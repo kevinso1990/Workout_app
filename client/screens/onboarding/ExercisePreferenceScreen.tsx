@@ -162,16 +162,18 @@ export default function ExercisePreferenceScreen() {
   const handleFinish = async () => {
     if (!state.exercisePreference) return;
 
+    if (state.splitPreference === "choose") {
+      navigation.navigate("SplitSelection");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const preferences = getPreferences();
       if (preferences) {
         await setUserPreferences(preferences);
 
-        if (
-          preferences.splitPreference === "recommended" &&
-          preferences.exercisePreference === "default"
-        ) {
+        if (preferences.exercisePreference === "default") {
           const defaultPlan = generateDefaultPlan(
             preferences.workoutDaysPerWeek
           );
@@ -199,6 +201,13 @@ export default function ExercisePreferenceScreen() {
     navigation.goBack();
   };
 
+  const getButtonText = () => {
+    if (state.splitPreference === "choose") {
+      return "Choose Split";
+    }
+    return "Create My Plan";
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <View
@@ -222,9 +231,7 @@ export default function ExercisePreferenceScreen() {
             <ThemedText style={styles.question}>
               How would you like{"\n"}to pick exercises?
             </ThemedText>
-            <ThemedText
-              style={[styles.hint, { color: theme.textSecondary }]}
-            >
+            <ThemedText style={[styles.hint, { color: theme.textSecondary }]}>
               Don't worry, you can swap exercises anytime
             </ThemedText>
           </Animated.View>
@@ -300,7 +307,7 @@ export default function ExercisePreferenceScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <ThemedText style={styles.buttonText}>Finish Setup</ThemedText>
+                <ThemedText style={styles.buttonText}>{getButtonText()}</ThemedText>
               )}
             </LinearGradient>
           </AnimatedPressable>
