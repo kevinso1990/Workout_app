@@ -11,6 +11,7 @@ export interface UserPreferences {
   workoutDaysPerWeek: number;
   splitPreference: "choose" | "recommended";
   exercisePreference: "choose" | "default";
+  cardioDays?: string[];
 }
 
 export interface Exercise {

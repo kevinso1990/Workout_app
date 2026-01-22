@@ -221,7 +221,7 @@ export default function ExercisePreferenceScreen() {
       >
         <View>
           <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-            <ProgressBar step={3} total={3} />
+            <ProgressBar step={4} total={4} />
           </Animated.View>
 
           <Animated.View

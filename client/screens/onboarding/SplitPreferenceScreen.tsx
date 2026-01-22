@@ -175,7 +175,7 @@ export default function SplitPreferenceScreen() {
       >
         <View>
           <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-            <ProgressBar step={2} total={3} />
+            <ProgressBar step={3} total={4} />
           </Animated.View>
 
           <Animated.View

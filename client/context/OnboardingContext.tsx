@@ -3,6 +3,7 @@ import { UserPreferences } from "@/lib/storage";
 
 interface OnboardingState {
   workoutDaysPerWeek: number;
+  cardioDays: string[];
   splitPreference: "choose" | "recommended" | null;
   exercisePreference: "choose" | "default" | null;
 }
@@ -10,6 +11,7 @@ interface OnboardingState {
 interface OnboardingContextType {
   state: OnboardingState;
   setWorkoutDays: (days: number) => void;
+  setCardioDays: (sports: string[]) => void;
   setSplitPreference: (preference: "choose" | "recommended") => void;
   setExercisePreference: (preference: "choose" | "default") => void;
   getPreferences: () => UserPreferences | null;
@@ -22,6 +24,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(
 
 const initialState: OnboardingState = {
   workoutDaysPerWeek: 3,
+  cardioDays: [],
   splitPreference: null,
   exercisePreference: null,
 };
@@ -31,6 +34,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const setWorkoutDays = (days: number) => {
     setState((prev) => ({ ...prev, workoutDaysPerWeek: days }));
+  };
+
+  const setCardioDays = (sports: string[]) => {
+    setState((prev) => ({ ...prev, cardioDays: sports }));
   };
 
   const setSplitPreference = (preference: "choose" | "recommended") => {
@@ -47,6 +54,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       workoutDaysPerWeek: state.workoutDaysPerWeek,
       splitPreference: state.splitPreference,
       exercisePreference: state.exercisePreference,
+      cardioDays: state.cardioDays,
     };
   };
 
@@ -59,6 +67,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         setWorkoutDays,
+        setCardioDays,
         setSplitPreference,
         setExercisePreference,
         getPreferences,
