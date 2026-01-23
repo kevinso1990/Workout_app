@@ -36,6 +36,18 @@ export interface WorkoutPlan {
   lastModified: string;
 }
 
+export interface SetData {
+  weight: string;
+  reps: string;
+  rating: "green" | "yellow" | "red" | null;
+  completed: boolean;
+}
+
+export interface ExerciseProgress {
+  exerciseId: string;
+  sets: SetData[];
+}
+
 export interface WorkoutSession {
   id: string;
   planId: string;
@@ -43,6 +55,8 @@ export interface WorkoutSession {
   dayName: string;
   completedAt: string;
   exercises: Exercise[];
+  exerciseProgress?: ExerciseProgress[];
+  duration?: number;
 }
 
 export async function getOnboardingComplete(): Promise<boolean> {

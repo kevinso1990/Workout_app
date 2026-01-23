@@ -6,6 +6,8 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import OnboardingStackNavigator from "@/navigation/OnboardingStackNavigator";
 import CreatePlanScreen from "@/screens/CreatePlanScreen";
 import PlanDetailScreen from "@/screens/PlanDetailScreen";
+import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
+import ActiveWorkoutScreen from "@/screens/main/ActiveWorkoutScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 import { getOnboardingComplete } from "@/lib/storage";
@@ -16,6 +18,8 @@ export type RootStackParamList = {
   Main: undefined;
   CreatePlan: undefined;
   PlanDetail: { planId: string };
+  StartWorkout: { planId?: string };
+  ActiveWorkout: { planId: string; planName: string; dayIndex: number };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -84,6 +88,22 @@ export default function RootStackNavigator() {
         component={PlanDetailScreen}
         options={{
           headerTitle: "Workout Plan",
+        }}
+      />
+      <Stack.Screen
+        name="StartWorkout"
+        component={StartWorkoutScreen}
+        options={{
+          headerTitle: "Start Workout",
+        }}
+      />
+      <Stack.Screen
+        name="ActiveWorkout"
+        component={ActiveWorkoutScreen}
+        options={{
+          headerShown: false,
+          presentation: "fullScreenModal",
+          gestureEnabled: false,
         }}
       />
     </Stack.Navigator>

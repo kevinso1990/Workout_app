@@ -13,6 +13,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -33,25 +34,24 @@ function PlanCard({
   plan,
   index,
   onPress,
+  onStartPress,
 }: {
   plan: WorkoutPlan;
   index: number;
   onPress: () => void;
+  onStartPress: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+  const startScale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-  };
+  const startAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: startScale.value }],
+  }));
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -62,8 +62,12 @@ function PlanCard({
     <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
       <AnimatedPressable
         onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPressIn={() => {
+          scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+        }}
         style={[
           animatedStyle,
           styles.planCard,
@@ -71,30 +75,57 @@ function PlanCard({
         ]}
         testID={`card-plan-${plan.id}`}
       >
-        <View
-          style={[
-            styles.planIcon,
-            { backgroundColor: Colors.light.primary + "15" },
-          ]}
+        <View style={styles.planCardContent}>
+          <View
+            style={[
+              styles.planIcon,
+              { backgroundColor: Colors.light.primary + "15" },
+            ]}
+          >
+            <Feather name="calendar" size={24} color={Colors.light.primary} />
+          </View>
+          <View style={styles.planInfo}>
+            <ThemedText style={styles.planName}>{plan.name}</ThemedText>
+            <ThemedText
+              style={[styles.planDetails, { color: theme.textSecondary }]}
+            >
+              {plan.daysPerWeek} days/week • {plan.days.length} workouts
+            </ThemedText>
+          </View>
+          <View style={styles.planMeta}>
+            <ThemedText
+              style={[styles.planDate, { color: theme.textSecondary }]}
+            >
+              {formatDate(plan.lastModified)}
+            </ThemedText>
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </View>
+        </View>
+
+        <AnimatedPressable
+          onPress={(e) => {
+            e.stopPropagation();
+            onStartPress();
+          }}
+          onPressIn={() => {
+            startScale.value = withSpring(0.96, { damping: 15, stiffness: 200 });
+          }}
+          onPressOut={() => {
+            startScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+          }}
+          style={startAnimatedStyle}
+          testID={`button-start-plan-${plan.id}`}
         >
-          <Feather name="calendar" size={24} color={Colors.light.primary} />
-        </View>
-        <View style={styles.planInfo}>
-          <ThemedText style={styles.planName}>{plan.name}</ThemedText>
-          <ThemedText
-            style={[styles.planDetails, { color: theme.textSecondary }]}
+          <LinearGradient
+            colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.startWorkoutButton}
           >
-            {plan.daysPerWeek} days/week
-          </ThemedText>
-        </View>
-        <View style={styles.planMeta}>
-          <ThemedText
-            style={[styles.planDate, { color: theme.textSecondary }]}
-          >
-            {formatDate(plan.lastModified)}
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </View>
+            <Feather name="play" size={16} color="#FFFFFF" />
+            <ThemedText style={styles.startButtonText}>Start Workout</ThemedText>
+          </LinearGradient>
+        </AnimatedPressable>
       </AnimatedPressable>
     </Animated.View>
   );
@@ -187,6 +218,11 @@ export default function MyPlansScreen() {
     navigation.navigate("PlanDetail", { planId: plan.id });
   };
 
+  const handleStartWorkout = (plan: WorkoutPlan) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate("StartWorkout", { planId: plan.id });
+  };
+
   const renderItem = ({
     item,
     index,
@@ -198,6 +234,7 @@ export default function MyPlansScreen() {
       plan={item}
       index={index}
       onPress={() => handlePlanPress(item)}
+      onStartPress={() => handleStartWorkout(item)}
     />
   );
 
@@ -261,10 +298,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   planCard: {
-    flexDirection: "row",
-    alignItems: "center",
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
+  },
+  planCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.md,
   },
   planIcon: {
     width: 48,
@@ -293,6 +333,20 @@ const styles = StyleSheet.create({
   },
   planDate: {
     fontSize: 13,
+  },
+  startWorkoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+  },
+  startButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
   },
   emptyContainer: {
     alignItems: "center",
