@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,9 +19,9 @@ import Animated, {
   withTiming,
   FadeIn,
   FadeInDown,
-  FadeOut,
+  FadeInUp,
+  ZoomIn,
   SlideInRight,
-  SlideOutLeft,
 } from "react-native-reanimated";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -60,11 +61,241 @@ interface ExerciseProgress {
   sets: SetData[];
 }
 
+interface PRRecord {
+  exerciseName: string;
+  weight: number;
+  reps: number;
+}
+
 const RATING_COLORS = {
   green: "#22C55E",
   yellow: "#F59E0B",
   red: "#EF4444",
 };
+
+const DEFAULT_REST_TIME = 90;
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function RestTimerModal({
+  visible,
+  timeLeft,
+  onSkip,
+}: {
+  visible: boolean;
+  timeLeft: number;
+  onSkip: () => void;
+}) {
+  const { theme } = useTheme();
+  const progress = timeLeft / DEFAULT_REST_TIME;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.restModalOverlay}>
+        <Animated.View
+          entering={ZoomIn.duration(300)}
+          style={[styles.restModalContent, { backgroundColor: theme.backgroundDefault }]}
+        >
+          <ThemedText style={styles.restTitle}>Rest Time</ThemedText>
+          <View style={styles.timerCircle}>
+            <View
+              style={[
+                styles.timerCircleProgress,
+                {
+                  backgroundColor: Colors.light.primary,
+                  transform: [{ scaleX: progress }],
+                },
+              ]}
+            />
+            <ThemedText style={styles.timerText}>{formatTime(timeLeft)}</ThemedText>
+          </View>
+          <ThemedText style={[styles.restHint, { color: theme.textSecondary }]}>
+            Take a breather, you earned it
+          </ThemedText>
+          <Pressable onPress={onSkip} style={styles.skipRestButton}>
+            <ThemedText style={[styles.skipRestText, { color: Colors.light.primary }]}>
+              Skip Rest
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+function PRCelebration({
+  visible,
+  pr,
+  onClose,
+}: {
+  visible: boolean;
+  pr: PRRecord | null;
+  onClose: () => void;
+}) {
+  const { theme } = useTheme();
+
+  if (!visible || !pr) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.prModalOverlay}>
+        <Animated.View
+          entering={ZoomIn.springify().damping(12)}
+          style={[styles.prModalContent, { backgroundColor: theme.backgroundDefault }]}
+        >
+          <LinearGradient
+            colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+            style={styles.prBadge}
+          >
+            <Feather name="award" size={40} color="#FFFFFF" />
+          </LinearGradient>
+          <ThemedText style={styles.prTitle}>New Personal Record!</ThemedText>
+          <ThemedText style={styles.prExercise}>{pr.exerciseName}</ThemedText>
+          <View style={styles.prStats}>
+            <View style={styles.prStatItem}>
+              <ThemedText style={styles.prStatValue}>{pr.weight}</ThemedText>
+              <ThemedText style={[styles.prStatLabel, { color: theme.textSecondary }]}>
+                kg
+              </ThemedText>
+            </View>
+            <View style={[styles.prDivider, { backgroundColor: theme.border }]} />
+            <View style={styles.prStatItem}>
+              <ThemedText style={styles.prStatValue}>{pr.reps}</ThemedText>
+              <ThemedText style={[styles.prStatLabel, { color: theme.textSecondary }]}>
+                reps
+              </ThemedText>
+            </View>
+          </View>
+          <Pressable onPress={onClose}>
+            <LinearGradient
+              colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+              style={styles.prButton}
+            >
+              <ThemedText style={styles.prButtonText}>Awesome!</ThemedText>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+function WorkoutSummary({
+  visible,
+  duration,
+  totalSets,
+  completedSets,
+  totalVolume,
+  prs,
+  onClose,
+}: {
+  visible: boolean;
+  duration: number;
+  totalSets: number;
+  completedSets: number;
+  totalVolume: number;
+  prs: number;
+  onClose: () => void;
+}) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} animationType="slide">
+      <ThemedView style={[styles.summaryContainer, { paddingTop: insets.top + Spacing.xl }]}>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <LinearGradient
+            colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+            style={styles.summaryBadge}
+          >
+            <Feather name="check-circle" size={48} color="#FFFFFF" />
+          </LinearGradient>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <ThemedText style={styles.summaryTitle}>Workout Complete!</ThemedText>
+          <ThemedText style={[styles.summarySubtitle, { color: theme.textSecondary }]}>
+            Great job crushing it today
+          </ThemedText>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInUp.delay(300).duration(400)}
+          style={styles.summaryStats}
+        >
+          <View style={[styles.summaryStatCard, { backgroundColor: theme.backgroundDefault }]}>
+            <Feather name="clock" size={24} color={Colors.light.primary} />
+            <ThemedText style={styles.summaryStatValue}>
+              {formatTime(duration)}
+            </ThemedText>
+            <ThemedText style={[styles.summaryStatLabel, { color: theme.textSecondary }]}>
+              Duration
+            </ThemedText>
+          </View>
+
+          <View style={[styles.summaryStatCard, { backgroundColor: theme.backgroundDefault }]}>
+            <Feather name="check-square" size={24} color={Colors.light.primary} />
+            <ThemedText style={styles.summaryStatValue}>
+              {completedSets}/{totalSets}
+            </ThemedText>
+            <ThemedText style={[styles.summaryStatLabel, { color: theme.textSecondary }]}>
+              Sets
+            </ThemedText>
+          </View>
+
+          <View style={[styles.summaryStatCard, { backgroundColor: theme.backgroundDefault }]}>
+            <Feather name="trending-up" size={24} color={Colors.light.primary} />
+            <ThemedText style={styles.summaryStatValue}>
+              {totalVolume.toLocaleString()}
+            </ThemedText>
+            <ThemedText style={[styles.summaryStatLabel, { color: theme.textSecondary }]}>
+              kg Volume
+            </ThemedText>
+          </View>
+        </Animated.View>
+
+        {prs > 0 ? (
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(400)}
+            style={styles.prSummaryBadge}
+          >
+            <LinearGradient
+              colors={["#FFD700", "#FFA500"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.prSummaryGradient}
+            >
+              <Feather name="award" size={20} color="#FFFFFF" />
+              <ThemedText style={styles.prSummaryText}>
+                {prs} New Personal Record{prs > 1 ? "s" : ""}!
+              </ThemedText>
+            </LinearGradient>
+          </Animated.View>
+        ) : null}
+
+        <Animated.View
+          entering={FadeInUp.delay(500).duration(400)}
+          style={[styles.summaryBottom, { paddingBottom: insets.bottom + Spacing.lg }]}
+        >
+          <Pressable onPress={onClose}>
+            <LinearGradient
+              colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+              style={styles.summaryButton}
+            >
+              <ThemedText style={styles.summaryButtonText}>Done</ThemedText>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+      </ThemedView>
+    </Modal>
+  );
+}
 
 function RatingButton({
   rating,
@@ -155,6 +386,12 @@ function SetInput({
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
 
+  useEffect(() => {
+    if (isActive && lastWeekData && setData.weight === "" && setData.reps === "") {
+      onUpdate({ weight: lastWeekData.weight, reps: lastWeekData.reps });
+    }
+  }, [isActive]);
+
   const handleRating = (rating: SetRating) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onUpdate({ rating, completed: true });
@@ -213,7 +450,7 @@ function SetInput({
           {lastWeekData ? (
             <View style={styles.lastWeekBadge}>
               <ThemedText style={[styles.lastWeekLabel, { color: theme.textSecondary }]}>
-                Last time: {lastWeekData.weight}kg x {lastWeekData.reps}
+                Last: {lastWeekData.weight}kg x {lastWeekData.reps}
               </ThemedText>
               {lastWeekData.rating ? (
                 <View
@@ -315,7 +552,15 @@ export default function ActiveWorkoutScreen() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
   const [lastWeekProgress, setLastWeekProgress] = useState<ExerciseProgress[]>([]);
+  const [allHistory, setAllHistory] = useState<WorkoutSession[]>([]);
   const [startTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [restTimeLeft, setRestTimeLeft] = useState(DEFAULT_REST_TIME);
+  const [showPRCelebration, setShowPRCelebration] = useState(false);
+  const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
+  const [prsThisSession, setPrsThisSession] = useState(0);
+  const [showSummary, setShowSummary] = useState(false);
   const buttonScale = useSharedValue(1);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -325,6 +570,30 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showRestTimer && restTimeLeft > 0) {
+      interval = setInterval(() => {
+        setRestTimeLeft((prev) => {
+          if (prev <= 1) {
+            setShowRestTimer(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            return DEFAULT_REST_TIME;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showRestTimer, restTimeLeft]);
 
   const loadData = async () => {
     try {
@@ -337,6 +606,7 @@ export default function ActiveWorkoutScreen() {
       if (!targetPlan) return;
 
       setPlan(targetPlan);
+      setAllHistory(history);
       const day = targetPlan.days[route.params.dayIndex];
 
       const initialProgress: ExerciseProgress[] = day.exercises.map((ex) => ({
@@ -361,6 +631,32 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  const checkForPR = (exerciseName: string, weight: number, reps: number) => {
+    const exerciseHistory = allHistory.flatMap((session) =>
+      (session.exerciseProgress || []).flatMap((ep, idx) =>
+        session.exercises[idx]?.name === exerciseName
+          ? ep.sets.filter((s) => s.completed).map((s) => ({
+              weight: parseFloat(s.weight) || 0,
+              reps: parseInt(s.reps) || 0,
+            }))
+          : []
+      )
+    );
+
+    const currentVolume = weight * reps;
+    const maxPreviousVolume = Math.max(
+      0,
+      ...exerciseHistory.map((h) => h.weight * h.reps)
+    );
+
+    if (currentVolume > maxPreviousVolume && currentVolume > 0) {
+      setCurrentPR({ exerciseName, weight, reps });
+      setShowPRCelebration(true);
+      setPrsThisSession((prev) => prev + 1);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
   const handleUpdateSet = (data: Partial<SetData>) => {
     setProgress((prev) => {
       const updated = [...prev];
@@ -379,8 +675,17 @@ export default function ActiveWorkoutScreen() {
     const day = plan.days[route.params.dayIndex];
     const currentExercise = day.exercises[currentExerciseIndex];
     const exerciseProgress = progress[currentExerciseIndex];
+    const completedSet = exerciseProgress.sets[currentSetIndex];
+
+    const weight = parseFloat(completedSet.weight) || 0;
+    const reps = parseInt(completedSet.reps) || 0;
+    if (weight > 0 && reps > 0) {
+      checkForPR(currentExercise.name, weight, reps);
+    }
 
     if (currentSetIndex < currentExercise.sets - 1) {
+      setShowRestTimer(true);
+      setRestTimeLeft(DEFAULT_REST_TIME);
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < day.exercises.length - 1) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -389,10 +694,15 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  const handleSkipRest = () => {
+    setShowRestTimer(false);
+    setRestTimeLeft(DEFAULT_REST_TIME);
+  };
+
   const handleNextExercise = () => {
     if (!plan) return;
     const day = plan.days[route.params.dayIndex];
-    
+
     if (currentExerciseIndex < day.exercises.length - 1) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setCurrentExerciseIndex(currentExerciseIndex + 1);
@@ -423,15 +733,15 @@ export default function ActiveWorkoutScreen() {
         `You've completed ${completedSets} of ${totalSets} sets. Finish anyway?`,
         [
           { text: "Keep Going", style: "cancel" },
-          { text: "Finish", onPress: () => saveAndExit() },
+          { text: "Finish", onPress: () => saveAndShowSummary() },
         ]
       );
     } else {
-      saveAndExit();
+      saveAndShowSummary();
     }
   };
 
-  const saveAndExit = async () => {
+  const saveAndShowSummary = async () => {
     if (!plan) return;
 
     const day = plan.days[route.params.dayIndex];
@@ -443,12 +753,27 @@ export default function ActiveWorkoutScreen() {
       completedAt: new Date().toISOString(),
       exercises: day.exercises,
       exerciseProgress: progress,
-      duration: Math.floor((Date.now() - startTime) / 1000),
+      duration: elapsedTime,
     };
 
     await addWorkoutSession(session);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    navigation.goBack();
+    setShowSummary(true);
+  };
+
+  const calculateTotalVolume = () => {
+    return progress.reduce((total, ep) => {
+      return (
+        total +
+        ep.sets
+          .filter((s) => s.completed)
+          .reduce((setTotal, s) => {
+            const weight = parseFloat(s.weight) || 0;
+            const reps = parseInt(s.reps) || 0;
+            return setTotal + weight * reps;
+          }, 0)
+      );
+    }, 0);
   };
 
   if (!plan || progress.length === 0) {
@@ -476,6 +801,26 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <RestTimerModal
+        visible={showRestTimer}
+        timeLeft={restTimeLeft}
+        onSkip={handleSkipRest}
+      />
+      <PRCelebration
+        visible={showPRCelebration}
+        pr={currentPR}
+        onClose={() => setShowPRCelebration(false)}
+      />
+      <WorkoutSummary
+        visible={showSummary}
+        duration={elapsedTime}
+        totalSets={totalSets}
+        completedSets={completedSets}
+        totalVolume={calculateTotalVolume()}
+        prs={prsThisSession}
+        onClose={() => navigation.goBack()}
+      />
+
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -500,9 +845,12 @@ export default function ActiveWorkoutScreen() {
             </Pressable>
             <View style={styles.headerInfo}>
               <ThemedText style={styles.dayTitle}>{day.dayName}</ThemedText>
-              <ThemedText style={[styles.planLabel, { color: theme.textSecondary }]}>
-                {plan.name}
-              </ThemedText>
+              <View style={styles.timerBadge}>
+                <Feather name="clock" size={12} color={Colors.light.primary} />
+                <ThemedText style={[styles.timerBadgeText, { color: Colors.light.primary }]}>
+                  {formatTime(elapsedTime)}
+                </ThemedText>
+              </View>
             </View>
             <View style={{ width: 40 }} />
           </View>
@@ -699,8 +1047,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
   },
-  planLabel: {
+  timerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  timerBadgeText: {
     fontSize: 13,
+    fontWeight: "600",
   },
   progressBarContainer: {
     flexDirection: "row",
@@ -962,5 +1317,203 @@ const styles = StyleSheet.create({
   skipButtonText: {
     fontSize: 15,
     fontWeight: "500",
+  },
+  restModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  restModalContent: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing["2xl"],
+    alignItems: "center",
+  },
+  restTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+    marginBottom: Spacing.xl,
+  },
+  timerCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: Colors.light.primary + "15",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.lg,
+    overflow: "hidden",
+  },
+  timerCircleProgress: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: "100%",
+    opacity: 0.2,
+  },
+  timerText: {
+    fontSize: 48,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  restHint: {
+    fontSize: 14,
+    marginBottom: Spacing.xl,
+  },
+  skipRestButton: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+  },
+  skipRestText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  prModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  prModalContent: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing["2xl"],
+    alignItems: "center",
+  },
+  prBadge: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.lg,
+  },
+  prTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+    marginBottom: Spacing.sm,
+  },
+  prExercise: {
+    fontSize: 18,
+    fontWeight: "500",
+    marginBottom: Spacing.xl,
+  },
+  prStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  prStatItem: {
+    alignItems: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  prStatValue: {
+    fontSize: 36,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  prStatLabel: {
+    fontSize: 14,
+  },
+  prDivider: {
+    width: 1,
+    height: 40,
+  },
+  prButton: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing["2xl"],
+    borderRadius: BorderRadius.lg,
+  },
+  prButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  summaryContainer: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+  },
+  summaryBadge: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.xl,
+  },
+  summaryTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+    textAlign: "center",
+    marginBottom: Spacing.sm,
+  },
+  summarySubtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: Spacing["2xl"],
+  },
+  summaryStats: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  summaryStatCard: {
+    flex: 1,
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
+  },
+  summaryStatValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  summaryStatLabel: {
+    fontSize: 12,
+  },
+  prSummaryBadge: {
+    marginBottom: Spacing.xl,
+  },
+  prSummaryGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.full,
+    gap: Spacing.sm,
+  },
+  prSummaryText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  summaryBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+  },
+  summaryButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+  },
+  summaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
   },
 });
