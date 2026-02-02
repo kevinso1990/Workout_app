@@ -41,6 +41,38 @@ export interface SetData {
   reps: string;
   rating: "green" | "yellow" | "red" | null;
   completed: boolean;
+  notes?: string;
+}
+
+export function calculateProgressionWeight(
+  lastWeight: number,
+  lastRating: "green" | "yellow" | "red" | null
+): { suggestedWeight: number; message: string } {
+  if (!lastRating || lastWeight === 0) {
+    return { suggestedWeight: lastWeight, message: "Same as last time" };
+  }
+
+  switch (lastRating) {
+    case "green":
+      const increase = lastWeight < 20 ? 2.5 : lastWeight < 50 ? 2.5 : 5;
+      return {
+        suggestedWeight: lastWeight + increase,
+        message: `+${increase}kg - Last set felt easy!`,
+      };
+    case "yellow":
+      return {
+        suggestedWeight: lastWeight,
+        message: "Maintain weight - Good effort",
+      };
+    case "red":
+      const decrease = lastWeight < 20 ? 2.5 : 5;
+      return {
+        suggestedWeight: Math.max(0, lastWeight - decrease),
+        message: `${decrease > 0 ? "-" + decrease + "kg" : "Same"} - Take it easier`,
+      };
+    default:
+      return { suggestedWeight: lastWeight, message: "Same as last time" };
+  }
 }
 
 export interface ExerciseProgress {

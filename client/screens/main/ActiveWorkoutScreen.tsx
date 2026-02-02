@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -40,6 +40,7 @@ import {
   addWorkoutSession,
   getWorkoutHistory,
   WorkoutSession,
+  calculateProgressionWeight,
 } from "@/lib/storage";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -386,9 +387,22 @@ function SetInput({
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
 
+  const progressionSuggestion = useMemo(() => {
+    if (!lastWeekData || !lastWeekData.weight || !lastWeekData.rating) return null;
+    const lastWeight = parseFloat(lastWeekData.weight) || 0;
+    return calculateProgressionWeight(lastWeight, lastWeekData.rating);
+  }, [lastWeekData]);
+
   useEffect(() => {
     if (isActive && lastWeekData && setData.weight === "" && setData.reps === "") {
-      onUpdate({ weight: lastWeekData.weight, reps: lastWeekData.reps });
+      if (progressionSuggestion) {
+        onUpdate({
+          weight: progressionSuggestion.suggestedWeight.toString(),
+          reps: lastWeekData.reps,
+        });
+      } else {
+        onUpdate({ weight: lastWeekData.weight, reps: lastWeekData.reps });
+      }
     }
   }, [isActive]);
 
@@ -460,6 +474,14 @@ function SetInput({
                   ]}
                 />
               ) : null}
+            </View>
+          ) : null}
+          {progressionSuggestion ? (
+            <View style={[styles.progressionBadge, { backgroundColor: Colors.light.primary + "15" }]}>
+              <Feather name="trending-up" size={12} color={Colors.light.primary} />
+              <ThemedText style={[styles.progressionText, { color: Colors.light.primary }]}>
+                {progressionSuggestion.message}
+              </ThemedText>
             </View>
           ) : null}
         </View>
@@ -1215,6 +1237,20 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  progressionBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.sm,
+    marginTop: 4,
+    alignSelf: "flex-start",
+  },
+  progressionText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   inputsRow: {
     flexDirection: "row",
