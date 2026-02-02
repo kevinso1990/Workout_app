@@ -75,11 +75,115 @@ const RATING_COLORS = {
 };
 
 const DEFAULT_REST_TIME = 90;
+const BAR_WEIGHT = 20;
+const AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function calculatePlates(totalWeight: number): { plates: number[]; perSide: string } {
+  const weightPerSide = (totalWeight - BAR_WEIGHT) / 2;
+  if (weightPerSide <= 0) {
+    return { plates: [], perSide: "Just the bar" };
+  }
+
+  const platesNeeded: number[] = [];
+  let remaining = weightPerSide;
+
+  for (const plate of AVAILABLE_PLATES) {
+    while (remaining >= plate) {
+      platesNeeded.push(plate);
+      remaining -= plate;
+    }
+  }
+
+  if (platesNeeded.length === 0) {
+    return { plates: [], perSide: "Just the bar" };
+  }
+
+  const plateStr = platesNeeded.join(" + ");
+  return { plates: platesNeeded, perSide: `${plateStr} kg per side` };
+}
+
+function PlateCalculatorModal({
+  visible,
+  weight,
+  onClose,
+}: {
+  visible: boolean;
+  weight: number;
+  onClose: () => void;
+}) {
+  const { theme } = useTheme();
+  const calculation = calculatePlates(weight);
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <Pressable style={styles.plateModalOverlay} onPress={onClose}>
+        <Animated.View
+          entering={ZoomIn.duration(200)}
+          style={[styles.plateModalContent, { backgroundColor: theme.backgroundDefault }]}
+        >
+          <View style={styles.plateHeader}>
+            <Feather name="disc" size={24} color={Colors.light.primary} />
+            <ThemedText style={styles.plateTitle}>Plate Calculator</ThemedText>
+          </View>
+
+          <View style={styles.plateBarSection}>
+            <ThemedText style={[styles.plateLabel, { color: theme.textSecondary }]}>
+              Bar weight
+            </ThemedText>
+            <ThemedText style={styles.plateValue}>{BAR_WEIGHT}kg</ThemedText>
+          </View>
+
+          <View style={styles.plateDivider}>
+            <View style={[styles.plateDividerLine, { backgroundColor: theme.border }]} />
+          </View>
+
+          <View style={styles.plateResultSection}>
+            <ThemedText style={[styles.plateLabel, { color: theme.textSecondary }]}>
+              Total: {weight}kg
+            </ThemedText>
+            <View style={styles.plateResult}>
+              {calculation.plates.length > 0 ? (
+                <View style={styles.plateVisual}>
+                  {calculation.plates.map((plate, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.plateChip,
+                        {
+                          backgroundColor: Colors.light.primary,
+                          width: 30 + plate * 1.2,
+                        },
+                      ]}
+                    >
+                      <ThemedText style={styles.plateChipText}>{plate}</ThemedText>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              <ThemedText style={[styles.plateDescription, { color: theme.text }]}>
+                {calculation.perSide}
+              </ThemedText>
+            </View>
+          </View>
+
+          <Pressable
+            onPress={onClose}
+            style={[styles.plateCloseButton, { backgroundColor: theme.backgroundSecondary }]}
+          >
+            <ThemedText style={{ color: theme.text }}>Got it</ThemedText>
+          </Pressable>
+        </Animated.View>
+      </Pressable>
+    </Modal>
+  );
 }
 
 function RestTimerModal({
@@ -386,6 +490,7 @@ function SetInput({
   const { theme } = useTheme();
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
+  const [showPlateCalc, setShowPlateCalc] = useState(false);
 
   const progressionSuggestion = useMemo(() => {
     if (!lastWeekData || !lastWeekData.weight || !lastWeekData.rating) return null;
@@ -487,11 +592,29 @@ function SetInput({
         </View>
       </View>
 
+      <PlateCalculatorModal
+        visible={showPlateCalc}
+        weight={parseFloat(setData.weight) || 0}
+        onClose={() => setShowPlateCalc(false)}
+      />
+
       <View style={styles.inputsRow}>
         <View style={styles.inputWrapper}>
-          <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
-            Weight
-          </ThemedText>
+          <View style={styles.inputLabelRow}>
+            <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+              Weight
+            </ThemedText>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowPlateCalc(true);
+              }}
+              style={[styles.plateButton, { backgroundColor: Colors.light.primary + "15" }]}
+              testID={`button-plate-calc-${setIndex}`}
+            >
+              <Feather name="disc" size={12} color={Colors.light.primary} />
+            </Pressable>
+          </View>
           <View style={[styles.inputBox, { backgroundColor: theme.backgroundSecondary }]}>
             <TextInput
               ref={weightRef}
@@ -1260,10 +1383,22 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flex: 1,
   },
+  inputLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
   inputLabel: {
     fontSize: 12,
     fontWeight: "500",
-    marginBottom: 6,
+  },
+  plateButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   inputBox: {
     flexDirection: "row",
@@ -1551,5 +1686,80 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  plateModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plateModalContent: {
+    width: SCREEN_WIDTH - 64,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+  },
+  plateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  plateTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  plateBarSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  plateLabel: {
+    fontSize: 14,
+  },
+  plateValue: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  plateDivider: {
+    paddingVertical: Spacing.md,
+  },
+  plateDividerLine: {
+    height: 1,
+  },
+  plateResultSection: {
+    marginBottom: Spacing.xl,
+  },
+  plateResult: {
+    marginTop: Spacing.md,
+  },
+  plateVisual: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  plateChip: {
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plateChipText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  plateDescription: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  plateCloseButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
   },
 });
