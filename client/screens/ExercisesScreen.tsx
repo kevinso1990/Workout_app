@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
   FlatList,
   Pressable,
   TextInput,
+  Modal,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -21,6 +24,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,32 +33,113 @@ interface ExerciseItem {
   name: string;
   muscleGroup: string;
   equipment: string;
+  isCustom?: boolean;
 }
+
+interface APIExercise {
+  name: string;
+  force: string;
+  level: string;
+  mechanic: string;
+  equipment: string;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructions: string[];
+  category: string;
+}
+
+const CUSTOM_EXERCISES_KEY = "@fitplan_custom_exercises";
 
 const EXERCISE_LIBRARY: ExerciseItem[] = [
   { id: "1", name: "Bench Press", muscleGroup: "Chest", equipment: "Barbell" },
   { id: "2", name: "Incline Dumbbell Press", muscleGroup: "Chest", equipment: "Dumbbells" },
-  { id: "3", name: "Cable Flyes", muscleGroup: "Chest", equipment: "Cable" },
-  { id: "4", name: "Push-ups", muscleGroup: "Chest", equipment: "Bodyweight" },
-  { id: "5", name: "Squat", muscleGroup: "Legs", equipment: "Barbell" },
-  { id: "6", name: "Leg Press", muscleGroup: "Legs", equipment: "Machine" },
-  { id: "7", name: "Lunges", muscleGroup: "Legs", equipment: "Dumbbells" },
-  { id: "8", name: "Leg Curl", muscleGroup: "Legs", equipment: "Machine" },
-  { id: "9", name: "Deadlift", muscleGroup: "Back", equipment: "Barbell" },
-  { id: "10", name: "Barbell Rows", muscleGroup: "Back", equipment: "Barbell" },
-  { id: "11", name: "Lat Pulldown", muscleGroup: "Back", equipment: "Cable" },
-  { id: "12", name: "Pull-ups", muscleGroup: "Back", equipment: "Bodyweight" },
-  { id: "13", name: "Overhead Press", muscleGroup: "Shoulders", equipment: "Barbell" },
-  { id: "14", name: "Lateral Raises", muscleGroup: "Shoulders", equipment: "Dumbbells" },
-  { id: "15", name: "Face Pulls", muscleGroup: "Shoulders", equipment: "Cable" },
-  { id: "16", name: "Bicep Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
-  { id: "17", name: "Tricep Pushdowns", muscleGroup: "Arms", equipment: "Cable" },
-  { id: "18", name: "Hammer Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
-  { id: "19", name: "Skull Crushers", muscleGroup: "Arms", equipment: "Barbell" },
-  { id: "20", name: "Calf Raises", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "3", name: "Decline Bench Press", muscleGroup: "Chest", equipment: "Barbell" },
+  { id: "4", name: "Cable Flyes", muscleGroup: "Chest", equipment: "Cable" },
+  { id: "5", name: "Push-ups", muscleGroup: "Chest", equipment: "Bodyweight" },
+  { id: "6", name: "Dumbbell Flyes", muscleGroup: "Chest", equipment: "Dumbbells" },
+  { id: "7", name: "Chest Dips", muscleGroup: "Chest", equipment: "Bodyweight" },
+  { id: "8", name: "Machine Chest Press", muscleGroup: "Chest", equipment: "Machine" },
+  { id: "9", name: "Pec Deck", muscleGroup: "Chest", equipment: "Machine" },
+  { id: "10", name: "Landmine Press", muscleGroup: "Chest", equipment: "Barbell" },
+  { id: "11", name: "Squat", muscleGroup: "Legs", equipment: "Barbell" },
+  { id: "12", name: "Front Squat", muscleGroup: "Legs", equipment: "Barbell" },
+  { id: "13", name: "Leg Press", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "14", name: "Lunges", muscleGroup: "Legs", equipment: "Dumbbells" },
+  { id: "15", name: "Bulgarian Split Squat", muscleGroup: "Legs", equipment: "Dumbbells" },
+  { id: "16", name: "Leg Extension", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "17", name: "Leg Curl", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "18", name: "Romanian Deadlift", muscleGroup: "Legs", equipment: "Barbell" },
+  { id: "19", name: "Goblet Squat", muscleGroup: "Legs", equipment: "Dumbbells" },
+  { id: "20", name: "Hack Squat", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "21", name: "Step-ups", muscleGroup: "Legs", equipment: "Dumbbells" },
+  { id: "22", name: "Hip Thrust", muscleGroup: "Legs", equipment: "Barbell" },
+  { id: "23", name: "Calf Raises", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "24", name: "Seated Calf Raises", muscleGroup: "Legs", equipment: "Machine" },
+  { id: "25", name: "Deadlift", muscleGroup: "Back", equipment: "Barbell" },
+  { id: "26", name: "Sumo Deadlift", muscleGroup: "Back", equipment: "Barbell" },
+  { id: "27", name: "Barbell Rows", muscleGroup: "Back", equipment: "Barbell" },
+  { id: "28", name: "Pendlay Rows", muscleGroup: "Back", equipment: "Barbell" },
+  { id: "29", name: "Dumbbell Rows", muscleGroup: "Back", equipment: "Dumbbells" },
+  { id: "30", name: "Lat Pulldown", muscleGroup: "Back", equipment: "Cable" },
+  { id: "31", name: "Pull-ups", muscleGroup: "Back", equipment: "Bodyweight" },
+  { id: "32", name: "Chin-ups", muscleGroup: "Back", equipment: "Bodyweight" },
+  { id: "33", name: "Seated Cable Row", muscleGroup: "Back", equipment: "Cable" },
+  { id: "34", name: "T-Bar Row", muscleGroup: "Back", equipment: "Barbell" },
+  { id: "35", name: "Machine Row", muscleGroup: "Back", equipment: "Machine" },
+  { id: "36", name: "Straight Arm Pulldown", muscleGroup: "Back", equipment: "Cable" },
+  { id: "37", name: "Shrugs", muscleGroup: "Back", equipment: "Dumbbells" },
+  { id: "38", name: "Hyperextensions", muscleGroup: "Back", equipment: "Bodyweight" },
+  { id: "39", name: "Overhead Press", muscleGroup: "Shoulders", equipment: "Barbell" },
+  { id: "40", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders", equipment: "Dumbbells" },
+  { id: "41", name: "Arnold Press", muscleGroup: "Shoulders", equipment: "Dumbbells" },
+  { id: "42", name: "Lateral Raises", muscleGroup: "Shoulders", equipment: "Dumbbells" },
+  { id: "43", name: "Cable Lateral Raises", muscleGroup: "Shoulders", equipment: "Cable" },
+  { id: "44", name: "Front Raises", muscleGroup: "Shoulders", equipment: "Dumbbells" },
+  { id: "45", name: "Face Pulls", muscleGroup: "Shoulders", equipment: "Cable" },
+  { id: "46", name: "Reverse Flyes", muscleGroup: "Shoulders", equipment: "Dumbbells" },
+  { id: "47", name: "Upright Rows", muscleGroup: "Shoulders", equipment: "Barbell" },
+  { id: "48", name: "Machine Shoulder Press", muscleGroup: "Shoulders", equipment: "Machine" },
+  { id: "49", name: "Push Press", muscleGroup: "Shoulders", equipment: "Barbell" },
+  { id: "50", name: "Bicep Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "51", name: "Barbell Curls", muscleGroup: "Arms", equipment: "Barbell" },
+  { id: "52", name: "Hammer Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "53", name: "Preacher Curls", muscleGroup: "Arms", equipment: "Barbell" },
+  { id: "54", name: "Concentration Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "55", name: "Cable Curls", muscleGroup: "Arms", equipment: "Cable" },
+  { id: "56", name: "Incline Dumbbell Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "57", name: "Spider Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "58", name: "Tricep Pushdowns", muscleGroup: "Arms", equipment: "Cable" },
+  { id: "59", name: "Skull Crushers", muscleGroup: "Arms", equipment: "Barbell" },
+  { id: "60", name: "Overhead Tricep Extension", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "61", name: "Tricep Dips", muscleGroup: "Arms", equipment: "Bodyweight" },
+  { id: "62", name: "Close Grip Bench Press", muscleGroup: "Arms", equipment: "Barbell" },
+  { id: "63", name: "Diamond Push-ups", muscleGroup: "Arms", equipment: "Bodyweight" },
+  { id: "64", name: "Tricep Kickbacks", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "65", name: "Rope Pushdowns", muscleGroup: "Arms", equipment: "Cable" },
+  { id: "66", name: "Wrist Curls", muscleGroup: "Arms", equipment: "Dumbbells" },
+  { id: "67", name: "Crunches", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "68", name: "Plank", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "69", name: "Russian Twists", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "70", name: "Leg Raises", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "71", name: "Hanging Leg Raises", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "72", name: "Ab Wheel Rollout", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "73", name: "Cable Crunches", muscleGroup: "Core", equipment: "Cable" },
+  { id: "74", name: "Mountain Climbers", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "75", name: "Dead Bug", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "76", name: "Bird Dog", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "77", name: "Side Plank", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "78", name: "Bicycle Crunches", muscleGroup: "Core", equipment: "Bodyweight" },
+  { id: "79", name: "Kettlebell Swings", muscleGroup: "Full Body", equipment: "Kettlebell" },
+  { id: "80", name: "Clean and Press", muscleGroup: "Full Body", equipment: "Barbell" },
+  { id: "81", name: "Thrusters", muscleGroup: "Full Body", equipment: "Barbell" },
+  { id: "82", name: "Burpees", muscleGroup: "Full Body", equipment: "Bodyweight" },
+  { id: "83", name: "Box Jumps", muscleGroup: "Full Body", equipment: "Bodyweight" },
+  { id: "84", name: "Battle Ropes", muscleGroup: "Full Body", equipment: "Cable" },
+  { id: "85", name: "Farmers Walk", muscleGroup: "Full Body", equipment: "Dumbbells" },
 ];
 
-const MUSCLE_GROUPS = ["All", "Chest", "Back", "Shoulders", "Legs", "Arms"];
+const MUSCLE_GROUPS = ["All", "Chest", "Back", "Shoulders", "Legs", "Arms", "Core", "Full Body"];
+const EQUIPMENT_OPTIONS = ["Barbell", "Dumbbells", "Cable", "Machine", "Bodyweight", "Kettlebell", "Other"];
 
 function FilterChip({
   label,
@@ -94,9 +179,11 @@ function FilterChip({
 function ExerciseCard({
   exercise,
   index,
+  onLongPress,
 }: {
   exercise: ExerciseItem;
   index: number;
+  onLongPress?: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -124,17 +211,20 @@ function ExerciseCard({
       Shoulders: "#45B7D1",
       Legs: "#96CEB4",
       Arms: "#DDA0DD",
+      Core: "#FFB347",
+      "Full Body": Colors.light.primary,
     };
     return colors[group] || Colors.light.primary;
   };
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 50).duration(300)}
+      entering={FadeInDown.delay(Math.min(index * 30, 300)).duration(300)}
       style={styles.cardWrapper}
     >
       <AnimatedPressable
         onPress={handlePress}
+        onLongPress={onLongPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[
@@ -151,7 +241,7 @@ function ExerciseCard({
           ]}
         >
           <Feather
-            name="activity"
+            name={exercise.isCustom ? "star" : "activity"}
             size={24}
             color={getMuscleGroupColor(exercise.muscleGroup)}
           />
@@ -179,8 +269,287 @@ function ExerciseCard({
         >
           {exercise.equipment}
         </ThemedText>
+        {exercise.isCustom ? (
+          <View style={[styles.customBadge, { backgroundColor: Colors.light.primary + "20" }]}>
+            <ThemedText style={[styles.customBadgeText, { color: Colors.light.primary }]}>
+              Custom
+            </ThemedText>
+          </View>
+        ) : null}
       </AnimatedPressable>
     </Animated.View>
+  );
+}
+
+function CreateExerciseModal({
+  visible,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSave: (exercise: Omit<ExerciseItem, "id">) => void;
+}) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [name, setName] = useState("");
+  const [muscleGroup, setMuscleGroup] = useState("Chest");
+  const [equipment, setEquipment] = useState("Barbell");
+
+  const handleSave = () => {
+    if (name.trim()) {
+      onSave({ name: name.trim(), muscleGroup, equipment, isCustom: true });
+      setName("");
+      setMuscleGroup("Chest");
+      setEquipment("Barbell");
+      onClose();
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg }]}>
+          <View style={styles.modalHeader}>
+            <ThemedText style={styles.modalTitle}>Create Custom Exercise</ThemedText>
+            <Pressable onPress={onClose}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.formGroup}>
+              <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
+                Exercise Name
+              </ThemedText>
+              <TextInput
+                style={[styles.textInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g., Single Arm Cable Row"
+                placeholderTextColor={theme.textSecondary}
+                testID="input-exercise-name"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
+                Muscle Group
+              </ThemedText>
+              <View style={styles.optionsGrid}>
+                {MUSCLE_GROUPS.filter(g => g !== "All").map((group) => (
+                  <Pressable
+                    key={group}
+                    onPress={() => setMuscleGroup(group)}
+                    style={[
+                      styles.optionChip,
+                      {
+                        backgroundColor: muscleGroup === group ? Colors.light.primary : theme.backgroundSecondary,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.optionChipText,
+                        { color: muscleGroup === group ? "#FFFFFF" : theme.text },
+                      ]}
+                    >
+                      {group}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
+                Equipment
+              </ThemedText>
+              <View style={styles.optionsGrid}>
+                {EQUIPMENT_OPTIONS.map((equip) => (
+                  <Pressable
+                    key={equip}
+                    onPress={() => setEquipment(equip)}
+                    style={[
+                      styles.optionChip,
+                      {
+                        backgroundColor: equipment === equip ? Colors.light.primary : theme.backgroundSecondary,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.optionChipText,
+                        { color: equipment === equip ? "#FFFFFF" : theme.text },
+                      ]}
+                    >
+                      {equip}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
+          <Pressable
+            onPress={handleSave}
+            style={[styles.saveButton, { opacity: name.trim() ? 1 : 0.5 }]}
+            disabled={!name.trim()}
+            testID="button-save-exercise"
+          >
+            <ThemedText style={styles.saveButtonText}>Create Exercise</ThemedText>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function APISearchModal({
+  visible,
+  onClose,
+  onSelect,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (exercise: Omit<ExerciseItem, "id">) => void;
+}) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState<APIExercise[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [allExercises, setAllExercises] = useState<APIExercise[]>([]);
+
+  useEffect(() => {
+    if (visible && allExercises.length === 0) {
+      fetchExercises();
+    }
+  }, [visible]);
+
+  const fetchExercises = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json"
+      );
+      const data = await response.json();
+      setAllExercises(data);
+      setResults(data.slice(0, 20));
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchQuery.trim() && allExercises.length > 0) {
+      const filtered = allExercises
+        .filter((ex) =>
+          ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          ex.primaryMuscles.some((m) => m.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+        .slice(0, 30);
+      setResults(filtered);
+    } else if (allExercises.length > 0) {
+      setResults(allExercises.slice(0, 20));
+    }
+  }, [searchQuery, allExercises]);
+
+  const mapMuscleGroup = (muscles: string[]): string => {
+    const muscle = muscles[0]?.toLowerCase() || "";
+    if (muscle.includes("chest") || muscle.includes("pectorals")) return "Chest";
+    if (muscle.includes("back") || muscle.includes("lats") || muscle.includes("traps")) return "Back";
+    if (muscle.includes("shoulder") || muscle.includes("delt")) return "Shoulders";
+    if (muscle.includes("quad") || muscle.includes("hamstring") || muscle.includes("glute") || muscle.includes("calf")) return "Legs";
+    if (muscle.includes("bicep") || muscle.includes("tricep") || muscle.includes("forearm")) return "Arms";
+    if (muscle.includes("ab") || muscle.includes("core") || muscle.includes("oblique")) return "Core";
+    return "Full Body";
+  };
+
+  const mapEquipment = (equip: string | null): string => {
+    if (!equip) return "Bodyweight";
+    const e = equip.toLowerCase();
+    if (e.includes("barbell")) return "Barbell";
+    if (e.includes("dumbbell")) return "Dumbbells";
+    if (e.includes("cable")) return "Cable";
+    if (e.includes("machine")) return "Machine";
+    if (e.includes("kettlebell")) return "Kettlebell";
+    if (e === "body only" || e === "body weight") return "Bodyweight";
+    return "Other";
+  };
+
+  const handleSelect = (exercise: APIExercise) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onSelect({
+      name: exercise.name,
+      muscleGroup: mapMuscleGroup(exercise.primaryMuscles),
+      equipment: mapEquipment(exercise.equipment),
+      isCustom: true,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg }]}>
+          <View style={styles.modalHeader}>
+            <ThemedText style={styles.modalTitle}>Search Exercise Database</ThemedText>
+            <Pressable onPress={onClose}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          </View>
+
+          <View style={[styles.apiSearchContainer, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="search" size={20} color={theme.textSecondary} />
+            <TextInput
+              style={[styles.apiSearchInput, { color: theme.text }]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search 800+ exercises..."
+              placeholderTextColor={theme.textSecondary}
+              testID="input-api-search"
+            />
+          </View>
+
+          <ThemedText style={[styles.apiSubtitle, { color: theme.textSecondary }]}>
+            Tap an exercise to add it to your library
+          </ThemedText>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.light.primary} />
+              <ThemedText style={{ marginTop: Spacing.md, color: theme.textSecondary }}>
+                Loading exercise database...
+              </ThemedText>
+            </View>
+          ) : (
+            <FlatList
+              data={results}
+              keyExtractor={(item, index) => `${item.name}-${index}`}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => handleSelect(item)}
+                  style={[styles.apiResultItem, { backgroundColor: theme.backgroundSecondary }]}
+                >
+                  <View style={styles.apiResultInfo}>
+                    <ThemedText style={styles.apiResultName}>{item.name}</ThemedText>
+                    <ThemedText style={[styles.apiResultMeta, { color: theme.textSecondary }]}>
+                      {item.primaryMuscles.join(", ")} • {item.equipment || "Bodyweight"}
+                    </ThemedText>
+                  </View>
+                  <Feather name="plus-circle" size={24} color={Colors.light.primary} />
+                </Pressable>
+              )}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.apiResultsList}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -191,9 +560,49 @@ export default function ExercisesScreen() {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAPIModal, setShowAPIModal] = useState(false);
+  const [customExercises, setCustomExercises] = useState<ExerciseItem[]>([]);
+
+  useEffect(() => {
+    loadCustomExercises();
+  }, []);
+
+  const loadCustomExercises = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(CUSTOM_EXERCISES_KEY);
+      if (stored) {
+        setCustomExercises(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error("Error loading custom exercises:", error);
+    }
+  };
+
+  const saveCustomExercise = async (exercise: Omit<ExerciseItem, "id">) => {
+    const newExercise: ExerciseItem = {
+      ...exercise,
+      id: `custom-${Date.now()}`,
+    };
+    const updated = [...customExercises, newExercise];
+    setCustomExercises(updated);
+    await AsyncStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(updated));
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const deleteCustomExercise = async (id: string) => {
+    const updated = customExercises.filter((ex) => ex.id !== id);
+    setCustomExercises(updated);
+    await AsyncStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(updated));
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  };
+
+  const allExercises = useMemo(() => {
+    return [...customExercises, ...EXERCISE_LIBRARY];
+  }, [customExercises]);
 
   const filteredExercises = useMemo(() => {
-    return EXERCISE_LIBRARY.filter((exercise) => {
+    return allExercises.filter((exercise) => {
       const matchesSearch = exercise.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
@@ -201,7 +610,7 @@ export default function ExercisesScreen() {
         selectedFilter === "All" || exercise.muscleGroup === selectedFilter;
       return matchesSearch && matchesFilter;
     });
-  }, [searchQuery, selectedFilter]);
+  }, [searchQuery, selectedFilter, allExercises]);
 
   const handleFilterPress = (filter: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -214,10 +623,27 @@ export default function ExercisesScreen() {
   }: {
     item: ExerciseItem;
     index: number;
-  }) => <ExerciseCard exercise={item} index={index} />;
+  }) => (
+    <ExerciseCard
+      exercise={item}
+      index={index}
+      onLongPress={item.isCustom ? () => deleteCustomExercise(item.id) : undefined}
+    />
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <CreateExerciseModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={saveCustomExercise}
+      />
+      <APISearchModal
+        visible={showAPIModal}
+        onClose={() => setShowAPIModal(false)}
+        onSelect={saveCustomExercise}
+      />
+
       <FlatList
         style={styles.list}
         contentContainerStyle={[
@@ -235,6 +661,32 @@ export default function ExercisesScreen() {
         columnWrapperStyle={styles.row}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
+            <View style={styles.actionButtons}>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowCreateModal(true);
+                }}
+                style={[styles.actionButton, { backgroundColor: Colors.light.primary }]}
+                testID="button-create-exercise"
+              >
+                <Feather name="plus" size={18} color="#FFFFFF" />
+                <ThemedText style={styles.actionButtonText}>Create</ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowAPIModal(true);
+                }}
+                style={[styles.actionButton, { backgroundColor: theme.backgroundDefault }]}
+                testID="button-search-database"
+              >
+                <Feather name="database" size={18} color={Colors.light.primary} />
+                <ThemedText style={[styles.actionButtonText, { color: Colors.light.primary }]}>
+                  Browse 800+
+                </ThemedText>
+              </Pressable>
+            </View>
             <View
               style={[
                 styles.searchContainer,
@@ -248,6 +700,7 @@ export default function ExercisesScreen() {
                 placeholderTextColor={theme.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                testID="input-search-exercises"
               />
               {searchQuery.length > 0 ? (
                 <Pressable onPress={() => setSearchQuery("")}>
@@ -269,6 +722,10 @@ export default function ExercisesScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filtersContainer}
             />
+            <ThemedText style={[styles.exerciseCount, { color: theme.textSecondary }]}>
+              {filteredExercises.length} exercises
+              {customExercises.length > 0 ? ` (${customExercises.length} custom)` : ""}
+            </ThemedText>
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -289,6 +746,26 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     marginBottom: Spacing.lg,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
   },
   searchContainer: {
     flexDirection: "row",
@@ -315,6 +792,11 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  exerciseCount: {
+    marginTop: Spacing.md,
+    fontSize: 13,
+    textAlign: "center",
   },
   row: {
     gap: Spacing.md,
@@ -357,5 +839,121 @@ const styles = StyleSheet.create({
   },
   equipmentText: {
     fontSize: 12,
+  },
+  customBadge: {
+    marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+  },
+  customBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  formGroup: {
+    marginBottom: Spacing.xl,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.sm,
+  },
+  textInput: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    fontSize: 16,
+  },
+  optionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  optionChip: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  optionChipText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  saveButton: {
+    backgroundColor: Colors.light.primary,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    marginTop: Spacing.lg,
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  apiSearchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    height: Spacing.inputHeight,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  apiSearchInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  apiSubtitle: {
+    fontSize: 13,
+    marginBottom: Spacing.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["2xl"],
+  },
+  apiResultsList: {
+    gap: Spacing.sm,
+  },
+  apiResultItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  apiResultInfo: {
+    flex: 1,
+  },
+  apiResultName: {
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    marginBottom: 4,
+  },
+  apiResultMeta: {
+    fontSize: 13,
   },
 });
