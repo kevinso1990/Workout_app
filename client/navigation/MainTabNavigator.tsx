@@ -18,9 +18,8 @@ import ExercisesScreen from "@/screens/ExercisesScreen";
 import ProgressScreen from "@/screens/ProgressScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
-import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { HeaderTitle } from "@/components/HeaderTitle";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { Colors, Spacing } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -76,7 +75,6 @@ function FAB() {
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
-  const screenOptions = useScreenOptions();
 
   return (
     <View style={styles.container}>
@@ -102,7 +100,19 @@ export default function MainTabNavigator() {
                 style={StyleSheet.absoluteFill}
               />
             ) : null,
-          ...screenOptions,
+          headerTransparent: true,
+          headerBlurEffect: isDark ? "dark" : "light",
+          headerTintColor: theme.text,
+          headerStyle: {
+            backgroundColor: Platform.select({
+              ios: undefined,
+              android: theme.backgroundRoot,
+              web: theme.backgroundRoot,
+            }),
+          },
+          sceneStyle: {
+            backgroundColor: theme.backgroundRoot,
+          },
         }}
       >
         <Tab.Screen

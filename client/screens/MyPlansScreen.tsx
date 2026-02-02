@@ -290,8 +290,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.lg,
   },
   emptyListContent: {
     flex: 1,
@@ -300,6 +300,8 @@ const styles = StyleSheet.create({
   planCard: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   planCardContent: {
     flexDirection: "row",

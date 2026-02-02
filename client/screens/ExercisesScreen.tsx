@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
   headerContainer: {
     marginBottom: Spacing.lg,
@@ -1113,6 +1113,8 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   exerciseIcon: {
     width: 56,

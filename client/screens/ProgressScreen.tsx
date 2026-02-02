@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
   emptyContent: {
     flex: 1,
@@ -611,6 +611,8 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   statIcon: {
     width: 40,
@@ -639,6 +641,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   chartHeader: {
     flexDirection: "row",
@@ -703,6 +707,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   muscleHeader: {
     flexDirection: "row",
@@ -773,6 +779,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   historyIcon: {
     width: 40,
