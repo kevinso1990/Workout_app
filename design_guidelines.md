@@ -1,161 +1,138 @@
-# Workout Builder App - Design Guidelines
+# FitPlan - Design Guidelines
 
 ## Brand Identity
 
-**Purpose**: Empower users to create personalized workout routines through an effortless, guided experience. Remove the intimidation of fitness planning.
+**Purpose**: Empower users to create personalized workout routines through an effortless, guided experience that removes fitness planning intimidation.
 
-**Aesthetic Direction**: Bold/striking with athletic energy. High contrast, confident typography, and motivational visual language. Think Nike meets Strava - powerful without being aggressive, energetic without being chaotic.
+**Aesthetic Direction**: Luxurious/refined meets athletic minimalism. Premium whitespace, restrained elegance, and surgical precision in layout. The app breathes - every element has room to exist. Think Calm meets Nike - serene confidence, not aggressive energy. The gradient appears only in meaningful moments (progress completion, active workout), making those moments feel special.
 
-**Memorable Element**: Vibrant gradient accent system that animates progress bars and active states, making the app feel alive and motivational.
+**Memorable Element**: The gradient "reward system" - vibrant orange-red gradient appears only to celebrate progress, completed workouts, and active states, creating dopamine-triggering moments of achievement against an otherwise calm canvas.
 
 ## Navigation Architecture
 
 **Root Navigation**: Tab Bar (4 tabs) + Floating Action Button
-- **My Plans** (Home) - View and manage workout plans
-- **Exercises** - Browse exercise library
-- **Progress** - Track workout history and stats
+- **My Plans** - View saved workout routines
+- **Exercises** - Browse exercise library  
+- **Progress** - Track history and stats
 - **Profile** - Settings and preferences
-- **FAB (Create)** - Floating button to start new workout plan
+- **FAB (Create)** - Floating button for new plan (gradient background)
 
-**First Launch**: Stack-only onboarding flow (3 screens) → dismisses to Home
+**First Launch**: Stack-only onboarding (3 screens) → My Plans with empty state
 
 ## Screen-by-Screen Specifications
 
 ### Onboarding Flow (Stack Navigation)
 
-**1. Welcome Screen**
-- Purpose: Introduce app and start setup
-- Layout: Full-screen with illustration, title, subtitle, CTA button
+**Welcome Screen**
+- Purpose: Introduce app value proposition
+- Layout: Full-screen, generous vertical spacing
 - No header
-- Top inset: insets.top + Spacing.xl
-- Bottom inset: insets.bottom + Spacing.xl
-- Components: Hero illustration, headline "Build Your Perfect Workout", subtitle, "Get Started" button
+- Top inset: insets.top + Spacing.xxl (extra breathing room)
+- Bottom inset: insets.bottom + Spacing.xxl
+- Components: Hero illustration (top 40% of screen), headline "Build Your Perfect Workout" (Montserrat Bold, ample letter-spacing), minimal subtitle, single gradient CTA button at bottom
 
-**2. Frequency Question**
-- Purpose: Ask "How often do you workout?"
-- Layout: Question at top, pill-style selection buttons (1-7 days/week), bottom nav buttons
-- Custom header with progress indicator (1/3)
+**Frequency Question (Progress 1/3)**
+- Purpose: "How often do you workout?"
+- Custom header: Minimal progress bar (thin line, gradient fill for completed portion)
 - Scrollable: No
-- Components: Progress bar, question text, horizontal pill selector, "Next" button (bottom right)
+- Top inset: Spacing.xxl
+- Bottom inset: insets.bottom + Spacing.xxl
+- Components: Question text (generous top margin), 7 pill buttons (outline style, gradient border when active), "Next" text button (bottom right)
 
-**3. Split Preference**
-- Purpose: "Choose your split or get a recommendation?"
-- Layout: Same as previous
-- Custom header with progress (2/3)
-- Components: Two large option cards ("I'll Choose" / "Recommend for Me"), "Back" and "Next" buttons
+**Split & Exercise Preferences (2/3, 3/3)**
+- Same layout structure as Frequency
+- Large option cards: Outlined, not filled. Gradient border when selected
+- Minimal "Back" and "Next" text buttons (no heavy button chrome)
 
-**4. Exercise Selection**
-- Purpose: "Select exercises yourself or use defaults?"
-- Layout: Same structure
-- Custom header with progress (3/3)
-- Components: Two option cards, "Back" and "Finish Setup" buttons
-- On complete: Navigate to Home, show empty state with "Create Your First Plan" CTA
+### My Plans Screen (Tab 1)
 
-### My Plans Screen (Tab 1 - Home)
+- Purpose: Access and manage workout plans
+- Transparent header: "My Plans" title, filter icon (right)
+- Scrollable list with generous spacing between cards
+- Top inset: headerHeight + Spacing.xxl
+- Bottom inset: tabBarHeight + Spacing.xxl + FAB_HEIGHT
+- Components: Plan cards (white surface, 1px border, 16px radius, minimal shadow), empty state illustration centered
+- Press feedback: Subtle opacity change (0.7), no scale
 
-- Purpose: View and access saved workout plans
-- Layout:
-  - Transparent header with title "My Plans"
-  - Right button: Filter icon
-  - Scrollable list
-  - Top inset: headerHeight + Spacing.xl
-  - Bottom inset: tabBarHeight + Spacing.xl + FAB_HEIGHT
-- Components: 
-  - Plan cards (title, days/week, last modified, thumbnail icon)
-  - Empty state: Illustration with "No plans yet" message
-- Press state: Card scales to 0.98
+### Plan Detail Screen (Modal)
 
-### Workout Plan Detail Screen (Modal)
-
-- Purpose: View and start a specific plan
-- Layout:
-  - Default navigation header with "Edit" right button
-  - Scrollable content
-  - Top inset: Spacing.xl
-  - Bottom inset: tabBarHeight + Spacing.xl
-- Components: Plan name, schedule grid (days of week), exercise list by day, "Start Workout" button (primary, full-width)
+- Purpose: View plan structure and start workout
+- Default header: "Back" left, "Edit" right text button
+- Scrollable
+- Top inset: Spacing.xl
+- Bottom inset: tabBarHeight + Spacing.xl
+- Components: Plan title (large Montserrat), day grid (minimal outlined boxes), exercise list (clean typography, ample line-height), "Start Workout" gradient button (full-width, bottom of scroll)
 
 ### Exercises Screen (Tab 2)
 
-- Purpose: Browse exercise library
-- Layout:
-  - Transparent header with title "Exercises" and search bar
-  - Scrollable grid (2 columns)
-  - Top inset: headerHeight + Spacing.xl
-  - Bottom inset: tabBarHeight + Spacing.xl
-- Components: Exercise cards (image, name, muscle group tag), filter chips at top
+- Transparent header: "Exercises" title, search bar (borderless, background surface color)
+- Scrollable 2-column grid with equal gaps
+- Top inset: headerHeight + Spacing.xxl
+- Bottom inset: tabBarHeight + Spacing.xl
+- Components: Exercise cards (square aspect, subtle border, no heavy shadow), filter chips (outlined, minimal)
 
-### Create/Edit Plan Screen (FAB trigger / Edit)
+### Create/Edit Plan Screen
 
-- Purpose: Build or modify workout plan
-- Layout:
-  - Default header with "Cancel" left button, "Save" right button
-  - Scrollable form
-  - Top inset: Spacing.xl
-  - Bottom inset: tabBarHeight + Spacing.xl
-- Components:
-  - Text input: Plan name
-  - Day selector grid
-  - Exercise picker (per day)
-  - Submit in header (right button)
+- Default header: "Cancel" left text button, "Save" right (gradient text when form valid)
+- Scrollable form with generous vertical rhythm
+- Top inset: Spacing.xl
+- Bottom inset: tabBarHeight + Spacing.xxl
+- Components: Clean text inputs (bottom border only), day selector (outlined circles), exercise picker per day
+- Form validation: Subtle error text, no red borders
 
 ### Progress Screen (Tab 3)
 
-- Purpose: View workout history and achievements
-- Layout:
-  - Transparent header with title "Progress"
-  - Scrollable content
-  - Top inset: headerHeight + Spacing.xl
-  - Bottom inset: tabBarHeight + Spacing.xl
-- Components: Stats cards (total workouts, streak), calendar heatmap, recent activity list
-- Empty state: "Complete your first workout to see stats"
+- Transparent header: "Progress" title
+- Scrollable
+- Top inset: headerHeight + Spacing.xxl
+- Bottom inset: tabBarHeight + Spacing.xl
+- Components: Stats cards (minimal outline, generous padding), calendar heatmap (gradient for workout days), activity list
+- Empty state: Centered illustration with supportive message
 
 ### Profile Screen (Tab 4)
 
-- Purpose: App settings and user preferences
-- Layout:
-  - Transparent header with title "Profile"
-  - Scrollable list
-  - Top inset: headerHeight + Spacing.xl
-  - Bottom inset: tabBarHeight + Spacing.xl
-- Components:
-  - Avatar (generated preset) with name field
-  - Settings sections: Preferences (theme, units), About
+- Transparent header: "Profile" title
+- Scrollable list
+- Top inset: headerHeight + Spacing.xxl
+- Bottom inset: tabBarHeight + Spacing.xl
+- Components: Avatar (circular, subtle border), editable name field, settings sections with chevron navigation
 
 ## Color Palette
 
-- **Primary**: #FF4D00 (energetic orange-red, used for CTA buttons, active states)
-- **Primary Gradient**: #FF4D00 → #FF8A00 (for progress bars, FAB)
-- **Background**: #FAFAFA (warm off-white)
-- **Surface**: #FFFFFF (cards, inputs)
-- **Surface Elevated**: #FFFFFF with shadow
-- **Text Primary**: #1A1A1A
-- **Text Secondary**: #6B6B6B
-- **Border**: #E8E8E8
-- **Success**: #00C853 (workout completed)
+- **Primary Gradient**: #FF4D00 → #FF8A00 (use ONLY for FAB, progress fills, active workout state)
+- **Primary Text**: #FF4D00 (sparingly for active labels)
+- **Background**: #FFFFFF (pure white for maximum calm)
+- **Surface**: #FAFAFA (cards, subtle differentiation)
+- **Text Primary**: #0F0F0F
+- **Text Secondary**: #8A8A8A
+- **Border**: #E8E8E8 (1px, subtle)
+- **Success**: #00C853
 - **Error**: #D32F2F
 
 ## Typography
 
-**Font**: Montserrat (Google Font) - bold, athletic feel
-- **Display**: Montserrat Bold, 32px
-- **H1**: Montserrat Bold, 24px
-- **H2**: Montserrat SemiBold, 18px
-- **Body**: System Regular, 16px (legibility for lists)
-- **Caption**: System Regular, 14px, Text Secondary
+**Font**: Montserrat for headings, SF Pro (system) for body
+- **Display**: Montserrat Bold, 28px, letter-spacing: -0.5px
+- **H1**: Montserrat SemiBold, 20px
+- **H2**: Montserrat Medium, 16px
+- **Body**: SF Pro Regular, 16px, line-height: 24px
+- **Caption**: SF Pro Regular, 13px, Text Secondary
 
 ## Visual Design
 
-- Cards: 12px border radius, subtle shadow (offset: 0,1 / opacity: 0.08 / radius: 3)
-- Buttons: 8px radius, scale to 0.96 on press
-- FAB: Gradient background, positioned bottom right (16px from edges), shadow (offset: 0,2 / opacity: 0.10 / radius: 2)
-- Icons: Feather icons from @expo/vector-icons, 24px default
+- Cards: 16px radius, border 1px #E8E8E8, shadow (offset: 0,1 / opacity: 0.04 / radius: 4)
+- Buttons: Outlined by default, gradient only for primary CTA
+- Text buttons: No background, just color
+- FAB: Gradient, 56x56px, bottom-right (24px margins), shadow (offset: 0,2 / opacity: 0.08 / radius: 8)
+- Icons: Feather, 22px, stroke-width: 1.5 (delicate)
+- Spacing scale: xs:4, sm:8, md:12, lg:16, xl:24, xxl:32
+- Touch targets: Minimum 44x44px
 
 ## Assets to Generate
 
-1. **icon.png** - App icon showing a stylized dumbbell or workout symbol with gradient
-2. **splash-icon.png** - Same as icon, shown during launch
-3. **onboarding-welcome.png** - Illustration of person planning workout on phone, energetic style. Used: Welcome screen hero
-4. **empty-plans.png** - Illustration of empty workout board/clipboard. Used: My Plans empty state
-5. **empty-progress.png** - Illustration of starting line or empty calendar. Used: Progress empty state
-6. **avatar-default.png** - Simple athletic silhouette icon. Used: Profile screen default avatar
+1. **icon.png** - Minimalist dumbbell icon, gradient accent. Used: Device home screen
+2. **splash-icon.png** - Same as icon. Used: App launch
+3. **onboarding-welcome.png** - Abstract illustration of workout routine visualization, clean line art. Used: Welcome screen
+4. **empty-plans.png** - Serene illustration of blank canvas/clipboard with subtle energy. Used: My Plans empty state
+5. **empty-progress.png** - Minimalist "day one" starting illustration. Used: Progress empty state
+6. **avatar-default.png** - Simple circular athletic silhouette. Used: Profile default avatar

@@ -102,13 +102,13 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius["2xl"],
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
   },
   cardTitle: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   cardDescription: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
 });
