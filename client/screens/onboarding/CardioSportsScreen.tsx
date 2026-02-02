@@ -215,10 +215,10 @@ export default function CardioSportsScreen() {
           style={styles.questionContainer}
         >
           <ThemedText style={styles.title}>
-            Want to add cardio{"\n"}or sports days?
+            How many days cardio{"\n"}or other sports?
           </ThemedText>
           <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Mix training with activities you love
+            Beyond your gym days, add activities you love
           </ThemedText>
         </Animated.View>
 

@@ -138,12 +138,12 @@ export default function FrequencyScreen() {
             style={styles.questionContainer}
           >
             <ThemedText style={styles.question}>
-              How many days per{"\n"}week do you workout?
+              How many days per week{"\n"}do you want to gym?
             </ThemedText>
             <ThemedText
               style={[styles.hint, { color: theme.textSecondary }]}
             >
-              This helps us create the perfect split for you
+              Strength and weight training days
             </ThemedText>
           </Animated.View>
 
