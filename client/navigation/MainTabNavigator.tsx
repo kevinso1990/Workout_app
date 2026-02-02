@@ -101,11 +101,10 @@ export default function MainTabNavigator() {
               />
             ) : null,
           headerTransparent: true,
-          headerBlurEffect: isDark ? "dark" : "light",
           headerTintColor: theme.text,
           headerStyle: {
             backgroundColor: Platform.select({
-              ios: undefined,
+              ios: "transparent",
               android: theme.backgroundRoot,
               web: theme.backgroundRoot,
             }),

@@ -36,8 +36,17 @@ Preferred communication style: Simple, everyday language.
 **UI/Theming**:
 - Custom theme system with light/dark mode support (`Colors` in `constants/theme.ts`)
 - Montserrat font family (Google Fonts via expo-font)
-- Brand color: `#FF4D00` (orange/athletic)
+- Brand color: `#FF4D00` (orange/athletic gradient to `#FF8A00`)
 - Reanimated for animations, expo-haptics for feedback
+- Design guidelines in `design_guidelines.md`
+
+**Design System**:
+- Streamlined, fluid, clean aesthetic with generous whitespace
+- Cards use subtle 1px borders (#E8E8E8) instead of heavy shadows
+- Border radius: 16px (cards), 24px (modals), full (pills/chips)
+- Spacing scale: xs(4), sm(8), md(12), lg(16), xl(24), 2xl(32)
+- Gradient used sparingly: FAB, primary CTAs, progress indicators
+- Typography: Montserrat for headings, system font for body
 
 ### Backend Architecture
 
