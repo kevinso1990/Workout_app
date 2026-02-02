@@ -679,7 +679,12 @@ function ExerciseProgressModal({
                 {exercise.muscleGroup} • {exercise.equipment}
               </ThemedText>
             </View>
-            <Pressable onPress={onClose}>
+            <Pressable
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              testID="button-close-progress-modal"
+              accessibilityLabel="Close"
+            >
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
           </View>
@@ -771,7 +776,7 @@ function ExerciseProgressModal({
                     <View key={idx} style={styles.chartBar}>
                       <View style={styles.barContainer}>
                         <LinearGradient
-                          colors={[Colors.light.primary, Colors.light.primaryDark]}
+                          colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
                           style={[
                             styles.bar,
                             { height: `${(session.volume / maxVolume) * 100}%` },
