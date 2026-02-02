@@ -5,11 +5,12 @@ import {
   Pressable,
   TextInput,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   Dimensions,
   Modal,
+  ScrollView,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -635,9 +636,11 @@ function SetInput({
         </View>
 
         <View style={styles.inputWrapper}>
-          <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
-            Reps
-          </ThemedText>
+          <View style={styles.inputLabelRow}>
+            <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+              Reps
+            </ThemedText>
+          </View>
           <View style={[styles.inputBox, { backgroundColor: theme.backgroundSecondary }]}>
             <TextInput
               ref={repsRef}
@@ -647,6 +650,7 @@ function SetInput({
               keyboardType="numeric"
               placeholder="0"
               placeholderTextColor={theme.textSecondary}
+              returnKeyType="done"
               testID={`input-reps-${setIndex}`}
             />
           </View>
@@ -966,11 +970,7 @@ export default function ActiveWorkoutScreen() {
         onClose={() => navigation.goBack()}
       />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
-      >
+      <View style={styles.mainContainer}>
         <View
           style={[
             styles.header,
@@ -1052,39 +1052,48 @@ export default function ActiveWorkoutScreen() {
           </Pressable>
         </View>
 
-        <Animated.View
-          key={currentExerciseIndex}
-          entering={SlideInRight.duration(300)}
-          style={styles.exerciseContent}
+        <KeyboardAwareScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.exerciseHeader}>
-            <ThemedText style={styles.exerciseName}>{currentExercise.name}</ThemedText>
-            <View style={styles.exerciseMeta}>
-              <View style={[styles.metaBadge, { backgroundColor: Colors.light.primary + "15" }]}>
-                <ThemedText style={[styles.metaText, { color: Colors.light.primary }]}>
-                  {currentExercise.muscleGroup}
+          <Animated.View
+            key={currentExerciseIndex}
+            entering={SlideInRight.duration(300)}
+            style={styles.exerciseContent}
+          >
+            <View style={styles.exerciseHeader}>
+              <ThemedText style={styles.exerciseName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+                {currentExercise.name}
+              </ThemedText>
+              <View style={styles.exerciseMeta}>
+                <View style={[styles.metaBadge, { backgroundColor: Colors.light.primary + "15" }]}>
+                  <ThemedText style={[styles.metaText, { color: Colors.light.primary }]}>
+                    {currentExercise.muscleGroup}
+                  </ThemedText>
+                </View>
+                <ThemedText style={[styles.targetText, { color: theme.textSecondary }]}>
+                  {currentExercise.sets} sets x {currentExercise.reps}
                 </ThemedText>
               </View>
-              <ThemedText style={[styles.targetText, { color: theme.textSecondary }]}>
-                {currentExercise.sets} sets x {currentExercise.reps}
-              </ThemedText>
             </View>
-          </View>
 
-          <View style={styles.setsContainer}>
-            {exerciseProgress.sets.map((setData, index) => (
-              <SetInput
-                key={index}
-                setIndex={index}
-                setData={setData}
-                lastWeekData={lastWeekExercise?.sets[index] || null}
-                onUpdate={handleUpdateSet}
-                onComplete={handleSetComplete}
-                isActive={index === currentSetIndex}
-              />
-            ))}
-          </View>
-        </Animated.View>
+            <View style={styles.setsContainer}>
+              {exerciseProgress.sets.map((setData, index) => (
+                <SetInput
+                  key={index}
+                  setIndex={index}
+                  setData={setData}
+                  lastWeekData={lastWeekExercise?.sets[index] || null}
+                  onUpdate={handleUpdateSet}
+                  onComplete={handleSetComplete}
+                  isActive={index === currentSetIndex}
+                />
+              ))}
+            </View>
+          </Animated.View>
+        </KeyboardAwareScrollView>
 
         <View
           style={[
@@ -1151,7 +1160,7 @@ export default function ActiveWorkoutScreen() {
             </Pressable>
           )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </ThemedView>
   );
 }
@@ -1160,8 +1169,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardView: {
+  mainContainer: {
     flex: 1,
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
+    paddingBottom: Spacing["2xl"],
   },
   loadingContainer: {
     flex: 1,

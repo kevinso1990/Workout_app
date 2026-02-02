@@ -96,6 +96,9 @@ function DayCard({
             </ThemedText>
           </View>
           <View style={styles.dayInfo}>
+            <ThemedText style={[styles.dayLabel, { color: theme.textSecondary }]}>
+              Day {dayIndex + 1}
+            </ThemedText>
             <ThemedText style={styles.dayName}>{day.dayName}</ThemedText>
             <ThemedText
               style={[styles.exerciseCount, { color: theme.textSecondary }]}
@@ -304,6 +307,13 @@ const styles = StyleSheet.create({
   },
   dayInfo: {
     flex: 1,
+  },
+  dayLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   dayName: {
     fontSize: 17,
