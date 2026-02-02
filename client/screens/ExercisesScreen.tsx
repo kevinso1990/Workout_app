@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -20,11 +21,15 @@ import Animated, {
   FadeInDown,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getWorkoutHistory, WorkoutSession } from "@/lib/storage";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -180,10 +185,12 @@ function ExerciseCard({
   exercise,
   index,
   onLongPress,
+  onPress,
 }: {
   exercise: ExerciseItem;
   index: number;
   onLongPress?: () => void;
+  onPress?: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -202,6 +209,7 @@ function ExerciseCard({
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress?.();
   };
 
   const getMuscleGroupColor = (group: string) => {
@@ -553,6 +561,277 @@ function APISearchModal({
   );
 }
 
+interface ExerciseStats {
+  totalSessions: number;
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  bestSet: { weight: number; reps: number; volume: number } | null;
+  recentSessions: { date: string; volume: number; sets: number }[];
+  volumeTrend: number;
+}
+
+function ExerciseProgressModal({
+  visible,
+  exercise,
+  onClose,
+  history,
+}: {
+  visible: boolean;
+  exercise: ExerciseItem | null;
+  onClose: () => void;
+  history: WorkoutSession[];
+}) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const stats = useMemo<ExerciseStats | null>(() => {
+    if (!exercise || !history.length) return null;
+
+    const exerciseSessions: { date: string; sets: { weight: number; reps: number }[] }[] = [];
+
+    history.forEach((session) => {
+      session.exercises.forEach((ex, exIdx) => {
+        if (ex.name.toLowerCase() === exercise.name.toLowerCase()) {
+          const progress = session.exerciseProgress?.[exIdx];
+          if (progress) {
+            const completedSets = progress.sets
+              .filter((s) => s.completed)
+              .map((s) => ({
+                weight: parseFloat(s.weight) || 0,
+                reps: parseInt(s.reps) || 0,
+              }));
+            if (completedSets.length > 0) {
+              exerciseSessions.push({
+                date: session.completedAt,
+                sets: completedSets,
+              });
+            }
+          }
+        }
+      });
+    });
+
+    if (exerciseSessions.length === 0) return null;
+
+    let totalSets = 0;
+    let totalReps = 0;
+    let totalVolume = 0;
+    let bestSet: { weight: number; reps: number; volume: number } | null = null;
+
+    const recentSessions = exerciseSessions.slice(0, 10).map((session) => {
+      let sessionVolume = 0;
+      session.sets.forEach((set) => {
+        const volume = set.weight * set.reps;
+        sessionVolume += volume;
+        totalVolume += volume;
+        totalSets++;
+        totalReps += set.reps;
+
+        if (!bestSet || volume > bestSet.volume) {
+          bestSet = { weight: set.weight, reps: set.reps, volume };
+        }
+      });
+      return {
+        date: session.date,
+        volume: sessionVolume,
+        sets: session.sets.length,
+      };
+    });
+
+    const volumeTrend =
+      recentSessions.length >= 2
+        ? ((recentSessions[0].volume - recentSessions[recentSessions.length - 1].volume) /
+            recentSessions[recentSessions.length - 1].volume) *
+          100
+        : 0;
+
+    return {
+      totalSessions: exerciseSessions.length,
+      totalSets,
+      totalReps,
+      totalVolume,
+      bestSet,
+      recentSessions: recentSessions.reverse(),
+      volumeTrend: isFinite(volumeTrend) ? volumeTrend : 0,
+    };
+  }, [exercise, history]);
+
+  const maxVolume = stats
+    ? Math.max(...stats.recentSessions.map((s) => s.volume), 1)
+    : 1;
+
+  if (!exercise) return null;
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View
+          style={[
+            styles.progressModalContent,
+            { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg },
+          ]}
+        >
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <ThemedText style={styles.modalTitle}>{exercise.name}</ThemedText>
+              <ThemedText style={[styles.progressSubtitle, { color: theme.textSecondary }]}>
+                {exercise.muscleGroup} • {exercise.equipment}
+              </ThemedText>
+            </View>
+            <Pressable onPress={onClose}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          </View>
+
+          {stats ? (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.statsGrid}>
+                <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
+                  <Feather name="calendar" size={20} color={Colors.light.primary} />
+                  <ThemedText style={styles.statValue}>{stats.totalSessions}</ThemedText>
+                  <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                    Sessions
+                  </ThemedText>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
+                  <Feather name="layers" size={20} color={Colors.light.primary} />
+                  <ThemedText style={styles.statValue}>{stats.totalSets}</ThemedText>
+                  <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                    Total Sets
+                  </ThemedText>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
+                  <Feather name="repeat" size={20} color={Colors.light.primary} />
+                  <ThemedText style={styles.statValue}>{stats.totalReps}</ThemedText>
+                  <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                    Total Reps
+                  </ThemedText>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
+                  <Feather name="bar-chart-2" size={20} color={Colors.light.primary} />
+                  <ThemedText style={styles.statValue}>
+                    {stats.totalVolume >= 1000
+                      ? `${(stats.totalVolume / 1000).toFixed(1)}t`
+                      : `${stats.totalVolume}kg`}
+                  </ThemedText>
+                  <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+                    Total Volume
+                  </ThemedText>
+                </View>
+              </View>
+
+              {stats.bestSet ? (
+                <View style={[styles.prCard, { backgroundColor: Colors.light.primary + "15" }]}>
+                  <View style={styles.prHeader}>
+                    <Feather name="award" size={24} color={Colors.light.primary} />
+                    <ThemedText style={[styles.prTitle, { color: Colors.light.primary }]}>
+                      Personal Record
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={styles.prValue}>
+                    {stats.bestSet.weight}kg x {stats.bestSet.reps} reps
+                  </ThemedText>
+                  <ThemedText style={[styles.prVolume, { color: theme.textSecondary }]}>
+                    Volume: {stats.bestSet.volume}kg
+                  </ThemedText>
+                </View>
+              ) : null}
+
+              <View style={styles.trendSection}>
+                <View style={styles.trendHeader}>
+                  <ThemedText style={styles.sectionTitle}>Volume Trend</ThemedText>
+                  {stats.volumeTrend !== 0 ? (
+                    <View
+                      style={[
+                        styles.trendBadge,
+                        { backgroundColor: stats.volumeTrend > 0 ? "#4CAF50" + "20" : "#FF5252" + "20" },
+                      ]}
+                    >
+                      <Feather
+                        name={stats.volumeTrend > 0 ? "trending-up" : "trending-down"}
+                        size={14}
+                        color={stats.volumeTrend > 0 ? "#4CAF50" : "#FF5252"}
+                      />
+                      <ThemedText
+                        style={[
+                          styles.trendText,
+                          { color: stats.volumeTrend > 0 ? "#4CAF50" : "#FF5252" },
+                        ]}
+                      >
+                        {stats.volumeTrend > 0 ? "+" : ""}
+                        {stats.volumeTrend.toFixed(0)}%
+                      </ThemedText>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={styles.chartContainer}>
+                  {stats.recentSessions.map((session, idx) => (
+                    <View key={idx} style={styles.chartBar}>
+                      <View style={styles.barContainer}>
+                        <LinearGradient
+                          colors={[Colors.light.primary, Colors.light.primaryDark]}
+                          style={[
+                            styles.bar,
+                            { height: `${(session.volume / maxVolume) * 100}%` },
+                          ]}
+                        />
+                      </View>
+                      <ThemedText style={[styles.barLabel, { color: theme.textSecondary }]}>
+                        {new Date(session.date).toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                      </ThemedText>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.historySection}>
+                <ThemedText style={styles.sectionTitle}>Recent Sessions</ThemedText>
+                {stats.recentSessions
+                  .slice()
+                  .reverse()
+                  .map((session, idx) => (
+                    <View
+                      key={idx}
+                      style={[styles.historyItem, { backgroundColor: theme.backgroundSecondary }]}
+                    >
+                      <View style={styles.historyLeft}>
+                        <ThemedText style={styles.historyDate}>
+                          {new Date(session.date).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </ThemedText>
+                        <ThemedText style={[styles.historySets, { color: theme.textSecondary }]}>
+                          {session.sets} sets
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={[styles.historyVolume, { color: Colors.light.primary }]}>
+                        {session.volume}kg
+                      </ThemedText>
+                    </View>
+                  ))}
+              </View>
+            </ScrollView>
+          ) : (
+            <View style={styles.noDataContainer}>
+              <Feather name="bar-chart" size={48} color={theme.textSecondary} />
+              <ThemedText style={[styles.noDataText, { color: theme.textSecondary }]}>
+                No workout data yet
+              </ThemedText>
+              <ThemedText style={[styles.noDataSubtext, { color: theme.textSecondary }]}>
+                Complete a workout with this exercise to see your progress
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function ExercisesScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
@@ -563,10 +842,22 @@ export default function ExercisesScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAPIModal, setShowAPIModal] = useState(false);
   const [customExercises, setCustomExercises] = useState<ExerciseItem[]>([]);
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseItem | null>(null);
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>([]);
 
   useEffect(() => {
     loadCustomExercises();
+    loadWorkoutHistory();
   }, []);
+
+  const loadWorkoutHistory = async () => {
+    try {
+      const history = await getWorkoutHistory();
+      setWorkoutHistory(history);
+    } catch (error) {
+      console.error("Error loading workout history:", error);
+    }
+  };
 
   const loadCustomExercises = async () => {
     try {
@@ -628,6 +919,7 @@ export default function ExercisesScreen() {
       exercise={item}
       index={index}
       onLongPress={item.isCustom ? () => deleteCustomExercise(item.id) : undefined}
+      onPress={() => setSelectedExercise(item)}
     />
   );
 
@@ -642,6 +934,12 @@ export default function ExercisesScreen() {
         visible={showAPIModal}
         onClose={() => setShowAPIModal(false)}
         onSelect={saveCustomExercise}
+      />
+      <ExerciseProgressModal
+        visible={selectedExercise !== null}
+        exercise={selectedExercise}
+        onClose={() => setSelectedExercise(null)}
+        history={workoutHistory}
       />
 
       <FlatList
@@ -955,5 +1253,154 @@ const styles = StyleSheet.create({
   },
   apiResultMeta: {
     fontSize: 13,
+  },
+  progressModalContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    maxHeight: "90%",
+  },
+  progressSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  statCard: {
+    width: (SCREEN_WIDTH - Spacing.xl * 2 - Spacing.md * 3) / 2,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  statLabel: {
+    fontSize: 12,
+  },
+  prCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xl,
+  },
+  prHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  prTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  prValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+    marginBottom: 4,
+  },
+  prVolume: {
+    fontSize: 14,
+  },
+  trendSection: {
+    marginBottom: Spacing.xl,
+  },
+  trendHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  trendBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  trendText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  chartContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    height: 120,
+    gap: Spacing.xs,
+  },
+  chartBar: {
+    flex: 1,
+    alignItems: "center",
+  },
+  barContainer: {
+    width: "100%",
+    height: 100,
+    justifyContent: "flex-end",
+  },
+  bar: {
+    width: "100%",
+    borderRadius: BorderRadius.xs,
+    minHeight: 4,
+  },
+  barLabel: {
+    fontSize: 9,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  historySection: {
+    gap: Spacing.sm,
+  },
+  historyItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  historyLeft: {
+    gap: 2,
+  },
+  historyDate: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  historySets: {
+    fontSize: 12,
+  },
+  historyVolume: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  noDataContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["2xl"] * 2,
+    gap: Spacing.md,
+  },
+  noDataText: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  noDataSubtext: {
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: Spacing.xl,
   },
 });
