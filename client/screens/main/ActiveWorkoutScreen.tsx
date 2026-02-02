@@ -9,6 +9,7 @@ import {
   Dimensions,
   Modal,
   ScrollView,
+  Image,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,6 +51,73 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 type ActiveWorkoutRouteProp = RouteProp<RootStackParamList, "ActiveWorkout">;
 
 type SetRating = "green" | "yellow" | "red" | null;
+type RIRValue = 0 | 1 | 2 | 3;
+
+const RIR_TO_RATING: Record<RIRValue, SetRating> = {
+  0: "red",
+  1: "yellow",
+  2: "yellow",
+  3: "green",
+};
+
+const RIR_LABELS: Record<RIRValue, string> = {
+  0: "0 RIR",
+  1: "1 RIR",
+  2: "2 RIR",
+  3: "3+ RIR",
+};
+
+const RIR_DESCRIPTIONS: Record<RIRValue, string> = {
+  0: "Failure",
+  1: "Very hard",
+  2: "Challenging",
+  3: "Comfortable",
+};
+
+function getExerciseImageUrl(exerciseName: string): string | null {
+  const nameToId: Record<string, string> = {
+    "Bench Press": "Barbell_Bench_Press_-_Medium_Grip",
+    "Incline Dumbbell Press": "Incline_Dumbbell_Press",
+    "Cable Flyes": "Cable_Crossover",
+    "Dumbbell Flyes": "Dumbbell_Flyes",
+    "Barbell Squat": "Barbell_Full_Squat",
+    "Leg Press": "Leg_Press",
+    "Leg Curl": "Lying_Leg_Curls",
+    "Leg Extension": "Leg_Extensions",
+    "Romanian Deadlift": "Romanian_Deadlift_With_Dumbbells",
+    "Calf Raises": "Standing_Calf_Raises",
+    "Pull Ups": "Pullups",
+    "Lat Pulldown": "Wide-Grip_Lat_Pulldown",
+    "Barbell Row": "Bent_Over_Barbell_Row",
+    "Seated Cable Row": "Seated_Cable_Rows",
+    "Face Pulls": "Face_Pull",
+    "Overhead Press": "Standing_Military_Press",
+    "Lateral Raises": "Side_Lateral_Raise",
+    "Front Raises": "Front_Dumbbell_Raise",
+    "Rear Delt Flyes": "Seated_Bent-Over_Rear_Delt_Raise",
+    "Shrugs": "Barbell_Shrug",
+    "Barbell Curl": "Barbell_Curl",
+    "Dumbbell Curl": "Dumbbell_Bicep_Curl",
+    "Hammer Curl": "Hammer_Curls",
+    "Preacher Curl": "Preacher_Curl",
+    "Tricep Pushdown": "Triceps_Pushdown",
+    "Skull Crushers": "EZ-Bar_Skullcrusher",
+    "Overhead Tricep Extension": "Dumbbell_One-Arm_Triceps_Extension",
+    "Dips": "Dips_-_Triceps_Version",
+    "Deadlift": "Barbell_Deadlift",
+    "Plank": "Plank",
+    "Russian Twists": "Russian_Twist",
+    "Hanging Leg Raise": "Hanging_Leg_Raise",
+    "Cable Crunch": "Cable_Crunch",
+    "Hip Thrust": "Barbell_Hip_Thrust",
+    "Lunges": "Dumbbell_Lunges",
+    "Bulgarian Split Squat": "Dumbbell_Single_Leg_Split_Squat",
+  };
+  
+  const id = nameToId[exerciseName];
+  if (!id) return null;
+  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${id}/0.jpg`;
+}
 
 interface SetData {
   weight: string;
@@ -403,35 +471,24 @@ function WorkoutSummary({
   );
 }
 
-function RatingButton({
-  rating,
+function RIRButton({
+  rir,
   selected,
   onPress,
   disabled,
 }: {
-  rating: "green" | "yellow" | "red";
+  rir: RIRValue;
   selected: boolean;
   onPress: () => void;
   disabled: boolean;
 }) {
   const scale = useSharedValue(1);
+  const rating = RIR_TO_RATING[rir] as "green" | "yellow" | "red";
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: disabled ? 0.5 : 1,
   }));
-
-  const labels = {
-    green: "Easy",
-    yellow: "Good",
-    red: "Hard",
-  };
-
-  const icons = {
-    green: "smile",
-    yellow: "meh",
-    red: "frown",
-  };
 
   return (
     <AnimatedPressable
@@ -445,31 +502,73 @@ function RatingButton({
       }}
       style={[
         animatedStyle,
-        styles.ratingButton,
+        styles.rirButton,
         {
           backgroundColor: selected
             ? RATING_COLORS[rating]
-            : RATING_COLORS[rating] + "20",
+            : RATING_COLORS[rating] + "15",
           borderColor: RATING_COLORS[rating],
-          borderWidth: selected ? 0 : 2,
+          borderWidth: selected ? 0 : 1.5,
         },
       ]}
-      testID={`button-rating-${rating}`}
+      testID={`button-rir-${rir}`}
     >
-      <Feather
-        name={icons[rating] as any}
-        size={24}
-        color={selected ? "#FFFFFF" : RATING_COLORS[rating]}
-      />
       <ThemedText
         style={[
-          styles.ratingText,
+          styles.rirValue,
           { color: selected ? "#FFFFFF" : RATING_COLORS[rating] },
         ]}
       >
-        {labels[rating]}
+        {rir === 3 ? "3+" : rir}
+      </ThemedText>
+      <ThemedText
+        style={[
+          styles.rirLabel,
+          { color: selected ? "#FFFFFF" : RATING_COLORS[rating] },
+        ]}
+      >
+        {RIR_DESCRIPTIONS[rir]}
       </ThemedText>
     </AnimatedPressable>
+  );
+}
+
+function QuickAdjustButton({
+  label,
+  onPress,
+  type,
+}: {
+  label: string;
+  onPress: () => void;
+  type: "increase" | "decrease";
+}) {
+  const { theme } = useTheme();
+  
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      style={[
+        styles.quickAdjustButton,
+        { 
+          backgroundColor: type === "increase" 
+            ? Colors.light.primary + "15" 
+            : theme.backgroundSecondary,
+          borderColor: type === "increase" ? Colors.light.primary : theme.border,
+        },
+      ]}
+    >
+      <ThemedText
+        style={[
+          styles.quickAdjustText,
+          { color: type === "increase" ? Colors.light.primary : theme.textSecondary },
+        ]}
+      >
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -492,6 +591,7 @@ function SetInput({
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
+  const [selectedRIR, setSelectedRIR] = useState<RIRValue | null>(null);
 
   const progressionSuggestion = useMemo(() => {
     if (!lastWeekData || !lastWeekData.weight || !lastWeekData.rating) return null;
@@ -512,8 +612,10 @@ function SetInput({
     }
   }, [isActive]);
 
-  const handleRating = (rating: SetRating) => {
+  const handleRIR = (rir: RIRValue) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSelectedRIR(rir);
+    const rating = RIR_TO_RATING[rir];
     onUpdate({ rating, completed: true });
     onComplete();
   };
@@ -633,6 +735,32 @@ function SetInput({
               kg
             </ThemedText>
           </View>
+          <View style={styles.quickAdjustRow}>
+            <QuickAdjustButton
+              label="-2.5"
+              onPress={() => {
+                const current = parseFloat(setData.weight) || 0;
+                onUpdate({ weight: Math.max(0, current - 2.5).toString() });
+              }}
+              type="decrease"
+            />
+            <QuickAdjustButton
+              label="+2.5"
+              onPress={() => {
+                const current = parseFloat(setData.weight) || 0;
+                onUpdate({ weight: (current + 2.5).toString() });
+              }}
+              type="increase"
+            />
+            <QuickAdjustButton
+              label="+5"
+              onPress={() => {
+                const current = parseFloat(setData.weight) || 0;
+                onUpdate({ weight: (current + 5).toString() });
+              }}
+              type="increase"
+            />
+          </View>
         </View>
 
         <View style={styles.inputWrapper}>
@@ -654,35 +782,55 @@ function SetInput({
               testID={`input-reps-${setIndex}`}
             />
           </View>
+          <View style={styles.quickAdjustRow}>
+            <QuickAdjustButton
+              label="-1"
+              onPress={() => {
+                const current = parseInt(setData.reps) || 0;
+                onUpdate({ reps: Math.max(0, current - 1).toString() });
+              }}
+              type="decrease"
+            />
+            <QuickAdjustButton
+              label="+1"
+              onPress={() => {
+                const current = parseInt(setData.reps) || 0;
+                onUpdate({ reps: (current + 1).toString() });
+              }}
+              type="increase"
+            />
+            <QuickAdjustButton
+              label="+2"
+              onPress={() => {
+                const current = parseInt(setData.reps) || 0;
+                onUpdate({ reps: (current + 2).toString() });
+              }}
+              type="increase"
+            />
+          </View>
         </View>
       </View>
 
-      <View style={styles.ratingSection}>
-        <ThemedText style={[styles.ratingQuestion, { color: theme.text }]}>
-          How did it feel?
+      <View style={styles.rirSection}>
+        <ThemedText style={[styles.rirQuestion, { color: theme.text }]}>
+          Reps in Reserve (RIR)
         </ThemedText>
-        <View style={styles.ratingButtonsRow}>
-          <RatingButton
-            rating="red"
-            selected={setData.rating === "red"}
-            onPress={() => handleRating("red")}
-            disabled={!canRate}
-          />
-          <RatingButton
-            rating="yellow"
-            selected={setData.rating === "yellow"}
-            onPress={() => handleRating("yellow")}
-            disabled={!canRate}
-          />
-          <RatingButton
-            rating="green"
-            selected={setData.rating === "green"}
-            onPress={() => handleRating("green")}
-            disabled={!canRate}
-          />
+        <ThemedText style={[styles.rirHelpText, { color: theme.textSecondary }]}>
+          How many more reps could you have done?
+        </ThemedText>
+        <View style={styles.rirButtonsRow}>
+          {([0, 1, 2, 3] as RIRValue[]).map((rir) => (
+            <RIRButton
+              key={rir}
+              rir={rir}
+              selected={setData.rating === RIR_TO_RATING[rir] && selectedRIR === rir}
+              onPress={() => handleRIR(rir)}
+              disabled={!canRate}
+            />
+          ))}
         </View>
         {!canRate ? (
-          <ThemedText style={[styles.ratingHint, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.rirHint, { color: theme.textSecondary }]}>
             Enter weight and reps first
           </ThemedText>
         ) : null}
@@ -1064,6 +1212,17 @@ export default function ActiveWorkoutScreen() {
             style={styles.exerciseContent}
           >
             <View style={styles.exerciseHeader}>
+              {getExerciseImageUrl(currentExercise.name) ? (
+                <Image
+                  source={{ uri: getExerciseImageUrl(currentExercise.name)! }}
+                  style={styles.exerciseImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.exerciseImagePlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
+                  <Feather name="image" size={32} color={theme.textSecondary} />
+                </View>
+              )}
               <ThemedText style={styles.exerciseName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {currentExercise.name}
               </ThemedText>
@@ -1777,5 +1936,77 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
+  },
+  rirButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    flex: 1,
+  },
+  rirValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  rirLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  rirSection: {
+    alignItems: "center",
+  },
+  rirQuestion: {
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    marginBottom: 4,
+  },
+  rirHelpText: {
+    fontSize: 12,
+    marginBottom: Spacing.md,
+  },
+  rirButtonsRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    width: "100%",
+  },
+  rirHint: {
+    fontSize: 12,
+    marginTop: Spacing.sm,
+  },
+  quickAdjustRow: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  quickAdjustButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  quickAdjustText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  exerciseImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+    backgroundColor: "#F0F0F0",
+  },
+  exerciseImagePlaceholder: {
+    width: "100%",
+    height: 120,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
