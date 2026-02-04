@@ -30,7 +30,6 @@ import {
   Exercise,
   getWorkoutPlans,
   deleteWorkoutPlan,
-  addWorkoutSession,
 } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -179,31 +178,16 @@ export default function PlanDetailScreen() {
     }, [loadPlan])
   );
 
-  const handleStartWorkout = async (dayIndex: number) => {
+  const handleStartWorkout = (dayIndex: number) => {
     if (!plan) return;
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const day = plan.days[dayIndex];
-    const session = {
-      id: Date.now().toString(),
+    navigation.navigate("ActiveWorkout", {
       planId: plan.id,
       planName: plan.name,
-      dayName: day.dayName,
-      completedAt: new Date().toISOString(),
-      exercises: day.exercises,
-    };
-
-    try {
-      await addWorkoutSession(session);
-      Alert.alert(
-        "Workout Complete!",
-        `Great job completing your ${day.dayName} workout!`,
-        [{ text: "OK" }]
-      );
-    } catch (error) {
-      console.error("Error saving workout:", error);
-    }
+      dayIndex,
+    });
   };
 
   const handleDelete = () => {

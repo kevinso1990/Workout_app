@@ -10,8 +10,8 @@ import {
   Modal,
   ScrollView,
   Image,
-  Keyboard,
 } from "react-native";
+import Slider from "@react-native-community/slider";
 import * as Sharing from "expo-sharing";
 import { captureRef } from "react-native-view-shot";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -720,8 +720,6 @@ function SetInput({
   isActive: boolean;
 }) {
   const { theme } = useTheme();
-  const weightRef = useRef<TextInput>(null);
-  const repsRef = useRef<TextInput>(null);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [selectedRIR, setSelectedRIR] = useState<RIRValue | null>(null);
 
@@ -962,40 +960,48 @@ function SetInput({
         })}
       </View>
 
-      <View style={styles.inputsRow}>
-        <View style={styles.inputWrapper}>
-          <View style={styles.inputLabelRow}>
+      <View style={styles.sliderSection}>
+        <View style={styles.sliderWrapper}>
+          <View style={styles.sliderLabelRow}>
             <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
               Weight
             </ThemedText>
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowPlateCalc(true);
-              }}
-              style={[styles.plateButton, { backgroundColor: Colors.light.primary + "15" }]}
-              testID={`button-plate-calc-${setIndex}`}
-            >
-              <Feather name="disc" size={12} color={Colors.light.primary} />
-            </Pressable>
+            <View style={styles.sliderValueContainer}>
+              <ThemedText style={styles.sliderValue}>
+                {parseFloat(setData.weight) || 0}
+              </ThemedText>
+              <ThemedText style={[styles.sliderUnit, { color: theme.textSecondary }]}>
+                kg
+              </ThemedText>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowPlateCalc(true);
+                }}
+                style={[styles.plateButton, { backgroundColor: Colors.light.primary + "15" }]}
+                testID={`button-plate-calc-${setIndex}`}
+              >
+                <Feather name="disc" size={12} color={Colors.light.primary} />
+              </Pressable>
+            </View>
           </View>
-          <View style={[styles.inputBox, { backgroundColor: theme.backgroundSecondary }]}>
-            <TextInput
-              ref={weightRef}
-              style={[styles.inputText, { color: theme.text }]}
-              value={setData.weight}
-              onChangeText={(text) => onUpdate({ weight: text })}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={theme.textSecondary}
-              returnKeyType="next"
-              onSubmitEditing={() => repsRef.current?.focus()}
-              testID={`input-weight-${setIndex}`}
-            />
-            <ThemedText style={[styles.inputUnit, { color: theme.textSecondary }]}>
-              kg
-            </ThemedText>
-          </View>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={200}
+            step={2.5}
+            value={parseFloat(setData.weight) || 0}
+            onValueChange={(value: number) => {
+              onUpdate({ weight: value.toString() });
+            }}
+            onSlidingComplete={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            minimumTrackTintColor={Colors.light.primary}
+            maximumTrackTintColor={theme.border}
+            thumbTintColor={Colors.light.primary}
+            testID={`slider-weight-${setIndex}`}
+          />
           <View style={styles.quickAdjustRow}>
             <QuickAdjustButton
               label="-2.5"
@@ -1024,25 +1030,32 @@ function SetInput({
           </View>
         </View>
 
-        <View style={styles.inputWrapper}>
-          <View style={styles.inputLabelRow}>
+        <View style={styles.sliderWrapper}>
+          <View style={styles.sliderLabelRow}>
             <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
               Reps
             </ThemedText>
+            <ThemedText style={styles.sliderValue}>
+              {parseInt(setData.reps) || 0}
+            </ThemedText>
           </View>
-          <View style={[styles.inputBox, { backgroundColor: theme.backgroundSecondary }]}>
-            <TextInput
-              ref={repsRef}
-              style={[styles.inputText, { color: theme.text }]}
-              value={setData.reps}
-              onChangeText={(text) => onUpdate({ reps: text })}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={theme.textSecondary}
-              returnKeyType="done"
-              testID={`input-reps-${setIndex}`}
-            />
-          </View>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={30}
+            step={1}
+            value={parseInt(setData.reps) || 0}
+            onValueChange={(value: number) => {
+              onUpdate({ reps: value.toString() });
+            }}
+            onSlidingComplete={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            minimumTrackTintColor={Colors.light.primary}
+            maximumTrackTintColor={theme.border}
+            thumbTintColor={Colors.light.primary}
+            testID={`slider-reps-${setIndex}`}
+          />
           <View style={styles.quickAdjustRow}>
             <QuickAdjustButton
               label="-1"
@@ -1071,20 +1084,6 @@ function SetInput({
           </View>
         </View>
       </View>
-
-      <Pressable
-        onPress={() => {
-          Keyboard.dismiss();
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }}
-        style={[styles.doneButton, { backgroundColor: theme.backgroundSecondary }]}
-        testID={`button-done-${setIndex}`}
-      >
-        <Feather name="check" size={16} color={Colors.light.primary} />
-        <ThemedText style={[styles.doneButtonText, { color: Colors.light.primary }]}>
-          Done Editing
-        </ThemedText>
-      </Pressable>
 
       <View style={styles.rirSection}>
         <ThemedText style={[styles.rirQuestion, { color: theme.text }]}>
@@ -1425,7 +1424,7 @@ export default function ActiveWorkoutScreen() {
         completedSets={completedSets}
         totalVolume={calculateTotalVolume()}
         prs={prsThisSession}
-        workoutName={plan?.days.find(d => d.id === dayId)?.name || "Workout"}
+        workoutName={plan?.days[route.params.dayIndex]?.dayName || "Workout"}
         onClose={() => navigation.goBack()}
       />
 
@@ -1900,6 +1899,36 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  sliderSection: {
+    gap: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  sliderWrapper: {
+    gap: Spacing.sm,
+  },
+  sliderLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sliderValueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  sliderValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  sliderUnit: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  slider: {
+    width: "100%",
+    height: 40,
   },
   inputBox: {
     flexDirection: "row",
