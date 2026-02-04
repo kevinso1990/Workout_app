@@ -60,10 +60,17 @@ function ExerciseItem({
           {exercise.muscleGroup}
         </ThemedText>
       </View>
-      <View style={styles.exerciseSets}>
+      <View style={styles.exerciseSetsContainer}>
         <ThemedText style={styles.setsText}>
           {exercise.sets} x {exercise.reps}
         </ThemedText>
+        {exercise.targetRIR !== undefined ? (
+          <View style={[styles.rirBadge, { backgroundColor: Colors.light.primary + "15" }]}>
+            <ThemedText style={[styles.rirBadgeText, { color: Colors.light.primary }]}>
+              {exercise.targetRIR} RIR
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
     </Animated.View>
   );
@@ -438,6 +445,19 @@ const styles = StyleSheet.create({
   },
   exerciseSets: {
     alignItems: "flex-end",
+  },
+  exerciseSetsContainer: {
+    alignItems: "flex-end",
+    gap: Spacing.xs,
+  },
+  rirBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  rirBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   setsText: {
     fontSize: 15,

@@ -31,6 +31,7 @@ export interface Exercise {
   muscleGroup: string;
   sets: number;
   reps: string;
+  targetRIR?: number;
 }
 
 export interface WorkoutDay {
