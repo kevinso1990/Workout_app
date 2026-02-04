@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef } from "react";
-import { View, StyleSheet, Image, Pressable, Alert, Modal, TextInput, ScrollView } from "react-native";
+import { View, StyleSheet, Image, Pressable, Alert, Modal, TextInput, ScrollView, Switch, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -28,6 +28,15 @@ import {
   getBodyMeasurements,
   addBodyMeasurement,
 } from "@/lib/storage";
+import {
+  ReminderSettings,
+  getReminderSettings,
+  saveReminderSettings,
+  scheduleWorkoutReminders,
+  requestNotificationPermissions,
+  analyzeWorkoutPatterns,
+  getDayName,
+} from "@/lib/notifications";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -315,18 +324,37 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState({ plans: 0, workouts: 0 });
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>({
+    enabled: false,
+    preferredTime: "09:00",
+    weekdays: [1, 2, 3, 4, 5],
+  });
+  const [workoutInsight, setWorkoutInsight] = useState<string>("");
 
   const loadData = useCallback(async () => {
     try {
-      const [prefs, plans, history, bodyMeasurements] = await Promise.all([
+      const [prefs, plans, history, bodyMeasurements, reminders, patterns] = await Promise.all([
         getUserPreferences(),
         getWorkoutPlans(),
         getWorkoutHistory(),
         getBodyMeasurements(),
+        getReminderSettings(),
+        analyzeWorkoutPatterns(),
       ]);
       setPreferences(prefs);
       setStats({ plans: plans.length, workouts: history.length });
       setMeasurements(bodyMeasurements);
+      setReminderSettings(reminders);
+      
+      if (patterns.lastWorkoutDaysAgo >= 0) {
+        if (patterns.lastWorkoutDaysAgo === 0) {
+          setWorkoutInsight("You trained today! Great job!");
+        } else if (patterns.lastWorkoutDaysAgo === 1) {
+          setWorkoutInsight("Last workout was yesterday");
+        } else {
+          setWorkoutInsight(`${patterns.lastWorkoutDaysAgo} days since last workout`);
+        }
+      }
     } catch (error) {
       console.error("Error loading profile data:", error);
     }
@@ -387,6 +415,30 @@ export default function ProfileScreen() {
     await addBodyMeasurement(measurement);
     setMeasurements([measurement, ...measurements]);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleToggleReminders = async (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    if (value && Platform.OS !== "web") {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        Alert.alert(
+          "Notifications Required",
+          "Please enable notifications in your device settings to receive workout reminders."
+        );
+        return;
+      }
+    }
+
+    const newSettings = { ...reminderSettings, enabled: value };
+    setReminderSettings(newSettings);
+    await saveReminderSettings(newSettings);
+    
+    if (value) {
+      await scheduleWorkoutReminders(newSettings);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   };
 
   return (
@@ -451,6 +503,51 @@ export default function ProfileScreen() {
           index={2}
         />
       </View>
+
+      <Animated.View
+        entering={FadeInDown.delay(200).duration(400)}
+        style={styles.section}
+      >
+        <ThemedText
+          style={[styles.sectionTitle, { color: theme.textSecondary }]}
+        >
+          Notifications
+        </ThemedText>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInDown.delay(250).duration(400)}
+        style={[styles.reminderCard, { backgroundColor: theme.backgroundDefault }]}
+      >
+        <View style={styles.reminderHeader}>
+          <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
+            <Feather name="bell" size={20} color={Colors.light.primary} />
+          </View>
+          <View style={styles.reminderInfo}>
+            <ThemedText style={styles.reminderTitle}>Workout Reminders</ThemedText>
+            <ThemedText style={[styles.reminderSubtitle, { color: theme.textSecondary }]}>
+              {reminderSettings.enabled
+                ? `Daily at ${reminderSettings.preferredTime}`
+                : "Get motivated to train"}
+            </ThemedText>
+          </View>
+          <Switch
+            value={reminderSettings.enabled}
+            onValueChange={handleToggleReminders}
+            trackColor={{ false: theme.border, true: Colors.light.primary }}
+            thumbColor="#fff"
+            testID="switch-reminders"
+          />
+        </View>
+        {workoutInsight ? (
+          <View style={[styles.insightBadge, { backgroundColor: Colors.light.primary + "10" }]}>
+            <Feather name="activity" size={14} color={Colors.light.primary} />
+            <ThemedText style={[styles.insightText, { color: Colors.light.primary }]}>
+              {workoutInsight}
+            </ThemedText>
+          </View>
+        ) : null}
+      </Animated.View>
 
       <Animated.View
         entering={FadeInDown.delay(300).duration(400)}
@@ -549,6 +646,42 @@ const styles = StyleSheet.create({
   settingsValue: {
     fontSize: 14,
     marginRight: Spacing.sm,
+  },
+  reminderCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+  },
+  reminderHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  reminderInfo: {
+    flex: 1,
+  },
+  reminderTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  reminderSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  insightBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    alignSelf: "flex-start",
+  },
+  insightText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   bodyStatsCard: {
     marginTop: Spacing.xl,
