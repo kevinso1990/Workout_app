@@ -742,14 +742,41 @@ function SetInput({
     };
     const currentSetType = setData.setType || "working";
     
+    const completedWeight = parseFloat(setData.weight) || 0;
+    const targetWeight = progressionSuggestion?.suggestedWeight || (lastWeekData ? parseFloat(lastWeekData.weight) : 0);
+    const performanceStatus = completedWeight > targetWeight 
+      ? "exceeded" 
+      : completedWeight === targetWeight 
+      ? "hit" 
+      : completedWeight > 0 && targetWeight > 0
+      ? "below"
+      : null;
+    
     return (
       <View style={[styles.setRowCompleted, { backgroundColor: theme.backgroundSecondary }]}>
         <View style={[styles.setNumber, { backgroundColor: Colors.light.primary }]}>
           <Feather name="check" size={14} color="#FFFFFF" />
         </View>
-        <ThemedText style={styles.completedSetText}>
-          {setData.weight}kg x {setData.reps} reps
-        </ThemedText>
+        <View style={styles.completedSetInfo}>
+          <ThemedText style={styles.completedSetText}>
+            {setData.weight}kg x {setData.reps} reps
+          </ThemedText>
+          {performanceStatus === "exceeded" ? (
+            <View style={[styles.performanceBadge, { backgroundColor: "#4CAF50" + "20" }]}>
+              <Feather name="trending-up" size={10} color="#4CAF50" />
+              <ThemedText style={[styles.performanceBadgeText, { color: "#4CAF50" }]}>
+                +{(completedWeight - targetWeight).toFixed(1)}kg
+              </ThemedText>
+            </View>
+          ) : performanceStatus === "hit" && targetWeight > 0 ? (
+            <View style={[styles.performanceBadge, { backgroundColor: Colors.light.primary + "20" }]}>
+              <Feather name="check" size={10} color={Colors.light.primary} />
+              <ThemedText style={[styles.performanceBadgeText, { color: Colors.light.primary }]}>
+                Target hit
+              </ThemedText>
+            </View>
+          ) : null}
+        </View>
         {currentSetType !== "working" ? (
           <View style={[styles.setTypeBadge, { backgroundColor: setTypeColors[currentSetType] + "20" }]}>
             <ThemedText style={[styles.setTypeBadgeText, { color: setTypeColors[currentSetType] }]}>
@@ -783,7 +810,7 @@ function SetInput({
           {lastWeekData ? (
             <View style={styles.lastWeekBadge}>
               <ThemedText style={[styles.lastWeekLabel, { color: theme.textSecondary }]}>
-                Last: {lastWeekData.weight}kg x {lastWeekData.reps}
+                Last session: {lastWeekData.weight}kg x {lastWeekData.reps}
               </ThemedText>
               {lastWeekData.rating ? (
                 <View
@@ -795,16 +822,57 @@ function SetInput({
               ) : null}
             </View>
           ) : null}
-          {progressionSuggestion ? (
-            <View style={[styles.progressionBadge, { backgroundColor: Colors.light.primary + "15" }]}>
-              <Feather name="trending-up" size={12} color={Colors.light.primary} />
-              <ThemedText style={[styles.progressionText, { color: Colors.light.primary }]}>
-                {progressionSuggestion.message}
-              </ThemedText>
-            </View>
-          ) : null}
         </View>
       </View>
+
+      {progressionSuggestion ? (
+        <View style={[styles.targetCard, { backgroundColor: Colors.light.primary + "10", borderColor: Colors.light.primary + "30" }]}>
+          <View style={styles.targetHeader}>
+            <View style={styles.targetIconContainer}>
+              <Feather name="target" size={16} color={Colors.light.primary} />
+            </View>
+            <ThemedText style={[styles.targetTitle, { color: Colors.light.primary }]}>
+              Today's Target
+            </ThemedText>
+          </View>
+          <View style={styles.targetContent}>
+            <ThemedText style={styles.targetWeight}>
+              {progressionSuggestion.suggestedWeight}kg
+            </ThemedText>
+            <ThemedText style={[styles.targetReps, { color: theme.textSecondary }]}>
+              x {lastWeekData?.reps || "8-10"}
+            </ThemedText>
+          </View>
+          <View style={styles.targetReason}>
+            <Feather 
+              name={lastWeekData?.rating === "green" ? "trending-up" : lastWeekData?.rating === "red" ? "trending-down" : "minus"} 
+              size={12} 
+              color={theme.textSecondary} 
+            />
+            <ThemedText style={[styles.targetReasonText, { color: theme.textSecondary }]}>
+              {lastWeekData?.rating === "green" 
+                ? "Last set felt easy - time to progress!" 
+                : lastWeekData?.rating === "red"
+                ? "Last session was tough - lighter today"
+                : "Maintain weight - build consistency"}
+            </ThemedText>
+          </View>
+        </View>
+      ) : !lastWeekData ? (
+        <View style={[styles.targetCard, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+          <View style={styles.targetHeader}>
+            <View style={[styles.targetIconContainer, { backgroundColor: theme.border }]}>
+              <Feather name="plus" size={16} color={theme.textSecondary} />
+            </View>
+            <ThemedText style={[styles.targetTitle, { color: theme.text }]}>
+              First Time
+            </ThemedText>
+          </View>
+          <ThemedText style={[styles.firstTimeHint, { color: theme.textSecondary }]}>
+            Start with a weight you can lift for 8-10 reps with good form
+          </ThemedText>
+        </View>
+      ) : null}
 
       <PlateCalculatorModal
         visible={showPlateCalc}
@@ -2342,5 +2410,76 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: "500",
+  },
+  targetCard: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  targetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  targetIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.light.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  targetTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  targetContent: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  targetWeight: {
+    fontSize: 28,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  targetReps: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  targetReason: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  targetReasonText: {
+    fontSize: 12,
+  },
+  firstTimeHint: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  completedSetInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  performanceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+  },
+  performanceBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
 });
