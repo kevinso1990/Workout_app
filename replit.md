@@ -14,6 +14,15 @@ The application follows a client-server architecture with:
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (February 2026)
+
+- **Exercise Swap During Workouts**: Users can now swap exercises mid-workout when equipment is busy. The swap button next to exercise names opens a modal with muscle-group-appropriate alternatives.
+- **Duplicate Workout Plans**: Added copy button on plan cards to quickly duplicate an entire workout plan.
+- **Set Type Marking**: Users can tag sets as working/warm-up/failure/drop set with color-coded badges.
+- **Exercise Illustrations**: Exercise cards now display images from free-exercise-db for 40+ exercises.
+- **Personal Best Notifications**: Celebration modal appears when users beat their previous records.
+- **Improved Keyboard UX**: "Done Editing" button to dismiss keyboard during weight/reps entry.
+
 ## System Architecture
 
 ### Frontend Architecture
