@@ -576,6 +576,92 @@ function QuickAdjustButton({
   );
 }
 
+const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
+  Chest: ["Bench Press", "Incline Dumbbell Press", "Cable Flyes", "Push-ups", "Dumbbell Flyes", "Machine Chest Press", "Dips"],
+  Back: ["Deadlift", "Barbell Rows", "Lat Pulldown", "Pull-ups", "Seated Cable Row", "Dumbbell Rows", "T-Bar Row"],
+  Shoulders: ["Overhead Press", "Dumbbell Shoulder Press", "Lateral Raises", "Face Pulls", "Arnold Press", "Front Raises"],
+  Legs: ["Squat", "Leg Press", "Lunges", "Leg Extension", "Leg Curl", "Romanian Deadlift", "Bulgarian Split Squat"],
+  Arms: ["Bicep Curls", "Tricep Pushdowns", "Hammer Curls", "Skull Crushers", "Preacher Curls", "Cable Curls"],
+  Core: ["Plank", "Crunches", "Leg Raises", "Russian Twists", "Cable Crunches", "Hanging Leg Raises"],
+};
+
+function ExerciseSwapModal({
+  visible,
+  currentExercise,
+  onClose,
+  onSwap,
+}: {
+  visible: boolean;
+  currentExercise: { name: string; muscleGroup: string } | null;
+  onClose: () => void;
+  onSwap: (newExerciseName: string) => void;
+}) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  if (!visible || !currentExercise) return null;
+
+  const alternatives = EXERCISE_ALTERNATIVES[currentExercise.muscleGroup] || [];
+  const filteredAlternatives = alternatives.filter((ex) => ex !== currentExercise.name);
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.swapModalOverlay}>
+        <View
+          style={[
+            styles.swapModalContent,
+            { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg },
+          ]}
+        >
+          <View style={styles.swapModalHeader}>
+            <View>
+              <ThemedText style={styles.swapModalTitle}>Swap Exercise</ThemedText>
+              <ThemedText style={[styles.swapModalSubtitle, { color: theme.textSecondary }]}>
+                Equipment busy? Pick an alternative
+              </ThemedText>
+            </View>
+            <Pressable onPress={onClose}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          </View>
+
+          <ThemedText style={[styles.swapCurrentLabel, { color: theme.textSecondary }]}>
+            Current: {currentExercise.name}
+          </ThemedText>
+
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.swapList}>
+            {filteredAlternatives.map((exercise) => (
+              <Pressable
+                key={exercise}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  onSwap(exercise);
+                  onClose();
+                }}
+                style={[styles.swapOption, { backgroundColor: theme.backgroundSecondary }]}
+              >
+                {getExerciseImageUrl(exercise) ? (
+                  <Image
+                    source={{ uri: getExerciseImageUrl(exercise)! }}
+                    style={styles.swapOptionImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.swapOptionImagePlaceholder, { backgroundColor: Colors.light.primary + "15" }]}>
+                    <Feather name="activity" size={20} color={Colors.light.primary} />
+                  </View>
+                )}
+                <ThemedText style={styles.swapOptionText}>{exercise}</ThemedText>
+                <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function SetInput({
   setIndex,
   setData,
@@ -937,6 +1023,7 @@ export default function ActiveWorkoutScreen() {
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
   const buttonScale = useSharedValue(1);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -1187,6 +1274,40 @@ export default function ActiveWorkoutScreen() {
         pr={currentPR}
         onClose={() => setShowPRCelebration(false)}
       />
+      <ExerciseSwapModal
+        visible={showSwapModal}
+        currentExercise={currentExercise}
+        onClose={() => setShowSwapModal(false)}
+        onSwap={(newExerciseName) => {
+          setPlan((prev) => {
+            if (!prev) return prev;
+            const updated = { ...prev };
+            updated.days = [...updated.days];
+            updated.days[route.params.dayIndex] = { ...updated.days[route.params.dayIndex] };
+            updated.days[route.params.dayIndex].exercises = [...updated.days[route.params.dayIndex].exercises];
+            updated.days[route.params.dayIndex].exercises[currentExerciseIndex] = {
+              ...updated.days[route.params.dayIndex].exercises[currentExerciseIndex],
+              name: newExerciseName,
+            };
+            return updated;
+          });
+          setProgress((prev) => {
+            const updated = [...prev];
+            updated[currentExerciseIndex] = {
+              exerciseId: newExerciseName,
+              sets: updated[currentExerciseIndex].sets.map((s) => ({
+                ...s,
+                weight: "",
+                reps: "",
+                rating: null,
+                completed: false,
+              })),
+            };
+            return updated;
+          });
+          setCurrentSetIndex(0);
+        }}
+      />
       <WorkoutSummary
         visible={showSummary}
         duration={elapsedTime}
@@ -1302,9 +1423,24 @@ export default function ActiveWorkoutScreen() {
                   <Feather name="image" size={32} color={theme.textSecondary} />
                 </View>
               )}
-              <ThemedText style={styles.exerciseName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
-                {currentExercise.name}
-              </ThemedText>
+              <View style={styles.exerciseNameRow}>
+                <ThemedText style={[styles.exerciseName, { flex: 1 }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+                  {currentExercise.name}
+                </ThemedText>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowSwapModal(true);
+                  }}
+                  style={[styles.swapButton, { backgroundColor: theme.backgroundSecondary }]}
+                  testID="button-swap-exercise"
+                >
+                  <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
+                  <ThemedText style={[styles.swapButtonText, { color: theme.textSecondary }]}>
+                    Swap
+                  </ThemedText>
+                </Pressable>
+              </View>
               <View style={styles.exerciseMeta}>
                 <View style={[styles.metaBadge, { backgroundColor: Colors.light.primary + "15" }]}>
                   <ThemedText style={[styles.metaText, { color: Colors.light.primary }]}>
@@ -2130,5 +2266,81 @@ const styles = StyleSheet.create({
   setTypeBadgeText: {
     fontSize: 10,
     fontWeight: "600",
+  },
+  exerciseNameRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+  },
+  swapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  swapButtonText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  swapModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  swapModalContent: {
+    borderTopLeftRadius: BorderRadius["2xl"],
+    borderTopRightRadius: BorderRadius["2xl"],
+    padding: Spacing.xl,
+    maxHeight: "70%",
+  },
+  swapModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: Spacing.lg,
+  },
+  swapModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  swapModalSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  swapCurrentLabel: {
+    fontSize: 13,
+    marginBottom: Spacing.md,
+  },
+  swapList: {
+    flex: 1,
+  },
+  swapOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+  },
+  swapOptionImage: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: "#F0F0F0",
+  },
+  swapOptionImagePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  swapOptionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
   },
 });
