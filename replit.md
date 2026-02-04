@@ -16,6 +16,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (February 2026)
 
+- **Smart Workout Reminders**: Toggle in Profile settings to enable workout reminder notifications. Analyzes training patterns to show insights like "3 days since last workout".
+- **Enhanced Onboarding**: New personalized flow with Fitness Level, Equipment Access, Goals, and Focus Muscles screens for tailored workout recommendations.
+- **Body Measurements Tracking**: Profile now includes body stats card with weight, body fat %, chest, waist measurements with history.
+- **Shareable Workout Cards**: After completing workouts, generate branded summary images with stats and PR badges for social sharing.
+- **Target RIR/RPE Badges**: Exercises display target RIR (Reps In Reserve) badges in plan detail view for intensity guidance.
 - **Smart Progression Suggestions**: "Today's Target" card shows exactly what weight/reps to aim for based on last session's performance. Explains *why* (e.g., "Last set felt easy - time to progress!").
 - **Performance Feedback**: After completing sets, shows badges like "Target hit" or "+2.5kg" if you exceeded the target.
 - **First-Time Guidance**: New exercises show helpful hints about starting weight selection.
@@ -38,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 **Navigation Structure**:
 - Root Stack Navigator handles app-level navigation (Onboarding, Main, CreatePlan, PlanDetail)
 - Main Tab Navigator with 4 tabs (My Plans, Exercises, Progress, Profile) plus a floating action button
-- Onboarding Stack for first-launch flow (Welcome → Frequency → SplitPreference → ExercisePreference → SplitSelection)
+- Onboarding Stack for first-launch flow (Welcome → FitnessLevel → Equipment → Goals → FocusMuscles → Frequency → SplitPreference → ExercisePreference → SplitSelection)
 
 **State Management**:
 - React Context for onboarding flow state (`OnboardingContext`)
