@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   USER_PREFERENCES: "user_preferences",
   WORKOUT_PLANS: "workout_plans",
   WORKOUT_HISTORY: "workout_history",
+  BODY_MEASUREMENTS: "body_measurements",
+  PROGRESS_PHOTOS: "progress_photos",
 };
 
 export interface UserPreferences {
@@ -577,4 +579,54 @@ export function generateDefaultPlan(
     createdAt: new Date().toISOString(),
     lastModified: new Date().toISOString(),
   };
+}
+
+export interface BodyMeasurement {
+  id: string;
+  date: string;
+  weight?: number;
+  bodyFat?: number;
+  chest?: number;
+  waist?: number;
+  hips?: number;
+  biceps?: number;
+  thighs?: number;
+  notes?: string;
+}
+
+export interface ProgressPhoto {
+  id: string;
+  date: string;
+  uri: string;
+  type: "front" | "side" | "back";
+}
+
+export async function getBodyMeasurements(): Promise<BodyMeasurement[]> {
+  try {
+    const value = await AsyncStorage.getItem(STORAGE_KEYS.BODY_MEASUREMENTS);
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addBodyMeasurement(measurement: BodyMeasurement): Promise<void> {
+  const measurements = await getBodyMeasurements();
+  measurements.unshift(measurement);
+  await AsyncStorage.setItem(STORAGE_KEYS.BODY_MEASUREMENTS, JSON.stringify(measurements));
+}
+
+export async function getProgressPhotos(): Promise<ProgressPhoto[]> {
+  try {
+    const value = await AsyncStorage.getItem(STORAGE_KEYS.PROGRESS_PHOTOS);
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addProgressPhoto(photo: ProgressPhoto): Promise<void> {
+  const photos = await getProgressPhotos();
+  photos.unshift(photo);
+  await AsyncStorage.setItem(STORAGE_KEYS.PROGRESS_PHOTOS, JSON.stringify(photos));
 }

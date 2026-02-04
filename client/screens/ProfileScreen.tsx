@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from "react";
-import { View, StyleSheet, Image, Pressable, Alert } from "react-native";
+import React, { useCallback, useState, useRef } from "react";
+import { View, StyleSheet, Image, Pressable, Alert, Modal, TextInput, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -23,9 +24,202 @@ import {
   clearAllData,
   getWorkoutPlans,
   getWorkoutHistory,
+  BodyMeasurement,
+  getBodyMeasurements,
+  addBodyMeasurement,
 } from "@/lib/storage";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function BodyStatsCard({
+  latestMeasurement,
+  onAddNew,
+}: {
+  latestMeasurement: BodyMeasurement | null;
+  onAddNew: () => void;
+}) {
+  const { theme } = useTheme();
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(350).duration(400)}
+      style={[styles.bodyStatsCard, { backgroundColor: theme.backgroundDefault }]}
+    >
+      <View style={styles.bodyStatsHeader}>
+        <View>
+          <ThemedText style={styles.bodyStatsTitle}>Body Stats</ThemedText>
+          {latestMeasurement ? (
+            <ThemedText style={[styles.bodyStatsDate, { color: theme.textSecondary }]}>
+              Last updated: {formatDate(latestMeasurement.date)}
+            </ThemedText>
+          ) : null}
+        </View>
+        <Pressable
+          onPress={onAddNew}
+          style={[styles.addMeasurementBtn, { backgroundColor: Colors.light.primary + "15" }]}
+        >
+          <Feather name="plus" size={16} color={Colors.light.primary} />
+          <ThemedText style={[styles.addMeasurementText, { color: Colors.light.primary }]}>
+            {latestMeasurement ? "Update" : "Add"}
+          </ThemedText>
+        </Pressable>
+      </View>
+
+      {latestMeasurement ? (
+        <View style={styles.bodyStatsGrid}>
+          {latestMeasurement.weight ? (
+            <View style={styles.bodyStatItem}>
+              <ThemedText style={styles.bodyStatValue}>{latestMeasurement.weight}</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>kg</ThemedText>
+            </View>
+          ) : null}
+          {latestMeasurement.bodyFat ? (
+            <View style={styles.bodyStatItem}>
+              <ThemedText style={styles.bodyStatValue}>{latestMeasurement.bodyFat}%</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>Body Fat</ThemedText>
+            </View>
+          ) : null}
+          {latestMeasurement.chest ? (
+            <View style={styles.bodyStatItem}>
+              <ThemedText style={styles.bodyStatValue}>{latestMeasurement.chest}</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>Chest cm</ThemedText>
+            </View>
+          ) : null}
+          {latestMeasurement.waist ? (
+            <View style={styles.bodyStatItem}>
+              <ThemedText style={styles.bodyStatValue}>{latestMeasurement.waist}</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>Waist cm</ThemedText>
+            </View>
+          ) : null}
+        </View>
+      ) : (
+        <View style={styles.bodyStatsEmpty}>
+          <Feather name="activity" size={24} color={theme.textSecondary} />
+          <ThemedText style={[styles.bodyStatsEmptyText, { color: theme.textSecondary }]}>
+            Track your body measurements to see progress over time
+          </ThemedText>
+        </View>
+      )}
+    </Animated.View>
+  );
+}
+
+function AddMeasurementModal({
+  visible,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSave: (measurement: BodyMeasurement) => void;
+}) {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [weight, setWeight] = useState("");
+  const [bodyFat, setBodyFat] = useState("");
+  const [chest, setChest] = useState("");
+  const [waist, setWaist] = useState("");
+
+  const handleSave = () => {
+    const measurement: BodyMeasurement = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      weight: weight ? parseFloat(weight) : undefined,
+      bodyFat: bodyFat ? parseFloat(bodyFat) : undefined,
+      chest: chest ? parseFloat(chest) : undefined,
+      waist: waist ? parseFloat(waist) : undefined,
+    };
+    onSave(measurement);
+    setWeight("");
+    setBodyFat("");
+    setChest("");
+    setWaist("");
+    onClose();
+  };
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.measurementModalOverlay}>
+        <View style={[styles.measurementModalContent, { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg }]}>
+          <View style={styles.measurementModalHeader}>
+            <ThemedText style={styles.measurementModalTitle}>Add Measurement</ThemedText>
+            <Pressable onPress={onClose}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.measurementInputRow}>
+              <View style={styles.measurementInputGroup}>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Weight (kg)</ThemedText>
+                <TextInput
+                  style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="decimal-pad"
+                  placeholder="75"
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </View>
+              <View style={styles.measurementInputGroup}>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Body Fat %</ThemedText>
+                <TextInput
+                  style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                  value={bodyFat}
+                  onChangeText={setBodyFat}
+                  keyboardType="decimal-pad"
+                  placeholder="15"
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </View>
+            </View>
+
+            <View style={styles.measurementInputRow}>
+              <View style={styles.measurementInputGroup}>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Chest (cm)</ThemedText>
+                <TextInput
+                  style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                  value={chest}
+                  onChangeText={setChest}
+                  keyboardType="decimal-pad"
+                  placeholder="100"
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </View>
+              <View style={styles.measurementInputGroup}>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Waist (cm)</ThemedText>
+                <TextInput
+                  style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                  value={waist}
+                  onChangeText={setWaist}
+                  keyboardType="decimal-pad"
+                  placeholder="80"
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </View>
+            </View>
+          </ScrollView>
+
+          <Pressable onPress={handleSave}>
+            <LinearGradient
+              colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+              style={styles.measurementSaveButton}
+            >
+              <ThemedText style={styles.measurementSaveText}>Save Measurement</ThemedText>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 function SettingsItem({
   icon,
@@ -119,16 +313,20 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [stats, setStats] = useState({ plans: 0, workouts: 0 });
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
+  const [showMeasurementModal, setShowMeasurementModal] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
-      const [prefs, plans, history] = await Promise.all([
+      const [prefs, plans, history, bodyMeasurements] = await Promise.all([
         getUserPreferences(),
         getWorkoutPlans(),
         getWorkoutHistory(),
+        getBodyMeasurements(),
       ]);
       setPreferences(prefs);
       setStats({ plans: plans.length, workouts: history.length });
+      setMeasurements(bodyMeasurements);
     } catch (error) {
       console.error("Error loading profile data:", error);
     }
@@ -183,6 +381,12 @@ export default function ProfileScreen() {
     return preferences.exercisePreference === "default"
       ? "Default exercises"
       : "Custom selection";
+  };
+
+  const handleSaveMeasurement = async (measurement: BodyMeasurement) => {
+    await addBodyMeasurement(measurement);
+    setMeasurements([measurement, ...measurements]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   return (
@@ -269,6 +473,17 @@ export default function ProfileScreen() {
           index={4}
         />
       </View>
+
+      <BodyStatsCard
+        latestMeasurement={measurements[0] || null}
+        onAddNew={() => setShowMeasurementModal(true)}
+      />
+
+      <AddMeasurementModal
+        visible={showMeasurementModal}
+        onClose={() => setShowMeasurementModal(false)}
+        onSave={handleSaveMeasurement}
+      />
     </KeyboardAwareScrollViewCompat>
   );
 }
@@ -334,5 +549,115 @@ const styles = StyleSheet.create({
   settingsValue: {
     fontSize: 14,
     marginRight: Spacing.sm,
+  },
+  bodyStatsCard: {
+    marginTop: Spacing.xl,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+  },
+  bodyStatsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: Spacing.lg,
+  },
+  bodyStatsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  bodyStatsDate: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addMeasurementBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  addMeasurementText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  bodyStatsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.lg,
+  },
+  bodyStatItem: {
+    alignItems: "center",
+    minWidth: 60,
+  },
+  bodyStatValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  bodyStatLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  bodyStatsEmpty: {
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+  },
+  bodyStatsEmptyText: {
+    fontSize: 13,
+    textAlign: "center",
+  },
+  measurementModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  measurementModalContent: {
+    borderTopLeftRadius: BorderRadius["2xl"],
+    borderTopRightRadius: BorderRadius["2xl"],
+    padding: Spacing.xl,
+  },
+  measurementModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  measurementModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  measurementInputRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  measurementInputGroup: {
+    flex: 1,
+  },
+  measurementInputLabel: {
+    fontSize: 12,
+    marginBottom: Spacing.xs,
+  },
+  measurementInput: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    fontSize: 16,
+  },
+  measurementSaveButton: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.full,
+    alignItems: "center",
+    marginTop: Spacing.lg,
+  },
+  measurementSaveText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
