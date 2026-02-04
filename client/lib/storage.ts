@@ -36,12 +36,15 @@ export interface WorkoutPlan {
   lastModified: string;
 }
 
+export type SetType = "working" | "warmup" | "failure" | "dropset";
+
 export interface SetData {
   weight: string;
   reps: string;
   rating: "green" | "yellow" | "red" | null;
   completed: boolean;
   notes?: string;
+  setType?: SetType;
 }
 
 export function calculateProgressionWeight(

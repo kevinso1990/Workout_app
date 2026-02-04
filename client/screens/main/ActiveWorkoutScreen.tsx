@@ -120,11 +120,14 @@ function getExerciseImageUrl(exerciseName: string): string | null {
   return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${id}/0.jpg`;
 }
 
+type SetType = "working" | "warmup" | "failure" | "dropset";
+
 interface SetData {
   weight: string;
   reps: string;
   rating: SetRating;
   completed: boolean;
+  setType?: SetType;
 }
 
 interface ExerciseProgress {
@@ -639,6 +642,20 @@ function SetInput({
   }
 
   if (setData.completed) {
+    const setTypeColors: Record<SetType, string> = {
+      working: Colors.light.primary,
+      warmup: "#FFB347",
+      failure: "#FF5252",
+      dropset: "#9C27B0",
+    };
+    const setTypeLabels: Record<SetType, string> = {
+      working: "Working",
+      warmup: "Warm-up",
+      failure: "Failure",
+      dropset: "Drop",
+    };
+    const currentSetType = setData.setType || "working";
+    
     return (
       <View style={[styles.setRowCompleted, { backgroundColor: theme.backgroundSecondary }]}>
         <View style={[styles.setNumber, { backgroundColor: Colors.light.primary }]}>
@@ -647,6 +664,13 @@ function SetInput({
         <ThemedText style={styles.completedSetText}>
           {setData.weight}kg x {setData.reps} reps
         </ThemedText>
+        {currentSetType !== "working" ? (
+          <View style={[styles.setTypeBadge, { backgroundColor: setTypeColors[currentSetType] + "20" }]}>
+            <ThemedText style={[styles.setTypeBadgeText, { color: setTypeColors[currentSetType] }]}>
+              {setTypeLabels[currentSetType]}
+            </ThemedText>
+          </View>
+        ) : null}
         {setData.rating ? (
           <View
             style={[
@@ -701,6 +725,46 @@ function SetInput({
         weight={parseFloat(setData.weight) || 0}
         onClose={() => setShowPlateCalc(false)}
       />
+
+      <View style={styles.setTypeRow}>
+        {(["working", "warmup", "failure", "dropset"] as SetType[]).map((type) => {
+          const isSelected = (setData.setType || "working") === type;
+          const typeConfig = {
+            working: { label: "Working", icon: "target" as const, color: Colors.light.primary },
+            warmup: { label: "Warm-up", icon: "sun" as const, color: "#FFB347" },
+            failure: { label: "Failure", icon: "zap" as const, color: "#FF5252" },
+            dropset: { label: "Drop", icon: "chevrons-down" as const, color: "#9C27B0" },
+          };
+          const config = typeConfig[type];
+          return (
+            <Pressable
+              key={type}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onUpdate({ setType: type });
+              }}
+              style={[
+                styles.setTypeButton,
+                {
+                  backgroundColor: isSelected ? config.color + "20" : theme.backgroundSecondary,
+                  borderColor: isSelected ? config.color : "transparent",
+                  borderWidth: isSelected ? 1.5 : 0,
+                },
+              ]}
+            >
+              <Feather name={config.icon} size={14} color={isSelected ? config.color : theme.textSecondary} />
+              <ThemedText
+                style={[
+                  styles.setTypeText,
+                  { color: isSelected ? config.color : theme.textSecondary },
+                ]}
+              >
+                {config.label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
 
       <View style={styles.inputsRow}>
         <View style={styles.inputWrapper}>
@@ -2037,5 +2101,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  setTypeRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  setTypeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    gap: 4,
+  },
+  setTypeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  setTypeBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+    marginLeft: Spacing.sm,
+  },
+  setTypeBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
   },
 });
