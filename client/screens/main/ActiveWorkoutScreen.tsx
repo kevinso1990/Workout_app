@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -12,6 +12,8 @@ import {
   Image,
   Keyboard,
 } from "react-native";
+import * as Sharing from "expo-sharing";
+import { captureRef } from "react-native-view-shot";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -369,6 +371,7 @@ function WorkoutSummary({
   completedSets,
   totalVolume,
   prs,
+  workoutName,
   onClose,
 }: {
   visible: boolean;
@@ -377,85 +380,124 @@ function WorkoutSummary({
   completedSets: number;
   totalVolume: number;
   prs: number;
+  workoutName: string;
   onClose: () => void;
 }) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const shareCardRef = useRef<View>(null);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const handleShare = async () => {
+    if (!shareCardRef.current) return;
+    
+    try {
+      setIsSharing(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      const uri = await captureRef(shareCardRef, {
+        format: "png",
+        quality: 1,
+        result: "tmpfile",
+      });
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "image/png",
+          dialogTitle: "Share your workout",
+        });
+      } else {
+        Alert.alert("Sharing not available", "Sharing is not available on this device");
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   if (!visible) return null;
+
+  const today = new Date().toLocaleDateString("en-US", { 
+    weekday: "long", 
+    month: "short", 
+    day: "numeric" 
+  });
 
   return (
     <Modal visible={visible} animationType="slide">
       <ThemedView style={[styles.summaryContainer, { paddingTop: insets.top + Spacing.xl }]}>
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+        {/* Shareable card - captured for sharing */}
+        <View 
+          ref={shareCardRef} 
+          collapsable={false}
+          style={[styles.shareableCard, { backgroundColor: theme.backgroundRoot }]}
+        >
           <LinearGradient
             colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
-            style={styles.summaryBadge}
+            style={styles.shareCardHeader}
           >
-            <Feather name="check-circle" size={48} color="#FFFFFF" />
+            <View style={styles.shareCardLogo}>
+              <Feather name="activity" size={18} color="#FFFFFF" />
+              <ThemedText style={styles.shareCardAppName}>FitPlan</ThemedText>
+            </View>
+            <ThemedText style={styles.shareCardDate}>{today}</ThemedText>
           </LinearGradient>
-        </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <ThemedText style={styles.summaryTitle}>Workout Complete!</ThemedText>
-          <ThemedText style={[styles.summarySubtitle, { color: theme.textSecondary }]}>
-            Great job crushing it today
-          </ThemedText>
-        </Animated.View>
+          <View style={[styles.shareCardContent, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.shareCardBadge}>
+              <Feather name="check-circle" size={32} color={Colors.light.primary} />
+            </View>
+            
+            <ThemedText style={styles.shareCardTitle}>{workoutName}</ThemedText>
+            <ThemedText style={[styles.shareCardSubtitle, { color: theme.textSecondary }]}>
+              Workout Complete
+            </ThemedText>
+
+            <View style={styles.shareCardStats}>
+              <View style={styles.shareCardStat}>
+                <ThemedText style={styles.shareCardStatValue}>{formatTime(duration)}</ThemedText>
+                <ThemedText style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}>Duration</ThemedText>
+              </View>
+              <View style={[styles.shareCardStatDivider, { backgroundColor: theme.border }]} />
+              <View style={styles.shareCardStat}>
+                <ThemedText style={styles.shareCardStatValue}>{completedSets}</ThemedText>
+                <ThemedText style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}>Sets</ThemedText>
+              </View>
+              <View style={[styles.shareCardStatDivider, { backgroundColor: theme.border }]} />
+              <View style={styles.shareCardStat}>
+                <ThemedText style={styles.shareCardStatValue}>{totalVolume.toLocaleString()}</ThemedText>
+                <ThemedText style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}>kg Volume</ThemedText>
+              </View>
+            </View>
+
+            {prs > 0 ? (
+              <View style={styles.shareCardPR}>
+                <Feather name="award" size={16} color="#FFD700" />
+                <ThemedText style={styles.shareCardPRText}>
+                  {prs} New PR{prs > 1 ? "s" : ""}
+                </ThemedText>
+              </View>
+            ) : null}
+          </View>
+        </View>
 
         <Animated.View
-          entering={FadeInUp.delay(300).duration(400)}
-          style={styles.summaryStats}
+          entering={FadeInUp.delay(400).duration(400)}
+          style={styles.shareActions}
         >
-          <View style={[styles.summaryStatCard, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="clock" size={24} color={Colors.light.primary} />
-            <ThemedText style={styles.summaryStatValue}>
-              {formatTime(duration)}
-            </ThemedText>
-            <ThemedText style={[styles.summaryStatLabel, { color: theme.textSecondary }]}>
-              Duration
-            </ThemedText>
-          </View>
-
-          <View style={[styles.summaryStatCard, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="check-square" size={24} color={Colors.light.primary} />
-            <ThemedText style={styles.summaryStatValue}>
-              {completedSets}/{totalSets}
-            </ThemedText>
-            <ThemedText style={[styles.summaryStatLabel, { color: theme.textSecondary }]}>
-              Sets
-            </ThemedText>
-          </View>
-
-          <View style={[styles.summaryStatCard, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="trending-up" size={24} color={Colors.light.primary} />
-            <ThemedText style={styles.summaryStatValue}>
-              {totalVolume.toLocaleString()}
-            </ThemedText>
-            <ThemedText style={[styles.summaryStatLabel, { color: theme.textSecondary }]}>
-              kg Volume
-            </ThemedText>
-          </View>
-        </Animated.View>
-
-        {prs > 0 ? (
-          <Animated.View
-            entering={FadeInUp.delay(400).duration(400)}
-            style={styles.prSummaryBadge}
+          <Pressable 
+            onPress={handleShare}
+            disabled={isSharing}
+            style={[styles.shareButton, { opacity: isSharing ? 0.6 : 1 }]}
           >
-            <LinearGradient
-              colors={["#FFD700", "#FFA500"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.prSummaryGradient}
-            >
-              <Feather name="award" size={20} color="#FFFFFF" />
-              <ThemedText style={styles.prSummaryText}>
-                {prs} New Personal Record{prs > 1 ? "s" : ""}!
-              </ThemedText>
-            </LinearGradient>
-          </Animated.View>
-        ) : null}
+            <Feather name="share-2" size={20} color={Colors.light.primary} />
+            <ThemedText style={[styles.shareButtonText, { color: Colors.light.primary }]}>
+              {isSharing ? "Sharing..." : "Share Workout"}
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
 
         <Animated.View
           entering={FadeInUp.delay(500).duration(400)}
@@ -1383,6 +1425,7 @@ export default function ActiveWorkoutScreen() {
         completedSets={completedSets}
         totalVolume={calculateTotalVolume()}
         prs={prsThisSession}
+        workoutName={plan?.days.find(d => d.id === dayId)?.name || "Workout"}
         onClose={() => navigation.goBack()}
       />
 
@@ -2142,6 +2185,109 @@ const styles = StyleSheet.create({
   summaryButtonText: {
     color: "#FFFFFF",
     fontSize: 17,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  shareableCard: {
+    borderRadius: BorderRadius.xl,
+    overflow: "hidden",
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  shareCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  shareCardLogo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  shareCardAppName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  shareCardDate: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 12,
+  },
+  shareCardContent: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+  },
+  shareCardBadge: {
+    marginBottom: Spacing.md,
+  },
+  shareCardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+    textAlign: "center",
+  },
+  shareCardSubtitle: {
+    fontSize: 14,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.lg,
+  },
+  shareCardStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.lg,
+  },
+  shareCardStat: {
+    alignItems: "center",
+    flex: 1,
+  },
+  shareCardStatValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  shareCardStatLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  shareCardStatDivider: {
+    width: 1,
+    height: 30,
+  },
+  shareCardPR: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: "rgba(255,215,0,0.1)",
+    borderRadius: BorderRadius.full,
+  },
+  shareCardPRText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#B8860B",
+  },
+  shareActions: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.light.primary,
+  },
+  shareButtonText: {
+    fontSize: 15,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
   },
