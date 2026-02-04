@@ -25,7 +25,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
-import { WorkoutPlan, getWorkoutPlans } from "@/lib/storage";
+import { WorkoutPlan, getWorkoutPlans, duplicateWorkoutPlan } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -35,11 +35,13 @@ function PlanCard({
   index,
   onPress,
   onStartPress,
+  onDuplicate,
 }: {
   plan: WorkoutPlan;
   index: number;
   onPress: () => void;
   onStartPress: () => void;
+  onDuplicate: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -93,11 +95,17 @@ function PlanCard({
             </ThemedText>
           </View>
           <View style={styles.planMeta}>
-            <ThemedText
-              style={[styles.planDate, { color: theme.textSecondary }]}
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onDuplicate();
+              }}
+              style={[styles.duplicateButton, { backgroundColor: theme.backgroundSecondary }]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              testID={`button-duplicate-plan-${plan.id}`}
             >
-              {formatDate(plan.lastModified)}
-            </ThemedText>
+              <Feather name="copy" size={16} color={theme.textSecondary} />
+            </Pressable>
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </View>
         </View>
@@ -223,6 +231,14 @@ export default function MyPlansScreen() {
     navigation.navigate("StartWorkout", { planId: plan.id });
   };
 
+  const handleDuplicate = async (plan: WorkoutPlan) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const newPlan = await duplicateWorkoutPlan(plan.id);
+    if (newPlan) {
+      loadPlans();
+    }
+  };
+
   const renderItem = ({
     item,
     index,
@@ -235,6 +251,7 @@ export default function MyPlansScreen() {
       index={index}
       onPress={() => handlePlanPress(item)}
       onStartPress={() => handleStartWorkout(item)}
+      onDuplicate={() => handleDuplicate(item)}
     />
   );
 
@@ -385,5 +402,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  duplicateButton: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

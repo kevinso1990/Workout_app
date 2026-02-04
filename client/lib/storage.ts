@@ -157,6 +157,28 @@ export async function deleteWorkoutPlan(planId: string): Promise<void> {
   );
 }
 
+export async function duplicateWorkoutPlan(planId: string): Promise<WorkoutPlan | null> {
+  const plans = await getWorkoutPlans();
+  const planToDuplicate = plans.find((p) => p.id === planId);
+  if (!planToDuplicate) return null;
+
+  const newPlan: WorkoutPlan = {
+    ...planToDuplicate,
+    id: Date.now().toString(),
+    name: `${planToDuplicate.name} (Copy)`,
+    createdAt: new Date().toISOString(),
+    lastModified: new Date().toISOString(),
+    days: planToDuplicate.days.map((day) => ({
+      ...day,
+      exercises: day.exercises.map((ex) => ({ ...ex, id: `${ex.id}-${Date.now()}` })),
+    })),
+  };
+
+  plans.push(newPlan);
+  await AsyncStorage.setItem(STORAGE_KEYS.WORKOUT_PLANS, JSON.stringify(plans));
+  return newPlan;
+}
+
 export async function getWorkoutHistory(): Promise<WorkoutSession[]> {
   try {
     const value = await AsyncStorage.getItem(STORAGE_KEYS.WORKOUT_HISTORY);
