@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -146,6 +147,52 @@ const EXERCISE_LIBRARY: ExerciseItem[] = [
 const MUSCLE_GROUPS = ["All", "Chest", "Back", "Shoulders", "Legs", "Arms", "Core", "Full Body"];
 const EQUIPMENT_OPTIONS = ["Barbell", "Dumbbells", "Cable", "Machine", "Bodyweight", "Kettlebell", "Other"];
 
+const EXERCISE_IMAGE_MAP: Record<string, string> = {
+  "Bench Press": "Barbell-Bench-Press",
+  "Incline Dumbbell Press": "Incline-Dumbbell-Press",
+  "Decline Bench Press": "Decline-Barbell-Bench-Press",
+  "Cable Flyes": "Cable-Crossover",
+  "Push-ups": "Push-Up",
+  "Dumbbell Flyes": "Dumbbell-Fly",
+  "Squat": "Barbell-Squat",
+  "Front Squat": "Barbell-Front-Squat",
+  "Leg Press": "Sled-45-Leg-Press",
+  "Lunges": "Dumbbell-Lunge",
+  "Leg Extension": "Lever-Leg-Extension",
+  "Leg Curl": "Lever-Lying-Leg-Curl",
+  "Romanian Deadlift": "Barbell-Romanian-Deadlift",
+  "Deadlift": "Barbell-Deadlift",
+  "Barbell Rows": "Barbell-Bent-Over-Row",
+  "Dumbbell Rows": "Dumbbell-Row",
+  "Lat Pulldown": "Cable-Bar-Lateral-Pulldown",
+  "Pull-ups": "Pull-Up",
+  "Chin-ups": "Chin-Up",
+  "Seated Cable Row": "Cable-Seated-Row",
+  "Overhead Press": "Barbell-Standing-Military-Press",
+  "Dumbbell Shoulder Press": "Dumbbell-Shoulder-Press",
+  "Lateral Raises": "Dumbbell-Lateral-Raise",
+  "Front Raises": "Dumbbell-Front-Raise",
+  "Face Pulls": "Cable-Face-Pull",
+  "Bicep Curls": "Dumbbell-Bicep-Curl",
+  "Barbell Curls": "Barbell-Curl",
+  "Hammer Curls": "Dumbbell-Hammer-Curl",
+  "Tricep Pushdowns": "Cable-Pushdown",
+  "Skull Crushers": "Barbell-Lying-Triceps-Extension",
+  "Overhead Tricep Extension": "Dumbbell-Seated-Tricep-Extension",
+  "Crunches": "Crunch",
+  "Plank": "Front-Plank",
+  "Leg Raises": "Lying-Leg-Raise",
+  "Hip Thrust": "Barbell-Hip-Thrust",
+  "Calf Raises": "Standing-Calf-Raise",
+  "Shrugs": "Dumbbell-Shrug",
+};
+
+function getExerciseImageUrl(exerciseName: string): string | null {
+  const imageId = EXERCISE_IMAGE_MAP[exerciseName];
+  if (!imageId) return null;
+  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${imageId}/0.jpg`;
+}
+
 function FilterChip({
   label,
   selected,
@@ -242,18 +289,26 @@ function ExerciseCard({
         ]}
         testID={`card-exercise-${exercise.id}`}
       >
-        <View
-          style={[
-            styles.exerciseIcon,
-            { backgroundColor: getMuscleGroupColor(exercise.muscleGroup) + "20" },
-          ]}
-        >
-          <Feather
-            name={exercise.isCustom ? "star" : "activity"}
-            size={24}
-            color={getMuscleGroupColor(exercise.muscleGroup)}
+        {getExerciseImageUrl(exercise.name) ? (
+          <Image
+            source={{ uri: getExerciseImageUrl(exercise.name)! }}
+            style={styles.cardExerciseImage}
+            resizeMode="cover"
           />
-        </View>
+        ) : (
+          <View
+            style={[
+              styles.exerciseIcon,
+              { backgroundColor: getMuscleGroupColor(exercise.muscleGroup) + "20" },
+            ]}
+          >
+            <Feather
+              name={exercise.isCustom ? "star" : "activity"}
+              size={24}
+              color={getMuscleGroupColor(exercise.muscleGroup)}
+            />
+          </View>
+        )}
         <ThemedText style={styles.exerciseName} numberOfLines={2}>
           {exercise.name}
         </ThemedText>
@@ -688,6 +743,18 @@ function ExerciseProgressModal({
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
           </View>
+
+          {getExerciseImageUrl(exercise.name) ? (
+            <Image
+              source={{ uri: getExerciseImageUrl(exercise.name)! }}
+              style={styles.progressModalImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.progressModalImagePlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
+              <Feather name="image" size={32} color={theme.textSecondary} />
+            </View>
+          )}
 
           {stats ? (
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -1409,5 +1476,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     paddingHorizontal: Spacing.xl,
+  },
+  cardExerciseImage: {
+    width: "100%",
+    height: 80,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.sm,
+    backgroundColor: "#F0F0F0",
+  },
+  progressModalImage: {
+    width: "100%",
+    height: 150,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+    backgroundColor: "#F0F0F0",
+  },
+  progressModalImagePlaceholder: {
+    width: "100%",
+    height: 100,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

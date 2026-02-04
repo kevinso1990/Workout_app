@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   Image,
+  Keyboard,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -810,6 +811,20 @@ function SetInput({
           </View>
         </View>
       </View>
+
+      <Pressable
+        onPress={() => {
+          Keyboard.dismiss();
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        style={[styles.doneButton, { backgroundColor: theme.backgroundSecondary }]}
+        testID={`button-done-${setIndex}`}
+      >
+        <Feather name="check" size={16} color={Colors.light.primary} />
+        <ThemedText style={[styles.doneButtonText, { color: Colors.light.primary }]}>
+          Done Editing
+        </ThemedText>
+      </Pressable>
 
       <View style={styles.rirSection}>
         <ThemedText style={[styles.rirQuestion, { color: theme.text }]}>
@@ -2008,5 +2023,19 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     alignItems: "center",
     justifyContent: "center",
+  },
+  doneButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  doneButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
   },
 });

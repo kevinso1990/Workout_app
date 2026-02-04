@@ -1,0 +1,29 @@
+Here is an exhaustive list of user stories categorized by the user’s journey, designed for a high-end UX.
+1. Onboarding & Personalization
+The goal: Minimize friction and make the app feel "built for me."
+• As a new user, I want to input my fitness level, equipment access (gym vs. home), and goals so the app suggests a tailored starting program.
+• As a busy professional, I want to specify my available workout days and duration so the planner doesn't overwhelm my schedule.
+• As an aesthetic-focused user, I want to select specific "focus muscle groups" so the app prioritizes those in my routine.
+2. Plan Creation & Management
+The goal: Flexibility and "smart" defaults.
+• As an experienced lifter, I want to build a custom routine using a searchable database of exercises with video previews.
+• As a creature of habit, I want to duplicate a previous workout or week so I don’t have to build it from scratch every time.
+• As a trainee on the go, I want to swap an exercise (e.g., Barbell Bench for Dumbbell Bench) if the equipment is taken, without breaking my tracking logic.
+• As a programmer, I want to set specific RPE (Rate of Perceived Exertion) or % of 1RM targets for my lifts.
+3. The Active Workout Experience (The "Core Loop")
+The goal: Zero distractions, high efficiency.
+• As an athlete, I want a "Rest Timer" that starts automatically after I log a set so I stay on track.
+• As a focused lifter, I want to see my previous performance (weight/reps) for the current exercise on the same screen so I know what to beat.
+• As a multitasker, I want to log my sets via a Lock Screen widget or Apple Watch so I don't have to unlock my phone constantly.
+• As a data-driven lifter, I want to mark a set as a "Warm-up," "Failure," or "Drop Set" to ensure my volume data is accurate.
+4. Progress Tracking & Analytics
+The goal: Visualizing the "why."
+• As a visual learner, I want to see a 1RM (One Rep Max) progression chart for my compound lifts over time.
+• As a body-conscious user, I want to upload progress photos and body measurements (weight, waist, etc.) side-by-side with my lifting data.
+• As a volume tracker, I want to see a "Muscle Heatmap" showing which areas I’ve trained most this week.
+• As an achiever, I want to be notified when I hit a "Personal Best" (PB) immediately after finishing a set.
+5. Retention & Intelligence
+The goal: Keep them coming back.
+• As a plateaued lifter, I want the app to suggest an "Auto-Regulated" weight increase or decrease based on my recent performance trends.
+• As a social lifter, I want to export my workout summary as a high-quality "Share Card" for Instagram or Strava.
+• As a forgetful user, I want smart notifications that remind me to work out based on my historical "best time to train."
