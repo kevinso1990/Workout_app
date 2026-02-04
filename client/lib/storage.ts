@@ -9,11 +9,20 @@ const STORAGE_KEYS = {
   PROGRESS_PHOTOS: "progress_photos",
 };
 
+export type FitnessLevel = "beginner" | "intermediate" | "advanced";
+export type FitnessGoal = "build_muscle" | "lose_fat" | "get_stronger" | "stay_fit";
+export type Equipment = "full_gym" | "dumbbells_only" | "home_minimal" | "bodyweight";
+export type MuscleGroupType = "chest" | "back" | "shoulders" | "arms" | "legs" | "core";
+
 export interface UserPreferences {
   workoutDaysPerWeek: number;
   splitPreference: "choose" | "recommended";
   exercisePreference: "choose" | "default";
   cardioDays?: string[];
+  fitnessLevel?: FitnessLevel | null;
+  fitnessGoals?: FitnessGoal[];
+  equipment?: Equipment | null;
+  focusMuscles?: MuscleGroupType[];
 }
 
 export interface Exercise {
