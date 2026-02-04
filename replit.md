@@ -16,6 +16,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (February 2026)
 
+- **Smart Progression Suggestions**: "Today's Target" card shows exactly what weight/reps to aim for based on last session's performance. Explains *why* (e.g., "Last set felt easy - time to progress!").
+- **Performance Feedback**: After completing sets, shows badges like "Target hit" or "+2.5kg" if you exceeded the target.
+- **First-Time Guidance**: New exercises show helpful hints about starting weight selection.
 - **Exercise Swap During Workouts**: Users can now swap exercises mid-workout when equipment is busy. The swap button next to exercise names opens a modal with muscle-group-appropriate alternatives.
 - **Duplicate Workout Plans**: Added copy button on plan cards to quickly duplicate an entire workout plan.
 - **Set Type Marking**: Users can tag sets as working/warm-up/failure/drop set with color-coded badges.
