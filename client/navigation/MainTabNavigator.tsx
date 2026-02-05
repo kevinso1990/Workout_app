@@ -14,7 +14,6 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 
 import MyPlansScreen from "@/screens/MyPlansScreen";
-import ExercisesScreen from "@/screens/ExercisesScreen";
 import ProgressScreen from "@/screens/ProgressScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
@@ -26,7 +25,6 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export type MainTabParamList = {
   MyPlans: undefined;
-  Exercises: undefined;
   Progress: undefined;
   Profile: undefined;
 };
@@ -122,16 +120,6 @@ export default function MainTabNavigator() {
             headerTitle: () => <HeaderTitle title="FitPlan" />,
             tabBarIcon: ({ color, size }) => (
               <Feather name="clipboard" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Exercises"
-          component={ExercisesScreen}
-          options={{
-            title: "Exercises",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="activity" size={size} color={color} />
             ),
           }}
         />
