@@ -1,65 +1,31 @@
-import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import * as SplashScreen from "expo-splash-screen";
-import {
-  useFonts,
-  Montserrat_400Regular,
-  Montserrat_500Medium,
-  Montserrat_600SemiBold,
-  Montserrat_700Bold,
-} from "@expo-google-fonts/montserrat";
-
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/query-client";
-
-import RootStackNavigator from "@/navigation/RootStackNavigator";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-
-SplashScreen.preventAutoHideAsync();
+import React from "react";
+import { Route, Switch } from "wouter";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
+import Plans from "./pages/Plans";
+import PlanBuilder from "./pages/PlanBuilder";
+import ActiveWorkout from "./pages/ActiveWorkout";
+import PostWorkout from "./pages/PostWorkout";
+import History from "./pages/History";
+import SessionDetail from "./pages/SessionDetail";
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({
-    Montserrat_400Regular,
-    Montserrat_500Medium,
-    Montserrat_600SemiBold,
-    Montserrat_700Bold,
-  });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <GestureHandlerRootView style={styles.root}>
-            <KeyboardProvider>
-              <NavigationContainer>
-                <RootStackNavigator />
-              </NavigationContainer>
-              <StatusBar style="auto" />
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </SafeAreaProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <Switch>
+      <Route path="/workout/:sessionId/finish" component={PostWorkout} />
+      <Route path="/workout/:sessionId" component={ActiveWorkout} />
+      <Route path="/session/:id" component={SessionDetail} />
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/plans" component={Plans} />
+            <Route path="/plans/new" component={PlanBuilder} />
+            <Route path="/plans/:id/edit" component={PlanBuilder} />
+            <Route path="/history" component={History} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-});
