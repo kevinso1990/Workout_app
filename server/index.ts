@@ -1,7 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { createServer as createViteServer } from "vite";
-import { createServer } from "node:http";
 import { registerRoutes } from "./routes";
 import { initDb } from "./db";
 import * as fs from "fs";
@@ -30,12 +29,14 @@ function setupCors(app: express.Application) {
   });
 }
 
-function setupBodyParsing(app: express.Application) {
+(async () => {
+  initDb();
+  log("Database initialized");
+
+  setupCors(app);
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
-}
 
-function setupRequestLogging(app: express.Application) {
   app.use((req, res, next) => {
     const start = Date.now();
     res.on("finish", () => {
@@ -46,9 +47,9 @@ function setupRequestLogging(app: express.Application) {
     });
     next();
   });
-}
 
-function setupErrorHandler(app: express.Application) {
+  await registerRoutes(app);
+
   app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
     const error = err as { status?: number; statusCode?: number; message?: string };
     const status = error.status || error.statusCode || 500;
@@ -57,19 +58,6 @@ function setupErrorHandler(app: express.Application) {
     if (res.headersSent) return next(err);
     return res.status(status).json({ message });
   });
-}
-
-(async () => {
-  initDb();
-  log("Database initialized");
-
-  setupCors(app);
-  setupBodyParsing(app);
-  setupRequestLogging(app);
-
-  await registerRoutes(app);
-
-  setupErrorHandler(app);
 
   if (isProd) {
     const distPath = path.resolve(process.cwd(), "dist/public");
@@ -88,8 +76,14 @@ function setupErrorHandler(app: express.Application) {
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  const httpServer = createServer(app);
-  httpServer.listen(port, "0.0.0.0", () => {
+  app.listen(port, "0.0.0.0", () => {
     log(`Server running on port ${port}`);
   });
+
+  const proxyPort = 8081;
+  if (proxyPort !== port) {
+    app.listen(proxyPort, "0.0.0.0", () => {
+      log(`Server also listening on port ${proxyPort} (proxy)`);
+    });
+  }
 })();

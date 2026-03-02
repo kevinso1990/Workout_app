@@ -72,7 +72,7 @@ export default function Plans() {
               {plan.exercises?.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {[...new Set(plan.exercises.map((e: any) => e.muscle_group))].map((mg: any) => (
-                    <span key={mg} className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400">
+                    <span key={mg} className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]">
                       {mg}
                     </span>
                   ))}

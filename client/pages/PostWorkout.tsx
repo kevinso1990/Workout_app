@@ -47,7 +47,7 @@ export default function PostWorkout() {
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -56,7 +56,7 @@ export default function PostWorkout() {
   const rpeColors = ["#22c55e", "#22c55e", "#4ade80", "#84cc16", "#a3e635", "#eab308", "#f59e0b", "#f97316", "#ef4444", "#dc2626"];
 
   return (
-    <div className="min-h-[100dvh] bg-neutral-950 px-4 py-6 max-w-lg mx-auto">
+    <div className="min-h-[100dvh] bg-[var(--color-bg)] px-4 py-6 max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-2">How did it feel?</h1>
       <p className="text-neutral-500 mb-8">Rate your workout to get better recommendations next time.</p>
 
@@ -107,7 +107,7 @@ export default function PostWorkout() {
                           ? opt.color === "red" ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/50"
                           : opt.color === "green" ? "bg-green-500/20 text-green-400 ring-1 ring-green-500/50"
                           : "bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/50"
-                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                          : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80"
                       }`}
                     >
                       {opt.label}

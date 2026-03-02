@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import ExerciseChart from "../components/ExerciseChart";
 
 export default function SessionDetail() {
   const params = useParams<{ id: string }>();
@@ -24,7 +25,7 @@ export default function SessionDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -32,7 +33,7 @@ export default function SessionDetail() {
 
   if (!session) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
         <p className="text-neutral-400">Session not found</p>
       </div>
     );
@@ -54,8 +55,8 @@ export default function SessionDetail() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-neutral-950">
-      <header className="sticky top-0 z-40 bg-neutral-950/95 backdrop-blur-lg border-b border-neutral-800 px-4 py-3">
+    <div className="min-h-[100dvh] bg-[var(--color-bg)]">
+      <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-lg border-b border-[var(--color-border)] px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <button onClick={() => navigate("/history")} className="p-2 -ml-2 text-neutral-400">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
@@ -109,6 +110,7 @@ export default function SessionDetail() {
                     </div>
                   ))}
                 </div>
+                <ExerciseChart exerciseId={exId} exerciseName={group.name} />
                 {rec && rec.reason !== "No previous data" ? (
                   <div className="mt-2 p-2.5 rounded-lg bg-brand/10 border border-brand/20">
                     <div className="text-xs text-brand font-semibold mb-0.5">Next session</div>

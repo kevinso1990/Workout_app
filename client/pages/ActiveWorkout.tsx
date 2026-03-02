@@ -207,15 +207,15 @@ export default function ActiveWorkout() {
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] bg-neutral-950 flex flex-col">
-      <header className="sticky top-0 z-50 bg-neutral-950/95 backdrop-blur-lg border-b border-neutral-800 px-4 py-2 safe-top">
+    <div className="min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
+      <header className="sticky top-0 z-50 bg-[var(--color-nav-bg)] backdrop-blur-lg border-b border-[var(--color-border)] px-4 py-2 safe-top">
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <button onClick={() => setShowLeaveConfirm(true)} className="text-neutral-500 p-2 -ml-2">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -224,14 +224,14 @@ export default function ActiveWorkout() {
             <div className="text-sm font-semibold">{formatTime(elapsed)}</div>
             <div className="text-[10px] text-neutral-500">{exercises.reduce((a, e) => a + e.loggedSets.length, 0)} sets logged</div>
           </div>
-          <button onClick={() => setUnit(u => u === "kg" ? "lbs" : "kg")} className="text-xs font-semibold px-2 py-1 rounded-lg bg-neutral-800 text-neutral-400">
+          <button onClick={() => setUnit(u => u === "kg" ? "lbs" : "kg")} className="text-xs font-semibold px-2 py-1 rounded-lg bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]">
             {unit}
           </button>
         </div>
       </header>
 
       {isResting ? (
-        <div className="bg-neutral-900 border-b border-neutral-800 px-4 py-3">
+        <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 py-3">
           <div className="max-w-lg mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-2xl font-bold text-brand tabular-nums">{formatTime(restTimer)}</div>
@@ -252,7 +252,7 @@ export default function ActiveWorkout() {
               <div
                 key={ex.exercise_id}
                 ref={isActive ? activeExRef : undefined}
-                className={`border-b border-neutral-800/50 transition-colors ${isActive ? "bg-neutral-950" : "bg-neutral-950/50"}`}
+                className={`border-b border-[var(--color-border)] transition-all ${isActive ? "bg-[var(--color-bg)] exercise-highlight" : "opacity-60"}`}
               >
                 <button
                   onClick={() => setActiveIdx(exIdx)}
@@ -272,7 +272,7 @@ export default function ActiveWorkout() {
                 {isActive ? (
                   <div className="px-4 pb-4">
                     {ex.lastSessionSets.length > 0 ? (
-                      <div className="mb-4 p-3 rounded-xl bg-neutral-900/80 border border-neutral-800">
+                      <div className="mb-4 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
                         <div className="text-xs text-neutral-500 mb-1.5 font-medium">Last session</div>
                         <div className="flex gap-3 flex-wrap">
                           {ex.lastSessionSets.map((s: any, i: number) => (
@@ -285,7 +285,7 @@ export default function ActiveWorkout() {
                     {ex.loggedSets.length > 0 ? (
                       <div className="mb-4 space-y-1">
                         {ex.loggedSets.map((s, i) => (
-                          <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-neutral-900/50">
+                          <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-[var(--color-surface)]">
                             <span className="text-sm text-neutral-400">Set {s.set_number}</span>
                             <span className="text-sm font-medium">{toDisplayWeight(s.weight)} {unit} x {s.reps}</span>
                           </div>
@@ -296,7 +296,7 @@ export default function ActiveWorkout() {
                     <div className="mb-4">
                       <div className="text-xs text-neutral-500 mb-2">Weight ({unit})</div>
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn bg-neutral-800 text-neutral-300 hover:bg-neutral-700">-</button>
+                        <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn">-</button>
                         <div className="w-28 text-center">
                           <input
                             type="number"
@@ -310,14 +310,14 @@ export default function ActiveWorkout() {
                           />
                           <div className="text-xs text-neutral-600">{unit}</div>
                         </div>
-                        <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn bg-neutral-800 text-neutral-300 hover:bg-neutral-700">+</button>
+                        <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn">+</button>
                       </div>
                     </div>
 
                     <div className="mb-5">
                       <div className="text-xs text-neutral-500 mb-2">Reps</div>
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => adjustReps(exIdx, -REP_STEP)} className="stepper-btn bg-neutral-800 text-neutral-300 hover:bg-neutral-700">-</button>
+                        <button onClick={() => adjustReps(exIdx, -REP_STEP)} className="stepper-btn">-</button>
                         <div className="w-28 text-center">
                           <input
                             type="number"
@@ -330,7 +330,7 @@ export default function ActiveWorkout() {
                           />
                           <div className="text-xs text-neutral-600">reps</div>
                         </div>
-                        <button onClick={() => adjustReps(exIdx, REP_STEP)} className="stepper-btn bg-neutral-800 text-neutral-300 hover:bg-neutral-700">+</button>
+                        <button onClick={() => adjustReps(exIdx, REP_STEP)} className="stepper-btn">+</button>
                       </div>
                     </div>
 
@@ -354,7 +354,7 @@ export default function ActiveWorkout() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-neutral-950/95 backdrop-blur-lg border-t border-neutral-800 p-4 z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-lg border-t border-[var(--color-border)] p-4 z-50">
         <div className="max-w-lg mx-auto">
           <button onClick={finishWorkout} className="w-full btn bg-green-600 text-white hover:bg-green-700 min-h-12 text-base font-semibold">
             Finish Workout

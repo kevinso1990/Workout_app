@@ -18,7 +18,7 @@ export default function ConfirmModal({ open, title, message, confirmLabel = "Con
     <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-6" onClick={onCancel}>
       <div className="card p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        {message ? <p className="text-sm text-neutral-400 mb-6">{message}</p> : null}
+        {message ? <p className="text-sm text-[var(--color-text-muted)] mb-6">{message}</p> : null}
         <div className="flex gap-3">
           {cancelLabel ? <button onClick={onCancel} className="btn-ghost flex-1">{cancelLabel}</button> : null}
           <button
