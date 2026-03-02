@@ -26,7 +26,7 @@ export default function SessionDetail() {
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -34,7 +34,7 @@ export default function SessionDetail() {
   if (!session) {
     return (
       <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
-        <p className="text-neutral-400">Session not found</p>
+        <p className="text-[var(--color-text-secondary)]">Session not found</p>
       </div>
     );
   }
@@ -56,38 +56,43 @@ export default function SessionDetail() {
 
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)]">
-      <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-lg border-b border-[var(--color-border)] px-4 py-3">
+      <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-xl px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={() => navigate("/history")} className="p-2 -ml-2 text-neutral-400">
+          <button onClick={() => navigate("/history")} className="p-2 -ml-2 text-[var(--color-text-secondary)]">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <h1 className="font-semibold">{session.plan_name}</h1>
+          <h1 className="font-bold">{session.plan_name}</h1>
           <div className="w-10" />
         </div>
       </header>
 
       <div className="px-4 pt-4 pb-8 max-w-lg mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="card p-3 flex-1 text-center">
-            <div className="text-xs text-neutral-500">Volume</div>
-            <div className="text-lg font-bold">{Math.round(session.totalVolume).toLocaleString()} kg</div>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="card p-3 text-center">
+            <div className="text-xs text-[var(--color-text-secondary)]">Volume</div>
+            <div className="text-lg font-bold tabular-nums">{Math.round(session.totalVolume).toLocaleString()} <span className="text-sm text-[var(--color-text-muted)]">kg</span></div>
           </div>
-          <div className="card p-3 flex-1 text-center">
-            <div className="text-xs text-neutral-500">Duration</div>
+          <div className="card p-3 text-center">
+            <div className="text-xs text-[var(--color-text-secondary)]">Duration</div>
             <div className="text-lg font-bold">{session.duration ? `${session.duration} min` : "—"}</div>
           </div>
           {session.rpe ? (
-            <div className="card p-3 flex-1 text-center">
-              <div className="text-xs text-neutral-500">RPE</div>
+            <div className="card p-3 text-center">
+              <div className="text-xs text-[var(--color-text-secondary)]">RPE</div>
               <div className="text-lg font-bold">{session.rpe}</div>
             </div>
-          ) : null}
+          ) : (
+            <div className="card p-3 text-center">
+              <div className="text-xs text-[var(--color-text-secondary)]">Sets</div>
+              <div className="text-lg font-bold">{session.sets?.length || 0}</div>
+            </div>
+          )}
         </div>
 
         {session.notes ? (
           <div className="card p-4 mb-6">
-            <div className="text-xs text-neutral-500 mb-1">Notes</div>
-            <p className="text-sm text-neutral-300">{session.notes}</p>
+            <div className="text-xs text-[var(--color-text-muted)] mb-1 uppercase font-semibold">Notes</div>
+            <p className="text-sm text-[var(--color-text-secondary)]">{session.notes}</p>
           </div>
         ) : null}
 
@@ -96,26 +101,24 @@ export default function SessionDetail() {
             const rec = recMap.get(exId);
             return (
               <div key={exId} className="card p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="font-semibold">{group.name}</div>
-                    <div className="text-xs text-neutral-500">{group.muscle_group}</div>
-                  </div>
+                <div className="mb-3">
+                  <div className="font-bold text-base">{group.name}</div>
+                  <div className="text-xs text-[var(--color-text-secondary)]">{group.muscle_group}</div>
                 </div>
-                <div className="space-y-1 mb-2">
+                <div className="space-y-0 mb-2">
                   {group.sets.map((s: any) => (
-                    <div key={s.id} className="flex justify-between text-sm py-1">
-                      <span className="text-neutral-500">Set {s.set_number}</span>
-                      <span>{s.weight} kg x {s.reps}</span>
+                    <div key={s.id} className="flex justify-between text-sm py-1.5" style={{ borderBottom: "1px solid var(--color-border)" }}>
+                      <span className="text-[var(--color-text-muted)]">Set {s.set_number}</span>
+                      <span className="font-bold tabular-nums">{s.weight} kg x {s.reps}</span>
                     </div>
                   ))}
                 </div>
                 <ExerciseChart exerciseId={exId} exerciseName={group.name} />
                 {rec && rec.reason !== "No previous data" ? (
-                  <div className="mt-2 p-2.5 rounded-lg bg-brand/10 border border-brand/20">
-                    <div className="text-xs text-brand font-semibold mb-0.5">Next session</div>
-                    <div className="text-sm font-medium">{rec.suggested_sets} x {rec.suggested_reps} @ {rec.suggested_weight} kg</div>
-                    <div className="text-xs text-neutral-500 mt-0.5">{rec.reason}</div>
+                  <div className="mt-3 p-3 rounded-xl" style={{ background: "rgba(79, 142, 247, 0.1)" }}>
+                    <div className="text-xs text-[var(--color-accent)] font-bold mb-0.5">Next session</div>
+                    <div className="text-sm font-bold">{rec.suggested_sets} x {rec.suggested_reps} @ {rec.suggested_weight} kg</div>
+                    <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{rec.reason}</div>
                   </div>
                 ) : null}
               </div>

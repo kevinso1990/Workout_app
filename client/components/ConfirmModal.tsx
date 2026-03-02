@@ -17,13 +17,14 @@ export default function ConfirmModal({ open, title, message, confirmLabel = "Con
   return (
     <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-6" onClick={onCancel}>
       <div className="card p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        {message ? <p className="text-sm text-[var(--color-text-muted)] mb-6">{message}</p> : null}
+        <h3 className="text-lg font-bold mb-2">{title}</h3>
+        {message ? <p className="text-sm text-[var(--color-text-secondary)] mb-6">{message}</p> : null}
         <div className="flex gap-3">
           {cancelLabel ? <button onClick={onCancel} className="btn-ghost flex-1">{cancelLabel}</button> : null}
           <button
             onClick={onConfirm}
-            className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-150 active:scale-95 min-h-12 px-6 ${destructive ? "bg-red-600 text-white hover:bg-red-700" : "bg-brand text-white hover:bg-brand-dark"}`}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-150 active:scale-95 min-h-12 px-6 text-white"
+            style={{ background: destructive ? "#dc2626" : "var(--color-accent-gradient)" }}
           >
             {confirmLabel}
           </button>

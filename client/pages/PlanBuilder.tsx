@@ -107,14 +107,14 @@ export default function PlanBuilder() {
 
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
-      <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-lg border-b border-[var(--color-border)] px-4 py-3">
+      <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-xl px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <button onClick={() => navigate("/plans")} className="btn-ghost min-h-0 px-2 py-1 text-sm">
             Cancel
           </button>
-          <h1 className="font-semibold">{isEdit ? "Edit Plan" : "New Plan"}</h1>
+          <h1 className="font-bold">{isEdit ? "Edit Plan" : "New Plan"}</h1>
           <button onClick={handleSave} disabled={saving || !name.trim()} className="btn-primary min-h-0 px-4 py-1.5 text-sm">
-            {saving ? "Saving..." : "Save"}
+            {saving ? "..." : "Save"}
           </button>
         </div>
       </header>
@@ -125,7 +125,7 @@ export default function PlanBuilder() {
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Plan name (e.g. Push Day A)"
-          className="input w-full text-lg font-semibold mb-6"
+          className="input w-full text-lg font-bold mb-6"
           autoFocus
         />
 
@@ -135,32 +135,32 @@ export default function PlanBuilder() {
               <div key={`${ex.exercise_id}-${idx}`} className="card p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveExercise(idx, -1)} disabled={idx === 0} className="text-neutral-600 hover:text-neutral-400 disabled:opacity-20 p-0.5">
+                    <button onClick={() => moveExercise(idx, -1)} disabled={idx === 0} className="text-[var(--color-text-muted)] disabled:opacity-20 p-0.5">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
                     </button>
-                    <button onClick={() => moveExercise(idx, 1)} disabled={idx === exercises.length - 1} className="text-neutral-600 hover:text-neutral-400 disabled:opacity-20 p-0.5">
+                    <button onClick={() => moveExercise(idx, 1)} disabled={idx === exercises.length - 1} className="text-[var(--color-text-muted)] disabled:opacity-20 p-0.5">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                     </button>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{ex.name}</div>
-                    <div className="text-xs text-neutral-500">{ex.muscle_group}</div>
+                    <div className="font-semibold truncate">{ex.name}</div>
+                    <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
                   </div>
-                  <button onClick={() => removeExercise(idx)} className="text-neutral-600 hover:text-red-400 p-1">
+                  <button onClick={() => removeExercise(idx)} className="text-[var(--color-text-muted)] hover:text-red-400 p-1">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs text-neutral-500">Sets</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">Sets</label>
                     <input type="number" value={ex.default_sets} onChange={e => updateExercise(idx, "default_sets", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-neutral-500">Reps</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">Reps</label>
                     <input type="number" value={ex.default_reps} onChange={e => updateExercise(idx, "default_reps", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-neutral-500">Weight (kg)</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">kg</label>
                     <input type="number" value={ex.default_weight} onChange={e => updateExercise(idx, "default_weight", parseFloat(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" step="2.5" />
                   </div>
                 </div>
@@ -179,11 +179,11 @@ export default function PlanBuilder() {
       </div>
 
       {showLibrary ? (
-        <div className="fixed inset-0 bg-black/70 z-50 flex flex-col">
+        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col">
           <div className="flex-1 bg-[var(--color-bg)] flex flex-col mt-8 rounded-t-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
-              <h2 className="font-semibold text-lg">Exercise Library</h2>
-              <button onClick={() => setShowLibrary(false)} className="btn-ghost min-h-0 px-2 py-1">Done</button>
+            <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--color-border)" }}>
+              <h2 className="font-bold text-lg">Exercise Library</h2>
+              <button onClick={() => setShowLibrary(false)} className="btn-ghost min-h-0 px-2 py-1 text-sm">Done</button>
             </div>
 
             <div className="px-4 py-3 space-y-2">
@@ -196,15 +196,15 @@ export default function PlanBuilder() {
                 autoFocus
               />
               <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-                <button onClick={() => setFilterGroup("")} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap ${!filterGroup ? "bg-brand text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"}`}>All</button>
+                <button onClick={() => setFilterGroup("")} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${!filterGroup ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`} style={!filterGroup ? { background: "var(--color-accent-gradient)" } : {}}>All</button>
                 {muscleGroups.map(mg => (
-                  <button key={mg} onClick={() => setFilterGroup(mg)} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap ${filterGroup === mg ? "bg-brand text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"}`}>{mg}</button>
+                  <button key={mg} onClick={() => setFilterGroup(mg)} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${filterGroup === mg ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`} style={filterGroup === mg ? { background: "var(--color-accent-gradient)" } : {}}>{mg}</button>
                 ))}
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-4">
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {filteredExercises.map(ex => (
                   <button
                     key={ex.id}
@@ -213,9 +213,9 @@ export default function PlanBuilder() {
                   >
                     <div>
                       <div className="font-medium">{ex.name}</div>
-                      <div className="text-xs text-neutral-500">{ex.muscle_group}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
                     </div>
-                    <svg className="w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                    <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                   </button>
                 ))}
               </div>
@@ -225,9 +225,9 @@ export default function PlanBuilder() {
       ) : null}
 
       {showCustom ? (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end">
-          <div className="w-full bg-[var(--color-surface)] rounded-t-2xl p-4 pb-8">
-            <h2 className="font-semibold text-lg mb-4">Create Custom Exercise</h2>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="w-full bg-[var(--color-surface)] rounded-t-2xl p-5 pb-8">
+            <h2 className="font-bold text-lg mb-4">Custom Exercise</h2>
             <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder="Exercise name" className="input w-full mb-3" autoFocus />
             <select value={customGroup} onChange={e => setCustomGroup(e.target.value)} className="input w-full mb-4">
               {(muscleGroups.length > 0 ? muscleGroups : ["Chest", "Back", "Shoulders", "Legs", "Biceps", "Triceps", "Core"]).map(mg => (

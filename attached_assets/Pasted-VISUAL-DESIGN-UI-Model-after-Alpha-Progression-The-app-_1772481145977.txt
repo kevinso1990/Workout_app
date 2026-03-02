@@ -1,0 +1,52 @@
+VISUAL DESIGN & UI — Model after Alpha Progression
+
+The app's look, feel, and layout should closely resemble the Alpha Progression app. Study the following design principles and apply them throughout:
+
+OVERALL AESTHETIC
+- Deep dark background (approximately #0f0f0f or #111111) with card surfaces in a slightly lighter dark (approximately #1c1c1e or #1e1e1e)
+- Primary accent color: a vivid blue or blue-purple gradient (similar to #4f8ef7 or a blue-to-violet gradient) used on buttons, progress bars, active states, and highlights
+- Clean, modern sans-serif typography (use Inter or similar) with clear size hierarchy: large bold headings, medium subheadings, small muted metadata
+- Subtle rounded corners (border-radius 12–16px) on all cards and buttons
+- Thin separator lines between list items, never heavy borders
+- Muted secondary text in gray (#888 or similar) for labels, timestamps, and metadata
+
+LAYOUT PATTERNS
+- Home/Dashboard screen: show the next scheduled workout as a prominent hero card at the top, followed by a weekly schedule strip (Mon–Sun) showing which days have planned workouts, then recent activity below
+- Exercise cards during active workout: each exercise gets its own full-width card with the exercise name bold at top, previous session data shown in small muted text just below, and the set rows clearly laid out in a table-like grid (Set | Previous | Weight | Reps | Done)
+- Each set row has a checkbox or tap-to-complete interaction that turns the row green/highlighted when logged
+- Completed sets should visually "check off" with a colored left border or row highlight — do not remove them from view
+- Weight and reps input fields should be large, centered, and tappable — styled like pill-shaped input chips, not plain text boxes
+
+NAVIGATION
+- Bottom tab bar with 4 tabs: Home, Workout (active session), History, Profile
+- Active tab uses the accent color; inactive tabs use muted gray icons
+- No top navigation bar during an active workout — maximize vertical space
+
+CHARTS & PROGRESS
+- Progress charts use a clean line graph with a gradient fill underneath the line (accent color fading to transparent)
+- Show the chart inside a card with the exercise name, current max weight, and percentage improvement since start
+- Volume charts use a soft bar chart with rounded tops on each bar
+
+WORKOUT COMPLETION SCREEN
+- After finishing a workout, show a full-screen summary card with: workout name, duration, total volume, number of sets, and personal records hit
+- Use a subtle confetti or animated checkmark to celebrate completion
+- Below the summary, immediately show the Next Session Recommendations section with the per-exercise badges
+
+PLATE CALCULATOR (BONUS FEATURE)
+- Add a small plate calculator accessible from within the active workout screen
+- User enters a target weight, and the app shows exactly which plates to load on each side of a 20 kg Olympic bar
+- Display plates visually as colored stacked discs (like Alpha Progression does)
+
+TYPOGRAPHY RULES
+- Exercise names: bold, white, 16–18px
+- Set numbers: medium weight, muted gray
+- Weight and reps values: bold, white, 20–22px (these are the most important numbers — make them the biggest on screen)
+- Recommendation badges: accent color background, white bold text, rounded pill shape
+
+MICRO-INTERACTIONS
+- Tapping "Log Set" triggers a subtle haptic-style visual pulse on the row
+- Rest timer appears as a circular countdown ring in the accent color
+- Swiping left on a set row reveals a delete option
+- Long-pressing an exercise reveals options: edit, swap exercise, add note
+
+The goal is that a user familiar with Alpha Progression should feel immediately at home. Match the information density, the dark premium feel, and the focus on making numbers the hero of every screen.

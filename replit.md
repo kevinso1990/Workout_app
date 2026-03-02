@@ -2,7 +2,7 @@
 
 ## Overview
 
-WorkoutApp is a mobile-first web application for creating workout plans and tracking workouts. Dark-mode-first design with light mode toggle. Optimized for speed of data entry (3 taps to log a set).
+WorkoutApp is a mobile-first web application for creating workout plans and tracking workouts. Dark-mode-first design with light mode toggle. Optimized for speed of data entry (3 taps to log a set). Visual design modeled after Alpha Progression app.
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ WorkoutApp is a mobile-first web application for creating workout plans and trac
 - **Backend**: Express.js + TypeScript (tsx)
 - **Database**: SQLite via better-sqlite3 (WAL mode)
 - **Build**: Vite with @tailwindcss/vite plugin
-- **Charts**: Inline SVG (ExerciseChart component)
+- **Charts**: Inline SVG (ExerciseChart component with gradient fills)
 
 ## Architecture
 
@@ -42,31 +42,43 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - `GET /api/stats/rest-average/:id` - Historical rest time average
 
 ### Frontend Pages
-- **Dashboard** (`/`) - Quick start workout, weekly volume bars, recent sessions
-- **Plans** (`/plans`) - List/delete plans with muscle group tags
+- **Dashboard** (`/`) - Hero card for next workout, weekly schedule strip (Mon-Sun), volume by muscle, recent activity
+- **Plans** (`/plans`) - List/delete plans with muscle group tag pills
 - **PlanBuilder** (`/plans/new`, `/plans/:id/edit`) - Create/edit plans with exercise library modal, up/down reorder, custom exercise creation
-- **ActiveWorkout** (`/workout/:sessionId`) - Full-screen workout tracker with weight/reps steppers, rest timer, localStorage backup, kg/lbs toggle, auto-highlight next exercise
-- **PostWorkout** (`/workout/:sessionId/finish`) - RPE slider + per-exercise feedback (Too Hard/Just Right/Too Easy)
-- **History** (`/history`) - Workout log with PR badges
-- **SessionDetail** (`/session/:id`) - Sets breakdown with progress charts and smart progression recommendations
+- **ActiveWorkout** (`/workout/:sessionId`) - Full-screen workout tracker with table-like set rows (Set | Previous | Weight | Reps | Done), pill-shaped inputs, circular SVG rest timer, plate calculator, localStorage backup, kg/lbs toggle, auto-highlight next exercise
+- **PostWorkout** (`/workout/:sessionId/finish`) - Full-screen summary card (duration, volume, sets), confetti animation, RPE slider, per-exercise feedback
+- **History** (`/history`) - Workout log with PR badges (star icons)
+- **SessionDetail** (`/session/:id`) - Sets breakdown with gradient-fill progress charts, recommendation badges
+- **Profile** (`/profile`) - Stats overview, theme toggle (dark/light)
 
-### Design System (client/index.css)
-- CSS variable-based theming: `--color-bg`, `--color-surface`, `--color-text`, etc.
-- Dark mode (default) and light mode via `data-theme` attribute on `<html>`
-- Brand color: #f97316 (orange)
-- Custom CSS classes: .btn, .btn-primary, .btn-ghost, .btn-outline, .card, .input, .stepper-btn, .exercise-highlight
+### Design System — Alpha Progression Style (client/index.css)
+- Deep dark background (#0f0f0f), card surfaces (#1c1c1e)
+- Accent: Blue/blue-purple gradient (#4f8ef7 → #7c5bf5) — CSS variable `--color-accent` + `--color-accent-gradient`
+- Cards have no border, rounded corners (1rem), shadow-only elevation
+- Typography: Inter font, large bold numbers for weight/reps (hero numbers), muted gray labels
+- CSS variable-based theming with light mode override via `data-theme` attribute
+- Custom component classes: .btn-primary (gradient), .card, .input, .stepper-btn (circular), .pill-input, .set-row, .set-row-done, .tag-pill, .rec-badge, .section-label, .exercise-highlight, .log-pulse
 - All written as plain CSS (no @apply) for Tailwind v4 compatibility
+
+### Navigation
+- 4-tab bottom nav: Home, Plans, History, Profile
+- Active tab uses accent color (blue), inactive uses muted gray
+- Filled icons for active state, outlined for inactive
 
 ### Theme System (client/lib/theme.ts)
 - Theme stored in localStorage (`workoutapp_theme`)
 - Applied via `data-theme` attribute on `<html>` element
-- Toggle in Layout header (sun/moon icon)
+- Toggle on Profile page
+
+### Plate Calculator (client/components/PlateCalculator.tsx)
+- Accessible from active workout header
+- Shows colored plate discs for a target weight
+- Supports kg/lbs, standard Olympic bar (20kg)
 
 ### Onboarding (client/components/Onboarding.tsx)
 - 3-step guided overlay for first-time users
-- Steps: Create a Plan, Start a Workout, Track Your Progress
+- Steps: Create a Plan, Start a Workout, Track Progress
 - Completion stored in localStorage (`workoutapp_onboarding_done`)
-- Skip or Next/Get Started buttons
 
 ### Key Config (client/config.ts)
 - APP_NAME, DEFAULT_REST_SECONDS (90), WEIGHT_STEP (2.5), REP_STEP (1), DEFAULT_SETS (3), DEFAULT_REPS (10)
@@ -94,6 +106,7 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - Dark mode first design (with light mode toggle)
 - Mobile-first responsive layout
 - Speed of data entry is priority (3 taps to log a set)
+- Visual design modeled after Alpha Progression app
 
 ## Important Notes
 - Tailwind v4: Never use `@apply` to reference custom component classes

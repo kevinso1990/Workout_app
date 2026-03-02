@@ -3,6 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { api } from "../lib/api";
 import { DEFAULT_REST_SECONDS, WEIGHT_STEP, REP_STEP } from "../config";
 import ConfirmModal from "../components/ConfirmModal";
+import PlateCalculator from "../components/PlateCalculator";
 
 interface LoggedSet {
   id?: number;
@@ -60,6 +61,8 @@ export default function ActiveWorkout() {
   const [isResting, setIsResting] = useState(false);
   const [unit, setUnit] = useState<"kg" | "lbs">("kg");
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showPlateCalc, setShowPlateCalc] = useState(false);
+  const [pulsingRow, setPulsingRow] = useState<string | null>(null);
   const restIntervalRef = useRef<number | null>(null);
   const activeExRef = useRef<HTMLDivElement>(null);
 
@@ -159,6 +162,10 @@ export default function ActiveWorkout() {
       reps: ex.currentReps,
     };
 
+    const rowKey = `${ex.exercise_id}-${setNumber}`;
+    setPulsingRow(rowKey);
+    setTimeout(() => setPulsingRow(null), 300);
+
     setExercises(prev => prev.map((e, i) => i === exIdx ? { ...e, loggedSets: [...e.loggedSets, newSet] } : e));
 
     startRest();
@@ -205,39 +212,69 @@ export default function ActiveWorkout() {
   const toDisplayWeight = (kg: number) => unit === "lbs" ? Math.round(kg * 2.205 * 10) / 10 : kg;
   const step = unit === "lbs" ? 5 : WEIGHT_STEP;
 
+  const restProgress = DEFAULT_REST_SECONDS > 0 ? restTimer / DEFAULT_REST_SECONDS : 0;
+  const circumference = 2 * Math.PI * 28;
+  const strokeDashoffset = circumference * (1 - restProgress);
+
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
-      <header className="sticky top-0 z-50 bg-[var(--color-nav-bg)] backdrop-blur-lg border-b border-[var(--color-border)] px-4 py-2 safe-top">
+      <header className="sticky top-0 z-50 bg-[var(--color-nav-bg)] backdrop-blur-xl px-4 py-2" style={{ borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={() => setShowLeaveConfirm(true)} className="text-neutral-500 p-2 -ml-2">
+          <button onClick={() => setShowLeaveConfirm(true)} className="text-[var(--color-text-muted)] p-2 -ml-2">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
           <div className="text-center">
-            <div className="text-sm font-semibold">{formatTime(elapsed)}</div>
-            <div className="text-[10px] text-neutral-500">{exercises.reduce((a, e) => a + e.loggedSets.length, 0)} sets logged</div>
+            <div className="text-base font-bold tabular-nums">{formatTime(elapsed)}</div>
+            <div className="text-[10px] text-[var(--color-text-secondary)]">{exercises.reduce((a, e) => a + e.loggedSets.length, 0)} sets logged</div>
           </div>
-          <button onClick={() => setUnit(u => u === "kg" ? "lbs" : "kg")} className="text-xs font-semibold px-2 py-1 rounded-lg bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]">
-            {unit}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowPlateCalc(true)} className="p-2 text-[var(--color-text-muted)]">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="12" y1="3" x2="12" y2="8" />
+                <line x1="12" y1="16" x2="12" y2="21" />
+              </svg>
+            </button>
+            <button onClick={() => setUnit(u => u === "kg" ? "lbs" : "kg")} className="text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
+              {unit}
+            </button>
+          </div>
         </div>
       </header>
 
       {isResting ? (
-        <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 py-3">
-          <div className="max-w-lg mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl font-bold text-brand tabular-nums">{formatTime(restTimer)}</div>
-              <span className="text-sm text-neutral-500">Rest</span>
+        <div className="bg-[var(--color-surface)] px-4 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <div className="max-w-lg mx-auto flex items-center justify-center gap-6">
+            <div className="relative w-16 h-16">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--color-surface-alt)" strokeWidth="4" />
+                <circle
+                  cx="32" cy="32" r="28" fill="none"
+                  stroke="var(--color-accent)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  style={{ transition: "stroke-dashoffset 1s linear" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-bold tabular-nums">{formatTime(restTimer)}</span>
+              </div>
             </div>
-            <button onClick={skipRest} className="btn-ghost min-h-0 text-sm px-3 py-1">Skip</button>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-[var(--color-text-secondary)]">Rest Timer</span>
+              <button onClick={skipRest} className="text-sm font-semibold text-[var(--color-accent)]">Skip</button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -252,97 +289,125 @@ export default function ActiveWorkout() {
               <div
                 key={ex.exercise_id}
                 ref={isActive ? activeExRef : undefined}
-                className={`border-b border-[var(--color-border)] transition-all ${isActive ? "bg-[var(--color-bg)] exercise-highlight" : "opacity-60"}`}
+                className={`transition-all ${isActive ? "exercise-highlight" : ""}`}
+                style={{ borderBottom: "1px solid var(--color-border)" }}
               >
                 <button
                   onClick={() => setActiveIdx(exIdx)}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-left"
+                  className={`w-full px-4 py-3.5 flex items-center gap-3 text-left ${isActive ? "" : "opacity-50"}`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isDone ? "bg-green-500/20 text-green-400" : isActive ? "bg-brand/20 text-brand" : "bg-neutral-800 text-neutral-500"}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                    isDone
+                      ? "bg-green-500/20 text-green-400"
+                      : isActive
+                      ? "text-white"
+                      : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
+                  }`}
+                    style={isActive && !isDone ? { background: "var(--color-accent-gradient)" } : {}}
+                  >
                     {isDone ? (
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     ) : exIdx + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`font-medium truncate ${isDone ? "text-neutral-500" : ""}`}>{ex.name}</div>
-                    <div className="text-xs text-neutral-600">{ex.muscle_group} · {ex.loggedSets.length}/{ex.default_sets} sets</div>
+                    <div className="font-bold text-base">{ex.name}</div>
+                    <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group} · {ex.loggedSets.length}/{ex.default_sets} sets</div>
                   </div>
                 </button>
 
                 {isActive ? (
-                  <div className="px-4 pb-4">
+                  <div className="px-4 pb-5">
                     {ex.lastSessionSets.length > 0 ? (
-                      <div className="mb-4 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-                        <div className="text-xs text-neutral-500 mb-1.5 font-medium">Last session</div>
+                      <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-surface)]">
+                        <div className="text-[10px] text-[var(--color-text-muted)] mb-1 uppercase tracking-wider font-semibold">Previous</div>
                         <div className="flex gap-3 flex-wrap">
                           {ex.lastSessionSets.map((s: any, i: number) => (
-                            <span key={i} className="text-sm text-neutral-400">{toDisplayWeight(s.weight)}{unit} x {s.reps}</span>
+                            <span key={i} className="text-sm text-[var(--color-text-secondary)]">{toDisplayWeight(s.weight)}{unit} x {s.reps}</span>
                           ))}
                         </div>
                       </div>
                     ) : null}
 
-                    {ex.loggedSets.length > 0 ? (
-                      <div className="mb-4 space-y-1">
-                        {ex.loggedSets.map((s, i) => (
-                          <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-[var(--color-surface)]">
-                            <span className="text-sm text-neutral-400">Set {s.set_number}</span>
-                            <span className="text-sm font-medium">{toDisplayWeight(s.weight)} {unit} x {s.reps}</span>
+                    <div className="mb-3 rounded-xl overflow-hidden bg-[var(--color-surface)]">
+                      <div className="set-row px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]" style={{ borderBottom: "1px solid var(--color-border)" }}>
+                        <span>Set</span>
+                        <span className="text-center">Previous</span>
+                        <span className="text-center">kg</span>
+                        <span className="text-center">Reps</span>
+                        <span></span>
+                      </div>
+                      {Array.from({ length: Math.max(ex.default_sets, ex.loggedSets.length) }, (_, i) => {
+                        const logged = ex.loggedSets[i];
+                        const prev = ex.lastSessionSets[i];
+                        const rowKey = `${ex.exercise_id}-${i + 1}`;
+                        const isLogged = !!logged;
+                        return (
+                          <div
+                            key={i}
+                            className={`set-row px-3 ${isLogged ? "set-row-done" : ""} ${pulsingRow === rowKey ? "log-pulse" : ""}`}
+                          >
+                            <span className="text-sm font-bold text-[var(--color-text-muted)]">{i + 1}</span>
+                            <span className="text-center text-xs text-[var(--color-text-muted)]">
+                              {prev ? `${toDisplayWeight(prev.weight)} x ${prev.reps}` : "—"}
+                            </span>
+                            <span className="text-center text-sm font-bold">
+                              {isLogged ? toDisplayWeight(logged.weight) : "—"}
+                            </span>
+                            <span className="text-center text-sm font-bold">
+                              {isLogged ? logged.reps : "—"}
+                            </span>
+                            <span className="flex justify-center">
+                              {isLogged ? (
+                                <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : null}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    <div className="mb-4">
-                      <div className="text-xs text-neutral-500 mb-2">Weight ({unit})</div>
-                      <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn">-</button>
-                        <div className="w-28 text-center">
-                          <input
-                            type="number"
-                            value={toDisplayWeight(ex.currentWeight)}
-                            onChange={e => {
-                              const v = parseFloat(e.target.value) || 0;
-                              const kg = unit === "lbs" ? Math.round(v / 2.205 * 10) / 10 : v;
-                              setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentWeight: kg } : ex2));
-                            }}
-                            className="w-full text-center text-3xl font-bold bg-transparent outline-none tabular-nums"
-                          />
-                          <div className="text-xs text-neutral-600">{unit}</div>
-                        </div>
-                        <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn">+</button>
-                      </div>
+                        );
+                      })}
                     </div>
 
-                    <div className="mb-5">
-                      <div className="text-xs text-neutral-500 mb-2">Reps</div>
-                      <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-4 mb-3">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn">-</button>
+                        <input
+                          type="number"
+                          value={toDisplayWeight(ex.currentWeight)}
+                          onChange={e => {
+                            const v = parseFloat(e.target.value) || 0;
+                            const kg = unit === "lbs" ? Math.round(v / 2.205 * 10) / 10 : v;
+                            setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentWeight: kg } : ex2));
+                          }}
+                          className="pill-input w-20"
+                        />
+                        <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn">+</button>
+                      </div>
+                      <div className="text-[var(--color-text-muted)] text-lg font-bold">x</div>
+                      <div className="flex items-center gap-2">
                         <button onClick={() => adjustReps(exIdx, -REP_STEP)} className="stepper-btn">-</button>
-                        <div className="w-28 text-center">
-                          <input
-                            type="number"
-                            value={ex.currentReps}
-                            onChange={e => {
-                              const v = parseInt(e.target.value) || 0;
-                              setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentReps: v } : ex2));
-                            }}
-                            className="w-full text-center text-3xl font-bold bg-transparent outline-none tabular-nums"
-                          />
-                          <div className="text-xs text-neutral-600">reps</div>
-                        </div>
+                        <input
+                          type="number"
+                          value={ex.currentReps}
+                          onChange={e => {
+                            const v = parseInt(e.target.value) || 0;
+                            setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentReps: v } : ex2));
+                          }}
+                          className="pill-input w-16"
+                        />
                         <button onClick={() => adjustReps(exIdx, REP_STEP)} className="stepper-btn">+</button>
                       </div>
                     </div>
 
                     <button
                       onClick={() => logSet(exIdx)}
-                      className="w-full btn-primary text-lg py-4 font-bold"
+                      className="w-full btn-primary text-base py-3.5 font-bold"
                     >
                       Log Set {ex.loggedSets.length + 1}
                     </button>
 
                     {ex.loggedSets.length > 0 ? (
-                      <button onClick={() => deleteLastSet(exIdx)} className="w-full btn-ghost text-sm mt-2 text-red-400">
+                      <button onClick={() => deleteLastSet(exIdx)} className="w-full text-center text-sm mt-2 text-red-400/70 py-2 font-medium">
                         Undo Last Set
                       </button>
                     ) : null}
@@ -354,9 +419,9 @@ export default function ActiveWorkout() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-lg border-t border-[var(--color-border)] p-4 z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-xl p-4 z-50" style={{ borderTop: "1px solid var(--color-border)" }}>
         <div className="max-w-lg mx-auto">
-          <button onClick={finishWorkout} className="w-full btn bg-green-600 text-white hover:bg-green-700 min-h-12 text-base font-semibold">
+          <button onClick={finishWorkout} className="w-full btn bg-green-600 text-white hover:bg-green-700 min-h-12 text-base font-semibold rounded-xl">
             Finish Workout
           </button>
         </div>
@@ -371,6 +436,13 @@ export default function ActiveWorkout() {
         onConfirm={() => navigate("/")}
         onCancel={() => setShowLeaveConfirm(false)}
       />
+
+      {showPlateCalc ? (
+        <PlateCalculator
+          unit={unit}
+          onClose={() => setShowPlateCalc(false)}
+        />
+      ) : null}
     </div>
   );
 }
