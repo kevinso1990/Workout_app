@@ -1,0 +1,71 @@
+This is a work-in-progress workout planner and tracker app. Do not start from scratch — review the existing code and continue building on top of what is already there. The app name is to be determined, so use a placeholder like "WorkoutApp" in the code for now and make the name easy to change in one place (e.g. a config or constants file).
+
+The core goal is to make this app radically easy to use — logging a single set should take no more than 3 taps/clicks and under 5 seconds. Every design decision must prioritize speed of data entry and clarity over flashy visuals.
+
+TECH STACK
+Use React (frontend) + Node.js/Express (backend) + SQLite (database via better-sqlite3). Use TailwindCSS for styling with a clean, dark-mode-first design. Only add dependencies if truly necessary.
+
+DATA MODEL (SQLite tables)
+If these tables do not already exist, create them. If they partially exist, migrate carefully without losing existing 
+- exercises (id, name, muscle_group, is_custom)
+- plans (id, name, created_at)
+- plan_exercises (id, plan_id, exercise_id, order, default_sets, default_reps, default_weight)
+- sessions (id, plan_id, started_at, finished_at, rpe, notes)
+- sets (id, session_id, exercise_id, set_number, weight, reps, logged_at)
+- exercise_feedback (id, session_id, exercise_id, rating: 'easy' | 'right' | 'hard')
+
+FEATURE 1 — Workout Plan Builder
+- User can create named workout plans (e.g. "Push Day A", "Pull Day B")
+- Each plan contains ordered exercises with default target sets, reps, and weight
+- Preloaded exercise library of 100+ common exercises (bench press, squat, deadlift, OHP, rows, curls, etc.) with muscle group tags
+- User can add custom exercises with name + muscle group
+- Plans can be reordered via drag-and-drop
+
+FEATURE 2 — Active Workout Tracker (most important screen)
+- When a user starts a workout from a plan, show each exercise as a scrollable list
+- For each set, show large tap targets for: weight (kg/lbs toggle), reps completed, and a "Log Set" button
+- Pre-fill weight and reps from the last session for that exercise automatically — the user just taps Log Set if nothing changed
+- Add +/- steppers for weight (2.5 kg increments) and reps (1 rep increments) so the user never needs to type unless they want to
+- Show a rest timer that auto-starts after logging a set (default 90 seconds, adjustable per exercise)
+- Show the last session's logged sets for the current exercise in a subtle reference panel
+- Allow extra sets, skipped sets, and per-exercise notes
+- Full-screen layout with no nav bar during an active workout
+- Floating "Finish Workout" button always visible
+- Use optimistic UI updates — tapping Log Set must feel instant with no loading spinners
+- Save all in-progress workout data to localStorage as a fallback so no data is ever lost if the browser is closed mid-session
+
+FEATURE 3 — Post-Workout Feedback
+- After finishing a workout, show a "How did that feel?" screen with:
+  - Overall RPE slider (Rate of Perceived Exertion, 1–10)
+  - Per-exercise quick rating: Too Hard | Just Right | Too Easy
+  - Optional free-text notes field
+- Store this feedback and use it in the recommendation engine
+
+FEATURE 4 — Next Workout Recommendation Engine
+Use this logic to generate recommendations for each exercise in the next session:
+- Rating = "Too Easy" OR user hit the top of their rep range on all sets → increase weight by 2.5 kg, reset to bottom of rep range
+- Rating = "Just Right" AND user did not complete all target reps → keep weight, target same reps
+- Rating = "Just Right" AND user completed all target reps → add 1 rep per set (double progression)
+- Rating = "Too Hard" OR RPE 9 or above → decrease weight by 2.5 kg or reduce target reps by 1
+
+Display each recommendation as: "Next session: 3 x 8 @ 82.5 kg" in a highlighted badge. Add a one-tap "Accept Recommendation" button that pre-fills the next plan session with the suggested weights and reps. Show a progress chart per exercise (last 10 sessions) with total volume (weight x reps) as a line graph.
+
+FEATURE 5 — Workout History
+- Full log of all past workouts with date, duration, and total volume (kg x reps summed)
+- Tap any past workout to see the full session detail
+- Auto-detect and display personal records with a trophy badge
+
+SMART UX DETAILS
+- Mobile-first responsive layout — the active workout screen must be fully usable with one thumb
+- All buttons must be at least 48px tall — no small tap targets
+- Auto-highlight the next exercise when a set is completed
+- Show weekly volume per muscle group on the dashboard so the user can spot undertrained muscle groups
+- Show "You usually rest X seconds here" based on historical average rest times per exercise
+- If the user is on a plan and missed a session, the next workout picks up where they left off
+- Quick Add mode on the home screen: tap any recent exercise to instantly log a single exercise without loading a full plan
+- 3-step onboarding tooltip sequence shown only on first use, never again
+- Dark mode by default with high contrast text; include a light mode toggle
+- Add PWA support with a service worker so the app works offline after first load
+
+THE GOLD STANDARD
+A user should be able to walk into the gym, open the app, and log their first set within 10 seconds of loading. Every single feature must serve that goal.
