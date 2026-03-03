@@ -59,6 +59,8 @@ function setupCors(app: express.Application) {
     return res.status(status).json({ message });
   });
 
+  const port = parseInt(process.env.PORT || "5000", 10);
+
   if (isProd) {
     const distPath = path.resolve(process.cwd(), "dist/public");
     if (fs.existsSync(distPath)) {
@@ -67,23 +69,41 @@ function setupCors(app: express.Application) {
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     }
+
+    const server = app.listen(port, "0.0.0.0", () => {
+      log(`Server running on port ${port}`);
+    });
+
+    const proxyPort = 8081;
+    if (proxyPort !== port) {
+      app.listen(proxyPort, "0.0.0.0", () => {
+        log(`Server also listening on port ${proxyPort} (proxy)`);
+      });
+    }
   } else {
+    const { createServer: createHttpServer } = await import("http");
+    const httpServer = createHttpServer(app);
+
     const vite = await createViteServer({
-      server: { middlewareMode: true, allowedHosts: true },
+      server: {
+        middlewareMode: true,
+        allowedHosts: true,
+        hmr: { server: httpServer },
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  }
 
-  const port = parseInt(process.env.PORT || "5000", 10);
-  app.listen(port, "0.0.0.0", () => {
-    log(`Server running on port ${port}`);
-  });
-
-  const proxyPort = 8081;
-  if (proxyPort !== port) {
-    app.listen(proxyPort, "0.0.0.0", () => {
-      log(`Server also listening on port ${proxyPort} (proxy)`);
+    httpServer.listen(port, "0.0.0.0", () => {
+      log(`Server running on port ${port}`);
     });
+
+    const proxyPort = 8081;
+    if (proxyPort !== port) {
+      const httpServer2 = createHttpServer(app);
+      httpServer2.listen(proxyPort, "0.0.0.0", () => {
+        log(`Server also listening on port ${proxyPort} (proxy)`);
+      });
+    }
   }
 })();
