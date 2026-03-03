@@ -11,6 +11,7 @@ WorkoutApp is a mobile-first web application for creating workout plans and trac
 - **Database**: SQLite via better-sqlite3 (WAL mode)
 - **Build**: Vite with @tailwindcss/vite plugin
 - **Charts**: Inline SVG (ExerciseChart component with gradient fills)
+- **Exercise Data**: MuscleWiki API (proxied through backend, cached in SQLite)
 
 ## Architecture
 
@@ -19,13 +20,14 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 
 ### Database (server/db.ts)
 - SQLite file: `workout.db` in project root
-- Tables: exercises, plans, plan_exercises, sessions, sets, exercise_feedback
+- Tables: exercises, plans, plan_exercises, sessions, sets, exercise_feedback, body_weight, exercise_media_cache
 - 100+ seeded exercises across 10 muscle groups (Chest, Back, Shoulders, Legs, Biceps, Triceps, Core, Traps, Forearms)
 - WAL mode + foreign keys enabled
 
 ### API Routes (server/routes.ts)
 - `GET/POST /api/exercises` - Exercise library CRUD
 - `GET/POST/PUT/DELETE /api/plans` - Plan management
+- `POST /api/plans/auto-generate` - Auto-generate plans from onboarding (frequency/experience/goal)
 - `POST /api/sessions` - Start workout session
 - `PUT /api/sessions/:id` - Finish session (with RPE, notes)
 - `GET /api/sessions` - List sessions with computed volume/duration
@@ -40,16 +42,30 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - `GET /api/stats/exercise-history/:id` - Exercise progression data
 - `GET /api/stats/last-sets/:id` - Last session's sets for pre-fill
 - `GET /api/stats/rest-average/:id` - Historical rest time average
+- `GET /api/stats/totals` - Total workouts, volume, streaks
+- `GET /api/stats/weekly-history` - 8-week volume history
+- `GET /api/stats/consistency` - Workout dates for calendar (last 6 months)
+- `GET /api/stats/exercise-progress/:id` - 1RM, best weight, volume progression
+- `GET /api/stats/muscle-volume-7d` - Muscle group volume (7 days)
+- `GET /api/stats/logged-exercises` - All exercises user has logged
+- `GET /api/musclewiki/search?name=...` - MuscleWiki proxy with caching
+- `GET/POST /api/body-weight` - Body weight logging
 
 ### Frontend Pages
 - **Dashboard** (`/`) - Hero card for next workout, weekly schedule strip (Mon-Sun), volume by muscle, recent activity
 - **Plans** (`/plans`) - List/delete plans with muscle group tag pills
-- **PlanBuilder** (`/plans/new`, `/plans/:id/edit`) - Create/edit plans with exercise library modal, up/down reorder, custom exercise creation
+- **PlanBuilder** (`/plans/new`, `/plans/:id/edit`) - Create/edit plans with exercise library modal, up/down reorder, custom exercise creation, MuscleWiki exercise thumbnails
 - **ActiveWorkout** (`/workout/:sessionId`) - Full-screen workout tracker with table-like set rows (Set | Previous | Weight | Reps | Done), pill-shaped inputs, circular SVG rest timer, plate calculator, localStorage backup, kg/lbs toggle, auto-highlight next exercise
 - **PostWorkout** (`/workout/:sessionId/finish`) - Full-screen summary card (duration, volume, sets), confetti animation, RPE slider, per-exercise feedback
+- **Progress** (`/progress`) - Stats dashboard (4 stat cards), weekly volume bar chart (8 weeks), per-exercise progress (1RM/weight/volume charts), muscle group heatmap, consistency calendar (GitHub-style), body weight tracking
 - **History** (`/history`) - Workout log with PR badges (star icons)
 - **SessionDetail** (`/session/:id`) - Sets breakdown with gradient-fill progress charts, recommendation badges
 - **Profile** (`/profile`) - Stats overview, theme toggle (dark/light)
+
+### New Components
+- **ExerciseMedia** (`client/components/ExerciseMedia.tsx`) - Fetches and displays MuscleWiki exercise data (video thumbnail, muscle tags, body map images, step-by-step instructions). Supports compact and full modes. Client-side memory cache.
+- **MuscleHeatmap** (`client/components/MuscleHeatmap.tsx`) - SVG body outline with muscles color-coded by 7-day training frequency. Accent gradient for trained muscles, muted for untrained.
+- **ConsistencyCalendar** (`client/components/ConsistencyCalendar.tsx`) - GitHub-style contribution grid showing last 6 months of workouts. Color-coded: empty = no workout, accent = workout, purple = PR day.
 
 ### Design System — Alpha Progression Style (client/index.css)
 - Deep dark background (#0f0f0f), card surfaces (#1c1c1e)
@@ -61,7 +77,7 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - All written as plain CSS (no @apply) for Tailwind v4 compatibility
 
 ### Navigation
-- 4-tab bottom nav: Home, Plans, History, Profile
+- 5-tab bottom nav: Home, Plans, Progress, History, Profile
 - Active tab uses accent color (blue), inactive uses muted gray
 - Filled icons for active state, outlined for inactive
 
@@ -76,9 +92,19 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - Supports kg/lbs, standard Olympic bar (20kg)
 
 ### Onboarding (client/components/Onboarding.tsx)
-- 3-step guided overlay for first-time users
-- Steps: Create a Plan, Start a Workout, Track Progress
+- 5-step guided overlay for first-time users
+- Steps: Welcome → Training Frequency (2-6 days) → Experience Level → Goal → Recommended Split
+- Auto-generates workout plans via POST /api/plans/auto-generate
+- Generates: Full Body (2-3 days), Upper/Lower (4 days), PPL (5-6 days)
+- Sets/reps based on goal: muscle 3x10, strength 4x5, fat/fitness 3x13
+- "Use Recommended Split" or "Build My Own" options
 - Completion stored in localStorage (`workoutapp_onboarding_done`)
+
+### Auto-Plan Generation Logic
+- 2-3 days → Full Body (Squat, RDL, Bench, Row, OHP, Plank)
+- 4 days → Upper A/B + Lower A/B with exercise variation
+- 5-6 days → Push/Pull/Legs split
+- Goal-based rep ranges: muscle 3x10, strength 4x5, fat/fitness 3x13
 
 ### Key Config (client/config.ts)
 - APP_NAME, DEFAULT_REST_SECONDS (90), WEIGHT_STEP (2.5), REP_STEP (1), DEFAULT_SETS (3), DEFAULT_REPS (10)
@@ -114,3 +140,4 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - Weight stored in kg internally; lbs display is frontend-only conversion
 - localStorage backup key: `workout_backup`
 - Old React Native files in `client/screens/` and `client/navigation/` exist but are not imported
+- MuscleWiki API responses cached in exercise_media_cache table (7-day TTL)

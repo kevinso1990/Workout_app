@@ -1,0 +1,101 @@
+ADDITIONAL FEATURES — Exercise Illustrations, Onboarding, and Progress Tracking
+
+---
+
+EXERCISE ILLUSTRATIONS & MUSCLE DIAGRAMS
+
+Integrate the MuscleWiki API (api.musclewiki.com) to power all exercise visuals. This API provides 1,800+ exercises with video demonstrations and muscle group data.
+
+- On every exercise card (in the plan builder, active workout, and exercise library), show an animated GIF or video thumbnail of the exercise being performed
+- Below the video/gif, show an anatomical muscle diagram highlighting the primary muscle (in the accent color blue/violet) and secondary muscles (in a lighter muted accent color)
+- Use the Muscle Group Image Generator API (freewebapi.com/health-and-fitness-apis/muscle-group-image-generator-api) to generate dual-color muscle highlight images dynamically — primary muscles in accent blue, secondary muscles in muted teal
+- In the exercise library browser, allow users to tap any muscle on an interactive body diagram to filter exercises by that muscle group
+- Each exercise detail page should show: name, muscle diagram, video demo, step-by-step instructions, and equipment needed
+- Cache all exercise media locally after first load so it works offline
+
+---
+
+ONBOARDING FLOW — Training Frequency & Split Recommendation
+
+Show this onboarding flow only on first launch. It should be skippable at any step but encourage completion.
+
+STEP 1 — Welcome screen
+- Brief headline: "Let's build your perfect workout plan"
+- Subtext: "Answer 3 quick questions and we'll set everything up for you"
+- Single "Get Started" button
+
+STEP 2 — Training frequency
+- Ask: "How many days per week can you train?"
+- Show large selectable tiles for: 2, 3, 4, 5, 6 days
+- Each tile shows the recommended split name underneath in muted text:
+  - 2 days → Full Body
+  - 3 days → Full Body or Push/Pull/Legs (3-day)
+  - 4 days → Upper / Lower Split
+  - 5 days → Upper / Lower + Full Body
+  - 6 days → Push / Pull / Legs (PPL x2)
+
+STEP 3 — Experience level
+- Ask: "What is your training experience?"
+- Selectable tiles: Beginner (under 1 year) | Intermediate (1–3 years) | Advanced (3+ years)
+
+STEP 4 — Goal
+- Ask: "What is your main goal?"
+- Selectable tiles: Build Muscle | Gain Strength | Lose Fat | General Fitness
+
+STEP 5 — Split choice
+- Based on the answers above, show a recommended plan with a brief explanation:
+  - Example: "Based on 4 days/week and your intermediate level, we recommend the Upper/Lower Split. It trains each muscle group twice per week for maximum hypertrophy."
+- Show two options as cards:
+  - "Use Recommended Split" — auto-generates the full plan with exercises pre-filled based on their goal and experience level
+  - "Build My Own" — takes the user directly to the plan builder
+
+AUTO-GENERATED PLAN LOGIC
+When "Use Recommended Split" is chosen, auto-generate workout plans using these rules:
+- Beginner Full Body (2–3 days): Squat, Romanian Deadlift, Bench Press, Barbell Row, OHP, Plank — 3 sets x 8–10 reps each
+- Intermediate Upper/Lower (4 days):
+  - Upper A: Bench Press, Incline DB Press, Barbell Row, Lat Pulldown, OHP, Bicep Curl, Tricep Pushdown
+  - Lower A: Squat, Romanian Deadlift, Leg Press, Leg Curl, Calf Raise
+  - Upper B and Lower B: slight exercise variation (e.g. swap Bench for DB Press, Squat for Bulgarian Split Squat)
+- PPL (6 days): Push (chest/shoulders/triceps), Pull (back/biceps), Legs — each done twice per week
+- For all auto-generated plans, default weights start at 0 kg and reps target is middle of the recommended rep range for their goal:
+  - Build Muscle: 3–4 sets x 8–12 reps
+  - Gain Strength: 4–5 sets x 4–6 reps
+  - Lose Fat / General Fitness: 3 sets x 12–15 reps
+
+---
+
+PROGRESS TRACKING — Dedicated Progress Screen
+
+Add a "Progress" tab to the bottom navigation bar (replace or add next to History).
+
+OVERVIEW DASHBOARD
+- At the top, show 4 summary stat cards in a 2x2 grid:
+  - Total Workouts Completed
+  - Total Volume Lifted (kg, all time)
+  - Current Streak (consecutive weeks with at least the target number of sessions)
+  - Longest Streak (all time)
+- Below, show a Weekly Volume bar chart (last 8 weeks) using the accent-colored rounded bars — each bar represents total kg lifted that week
+
+PER-EXERCISE PROGRESS
+- Searchable and filterable list of all exercises the user has ever logged
+- Tap any exercise to open its detail progress view:
+  - Line graph: Estimated 1 Rep Max over time (calculate as weight x (1 + reps/30) — the Epley formula)
+  - Line graph: Best set weight over time
+  - Bar chart: Total volume per session (last 10 sessions)
+  - Table: Personal records — best weight, best reps at weight, best volume in a single set
+  - All charts use gradient fill under the line in the accent color
+
+MUSCLE GROUP HEATMAP
+- Show the anatomical body diagram with a heatmap overlay
+- Muscles trained more frequently in the last 7 days appear in brighter accent color; undertrained muscles appear in muted gray
+- This gives the user an instant visual of muscle balance — model this directly after how Alpha Progression shows muscle recovery status
+
+BODY WEIGHT & MEASUREMENTS (OPTIONAL)
+- Allow users to log their bodyweight over time
+- Show a line chart of bodyweight trend
+- Option to also log measurements (chest, waist, arms, legs) and chart them over time
+
+CONSISTENCY CALENDAR
+- A GitHub-style contribution calendar showing workout frequency
+- Each day is a colored square: empty = no workout, light accent = workout done, bright accent = PR achieved that day
+- Show the last 6 months by default with a scroll to see further back

@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { DEFAULT_REST_SECONDS, WEIGHT_STEP, REP_STEP } from "../config";
 import ConfirmModal from "../components/ConfirmModal";
 import PlateCalculator from "../components/PlateCalculator";
+import ExerciseMedia from "../components/ExerciseMedia";
 
 interface LoggedSet {
   id?: number;
@@ -317,6 +318,9 @@ export default function ActiveWorkout() {
 
                 {isActive ? (
                   <div className="px-4 pb-5">
+                    <div className="mb-3">
+                      <ExerciseMedia exerciseName={ex.name} showInstructions />
+                    </div>
                     {ex.lastSessionSets.length > 0 ? (
                       <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-surface)]">
                         <div className="text-[10px] text-[var(--color-text-muted)] mb-1 uppercase tracking-wider font-semibold">Previous</div>

@@ -64,6 +64,21 @@ export function initDb() {
       FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
       FOREIGN KEY (exercise_id) REFERENCES exercises(id)
     );
+
+    CREATE TABLE IF NOT EXISTS body_weight (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      weight_kg REAL NOT NULL,
+      logged_date TEXT NOT NULL DEFAULT (date('now')),
+      notes TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS exercise_media_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      exercise_name TEXT NOT NULL,
+      data TEXT NOT NULL,
+      fetched_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_media_name ON exercise_media_cache(exercise_name);
   `);
 
   seedExercises();

@@ -29,6 +29,18 @@ const NAV_ITEMS = [
     ),
   },
   {
+    path: "/progress",
+    label: "Progress",
+    icon: (active: boolean) => (
+      <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+        {active
+          ? <path d="M3 3v18h18V3H3zm4 14H5v-6h2v6zm4 0H9V7h2v10zm4 0h-2v-4h2v4zm4 0h-2V5h2v12z" />
+          : <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18M7 17v-4m4 4V9m4 8v-2m4 2V5" />
+        }
+      </svg>
+    ),
+  },
+  {
     path: "/history",
     label: "History",
     icon: (active: boolean) => (

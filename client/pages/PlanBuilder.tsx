@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { api } from "../lib/api";
 import { DEFAULT_SETS, DEFAULT_REPS, DEFAULT_WEIGHT } from "../config";
+import ExerciseMedia from "../components/ExerciseMedia";
 
 interface PlanExercise {
   exercise_id: number;
@@ -145,6 +146,7 @@ export default function PlanBuilder() {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{ex.name}</div>
                     <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
+                    <ExerciseMedia exerciseName={ex.name} compact />
                   </div>
                   <button onClick={() => removeExercise(idx)} className="text-[var(--color-text-muted)] hover:text-red-400 p-1">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -211,11 +213,14 @@ export default function PlanBuilder() {
                     onClick={() => addExercise(ex)}
                     className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[var(--color-surface)] active:bg-[var(--color-surface-alt)] transition-colors text-left"
                   >
-                    <div>
-                      <div className="font-medium">{ex.name}</div>
-                      <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <ExerciseMedia exerciseName={ex.name} compact />
+                      <div className="min-w-0">
+                        <div className="font-medium">{ex.name}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
+                      </div>
                     </div>
-                    <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                    <svg className="w-5 h-5 text-[var(--color-accent)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                   </button>
                 ))}
               </div>

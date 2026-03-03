@@ -45,4 +45,20 @@ export const api = {
   getExerciseHistory: (exerciseId: number) => request<any[]>(`/api/stats/exercise-history/${exerciseId}`),
   getLastSets: (exerciseId: number) => request<any[]>(`/api/stats/last-sets/${exerciseId}`),
   getRestAverage: (exerciseId: number) => request<any>(`/api/stats/rest-average/${exerciseId}`),
+
+  searchMuscleWiki: (name: string) => request<any[]>(`/api/musclewiki/search?name=${encodeURIComponent(name)}`),
+
+  getBodyWeight: () => request<any[]>("/api/body-weight"),
+  logBodyWeight: (data: { weight_kg: number; logged_date?: string; notes?: string }) =>
+    request<any>("/api/body-weight", { method: "POST", body: JSON.stringify(data) }),
+
+  getStatsTotals: () => request<any>("/api/stats/totals"),
+  getWeeklyHistory: () => request<any[]>("/api/stats/weekly-history"),
+  getConsistency: () => request<any[]>("/api/stats/consistency"),
+  getExerciseProgress: (exerciseId: number) => request<any>(`/api/stats/exercise-progress/${exerciseId}`),
+  getMuscleVolume7d: () => request<any[]>("/api/stats/muscle-volume-7d"),
+  getLoggedExercises: () => request<any[]>("/api/stats/logged-exercises"),
+
+  autoGeneratePlans: (data: { frequency: number; experience: string; goal: string }) =>
+    request<any>("/api/plans/auto-generate", { method: "POST", body: JSON.stringify(data) }),
 };
