@@ -74,6 +74,7 @@
     "dropSet": "+ Série dégressive",
     "drop": "Dégressive",
     "superset": "Superset",
+    "notesPlaceholder": "Notes pour cet exercice...",
     "finishWorkout": "Terminer l'entraînement",
     "leaveWorkout": "Quitter l'entraînement ?",
     "leaveMessage": "Votre progression est sauvegardée et vous pouvez reprendre plus tard.",
@@ -185,7 +186,16 @@
     "enableNotifications": "Activer les notifications",
     "notificationsEnabled": "Notifications activées",
     "notifTitle": "Restez sur la bonne voie avec des rappels",
-    "notifDesc": "Recevez des rappels d'entraînement, des résumés hebdomadaires et des rappels d'inactivité."
+    "notifDesc": "Recevez des rappels d'entraînement, des résumés hebdomadaires et des rappels d'inactivité.",
+    "equipmentQuestion": "Quel équipement avez-vous ?",
+    "barbell": "Barre & salle de sport",
+    "dumbbell": "Haltères",
+    "kettlebell": "Kettlebell",
+    "bodyweight": "Poids du corps",
+    "splitDescFullBody": "{{days}} jours/semaine travaillant tous les muscles à chaque séance.",
+    "splitDescUpperLower": "Alternance haut du corps et bas du corps. Chaque groupe musculaire est travaillé 2x par semaine.",
+    "splitDescUpperLowerFull": "Split 5 jours combinant haut/bas et full body pour un volume équilibré.",
+    "splitDescPPL": "Le split classique 6 jours : Push, Pull, Legs — chacun deux fois par semaine."
   },
   "splits": {
     "fullBody": "Full Body",

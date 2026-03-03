@@ -36,9 +36,9 @@ interface ExerciseState {
 const BACKUP_KEY = "workout_backup";
 const SUPERSET_COLORS = ["#4f8ef7", "#7c5bf5", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
 
-function saveBackup(sessionId: number, exerciseStates: ExerciseState[], activeIdx: number) {
+function saveBackup(sessionId: number, exerciseStates: ExerciseState[], activeIdx: number, startedAt: number) {
   try {
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ sessionId, exerciseStates, activeIdx, savedAt: Date.now() }));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ sessionId, exerciseStates, activeIdx, startedAt, savedAt: Date.now() }));
   } catch {}
 }
 
@@ -62,7 +62,7 @@ export default function ActiveWorkout() {
   const [exercises, setExercises] = useState<ExerciseState[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
@@ -84,7 +84,7 @@ export default function ActiveWorkout() {
 
   useEffect(() => {
     if (exercises.length > 0) {
-      saveBackup(sessionId, exercises, activeIdx);
+      saveBackup(sessionId, exercises, activeIdx, startTime);
     }
   }, [exercises, activeIdx]);
 
@@ -101,6 +101,7 @@ export default function ActiveWorkout() {
       if (backup && backup.sessionId === sessionId) {
         setExercises(backup.exerciseStates);
         setActiveIdx(backup.activeIdx);
+        if (backup.startedAt) setStartTime(backup.startedAt);
         setLoading(false);
         return;
       }
@@ -484,6 +485,19 @@ export default function ActiveWorkout() {
                           </button>
                         </div>
                       ) : null}
+
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          value={ex.notes}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, notes: val } : ex2));
+                          }}
+                          placeholder={t("activeWorkout.notesPlaceholder")}
+                          className="input w-full text-sm py-2"
+                        />
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -507,7 +521,7 @@ export default function ActiveWorkout() {
         message={t("activeWorkout.leaveMessage")}
         confirmLabel={t("activeWorkout.leave")}
         destructive
-        onConfirm={() => navigate("/")}
+        onConfirm={() => { clearBackup(); navigate("/"); }}
         onCancel={() => setShowLeaveConfirm(false)}
       />
 

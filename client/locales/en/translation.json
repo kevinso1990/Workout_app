@@ -74,6 +74,7 @@
     "dropSet": "+ Drop Set",
     "drop": "Drop",
     "superset": "Superset",
+    "notesPlaceholder": "Notes for this exercise...",
     "finishWorkout": "Finish Workout",
     "leaveWorkout": "Leave Workout?",
     "leaveMessage": "Your progress is saved and you can resume later.",
@@ -185,7 +186,16 @@
     "enableNotifications": "Enable Notifications",
     "notificationsEnabled": "Notifications enabled",
     "notifTitle": "Stay on track with reminders",
-    "notifDesc": "Get workout reminders, weekly summaries, and inactivity nudges to keep your gains consistent."
+    "notifDesc": "Get workout reminders, weekly summaries, and inactivity nudges to keep your gains consistent.",
+    "equipmentQuestion": "What equipment do you have?",
+    "barbell": "Barbell & Gym",
+    "dumbbell": "Dumbbells",
+    "kettlebell": "Kettlebell",
+    "bodyweight": "Bodyweight",
+    "splitDescFullBody": "{{days}} days/week hitting all major muscles each session.",
+    "splitDescUpperLower": "Train upper body and lower body on alternating days. Each muscle group gets hit twice per week.",
+    "splitDescUpperLowerFull": "5-day split combining upper/lower days with a full body session for balanced weekly volume.",
+    "splitDescPPL": "The classic 6-day split: Push, Pull, Legs — each twice per week."
   },
   "splits": {
     "fullBody": "Full Body",

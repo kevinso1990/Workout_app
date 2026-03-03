@@ -29,6 +29,7 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - sets has `is_drop_set` INTEGER DEFAULT 0, `parent_set_id` INTEGER (FK to sets.id)
 - muscle_fatigue has muscle_group, fatigue_score REAL, last_trained_at TEXT, session_id INTEGER
 - push_subscriptions has endpoint, keys_p256dh, keys_auth, created_at
+- notification_log has notification_type TEXT, sent_date TEXT (UNIQUE pair, prevents duplicate notifications per day)
 
 ### API Routes (server/routes.ts)
 - `GET/POST /api/exercises` - Exercise library CRUD

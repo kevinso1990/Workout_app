@@ -74,6 +74,7 @@
     "dropSet": "+ Reduktionssatz",
     "drop": "Reduktion",
     "superset": "Supersatz",
+    "notesPlaceholder": "Notizen zu dieser Übung...",
     "finishWorkout": "Training beenden",
     "leaveWorkout": "Training verlassen?",
     "leaveMessage": "Dein Fortschritt ist gespeichert und du kannst später fortfahren.",
@@ -185,7 +186,16 @@
     "enableNotifications": "Benachrichtigungen aktivieren",
     "notificationsEnabled": "Benachrichtigungen aktiviert",
     "notifTitle": "Bleib auf Kurs mit Erinnerungen",
-    "notifDesc": "Erhalte Trainingserinnerungen, wöchentliche Zusammenfassungen und Inaktivitäts-Hinweise."
+    "notifDesc": "Erhalte Trainingserinnerungen, wöchentliche Zusammenfassungen und Inaktivitäts-Hinweise.",
+    "equipmentQuestion": "Welche Ausrüstung hast du?",
+    "barbell": "Langhantel & Studio",
+    "dumbbell": "Kurzhanteln",
+    "kettlebell": "Kettlebell",
+    "bodyweight": "Körpergewicht",
+    "splitDescFullBody": "{{days}} Tage/Woche alle Hauptmuskelgruppen pro Einheit.",
+    "splitDescUpperLower": "Ober- und Unterkörper im Wechsel. Jede Muskelgruppe wird 2x pro Woche trainiert.",
+    "splitDescUpperLowerFull": "5-Tage-Split mit Ober-/Unterkörper und Ganzkörpereinheit für ausgeglichenes Volumen.",
+    "splitDescPPL": "Der klassische 6-Tage-Split: Push, Pull, Legs — je zweimal pro Woche."
   },
   "splits": {
     "fullBody": "Ganzkörper",

@@ -1,0 +1,172 @@
+UAT PRE-DEPLOYMENT TESTING — Do not add new features. Only test, fix bugs, and stabilize.
+
+Before this app is handed to real users for prototype testing, perform a full UAT 
+(User Acceptance Testing) pass. Go through every feature systematically, identify 
+bugs, broken flows, and UX issues, fix them, and confirm everything works end-to-end.
+
+---
+
+TESTING SCOPE
+
+Work through each area below in order. For each item, test it, note if it passes or 
+fails, fix any failures, then move on.
+
+---
+
+1. ONBOARDING FLOW
+
+- [ ] App loads cleanly on first visit with no console errors
+- [ ] Onboarding triggers automatically on first launch and never again after completion
+- [ ] All 5 onboarding steps display correctly on mobile screen width (375px) and desktop
+- [ ] Training frequency selection (2–6 days) works and saves correctly
+- [ ] Experience level selection saves correctly
+- [ ] Goal selection saves correctly
+- [ ] Equipment selection saves correctly
+- [ ] "Use Recommended Split" generates a complete plan with exercises, sets, reps, and 
+     default weights
+- [ ] "Build My Own" correctly routes to the plan builder
+- [ ] Language auto-detection works on first load
+- [ ] All onboarding text is translated in all 6 supported languages (en, de, fr, es, it, pt)
+- [ ] Skipping onboarding does not cause any crash or blank screen
+
+---
+
+2. PLAN BUILDER
+
+- [ ] User can create a new plan with a custom name
+- [ ] Exercise library loads with 100+ exercises
+- [ ] Search and muscle group filter work correctly
+- [ ] Kettlebell equipment filter returns kettlebell-specific exercises
+- [ ] User can add exercises to a plan
+- [ ] User can set default sets, reps, and weight per exercise
+- [ ] Drag-and-drop reordering works on both mobile and desktop
+- [ ] User can create a superset by linking two exercises — they display grouped with a label
+- [ ] User can delete an exercise from a plan
+- [ ] User can delete an entire plan
+- [ ] Plan is saved and persists after page refresh
+
+---
+
+3. ACTIVE WORKOUT TRACKER
+
+- [ ] Starting a workout from a plan loads all exercises correctly
+- [ ] Previous session weights and reps are pre-filled automatically
+- [ ] +/- steppers for weight (2.5 kg increments) and reps (1 increment) work correctly
+- [ ] Tapping "Log Set" marks the set as complete instantly with no loading delay
+- [ ] Completed set rows show a visual highlight/checkmark and are not removed from view
+- [ ] Rest timer auto-starts after logging a set and counts down correctly
+- [ ] Rest timer can be dismissed or adjusted
+- [ ] Last session reference panel shows previous data correctly
+- [ ] Extra sets can be added mid-workout
+- [ ] Sets can be skipped
+- [ ] Drop sets can be added — they appear indented with reduced weight pre-filled
+- [ ] Superset exercises show back-to-back with rest only after both are completed
+- [ ] Notes can be added per exercise
+- [ ] Floating "Finish Workout" button is always visible during workout
+- [ ] No nav bar appears during active workout — full screen is used
+- [ ] All in-progress workout data is saved to localStorage — closing and reopening the 
+     browser mid-workout restores the session
+- [ ] kg/lbs toggle works and converts all values correctly
+- [ ] Active workout screen is fully usable on a 375px wide mobile screen with one thumb
+
+---
+
+4. POST-WORKOUT FEEDBACK
+
+- [ ] "How did that feel?" screen appears immediately after tapping "Finish Workout"
+- [ ] RPE slider (1–10) works and saves correctly
+- [ ] Per-exercise rating (Too Hard / Just Right / Too Easy) works for all exercises
+- [ ] Optional notes field saves correctly
+- [ ] Submitting feedback saves to the database without errors
+- [ ] Workout is added to history after feedback is submitted
+
+---
+
+5. RECOMMENDATION ENGINE
+
+- [ ] Recommendations are generated for every exercise after feedback is saved
+- [ ] Too Easy → weight increases by 2.5 kg, reps reset to bottom of range
+- [ ] Just Right + all reps completed → reps increase by 1
+- [ ] Just Right + reps not completed → weight and reps stay the same
+- [ ] Too Hard or RPE 9+ → weight decreases by 2.5 kg or reps decrease by 1
+- [ ] Recommendations display as highlighted badges with correct values
+- [ ] "Accept Recommendation" button pre-fills the next session correctly
+- [ ] Recommendations persist and are visible on the plan detail page
+
+---
+
+6. PROGRESS TRACKING
+
+- [ ] Progress tab loads without errors
+- [ ] Summary stat cards show correct values (total workouts, volume, streak)
+- [ ] Weekly volume bar chart renders correctly with real data
+- [ ] Tapping an exercise opens its detail progress view
+- [ ] 1RM line chart calculates and displays correctly using weight x (1 + reps/30)
+- [ ] Volume bar chart per exercise shows last 10 sessions
+- [ ] Personal records are detected correctly and shown with a trophy badge
+- [ ] Muscle group heatmap renders and updates based on recent sessions
+- [ ] Consistency calendar renders with correct workout days highlighted
+
+---
+
+7. WORKOUT HISTORY
+
+- [ ] All past workouts appear in history with correct date, duration, and total volume
+- [ ] Tapping a past workout shows the full session detail
+- [ ] Personal records show a trophy badge in history
+
+---
+
+8. RECOVERY TRACKING
+
+- [ ] Recovery status panel appears on the home screen after at least one workout is logged
+- [ ] Recovery bars show correct color coding (red / orange / green)
+- [ ] Warning banner appears when starting a workout with an under-recovered muscle
+- [ ] Warning does not block the workout — it only shows a banner
+
+---
+
+9. NOTIFICATIONS
+
+- [ ] Permission prompt appears during onboarding with a clear explanation
+- [ ] Workout reminder notification fires at the correct time
+- [ ] Inactivity nudge fires after 3 days of no logged workouts
+- [ ] Weekly summary notification fires on Sunday evening
+- [ ] PR celebration notification fires immediately after a PR session
+- [ ] All notification types can be individually toggled in Settings
+
+---
+
+10. MULTI-LANGUAGE
+
+- [ ] All 6 languages render correctly with no missing translation keys
+- [ ] Language switch in Settings updates all UI text immediately without page reload
+- [ ] Dates and numbers format correctly per locale
+- [ ] kg/lbs default follows regional setting
+- [ ] No hardcoded English strings exist anywhere in the UI
+
+---
+
+11. GENERAL STABILITY & PERFORMANCE
+
+- [ ] App loads in under 3 seconds on a standard mobile connection
+- [ ] No console errors or warnings on any screen
+- [ ] All API calls to MuscleWiki handle failures gracefully with a fallback message
+- [ ] App works fully offline after first load (PWA service worker confirmed active)
+- [ ] All data persists correctly after hard refresh
+- [ ] App is fully usable on Chrome, Safari, and Firefox
+- [ ] App layout is correct at 375px (iPhone SE), 390px (iPhone 14), and 1280px (desktop)
+- [ ] Dark mode and light mode toggle both render without broken styles
+- [ ] No workout data is ever silently lost — all errors are caught and logged
+
+---
+
+AFTER TESTING
+
+Once all items above pass:
+1. Generate a short UAT report summarizing: what was tested, what was fixed, and any 
+   known remaining issues that are low priority
+2. Make sure the app is running stably on the Replit deployment URL
+3. Confirm the PWA is installable on mobile (manifest.json and service worker are valid)
+4. Do a final check that no API keys, secrets, or sensitive config values are 
+   hardcoded in the frontend code

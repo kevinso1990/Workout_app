@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { isOnboardingDone, markOnboardingDone } from "../lib/onboarding";
 import { api } from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { subscribeToPush } from "../lib/notifications";
 
 const FREQUENCIES = [
   { days: 2, splitKey: "splits.fullBody" },
@@ -19,17 +20,24 @@ const EXPERIENCES = [
 ];
 
 const GOALS = [
-  { key: "muscle", labelKey: "onboarding.buildMuscle", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" },
-  { key: "strength", labelKey: "onboarding.gainStrength", icon: "M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2.71 7l1.43 1.43L2.71 9.86 4.14 11.29 7 8.43 15.57 17l-2.86 2.86 1.43 1.43 1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 2.14-2.14 1.43 1.43" },
-  { key: "fat", labelKey: "onboarding.loseFat", icon: "M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 16.89 19.17C18.55 17.36 19.07 14.68 17.66 12.55L17.66 11.2Z" },
-  { key: "fitness", labelKey: "onboarding.generalFitness", icon: "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" },
+  { key: "muscle", labelKey: "onboarding.buildMuscle" },
+  { key: "strength", labelKey: "onboarding.gainStrength" },
+  { key: "fat", labelKey: "onboarding.loseFat" },
+  { key: "fitness", labelKey: "onboarding.generalFitness" },
 ];
 
-function getSplitRecommendation(freq: number, exp: string) {
-  if (freq <= 3) return { name: "Full Body", desc: `${freq} days/week hitting all major muscles each session. Great for ${exp === "beginner" ? "building a foundation" : "efficient training"}.` };
-  if (freq === 4) return { name: "Upper / Lower Split", desc: "Train upper body and lower body on alternating days. Each muscle group gets hit twice per week for maximum growth." };
-  if (freq === 5) return { name: "Upper / Lower + Full Body", desc: "5-day split combining upper/lower days with a full body session for balanced weekly volume." };
-  return { name: "Push / Pull / Legs (PPL)", desc: "The classic 6-day split: Push (chest/shoulders/triceps), Pull (back/biceps), Legs — each twice per week." };
+const EQUIPMENT = [
+  { key: "barbell", labelKey: "onboarding.barbell" },
+  { key: "dumbbell", labelKey: "onboarding.dumbbell" },
+  { key: "kettlebell", labelKey: "onboarding.kettlebell" },
+  { key: "bodyweight", labelKey: "onboarding.bodyweight" },
+];
+
+function getSplitRecommendation(freq: number, t: (key: string, opts?: any) => string) {
+  if (freq <= 3) return { name: t("splits.fullBody"), desc: t("onboarding.splitDescFullBody", { days: freq }) };
+  if (freq === 4) return { name: t("splits.upperLower"), desc: t("onboarding.splitDescUpperLower") };
+  if (freq === 5) return { name: t("splits.upperLowerFull"), desc: t("onboarding.splitDescUpperLowerFull") };
+  return { name: t("splits.pplx2"), desc: t("onboarding.splitDescPPL") };
 }
 
 export default function Onboarding() {
@@ -39,7 +47,9 @@ export default function Onboarding() {
   const [frequency, setFrequency] = useState<number | null>(null);
   const [experience, setExperience] = useState<string | null>(null);
   const [goal, setGoal] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [notifGranted, setNotifGranted] = useState(false);
   const [, navigate] = useLocation();
 
   useEffect(() => {
@@ -53,15 +63,18 @@ export default function Onboarding() {
     setVisible(false);
   };
 
+  const TOTAL_STEPS = 6;
+
   const canProceed = () => {
     if (step === 1) return frequency !== null;
     if (step === 2) return experience !== null;
     if (step === 3) return goal !== null;
+    if (step === 4) return equipment !== null;
     return true;
   };
 
   const next = () => {
-    if (step < 4) setStep(step + 1);
+    if (step < TOTAL_STEPS - 1) setStep(step + 1);
     else dismiss();
   };
 
@@ -69,11 +82,18 @@ export default function Onboarding() {
     if (step > 0) setStep(step - 1);
   };
 
+  const handleNotificationRequest = async () => {
+    try {
+      const subscribed = await subscribeToPush();
+      setNotifGranted(subscribed);
+    } catch {}
+  };
+
   const useRecommended = async () => {
     if (!frequency || !experience || !goal) return;
     setGenerating(true);
     try {
-      await api.autoGeneratePlans({ frequency, experience, goal });
+      await api.autoGeneratePlans({ frequency, experience, goal, equipment: equipment || "barbell" });
       dismiss();
       navigate("/plans");
     } catch {
@@ -86,7 +106,7 @@ export default function Onboarding() {
     navigate("/plans/new");
   };
 
-  const rec = frequency ? getSplitRecommendation(frequency, experience || "beginner") : null;
+  const rec = frequency ? getSplitRecommendation(frequency, t) : null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -107,6 +127,18 @@ export default function Onboarding() {
               <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
                 {t("onboarding.welcomeSub")}
               </p>
+              <div className="pt-2 space-y-2">
+                <div className="p-3 rounded-xl bg-[var(--color-surface-alt)]">
+                  <div className="text-sm font-semibold mb-1">{t("onboarding.notifTitle")}</div>
+                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mb-2">{t("onboarding.notifDesc")}</p>
+                  <button
+                    onClick={handleNotificationRequest}
+                    className={`w-full text-sm py-2 rounded-lg font-semibold ${notifGranted ? "bg-green-500/20 text-green-400" : "btn-primary"}`}
+                  >
+                    {notifGranted ? t("onboarding.notificationsEnabled") : t("onboarding.enableNotifications")}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -176,7 +208,28 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 4 && rec && (
+          {step === 4 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-center">{t("onboarding.equipmentQuestion")}</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {EQUIPMENT.map(eq => (
+                  <button
+                    key={eq.key}
+                    onClick={() => setEquipment(eq.key)}
+                    className={`p-4 rounded-xl text-center transition-all border-2 ${
+                      equipment === eq.key
+                        ? "border-[var(--color-accent)] bg-[rgba(79,142,247,0.1)]"
+                        : "border-transparent bg-[var(--color-surface-alt)]"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">{t(eq.labelKey)}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 5 && rec ? (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-center">{t("onboarding.recommendedPlan")}</h2>
               <div className="p-4 rounded-xl bg-[var(--color-surface-alt)]">
@@ -194,12 +247,12 @@ export default function Onboarding() {
                 {t("onboarding.buildOwn")}
               </button>
             </div>
-          )}
+          ) : null}
 
-          {step < 4 && (
+          {step < 5 ? (
             <>
               <div className="flex items-center justify-center gap-1.5 mt-6 mb-4">
-                {[0, 1, 2, 3, 4].map(i => (
+                {Array.from({ length: TOTAL_STEPS }, (_, i) => (
                   <div
                     key={i}
                     className={`h-1.5 rounded-full transition-all ${i === step ? "w-6" : "w-1.5 bg-[var(--color-border)]"}`}
@@ -207,7 +260,6 @@ export default function Onboarding() {
                   />
                 ))}
               </div>
-
               <div className="flex gap-3">
                 {step > 0 ? (
                   <button onClick={prev} className="flex-1 btn-ghost min-h-[2.75rem] text-sm">{t("onboarding.back")}</button>
@@ -223,7 +275,7 @@ export default function Onboarding() {
                 </button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

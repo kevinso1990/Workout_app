@@ -398,7 +398,10 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
 
     if (finished_at) {
-      calculateAndStoreFatigue(parseInt(req.params.id));
+      const existingFatigue = db.prepare("SELECT id FROM muscle_fatigue WHERE session_id = ? LIMIT 1").get(parseInt(req.params.id));
+      if (!existingFatigue) {
+        calculateAndStoreFatigue(parseInt(req.params.id));
+      }
     }
 
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(req.params.id);
@@ -1008,6 +1011,17 @@ export async function registerRoutes(app: Express): Promise<void> {
     res.json({ ok: true });
   });
 
+  function wasNotificationSentToday(type: string): boolean {
+    const today = new Date().toISOString().slice(0, 10);
+    const row = db.prepare("SELECT id FROM notification_log WHERE notification_type = ? AND sent_date = ?").get(type, today);
+    return !!row;
+  }
+
+  function markNotificationSent(type: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    db.prepare("INSERT OR IGNORE INTO notification_log (notification_type, sent_date) VALUES (?, ?)").run(type, today);
+  }
+
   function sendPushToAll(payload: string) {
     const subscriptions = db.prepare("SELECT * FROM push_subscriptions").all() as any[];
     for (const sub of subscriptions) {
@@ -1038,7 +1052,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       const now = new Date();
       const daysSince = (now.getTime() - lastFinished.getTime()) / (1000 * 60 * 60 * 24);
 
-      if (daysSince >= 3) {
+      if (daysSince >= 3 && !wasNotificationSentToday("inactivity")) {
+        markNotificationSent("inactivity");
         sendPushToAll(JSON.stringify({
           title: "Time to Train!",
           body: `It's been ${Math.floor(daysSince)} days since your last workout. Ready to get back at it?`,
@@ -1057,6 +1072,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const now = new Date();
       if (now.getDay() !== 0 || now.getHours() !== 9) return;
+      if (wasNotificationSentToday("weekly_summary")) return;
 
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const sessions = db.prepare(
@@ -1073,6 +1089,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const workoutCount = sessions?.count || 0;
       const totalVolume = Math.round(sets?.totalVolume || 0);
 
+      markNotificationSent("weekly_summary");
       if (workoutCount > 0) {
         sendPushToAll(JSON.stringify({
           title: "Weekly Summary",
@@ -1091,7 +1108,6 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   }, 60 * 60 * 1000);
 
-  // ── Workout Reminder (check every 30 min, suggest based on usual time) ───
   setInterval(() => {
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
 
@@ -1135,7 +1151,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         WHERE date(started_at) = date('now')
       `).get() as any;
       if (todaySessions?.count > 0) return;
+      if (wasNotificationSentToday("workout_reminder")) return;
 
+      markNotificationSent("workout_reminder");
       sendPushToAll(JSON.stringify({
         title: "Workout Reminder",
         body: "Your usual workout time is coming up. Ready to train?",

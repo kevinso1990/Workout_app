@@ -101,6 +101,13 @@ export function initDb() {
       keys_auth TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS notification_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      notification_type TEXT NOT NULL,
+      sent_date TEXT NOT NULL,
+      UNIQUE(notification_type, sent_date)
+    );
   `);
 
   seedExercises();
