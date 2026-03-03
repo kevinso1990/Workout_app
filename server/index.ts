@@ -75,6 +75,13 @@ function setupCors(app: express.Application) {
     app.listen(port, "0.0.0.0", () => {
       log(`Server running on port ${port}`);
     });
+
+    const proxyPort = 8081;
+    if (proxyPort !== port) {
+      app.listen(proxyPort, "0.0.0.0", () => {
+        log(`Server also listening on port ${proxyPort} (proxy)`);
+      });
+    }
   } else {
     const { createServer: createHttpServer } = await import("http");
     const httpServer = createHttpServer(app);
