@@ -6,7 +6,12 @@ const MUSCLEWIKI_BASE = "https://musclewiki.com/newapi/exercise/exercises/";
 export async function registerRoutes(app: Express): Promise<void> {
 
   // ── Exercises ──────────────────────────────────────────────
-  app.get("/api/exercises", (_req: Request, res: Response) => {
+  app.get("/api/exercises", (req: Request, res: Response) => {
+    const equipment = req.query.equipment as string;
+    if (equipment) {
+      const rows = db.prepare("SELECT * FROM exercises WHERE equipment = ? ORDER BY muscle_group, name").all(equipment);
+      return res.json(rows);
+    }
     const rows = db.prepare("SELECT * FROM exercises ORDER BY muscle_group, name").all();
     res.json(rows);
   });

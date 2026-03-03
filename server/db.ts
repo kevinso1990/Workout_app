@@ -13,6 +13,7 @@ export function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
       muscle_group TEXT NOT NULL,
+      equipment TEXT DEFAULT 'barbell',
       is_custom INTEGER DEFAULT 0
     );
 
@@ -86,131 +87,215 @@ export function initDb() {
 
 function seedExercises() {
   const count = db.prepare("SELECT COUNT(*) as c FROM exercises").get() as { c: number };
-  if (count.c > 0) return;
+  if (count.c > 0) {
+    seedKettlebellExercises();
+    return;
+  }
 
-  const exercises: [string, string][] = [
-    ["Barbell Bench Press", "Chest"],
-    ["Incline Barbell Bench Press", "Chest"],
-    ["Decline Barbell Bench Press", "Chest"],
-    ["Dumbbell Bench Press", "Chest"],
-    ["Incline Dumbbell Press", "Chest"],
-    ["Dumbbell Flyes", "Chest"],
-    ["Cable Flyes", "Chest"],
-    ["Machine Chest Press", "Chest"],
-    ["Pec Deck", "Chest"],
-    ["Push-Ups", "Chest"],
-    ["Chest Dips", "Chest"],
-    ["Landmine Press", "Chest"],
+  const exercises: [string, string, string][] = [
+    ["Barbell Bench Press", "Chest", "barbell"],
+    ["Incline Barbell Bench Press", "Chest", "barbell"],
+    ["Decline Barbell Bench Press", "Chest", "barbell"],
+    ["Dumbbell Bench Press", "Chest", "dumbbell"],
+    ["Incline Dumbbell Press", "Chest", "dumbbell"],
+    ["Dumbbell Flyes", "Chest", "dumbbell"],
+    ["Cable Flyes", "Chest", "cable"],
+    ["Machine Chest Press", "Chest", "machine"],
+    ["Pec Deck", "Chest", "machine"],
+    ["Push-Ups", "Chest", "bodyweight"],
+    ["Chest Dips", "Chest", "bodyweight"],
+    ["Landmine Press", "Chest", "barbell"],
 
-    ["Barbell Row", "Back"],
-    ["Dumbbell Row", "Back"],
-    ["Pendlay Row", "Back"],
-    ["T-Bar Row", "Back"],
-    ["Seated Cable Row", "Back"],
-    ["Lat Pulldown", "Back"],
-    ["Wide Grip Lat Pulldown", "Back"],
-    ["Pull-Ups", "Back"],
-    ["Chin-Ups", "Back"],
-    ["Cable Pullover", "Back"],
-    ["Straight Arm Pulldown", "Back"],
-    ["Machine Row", "Back"],
-    ["Meadows Row", "Back"],
-    ["Chest Supported Row", "Back"],
+    ["Barbell Row", "Back", "barbell"],
+    ["Dumbbell Row", "Back", "dumbbell"],
+    ["Pendlay Row", "Back", "barbell"],
+    ["T-Bar Row", "Back", "barbell"],
+    ["Seated Cable Row", "Back", "cable"],
+    ["Lat Pulldown", "Back", "cable"],
+    ["Wide Grip Lat Pulldown", "Back", "cable"],
+    ["Pull-Ups", "Back", "bodyweight"],
+    ["Chin-Ups", "Back", "bodyweight"],
+    ["Cable Pullover", "Back", "cable"],
+    ["Straight Arm Pulldown", "Back", "cable"],
+    ["Machine Row", "Back", "machine"],
+    ["Meadows Row", "Back", "barbell"],
+    ["Chest Supported Row", "Back", "dumbbell"],
 
-    ["Overhead Press", "Shoulders"],
-    ["Dumbbell Shoulder Press", "Shoulders"],
-    ["Arnold Press", "Shoulders"],
-    ["Lateral Raise", "Shoulders"],
-    ["Cable Lateral Raise", "Shoulders"],
-    ["Machine Lateral Raise", "Shoulders"],
-    ["Front Raise", "Shoulders"],
-    ["Rear Delt Fly", "Shoulders"],
-    ["Face Pull", "Shoulders"],
-    ["Upright Row", "Shoulders"],
-    ["Behind The Neck Press", "Shoulders"],
-    ["Machine Shoulder Press", "Shoulders"],
+    ["Overhead Press", "Shoulders", "barbell"],
+    ["Dumbbell Shoulder Press", "Shoulders", "dumbbell"],
+    ["Arnold Press", "Shoulders", "dumbbell"],
+    ["Lateral Raise", "Shoulders", "dumbbell"],
+    ["Cable Lateral Raise", "Shoulders", "cable"],
+    ["Machine Lateral Raise", "Shoulders", "machine"],
+    ["Front Raise", "Shoulders", "dumbbell"],
+    ["Rear Delt Fly", "Shoulders", "dumbbell"],
+    ["Face Pull", "Shoulders", "cable"],
+    ["Upright Row", "Shoulders", "barbell"],
+    ["Behind The Neck Press", "Shoulders", "barbell"],
+    ["Machine Shoulder Press", "Shoulders", "machine"],
 
-    ["Barbell Squat", "Legs"],
-    ["Front Squat", "Legs"],
-    ["Goblet Squat", "Legs"],
-    ["Hack Squat", "Legs"],
-    ["Leg Press", "Legs"],
-    ["Leg Extension", "Legs"],
-    ["Leg Curl", "Legs"],
-    ["Seated Leg Curl", "Legs"],
-    ["Romanian Deadlift", "Legs"],
-    ["Stiff Leg Deadlift", "Legs"],
-    ["Sumo Deadlift", "Legs"],
-    ["Bulgarian Split Squat", "Legs"],
-    ["Walking Lunges", "Legs"],
-    ["Reverse Lunges", "Legs"],
-    ["Hip Thrust", "Legs"],
-    ["Glute Bridge", "Legs"],
-    ["Step Ups", "Legs"],
-    ["Sissy Squat", "Legs"],
-    ["Leg Press Calf Raise", "Legs"],
-    ["Standing Calf Raise", "Legs"],
-    ["Seated Calf Raise", "Legs"],
+    ["Barbell Squat", "Legs", "barbell"],
+    ["Front Squat", "Legs", "barbell"],
+    ["Goblet Squat", "Legs", "dumbbell"],
+    ["Hack Squat", "Legs", "machine"],
+    ["Leg Press", "Legs", "machine"],
+    ["Leg Extension", "Legs", "machine"],
+    ["Leg Curl", "Legs", "machine"],
+    ["Seated Leg Curl", "Legs", "machine"],
+    ["Romanian Deadlift", "Legs", "barbell"],
+    ["Stiff Leg Deadlift", "Legs", "barbell"],
+    ["Sumo Deadlift", "Legs", "barbell"],
+    ["Bulgarian Split Squat", "Legs", "dumbbell"],
+    ["Walking Lunges", "Legs", "dumbbell"],
+    ["Reverse Lunges", "Legs", "dumbbell"],
+    ["Hip Thrust", "Legs", "barbell"],
+    ["Glute Bridge", "Legs", "bodyweight"],
+    ["Step Ups", "Legs", "dumbbell"],
+    ["Sissy Squat", "Legs", "bodyweight"],
+    ["Leg Press Calf Raise", "Legs", "machine"],
+    ["Standing Calf Raise", "Legs", "machine"],
+    ["Seated Calf Raise", "Legs", "machine"],
 
-    ["Deadlift", "Back"],
-    ["Trap Bar Deadlift", "Back"],
-    ["Rack Pull", "Back"],
-    ["Good Morning", "Back"],
-    ["Hyperextension", "Back"],
+    ["Deadlift", "Back", "barbell"],
+    ["Trap Bar Deadlift", "Back", "barbell"],
+    ["Rack Pull", "Back", "barbell"],
+    ["Good Morning", "Back", "barbell"],
+    ["Hyperextension", "Back", "bodyweight"],
 
-    ["Barbell Curl", "Biceps"],
-    ["Dumbbell Curl", "Biceps"],
-    ["Hammer Curl", "Biceps"],
-    ["Preacher Curl", "Biceps"],
-    ["Incline Dumbbell Curl", "Biceps"],
-    ["Cable Curl", "Biceps"],
-    ["Concentration Curl", "Biceps"],
-    ["EZ-Bar Curl", "Biceps"],
-    ["Spider Curl", "Biceps"],
-    ["Bayesian Curl", "Biceps"],
-    ["Reverse Curl", "Biceps"],
+    ["Barbell Curl", "Biceps", "barbell"],
+    ["Dumbbell Curl", "Biceps", "dumbbell"],
+    ["Hammer Curl", "Biceps", "dumbbell"],
+    ["Preacher Curl", "Biceps", "barbell"],
+    ["Incline Dumbbell Curl", "Biceps", "dumbbell"],
+    ["Cable Curl", "Biceps", "cable"],
+    ["Concentration Curl", "Biceps", "dumbbell"],
+    ["EZ-Bar Curl", "Biceps", "barbell"],
+    ["Spider Curl", "Biceps", "dumbbell"],
+    ["Bayesian Curl", "Biceps", "cable"],
+    ["Reverse Curl", "Biceps", "barbell"],
 
-    ["Tricep Pushdown", "Triceps"],
-    ["Overhead Tricep Extension", "Triceps"],
-    ["Skull Crushers", "Triceps"],
-    ["Close Grip Bench Press", "Triceps"],
-    ["Tricep Dips", "Triceps"],
-    ["Tricep Kickback", "Triceps"],
-    ["Cable Overhead Extension", "Triceps"],
-    ["Diamond Push-Ups", "Triceps"],
-    ["JM Press", "Triceps"],
+    ["Tricep Pushdown", "Triceps", "cable"],
+    ["Overhead Tricep Extension", "Triceps", "dumbbell"],
+    ["Skull Crushers", "Triceps", "barbell"],
+    ["Close Grip Bench Press", "Triceps", "barbell"],
+    ["Tricep Dips", "Triceps", "bodyweight"],
+    ["Tricep Kickback", "Triceps", "dumbbell"],
+    ["Cable Overhead Extension", "Triceps", "cable"],
+    ["Diamond Push-Ups", "Triceps", "bodyweight"],
+    ["JM Press", "Triceps", "barbell"],
 
-    ["Plank", "Core"],
-    ["Side Plank", "Core"],
-    ["Crunches", "Core"],
-    ["Russian Twist", "Core"],
-    ["Hanging Leg Raise", "Core"],
-    ["Cable Crunch", "Core"],
-    ["Ab Wheel Rollout", "Core"],
-    ["Mountain Climbers", "Core"],
-    ["Dead Bug", "Core"],
-    ["Sit-Ups", "Core"],
-    ["Pallof Press", "Core"],
-    ["Woodchoppers", "Core"],
-    ["Decline Sit-Ups", "Core"],
-    ["Dragon Flag", "Core"],
+    ["Plank", "Core", "bodyweight"],
+    ["Side Plank", "Core", "bodyweight"],
+    ["Crunches", "Core", "bodyweight"],
+    ["Russian Twist", "Core", "bodyweight"],
+    ["Hanging Leg Raise", "Core", "bodyweight"],
+    ["Cable Crunch", "Core", "cable"],
+    ["Ab Wheel Rollout", "Core", "bodyweight"],
+    ["Mountain Climbers", "Core", "bodyweight"],
+    ["Dead Bug", "Core", "bodyweight"],
+    ["Sit-Ups", "Core", "bodyweight"],
+    ["Pallof Press", "Core", "cable"],
+    ["Woodchoppers", "Core", "cable"],
+    ["Decline Sit-Ups", "Core", "bodyweight"],
+    ["Dragon Flag", "Core", "bodyweight"],
 
-    ["Barbell Shrug", "Traps"],
-    ["Dumbbell Shrug", "Traps"],
-    ["Farmer's Walk", "Traps"],
+    ["Barbell Shrug", "Traps", "barbell"],
+    ["Dumbbell Shrug", "Traps", "dumbbell"],
+    ["Farmer's Walk", "Traps", "dumbbell"],
 
-    ["Wrist Curl", "Forearms"],
-    ["Reverse Wrist Curl", "Forearms"],
-    ["Plate Pinch", "Forearms"],
+    ["Wrist Curl", "Forearms", "barbell"],
+    ["Reverse Wrist Curl", "Forearms", "barbell"],
+    ["Plate Pinch", "Forearms", "bodyweight"],
+
+    ["KB Goblet Squat", "Legs", "kettlebell"],
+    ["KB Swing", "Legs", "kettlebell"],
+    ["KB Romanian Deadlift", "Legs", "kettlebell"],
+    ["KB Lunges", "Legs", "kettlebell"],
+    ["KB Bulgarian Split Squat", "Legs", "kettlebell"],
+    ["KB Calf Raise", "Legs", "kettlebell"],
+    ["KB Press", "Shoulders", "kettlebell"],
+    ["KB Push Press", "Shoulders", "kettlebell"],
+    ["KB Lateral Raise", "Shoulders", "kettlebell"],
+    ["KB Halo", "Shoulders", "kettlebell"],
+    ["KB Floor Press", "Chest", "kettlebell"],
+    ["KB Squeeze Press", "Chest", "kettlebell"],
+    ["KB Row", "Back", "kettlebell"],
+    ["KB Renegade Row", "Back", "kettlebell"],
+    ["KB High Pull", "Back", "kettlebell"],
+    ["KB Clean", "Back", "kettlebell"],
+    ["KB Snatch", "Back", "kettlebell"],
+    ["KB Curl", "Biceps", "kettlebell"],
+    ["KB Hammer Curl", "Biceps", "kettlebell"],
+    ["KB Overhead Tricep Extension", "Triceps", "kettlebell"],
+    ["KB Skull Crusher", "Triceps", "kettlebell"],
+    ["KB Turkish Get-Up", "Core", "kettlebell"],
+    ["KB Windmill", "Core", "kettlebell"],
+    ["KB Russian Twist", "Core", "kettlebell"],
+    ["KB Farmer's Walk", "Traps", "kettlebell"],
   ];
 
-  const insert = db.prepare("INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom) VALUES (?, ?, 0)");
+  const insert = db.prepare("INSERT OR IGNORE INTO exercises (name, muscle_group, equipment, is_custom) VALUES (?, ?, ?, 0)");
   const tx = db.transaction(() => {
-    for (const [name, group] of exercises) {
+    for (const [name, group, equip] of exercises) {
+      insert.run(name, group, equip);
+    }
+  });
+  tx();
+}
+
+function seedKettlebellExercises() {
+  const kbExercises: [string, string][] = [
+    ["KB Goblet Squat", "Legs"],
+    ["KB Swing", "Legs"],
+    ["KB Romanian Deadlift", "Legs"],
+    ["KB Lunges", "Legs"],
+    ["KB Bulgarian Split Squat", "Legs"],
+    ["KB Calf Raise", "Legs"],
+    ["KB Press", "Shoulders"],
+    ["KB Push Press", "Shoulders"],
+    ["KB Lateral Raise", "Shoulders"],
+    ["KB Halo", "Shoulders"],
+    ["KB Floor Press", "Chest"],
+    ["KB Squeeze Press", "Chest"],
+    ["KB Row", "Back"],
+    ["KB Renegade Row", "Back"],
+    ["KB High Pull", "Back"],
+    ["KB Clean", "Back"],
+    ["KB Snatch", "Back"],
+    ["KB Curl", "Biceps"],
+    ["KB Hammer Curl", "Biceps"],
+    ["KB Overhead Tricep Extension", "Triceps"],
+    ["KB Skull Crusher", "Triceps"],
+    ["KB Turkish Get-Up", "Core"],
+    ["KB Windmill", "Core"],
+    ["KB Russian Twist", "Core"],
+    ["KB Farmer's Walk", "Traps"],
+  ];
+
+  const insert = db.prepare("INSERT OR IGNORE INTO exercises (name, muscle_group, equipment, is_custom) VALUES (?, ?, 'kettlebell', 0)");
+  const tx = db.transaction(() => {
+    for (const [name, group] of kbExercises) {
       insert.run(name, group);
     }
   });
   tx();
+
+  try {
+    db.exec("ALTER TABLE exercises ADD COLUMN equipment TEXT DEFAULT 'barbell'");
+  } catch {}
+
+  const updateMap: Record<string, string> = {
+    dumbbell: "Dumbbell%",
+    cable: "Cable%",
+    machine: "Machine%",
+    bodyweight: "Push-Ups,Pull-Ups,Chin-Ups,Chest Dips,Tricep Dips,Diamond Push-Ups,Plank,Side Plank,Crunches,Russian Twist,Hanging Leg Raise,Ab Wheel Rollout,Mountain Climbers,Dead Bug,Sit-Ups,Decline Sit-Ups,Dragon Flag,Hyperextension,Glute Bridge,Sissy Squat,Plate Pinch",
+  };
+  db.prepare("UPDATE exercises SET equipment = 'dumbbell' WHERE name LIKE 'Dumbbell%' OR name LIKE 'Incline Dumbbell%' OR name LIKE '%Dumbbell%'").run();
+  db.prepare("UPDATE exercises SET equipment = 'cable' WHERE name LIKE 'Cable%' OR name LIKE 'Lat Pulldown' OR name LIKE 'Wide Grip Lat Pulldown' OR name LIKE 'Straight Arm Pulldown' OR name LIKE 'Bayesian Curl' OR name LIKE 'Face Pull' OR name LIKE 'Pallof Press' OR name LIKE 'Woodchoppers' OR name LIKE 'Tricep Pushdown' OR name LIKE 'Cable%' OR name LIKE 'Seated Cable Row'").run();
+  db.prepare("UPDATE exercises SET equipment = 'machine' WHERE name LIKE 'Machine%' OR name LIKE 'Pec Deck' OR name LIKE 'Hack Squat' OR name LIKE 'Leg Press%' OR name LIKE 'Leg Extension' OR name LIKE 'Leg Curl' OR name LIKE 'Seated Leg Curl' OR name LIKE 'Standing Calf Raise' OR name LIKE 'Seated Calf Raise'").run();
+  db.prepare("UPDATE exercises SET equipment = 'bodyweight' WHERE name IN ('Push-Ups','Pull-Ups','Chin-Ups','Chest Dips','Tricep Dips','Diamond Push-Ups','Plank','Side Plank','Crunches','Russian Twist','Hanging Leg Raise','Ab Wheel Rollout','Mountain Climbers','Dead Bug','Sit-Ups','Decline Sit-Ups','Dragon Flag','Hyperextension','Glute Bridge','Sissy Squat','Plate Pinch')").run();
+  db.prepare("UPDATE exercises SET equipment = 'kettlebell' WHERE name LIKE 'KB %'").run();
+  db.prepare("UPDATE exercises SET equipment = 'dumbbell' WHERE name IN ('Arnold Press','Lateral Raise','Front Raise','Rear Delt Fly','Goblet Squat','Bulgarian Split Squat','Walking Lunges','Reverse Lunges','Step Ups','Hammer Curl','Concentration Curl','Spider Curl','Overhead Tricep Extension','Tricep Kickback','Chest Supported Row')").run();
 }
 
 export default db;

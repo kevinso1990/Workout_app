@@ -1,0 +1,61 @@
+ADDITIONAL HIGH PRIORITY FEATURES — Add to existing app without breaking current functionality
+
+---
+
+PRIORITY 1 — MULTI-LANGUAGE SUPPORT
+
+Install and configure i18next and react-i18next for full internationalization.
+
+- Support these languages at launch: English (en), German (de), French (fr), Spanish (es), Italian (it), Portuguese (pt)
+- Store all UI strings, labels, button text, onboarding copy, recommendation badges, and error messages in /locales/{lang}/translation.json files — never hardcode display text anywhere in the app
+- Auto-detect the user's browser/device language on first launch and set it automatically
+- Allow manual language override in the Settings screen with a flag + language name selector
+- Exercise names should also be translated where the MuscleWiki API provides localized names; fall back to English if no translation exists
+- Units follow regional defaults: Germany/Europe default to kg and km, US defaults to lbs and miles — user can override in Settings
+- Format all dates and numbers according to the selected locale (e.g. 03.03.2026 in German, March 3 2026 in English)
+- The language setting must persist across sessions via localStorage
+
+---
+
+PRIORITY 2 — SUPERSETS AND DROP SETS
+
+In the plan builder, allow users to group two or more exercises into a superset:
+- A "Link as Superset" button appears when multiple exercises are selected in the plan editor
+- Supersetted exercises are visually grouped with a colored left border and a "Superset" label
+- During the active workout, superset exercises are shown back-to-back with no rest timer between them — the rest timer only triggers after both exercises in the pair are completed
+- In workout history and volume calculations, supersetted exercises are tracked individually
+
+Add drop set support in the active workout screen:
+- A "+ Drop Set" button appears below each logged set
+- Tapping it adds a new sub-row indented under the parent set, pre-filled with the parent weight minus 10% (rounded to nearest 2.5 kg)
+- Drop sets are visually distinct (lighter text, indented, labeled "Drop")
+- Drop sets are included in total volume calculations but excluded from progressive overload recommendations
+
+---
+
+PRIORITY 3 — RECOVERY AND FATIGUE TRACKING
+
+After every session is saved, calculate and store which muscle groups were trained and their estimated fatigue level:
+- Primary muscles trained = high fatigue (score: 3)
+- Secondary muscles trained = low fatigue (score: 1)
+- Each muscle recovers at a rate of approximately 1 point per 24 hours
+
+On the Home/Dashboard screen, show a Recovery Status panel:
+- List each major muscle group with a colored recovery bar:
+  - Red (0–40%): Not ready — avoid training
+  - Orange (40–70%): Partially recovered — train with caution
+  - Green (70–100%): Ready to train
+- When a user starts a workout from a plan, check the recovery status of the primary muscles in that plan
+- If any primary muscle is below 50% recovered, show a warning banner: "Your [muscle] may not be fully recovered. Consider resting or reducing intensity."
+- Do not block the workout — only warn
+
+---
+
+PRIORITY 4 — SMART PUSH NOTIFICATIONS (PWA)
+
+Use the Web Push Notifications API (via the PWA service worker) to send the following notifications. Always ask for notification permission during onboarding Step 1 with a clear explanation of what notifications will be sent.
+
+Notification types:
+- Workout reminder: "Time to train! Your [Plan Name] is scheduled today." — sent at the user's preferred reminder time (default 30 minutes before their usual workout time, learned from history)
+- Inactivity nudge: "You haven't trained in 3 days — your streak is at risk!" — triggered after 3 days of no logged workouts
+- Weekly sum
