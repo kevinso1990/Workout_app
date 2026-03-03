@@ -590,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // ── Auto-Generate Plans ──────────────────────────────────
   app.post("/api/plans/auto-generate", (req: Request, res: Response) => {
-    const { frequency, experience, goal } = req.body;
+    const { frequency, experience, goal, equipment } = req.body;
     if (!frequency || !experience || !goal) {
       return res.status(400).json({ error: "frequency, experience, goal required" });
     }
@@ -601,14 +601,53 @@ export async function registerRoutes(app: Express): Promise<void> {
         ? { sets: 3, reps: 10 }
         : { sets: 3, reps: 13 };
 
+    const kbSwap: Record<string, string> = {
+      "Barbell Squat": "KB Goblet Squat",
+      "Front Squat": "KB Goblet Squat",
+      "Romanian Deadlift": "KB Romanian Deadlift",
+      "Stiff Leg Deadlift": "KB Romanian Deadlift",
+      "Barbell Bench Press": "KB Floor Press",
+      "Dumbbell Bench Press": "KB Floor Press",
+      "Incline Dumbbell Press": "KB Squeeze Press",
+      "Barbell Row": "KB Row",
+      "Dumbbell Row": "KB Row",
+      "Overhead Press": "KB Press",
+      "Dumbbell Shoulder Press": "KB Press",
+      "Lateral Raise": "KB Lateral Raise",
+      "Barbell Curl": "KB Curl",
+      "Hammer Curl": "KB Hammer Curl",
+      "Tricep Pushdown": "KB Overhead Tricep Extension",
+      "Overhead Tricep Extension": "KB Overhead Tricep Extension",
+      "Cable Flyes": "KB Squeeze Press",
+      "Bulgarian Split Squat": "KB Bulgarian Split Squat",
+      "Barbell Shrug": "KB Farmer's Walk",
+      "Leg Press": "KB Lunges",
+      "Leg Curl": "KB Swing",
+      "Leg Extension": "KB Goblet Squat",
+      "Hack Squat": "KB Goblet Squat",
+      "Seated Leg Curl": "KB Swing",
+      "Standing Calf Raise": "KB Calf Raise",
+      "Seated Calf Raise": "KB Calf Raise",
+      "Face Pull": "KB High Pull",
+      "Lat Pulldown": "KB Row",
+      "Seated Cable Row": "KB Renegade Row",
+      "Pull-Ups": "KB High Pull",
+    };
+
+    const useKB = equipment === "kettlebell";
+
     function findExercise(name: string): any {
-      return db.prepare("SELECT id FROM exercises WHERE name = ?").get(name);
+      const resolvedName = useKB && kbSwap[name] ? kbSwap[name] : name;
+      return db.prepare("SELECT id FROM exercises WHERE name = ?").get(resolvedName);
     }
 
     function buildPlanExercises(names: string[]) {
+      const seen = new Set<number>();
       return names.map((n, i) => {
         const ex = findExercise(n);
-        return ex ? { exercise_id: ex.id, sort_order: i, default_sets: setsReps.sets, default_reps: setsReps.reps, default_weight: 0 } : null;
+        if (!ex || seen.has(ex.id)) return null;
+        seen.add(ex.id);
+        return { exercise_id: ex.id, sort_order: i, default_sets: setsReps.sets, default_reps: setsReps.reps, default_weight: 0 };
       }).filter(Boolean);
     }
 
@@ -618,10 +657,11 @@ export async function registerRoutes(app: Express): Promise<void> {
     );
 
     const createdPlans: number[] = [];
+    const prefix = useKB ? "KB " : "";
 
     const tx = db.transaction(() => {
       if (frequency <= 3) {
-        const result = insertPlan.run("Full Body");
+        const result = insertPlan.run(`${prefix}Full Body`);
         const planId = result.lastInsertRowid as number;
         const exercises = buildPlanExercises([
           "Barbell Squat", "Romanian Deadlift", "Barbell Bench Press",
@@ -630,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         exercises.forEach((ex: any) => insertPE.run(planId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(planId);
       } else if (frequency === 4) {
-        const upperA = insertPlan.run("Upper A");
+        const upperA = insertPlan.run(`${prefix}Upper A`);
         const upperAId = upperA.lastInsertRowid as number;
         buildPlanExercises([
           "Barbell Bench Press", "Incline Dumbbell Press", "Barbell Row",
@@ -638,7 +678,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ]).forEach((ex: any) => insertPE.run(upperAId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(upperAId);
 
-        const lowerA = insertPlan.run("Lower A");
+        const lowerA = insertPlan.run(`${prefix}Lower A`);
         const lowerAId = lowerA.lastInsertRowid as number;
         buildPlanExercises([
           "Barbell Squat", "Romanian Deadlift", "Leg Press",
@@ -646,7 +686,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ]).forEach((ex: any) => insertPE.run(lowerAId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(lowerAId);
 
-        const upperB = insertPlan.run("Upper B");
+        const upperB = insertPlan.run(`${prefix}Upper B`);
         const upperBId = upperB.lastInsertRowid as number;
         buildPlanExercises([
           "Dumbbell Bench Press", "Cable Flyes", "Dumbbell Row",
@@ -654,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ]).forEach((ex: any) => insertPE.run(upperBId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(upperBId);
 
-        const lowerB = insertPlan.run("Lower B");
+        const lowerB = insertPlan.run(`${prefix}Lower B`);
         const lowerBId = lowerB.lastInsertRowid as number;
         buildPlanExercises([
           "Bulgarian Split Squat", "Stiff Leg Deadlift", "Hack Squat",
@@ -662,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ]).forEach((ex: any) => insertPE.run(lowerBId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(lowerBId);
       } else {
-        const push = insertPlan.run("Push");
+        const push = insertPlan.run(`${prefix}Push`);
         const pushId = push.lastInsertRowid as number;
         buildPlanExercises([
           "Barbell Bench Press", "Incline Dumbbell Press", "Cable Flyes",
@@ -670,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ]).forEach((ex: any) => insertPE.run(pushId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(pushId);
 
-        const pull = insertPlan.run("Pull");
+        const pull = insertPlan.run(`${prefix}Pull`);
         const pullId = pull.lastInsertRowid as number;
         buildPlanExercises([
           "Barbell Row", "Lat Pulldown", "Seated Cable Row",
@@ -678,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ]).forEach((ex: any) => insertPE.run(pullId, ex.exercise_id, ex.sort_order, ex.default_sets, ex.default_reps, ex.default_weight));
         createdPlans.push(pullId);
 
-        const legs = insertPlan.run("Legs");
+        const legs = insertPlan.run(`${prefix}Legs`);
         const legsId = legs.lastInsertRowid as number;
         buildPlanExercises([
           "Barbell Squat", "Romanian Deadlift", "Leg Press",

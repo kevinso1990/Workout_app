@@ -244,6 +244,16 @@ function seedExercises() {
 }
 
 function seedKettlebellExercises() {
+  try {
+    db.exec("ALTER TABLE exercises ADD COLUMN equipment TEXT DEFAULT 'barbell'");
+  } catch {}
+
+  db.prepare("UPDATE exercises SET equipment = 'dumbbell' WHERE name LIKE '%Dumbbell%' OR name LIKE 'Incline Dumbbell%'").run();
+  db.prepare("UPDATE exercises SET equipment = 'cable' WHERE name LIKE 'Cable%' OR name IN ('Lat Pulldown','Wide Grip Lat Pulldown','Straight Arm Pulldown','Bayesian Curl','Face Pull','Pallof Press','Woodchoppers','Tricep Pushdown','Seated Cable Row')").run();
+  db.prepare("UPDATE exercises SET equipment = 'machine' WHERE name LIKE 'Machine%' OR name IN ('Pec Deck','Hack Squat','Leg Press','Leg Extension','Leg Curl','Seated Leg Curl','Standing Calf Raise','Seated Calf Raise','Leg Press Calf Raise')").run();
+  db.prepare("UPDATE exercises SET equipment = 'bodyweight' WHERE name IN ('Push-Ups','Pull-Ups','Chin-Ups','Chest Dips','Tricep Dips','Diamond Push-Ups','Plank','Side Plank','Crunches','Russian Twist','Hanging Leg Raise','Ab Wheel Rollout','Mountain Climbers','Dead Bug','Sit-Ups','Decline Sit-Ups','Dragon Flag','Hyperextension','Glute Bridge','Sissy Squat','Plate Pinch')").run();
+  db.prepare("UPDATE exercises SET equipment = 'dumbbell' WHERE name IN ('Arnold Press','Lateral Raise','Front Raise','Rear Delt Fly','Goblet Squat','Bulgarian Split Squat','Walking Lunges','Reverse Lunges','Step Ups','Hammer Curl','Concentration Curl','Spider Curl','Overhead Tricep Extension','Tricep Kickback','Chest Supported Row')").run();
+
   const kbExercises: [string, string][] = [
     ["KB Goblet Squat", "Legs"],
     ["KB Swing", "Legs"],
@@ -279,23 +289,6 @@ function seedKettlebellExercises() {
     }
   });
   tx();
-
-  try {
-    db.exec("ALTER TABLE exercises ADD COLUMN equipment TEXT DEFAULT 'barbell'");
-  } catch {}
-
-  const updateMap: Record<string, string> = {
-    dumbbell: "Dumbbell%",
-    cable: "Cable%",
-    machine: "Machine%",
-    bodyweight: "Push-Ups,Pull-Ups,Chin-Ups,Chest Dips,Tricep Dips,Diamond Push-Ups,Plank,Side Plank,Crunches,Russian Twist,Hanging Leg Raise,Ab Wheel Rollout,Mountain Climbers,Dead Bug,Sit-Ups,Decline Sit-Ups,Dragon Flag,Hyperextension,Glute Bridge,Sissy Squat,Plate Pinch",
-  };
-  db.prepare("UPDATE exercises SET equipment = 'dumbbell' WHERE name LIKE 'Dumbbell%' OR name LIKE 'Incline Dumbbell%' OR name LIKE '%Dumbbell%'").run();
-  db.prepare("UPDATE exercises SET equipment = 'cable' WHERE name LIKE 'Cable%' OR name LIKE 'Lat Pulldown' OR name LIKE 'Wide Grip Lat Pulldown' OR name LIKE 'Straight Arm Pulldown' OR name LIKE 'Bayesian Curl' OR name LIKE 'Face Pull' OR name LIKE 'Pallof Press' OR name LIKE 'Woodchoppers' OR name LIKE 'Tricep Pushdown' OR name LIKE 'Cable%' OR name LIKE 'Seated Cable Row'").run();
-  db.prepare("UPDATE exercises SET equipment = 'machine' WHERE name LIKE 'Machine%' OR name LIKE 'Pec Deck' OR name LIKE 'Hack Squat' OR name LIKE 'Leg Press%' OR name LIKE 'Leg Extension' OR name LIKE 'Leg Curl' OR name LIKE 'Seated Leg Curl' OR name LIKE 'Standing Calf Raise' OR name LIKE 'Seated Calf Raise'").run();
-  db.prepare("UPDATE exercises SET equipment = 'bodyweight' WHERE name IN ('Push-Ups','Pull-Ups','Chin-Ups','Chest Dips','Tricep Dips','Diamond Push-Ups','Plank','Side Plank','Crunches','Russian Twist','Hanging Leg Raise','Ab Wheel Rollout','Mountain Climbers','Dead Bug','Sit-Ups','Decline Sit-Ups','Dragon Flag','Hyperextension','Glute Bridge','Sissy Squat','Plate Pinch')").run();
-  db.prepare("UPDATE exercises SET equipment = 'kettlebell' WHERE name LIKE 'KB %'").run();
-  db.prepare("UPDATE exercises SET equipment = 'dumbbell' WHERE name IN ('Arnold Press','Lateral Raise','Front Raise','Rear Delt Fly','Goblet Squat','Bulgarian Split Squat','Walking Lunges','Reverse Lunges','Step Ups','Hammer Curl','Concentration Curl','Spider Curl','Overhead Tricep Extension','Tricep Kickback','Chest Supported Row')").run();
 }
 
 export default db;
