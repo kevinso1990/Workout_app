@@ -1422,7 +1422,7 @@ function setupCors(app2) {
     const distPath = path2.resolve(process.cwd(), "dist/public");
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.get("*", (_req, res) => {
+      app.get("/{*splat}", (_req, res) => {
         res.sendFile(path2.resolve(distPath, "index.html"));
       });
     } else {

@@ -65,7 +65,7 @@ function setupCors(app: express.Application) {
     const distPath = path.resolve(process.cwd(), "dist/public");
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.get("*", (_req, res) => {
+      app.get("/{*splat}", (_req, res) => {
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     } else {
