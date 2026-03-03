@@ -218,6 +218,11 @@
   "exerciseChart": {
     "weightProgression": "Gewichtsverlauf"
   },
+  "recovery": {
+    "title": "Erholungsstatus",
+    "warning": "Einige Muskeln sind noch erschöpft",
+    "warningDetail": "{{muscles}} brauchen möglicherweise mehr Erholungszeit."
+  },
   "common": {
     "confirm": "Bestätigen",
     "cancel": "Abbrechen",

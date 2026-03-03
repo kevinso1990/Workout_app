@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 interface RecoveryData {
   muscle_group: string;
@@ -20,6 +21,7 @@ function getBarBg(percent: number): string {
 }
 
 export default function RecoveryPanel() {
+  const { t } = useTranslation();
   const [recovery, setRecovery] = useState<RecoveryData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +41,7 @@ export default function RecoveryPanel() {
 
   return (
     <section className="mb-6">
-      <div className="section-label">Recovery Status</div>
+      <div className="section-label">{t("recovery.title")}</div>
       <div className="card p-4">
         <div className="space-y-3">
           {sorted.map(r => (

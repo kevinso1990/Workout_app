@@ -13,6 +13,8 @@ interface LoggedSet {
   set_number: number;
   weight: number;
   reps: number;
+  is_drop_set?: boolean;
+  parent_set_id?: number | null;
 }
 
 interface ExerciseState {
@@ -28,9 +30,11 @@ interface ExerciseState {
   lastSessionSets: any[];
   notes: string;
   skipped: boolean;
+  superset_group: number | null;
 }
 
 const BACKUP_KEY = "workout_backup";
+const SUPERSET_COLORS = ["#4f8ef7", "#7c5bf5", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
 
 function saveBackup(sessionId: number, exerciseStates: ExerciseState[], activeIdx: number) {
   try {
@@ -119,6 +123,7 @@ export default function ActiveWorkout() {
             lastSessionSets: lastSets,
             notes: "",
             skipped: false,
+            superset_group: pe.superset_group || null,
           };
         })
       );
@@ -129,6 +134,13 @@ export default function ActiveWorkout() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const isLastInSupersetGroup = (exIdx: number): boolean => {
+    const ex = exercises[exIdx];
+    if (!ex.superset_group) return true;
+    const nextEx = exercises[exIdx + 1];
+    return !nextEx || nextEx.superset_group !== ex.superset_group;
   };
 
   const startRest = useCallback(() => {
@@ -153,28 +165,40 @@ export default function ActiveWorkout() {
     if (restIntervalRef.current) clearInterval(restIntervalRef.current);
   };
 
-  const logSet = async (exIdx: number) => {
+  const logSet = async (exIdx: number, dropSet = false) => {
     const ex = exercises[exIdx];
-    const setNumber = ex.loggedSets.length + 1;
+    const normalSets = ex.loggedSets.filter(s => !s.is_drop_set);
+    const setNumber = dropSet ? ex.loggedSets.length + 1 : normalSets.length + 1;
     const weight = unit === "lbs" ? Math.round(ex.currentWeight / 2.205 * 10) / 10 : ex.currentWeight;
+
+    const parentId = dropSet && ex.loggedSets.length > 0 ? ex.loggedSets[ex.loggedSets.length - 1].id : null;
 
     const newSet: LoggedSet = {
       exercise_id: ex.exercise_id,
       set_number: setNumber,
-      weight,
+      weight: dropSet ? Math.round(weight * 0.9 / 2.5) * 2.5 : weight,
       reps: ex.currentReps,
+      is_drop_set: dropSet,
+      parent_set_id: parentId,
     };
 
-    const rowKey = `${ex.exercise_id}-${setNumber}`;
+    const rowKey = `${ex.exercise_id}-${ex.loggedSets.length + 1}`;
     setPulsingRow(rowKey);
     setTimeout(() => setPulsingRow(null), 300);
 
     setExercises(prev => prev.map((e, i) => i === exIdx ? { ...e, loggedSets: [...e.loggedSets, newSet] } : e));
 
-    startRest();
+    if (!dropSet) {
+      if (isLastInSupersetGroup(exIdx)) {
+        startRest();
+      }
+    }
 
     try {
-      const saved = await api.logSet({ session_id: sessionId, ...newSet });
+      const saved = await api.logSet({
+        session_id: sessionId,
+        ...newSet,
+      });
       setExercises(prev => prev.map((e, i) => {
         if (i !== exIdx) return e;
         return { ...e, loggedSets: e.loggedSets.map(s => s === newSet ? { ...s, id: saved.id } : s) };
@@ -183,7 +207,7 @@ export default function ActiveWorkout() {
       console.error("Failed to save set", err);
     }
 
-    if (setNumber >= ex.default_sets && exIdx < exercises.length - 1) {
+    if (!dropSet && normalSets.length + 1 >= ex.default_sets && exIdx < exercises.length - 1) {
       setTimeout(() => setActiveIdx(exIdx + 1), 300);
     }
   };
@@ -218,6 +242,11 @@ export default function ActiveWorkout() {
   const restProgress = DEFAULT_REST_SECONDS > 0 ? restTimer / DEFAULT_REST_SECONDS : 0;
   const circumference = 2 * Math.PI * 28;
   const strokeDashoffset = circumference * (1 - restProgress);
+
+  const getSupersetColor = (group: number | null) => {
+    if (group === null) return undefined;
+    return SUPERSET_COLORS[(group - 1) % SUPERSET_COLORS.length];
+  };
 
   if (loading) {
     return (
@@ -286,139 +315,178 @@ export default function ActiveWorkout() {
         <div className="max-w-lg mx-auto">
           {exercises.map((ex, exIdx) => {
             const isActive = exIdx === activeIdx;
-            const isDone = ex.loggedSets.length >= ex.default_sets;
+            const normalSets = ex.loggedSets.filter(s => !s.is_drop_set);
+            const isDone = normalSets.length >= ex.default_sets;
+            const supersetColor = getSupersetColor(ex.superset_group);
+            const isFirstInGroup = ex.superset_group !== null && (exIdx === 0 || exercises[exIdx - 1].superset_group !== ex.superset_group);
 
             return (
-              <div
-                key={ex.exercise_id}
-                ref={isActive ? activeExRef : undefined}
-                className={`transition-all ${isActive ? "exercise-highlight" : ""}`}
-                style={{ borderBottom: "1px solid var(--color-border)" }}
-              >
-                <button
-                  onClick={() => setActiveIdx(exIdx)}
-                  className={`w-full px-4 py-3.5 flex items-center gap-3 text-left ${isActive ? "" : "opacity-50"}`}
+              <div key={ex.exercise_id}>
+                {isFirstInGroup ? (
+                  <div className="flex items-center gap-1.5 px-4 pt-3 pb-1">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: supersetColor }} />
+                    <span className="text-xs font-semibold" style={{ color: supersetColor }}>{t("activeWorkout.superset")}</span>
+                  </div>
+                ) : null}
+                <div
+                  ref={isActive ? activeExRef : undefined}
+                  className={`transition-all ${isActive ? "exercise-highlight" : ""}`}
+                  style={{
+                    borderBottom: "1px solid var(--color-border)",
+                    ...(ex.superset_group ? { borderLeft: `3px solid ${supersetColor}` } : {}),
+                  }}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                    isDone
-                      ? "bg-green-500/20 text-green-400"
-                      : isActive
-                      ? "text-white"
-                      : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
-                  }`}
-                    style={isActive && !isDone ? { background: "var(--color-accent-gradient)" } : {}}
+                  <button
+                    onClick={() => setActiveIdx(exIdx)}
+                    className={`w-full px-4 py-3.5 flex items-center gap-3 text-left ${isActive ? "" : "opacity-50"}`}
                   >
-                    {isDone ? (
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    ) : exIdx + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-base">{ex.name}</div>
-                    <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group} · {ex.loggedSets.length}/{ex.default_sets} {t("activeWorkout.set").toLowerCase()}s</div>
-                  </div>
-                </button>
-
-                {isActive ? (
-                  <div className="px-4 pb-5">
-                    <div className="mb-3">
-                      <ExerciseMedia exerciseName={ex.name} showInstructions />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                      isDone
+                        ? "bg-green-500/20 text-green-400"
+                        : isActive
+                        ? "text-white"
+                        : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
+                    }`}
+                      style={isActive && !isDone ? { background: "var(--color-accent-gradient)" } : {}}
+                    >
+                      {isDone ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      ) : exIdx + 1}
                     </div>
-                    {ex.lastSessionSets.length > 0 ? (
-                      <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-surface)]">
-                        <div className="text-[10px] text-[var(--color-text-muted)] mb-1 uppercase tracking-wider font-semibold">{t("activeWorkout.previous")}</div>
-                        <div className="flex gap-3 flex-wrap">
-                          {ex.lastSessionSets.map((s: any, i: number) => (
-                            <span key={i} className="text-sm text-[var(--color-text-secondary)]">{toDisplayWeight(s.weight)}{unit} x {s.reps}</span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-base">{ex.name}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group} · {normalSets.length}/{ex.default_sets} {t("activeWorkout.set").toLowerCase()}s</div>
+                    </div>
+                  </button>
 
-                    <div className="mb-3 rounded-xl overflow-hidden bg-[var(--color-surface)]">
-                      <div className="set-row px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                        <span>{t("activeWorkout.set")}</span>
-                        <span className="text-center">{t("activeWorkout.previous")}</span>
-                        <span className="text-center">{t("activeWorkout.kg")}</span>
-                        <span className="text-center">{t("activeWorkout.reps")}</span>
-                        <span></span>
+                  {isActive ? (
+                    <div className="px-4 pb-5">
+                      <div className="mb-3">
+                        <ExerciseMedia exerciseName={ex.name} showInstructions />
                       </div>
-                      {Array.from({ length: Math.max(ex.default_sets, ex.loggedSets.length) }, (_, i) => {
-                        const logged = ex.loggedSets[i];
-                        const prev = ex.lastSessionSets[i];
-                        const rowKey = `${ex.exercise_id}-${i + 1}`;
-                        const isLogged = !!logged;
-                        return (
-                          <div
-                            key={i}
-                            className={`set-row px-3 ${isLogged ? "set-row-done" : ""} ${pulsingRow === rowKey ? "log-pulse" : ""}`}
-                          >
-                            <span className="text-sm font-bold text-[var(--color-text-muted)]">{i + 1}</span>
-                            <span className="text-center text-xs text-[var(--color-text-muted)]">
-                              {prev ? `${toDisplayWeight(prev.weight)} x ${prev.reps}` : "\u2014"}
-                            </span>
-                            <span className="text-center text-sm font-bold">
-                              {isLogged ? toDisplayWeight(logged.weight) : "\u2014"}
-                            </span>
-                            <span className="text-center text-sm font-bold">
-                              {isLogged ? logged.reps : "\u2014"}
-                            </span>
-                            <span className="flex justify-center">
-                              {isLogged ? (
+                      {ex.lastSessionSets.length > 0 ? (
+                        <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-surface)]">
+                          <div className="text-[10px] text-[var(--color-text-muted)] mb-1 uppercase tracking-wider font-semibold">{t("activeWorkout.previous")}</div>
+                          <div className="flex gap-3 flex-wrap">
+                            {ex.lastSessionSets.map((s: any, i: number) => (
+                              <span key={i} className="text-sm text-[var(--color-text-secondary)]">{toDisplayWeight(s.weight)}{unit} x {s.reps}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mb-3 rounded-xl overflow-hidden bg-[var(--color-surface)]">
+                        <div className="set-row px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]" style={{ borderBottom: "1px solid var(--color-border)" }}>
+                          <span>{t("activeWorkout.set")}</span>
+                          <span className="text-center">{t("activeWorkout.previous")}</span>
+                          <span className="text-center">{t("activeWorkout.kg")}</span>
+                          <span className="text-center">{t("activeWorkout.reps")}</span>
+                          <span></span>
+                        </div>
+                        {ex.loggedSets.length > 0 ? ex.loggedSets.map((logged, i) => {
+                          const rowKey = `${ex.exercise_id}-${i + 1}`;
+                          return (
+                            <div
+                              key={i}
+                              className={`set-row px-3 set-row-done ${pulsingRow === rowKey ? "log-pulse" : ""}`}
+                            >
+                              <span className="text-sm font-bold text-[var(--color-text-muted)]">
+                                {logged.is_drop_set ? (
+                                  <span className="text-[10px] text-purple-400 font-semibold">{t("activeWorkout.drop")}</span>
+                                ) : (
+                                  ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length
+                                )}
+                              </span>
+                              <span className="text-center text-xs text-[var(--color-text-muted)]">
+                                {!logged.is_drop_set && ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1]
+                                  ? `${toDisplayWeight(ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].weight)} x ${ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].reps}`
+                                  : "\u2014"}
+                              </span>
+                              <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
+                                {toDisplayWeight(logged.weight)}
+                              </span>
+                              <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
+                                {logged.reps}
+                              </span>
+                              <span className="flex justify-center">
                                 <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
-                              ) : null}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex items-center justify-center gap-4 mb-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn">-</button>
-                        <input
-                          type="number"
-                          value={toDisplayWeight(ex.currentWeight)}
-                          onChange={e => {
-                            const v = parseFloat(e.target.value) || 0;
-                            const kg = unit === "lbs" ? Math.round(v / 2.205 * 10) / 10 : v;
-                            setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentWeight: kg } : ex2));
-                          }}
-                          className="pill-input w-20"
-                        />
-                        <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn">+</button>
+                              </span>
+                            </div>
+                          );
+                        }) : null}
+                        {Array.from({ length: Math.max(0, ex.default_sets - normalSets.length) }, (_, i) => {
+                          const setNum = normalSets.length + i + 1;
+                          const prev = ex.lastSessionSets[normalSets.length + i];
+                          return (
+                            <div key={`pending-${i}`} className="set-row px-3">
+                              <span className="text-sm font-bold text-[var(--color-text-muted)]">{setNum}</span>
+                              <span className="text-center text-xs text-[var(--color-text-muted)]">
+                                {prev ? `${toDisplayWeight(prev.weight)} x ${prev.reps}` : "\u2014"}
+                              </span>
+                              <span className="text-center text-sm font-bold">{"\u2014"}</span>
+                              <span className="text-center text-sm font-bold">{"\u2014"}</span>
+                              <span></span>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="text-[var(--color-text-muted)] text-lg font-bold">x</div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => adjustReps(exIdx, -REP_STEP)} className="stepper-btn">-</button>
-                        <input
-                          type="number"
-                          value={ex.currentReps}
-                          onChange={e => {
-                            const v = parseInt(e.target.value) || 0;
-                            setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentReps: v } : ex2));
-                          }}
-                          className="pill-input w-16"
-                        />
-                        <button onClick={() => adjustReps(exIdx, REP_STEP)} className="stepper-btn">+</button>
+
+                      <div className="flex items-center justify-center gap-4 mb-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn">-</button>
+                          <input
+                            type="number"
+                            value={toDisplayWeight(ex.currentWeight)}
+                            onChange={e => {
+                              const v = parseFloat(e.target.value) || 0;
+                              const kg = unit === "lbs" ? Math.round(v / 2.205 * 10) / 10 : v;
+                              setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentWeight: kg } : ex2));
+                            }}
+                            className="pill-input w-20"
+                          />
+                          <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn">+</button>
+                        </div>
+                        <div className="text-[var(--color-text-muted)] text-lg font-bold">x</div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => adjustReps(exIdx, -REP_STEP)} className="stepper-btn">-</button>
+                          <input
+                            type="number"
+                            value={ex.currentReps}
+                            onChange={e => {
+                              const v = parseInt(e.target.value) || 0;
+                              setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentReps: v } : ex2));
+                            }}
+                            className="pill-input w-16"
+                          />
+                          <button onClick={() => adjustReps(exIdx, REP_STEP)} className="stepper-btn">+</button>
+                        </div>
                       </div>
-                    </div>
 
-                    <button
-                      onClick={() => logSet(exIdx)}
-                      className="w-full btn-primary text-base py-3.5 font-bold"
-                    >
-                      {t("activeWorkout.logSet", { number: ex.loggedSets.length + 1 })}
-                    </button>
-
-                    {ex.loggedSets.length > 0 ? (
-                      <button onClick={() => deleteLastSet(exIdx)} className="w-full text-center text-sm mt-2 text-red-400/70 py-2 font-medium">
-                        {t("activeWorkout.undoLastSet")}
+                      <button
+                        onClick={() => logSet(exIdx)}
+                        className="w-full btn-primary text-base py-3.5 font-bold"
+                      >
+                        {t("activeWorkout.logSet", { number: normalSets.length + 1 })}
                       </button>
-                    ) : null}
-                  </div>
-                ) : null}
+
+                      {ex.loggedSets.length > 0 ? (
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => logSet(exIdx, true)}
+                            className="flex-1 text-center text-sm py-2 font-semibold rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                          >
+                            {t("activeWorkout.dropSet")}
+                          </button>
+                          <button onClick={() => deleteLastSet(exIdx)} className="flex-1 text-center text-sm py-2 text-red-400/70 font-medium">
+                            {t("activeWorkout.undoLastSet")}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             );
           })}

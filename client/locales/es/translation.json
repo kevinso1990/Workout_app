@@ -218,6 +218,11 @@
   "exerciseChart": {
     "weightProgression": "Progresión de peso"
   },
+  "recovery": {
+    "title": "Estado de recuperación",
+    "warning": "Algunos músculos aún están fatigados",
+    "warningDetail": "{{muscles}} pueden necesitar más tiempo de recuperación."
+  },
   "common": {
     "confirm": "Confirmar",
     "cancel": "Cancelar",

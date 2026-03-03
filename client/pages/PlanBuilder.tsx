@@ -12,7 +12,10 @@ interface PlanExercise {
   default_sets: number;
   default_reps: number;
   default_weight: number;
+  superset_group: number | null;
 }
+
+const SUPERSET_COLORS = ["#4f8ef7", "#7c5bf5", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
 
 export default function PlanBuilder() {
   const { t } = useTranslation();
@@ -30,6 +33,8 @@ export default function PlanBuilder() {
   const [customName, setCustomName] = useState("");
   const [customGroup, setCustomGroup] = useState("Chest");
   const [saving, setSaving] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     api.getExercises().then(setAllExercises);
@@ -43,6 +48,7 @@ export default function PlanBuilder() {
           default_sets: e.default_sets,
           default_reps: e.default_reps,
           default_weight: e.default_weight,
+          superset_group: e.superset_group || null,
         })));
       });
     }
@@ -64,6 +70,7 @@ export default function PlanBuilder() {
       default_sets: DEFAULT_SETS,
       default_reps: DEFAULT_REPS,
       default_weight: DEFAULT_WEIGHT,
+      superset_group: null,
     }]);
   };
 
@@ -83,11 +90,47 @@ export default function PlanBuilder() {
     setExercises(exercises.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   };
 
+  const toggleSelect = (idx: number) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const linkSuperset = () => {
+    if (selected.size < 2) return;
+    const usedGroups = exercises.map(e => e.superset_group).filter((g): g is number => g !== null);
+    const nextGroup = usedGroups.length > 0 ? Math.max(...usedGroups) + 1 : 1;
+    setExercises(exercises.map((e, i) => selected.has(i) ? { ...e, superset_group: nextGroup } : e));
+    setSelected(new Set());
+    setSelectMode(false);
+  };
+
+  const unlinkSuperset = (group: number) => {
+    setExercises(exercises.map(e => e.superset_group === group ? { ...e, superset_group: null } : e));
+  };
+
+  const getSupersetColor = (group: number | null) => {
+    if (group === null) return undefined;
+    return SUPERSET_COLORS[(group - 1) % SUPERSET_COLORS.length];
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const data = { name, exercises: exercises.map(e => ({ exercise_id: e.exercise_id, default_sets: e.default_sets, default_reps: e.default_reps, default_weight: e.default_weight })) };
+      const data = {
+        name,
+        exercises: exercises.map(e => ({
+          exercise_id: e.exercise_id,
+          default_sets: e.default_sets,
+          default_reps: e.default_reps,
+          default_weight: e.default_weight,
+          superset_group: e.superset_group,
+        })),
+      };
       if (isEdit) {
         await api.updatePlan(parseInt(params.id!), data);
       } else {
@@ -107,6 +150,8 @@ export default function PlanBuilder() {
     setCustomName("");
     setShowCustom(false);
   };
+
+  const supersetGroups = [...new Set(exercises.map(e => e.superset_group).filter((g): g is number => g !== null))];
 
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
@@ -128,48 +173,97 @@ export default function PlanBuilder() {
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder={t("planBuilder.planNamePlaceholder")}
-          className="input w-full text-lg font-bold mb-6"
+          className="input w-full text-lg font-bold mb-4"
           autoFocus
         />
 
+        {exercises.length >= 2 ? (
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => { setSelectMode(!selectMode); setSelected(new Set()); }}
+              className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-all ${selectMode ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`}
+              style={selectMode ? { background: "var(--color-accent-gradient)" } : {}}
+            >
+              Superset
+            </button>
+            {selectMode && selected.size >= 2 ? (
+              <button onClick={linkSuperset} className="text-xs px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: "var(--color-accent-gradient)" }}>
+                Link as Superset
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         {exercises.length > 0 ? (
-          <div className="space-y-2 mb-6">
-            {exercises.map((ex, idx) => (
-              <div key={`${ex.exercise_id}-${idx}`} className="card p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveExercise(idx, -1)} disabled={idx === 0} className="text-[var(--color-text-muted)] disabled:opacity-20 p-0.5">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
-                    </button>
-                    <button onClick={() => moveExercise(idx, 1)} disabled={idx === exercises.length - 1} className="text-[var(--color-text-muted)] disabled:opacity-20 p-0.5">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                    </button>
+          <div className="space-y-1 mb-6">
+            {exercises.map((ex, idx) => {
+              const isFirstInGroup = ex.superset_group !== null && (idx === 0 || exercises[idx - 1].superset_group !== ex.superset_group);
+              const isInGroup = ex.superset_group !== null;
+              const color = getSupersetColor(ex.superset_group);
+
+              return (
+                <React.Fragment key={`${ex.exercise_id}-${idx}`}>
+                  {isFirstInGroup ? (
+                    <div className="flex items-center justify-between pt-2 pb-1 px-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-xs font-semibold" style={{ color }}>Superset</span>
+                      </div>
+                      <button onClick={() => unlinkSuperset(ex.superset_group!)} className="text-xs text-[var(--color-text-muted)] hover:text-red-400">
+                        Unlink
+                      </button>
+                    </div>
+                  ) : null}
+                  <div
+                    className="card p-3"
+                    style={isInGroup ? { borderLeft: `3px solid ${color}`, borderRadius: "0.75rem" } : {}}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      {selectMode ? (
+                        <button onClick={() => toggleSelect(idx)} className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${selected.has(idx) ? "border-[var(--color-accent)] bg-[var(--color-accent)]" : "border-[var(--color-border)]"}`}>
+                          {selected.has(idx) ? (
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          ) : null}
+                        </button>
+                      ) : (
+                        <div className="flex flex-col gap-0.5">
+                          <button onClick={() => moveExercise(idx, -1)} disabled={idx === 0} className="text-[var(--color-text-muted)] disabled:opacity-20 p-0.5">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                          </button>
+                          <button onClick={() => moveExercise(idx, 1)} disabled={idx === exercises.length - 1} className="text-[var(--color-text-muted)] disabled:opacity-20 p-0.5">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold truncate">{ex.name}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
+                        <ExerciseMedia exerciseName={ex.name} compact />
+                      </div>
+                      {!selectMode ? (
+                        <button onClick={() => removeExercise(idx)} className="text-[var(--color-text-muted)] hover:text-red-400 p-1">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.setsLabel")}</label>
+                        <input type="number" value={ex.default_sets} onChange={e => updateExercise(idx, "default_sets", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.repsLabel")}</label>
+                        <input type="number" value={ex.default_reps} onChange={e => updateExercise(idx, "default_reps", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.kgLabel")}</label>
+                        <input type="number" value={ex.default_weight} onChange={e => updateExercise(idx, "default_weight", parseFloat(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" step="2.5" />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{ex.name}</div>
-                    <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
-                    <ExerciseMedia exerciseName={ex.name} compact />
-                  </div>
-                  <button onClick={() => removeExercise(idx)} className="text-[var(--color-text-muted)] hover:text-red-400 p-1">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.setsLabel")}</label>
-                    <input type="number" value={ex.default_sets} onChange={e => updateExercise(idx, "default_sets", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.repsLabel")}</label>
-                    <input type="number" value={ex.default_reps} onChange={e => updateExercise(idx, "default_reps", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.kgLabel")}</label>
-                    <input type="number" value={ex.default_weight} onChange={e => updateExercise(idx, "default_weight", parseFloat(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" step="2.5" />
-                  </div>
-                </div>
-              </div>
-            ))}
+                </React.Fragment>
+              );
+            })}
           </div>
         ) : null}
 
@@ -189,16 +283,8 @@ export default function PlanBuilder() {
               <h2 className="font-bold text-lg">{t("planBuilder.exerciseLibrary")}</h2>
               <button onClick={() => setShowLibrary(false)} className="btn-ghost min-h-0 px-2 py-1 text-sm">{t("planBuilder.done")}</button>
             </div>
-
             <div className="px-4 py-3 space-y-2">
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder={t("planBuilder.searchPlaceholder")}
-                className="input w-full"
-                autoFocus
-              />
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={t("planBuilder.searchPlaceholder")} className="input w-full" autoFocus />
               <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
                 <button onClick={() => setFilterGroup("")} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${!filterGroup ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`} style={!filterGroup ? { background: "var(--color-accent-gradient)" } : {}}>{t("planBuilder.all")}</button>
                 {muscleGroups.map(mg => (
@@ -206,15 +292,10 @@ export default function PlanBuilder() {
                 ))}
               </div>
             </div>
-
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               <div className="space-y-0.5">
                 {filteredExercises.map(ex => (
-                  <button
-                    key={ex.id}
-                    onClick={() => addExercise(ex)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[var(--color-surface)] active:bg-[var(--color-surface-alt)] transition-colors text-left"
-                  >
+                  <button key={ex.id} onClick={() => addExercise(ex)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[var(--color-surface)] active:bg-[var(--color-surface-alt)] transition-colors text-left">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <ExerciseMedia exerciseName={ex.name} compact />
                       <div className="min-w-0">

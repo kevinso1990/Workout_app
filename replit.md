@@ -12,6 +12,8 @@ WorkoutApp is a mobile-first web application for creating workout plans and trac
 - **Build**: Vite with @tailwindcss/vite plugin
 - **Charts**: Inline SVG (ExerciseChart component with gradient fills)
 - **Exercise Data**: MuscleWiki API (proxied through backend, cached in SQLite)
+- **i18n**: i18next + react-i18next (6 languages)
+- **Push**: web-push (VAPID keys in env secrets)
 
 ## Architecture
 
@@ -20,23 +22,30 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 
 ### Database (server/db.ts)
 - SQLite file: `workout.db` in project root
-- Tables: exercises, plans, plan_exercises, sessions, sets, exercise_feedback, body_weight, exercise_media_cache
+- Tables: exercises, plans, plan_exercises, sessions, sets, exercise_feedback, body_weight, exercise_media_cache, muscle_fatigue, push_subscriptions
 - 100+ seeded exercises across 10 muscle groups (Chest, Back, Shoulders, Legs, Biceps, Triceps, Core, Traps, Forearms)
 - WAL mode + foreign keys enabled
+- plan_exercises has `superset_group` INTEGER (NULL = no superset, same number = grouped)
+- sets has `is_drop_set` INTEGER DEFAULT 0, `parent_set_id` INTEGER (FK to sets.id)
+- muscle_fatigue has muscle_group, fatigue_score REAL, last_trained_at TEXT, session_id INTEGER
+- push_subscriptions has endpoint, keys_p256dh, keys_auth, created_at
 
 ### API Routes (server/routes.ts)
 - `GET/POST /api/exercises` - Exercise library CRUD
-- `GET/POST/PUT/DELETE /api/plans` - Plan management
-- `POST /api/plans/auto-generate` - Auto-generate plans from onboarding (frequency/experience/goal)
+- `GET/POST/PUT/DELETE /api/plans` - Plan management (superset_group on plan_exercises)
+- `POST /api/plans/auto-generate` - Auto-generate plans from onboarding (frequency/experience/goal/equipment)
 - `POST /api/sessions` - Start workout session
-- `PUT /api/sessions/:id` - Finish session (with RPE, notes)
+- `PUT /api/sessions/:id` - Finish session (with RPE, notes, triggers fatigue recording)
 - `GET /api/sessions` - List sessions with computed volume/duration
-- `GET /api/sessions/:id` - Session detail with sets
-- `POST /api/sets` - Log a set
+- `GET /api/sessions/:id` - Session detail with sets (includes drop set data)
+- `POST /api/sets` - Log a set (accepts is_drop_set + parent_set_id)
 - `DELETE /api/sets/:id` - Undo a set
 - `POST /api/exercise-feedback` - Per-exercise difficulty rating
-- `GET /api/recommendations/:planId` - Smart progression suggestions
+- `GET /api/recommendations/:planId` - Smart progression suggestions (excludes drop sets)
 - `POST /api/recommendations/:planId/accept` - Apply recommendations
+- `GET /api/recovery` - Current muscle recovery % (fatigue decays 1pt/24h)
+- `GET /api/push/vapid-public` - Returns public VAPID key
+- `POST /api/push/subscribe` - Store push subscription
 - `GET /api/stats/weekly-volume` - Weekly volume by muscle group
 - `GET /api/stats/prs` - Personal records
 - `GET /api/stats/exercise-history/:id` - Exercise progression data
@@ -52,20 +61,49 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - `GET/POST /api/body-weight` - Body weight logging
 
 ### Frontend Pages
-- **Dashboard** (`/`) - Hero card for next workout, weekly schedule strip (Mon-Sun), volume by muscle, recent activity
+- **Dashboard** (`/`) - Hero card for next workout, weekly schedule strip (Mon-Sun), volume by muscle, recent activity, recovery status panel
 - **Plans** (`/plans`) - List/delete plans with muscle group tag pills
-- **PlanBuilder** (`/plans/new`, `/plans/:id/edit`) - Create/edit plans with exercise library modal, up/down reorder, custom exercise creation, MuscleWiki exercise thumbnails
-- **ActiveWorkout** (`/workout/:sessionId`) - Full-screen workout tracker with table-like set rows (Set | Previous | Weight | Reps | Done), pill-shaped inputs, circular SVG rest timer, plate calculator, localStorage backup, kg/lbs toggle, auto-highlight next exercise
+- **PlanBuilder** (`/plans/new`, `/plans/:id/edit`) - Create/edit plans with exercise library modal, up/down reorder, custom exercise creation, MuscleWiki exercise thumbnails, superset grouping with colored borders
+- **ActiveWorkout** (`/workout/:sessionId`) - Full-screen workout tracker with table-like set rows (Set | Previous | Weight | Reps | Done), pill-shaped inputs, circular SVG rest timer, plate calculator, localStorage backup, kg/lbs toggle, auto-highlight next exercise, drop set button (+10% weight reduction), superset rest timer skip
 - **PostWorkout** (`/workout/:sessionId/finish`) - Full-screen summary card (duration, volume, sets), confetti animation, RPE slider, per-exercise feedback
 - **Progress** (`/progress`) - Stats dashboard (4 stat cards), weekly volume bar chart (8 weeks), per-exercise progress (1RM/weight/volume charts), muscle group heatmap, consistency calendar (GitHub-style), body weight tracking
 - **History** (`/history`) - Workout log with PR badges (star icons)
 - **SessionDetail** (`/session/:id`) - Sets breakdown with gradient-fill progress charts, recommendation badges
-- **Profile** (`/profile`) - Stats overview, theme toggle (dark/light)
+- **Profile** (`/profile`) - Stats overview, theme toggle (dark/light), language selector, notification toggle
 
-### New Components
+### Components
 - **ExerciseMedia** (`client/components/ExerciseMedia.tsx`) - Fetches and displays MuscleWiki exercise data (video thumbnail, muscle tags, body map images, step-by-step instructions). Supports compact and full modes. Client-side memory cache.
 - **MuscleHeatmap** (`client/components/MuscleHeatmap.tsx`) - SVG body outline with muscles color-coded by 7-day training frequency. Accent gradient for trained muscles, muted for untrained.
 - **ConsistencyCalendar** (`client/components/ConsistencyCalendar.tsx`) - GitHub-style contribution grid showing last 6 months of workouts. Color-coded: empty = no workout, accent = workout, purple = PR day.
+- **RecoveryPanel** (`client/components/RecoveryPanel.tsx`) - Recovery status bars for each muscle group (red 0-40%, orange 40-70%, green 70-100%). Uses `useRecoveryWarning` hook for pre-workout fatigue warnings.
+- **Onboarding** (`client/components/Onboarding.tsx`) - 5-step guided overlay with notification permission request.
+
+### Multi-Language Support (client/i18n.ts)
+- 6 languages: English, German, French, Spanish, Italian, Portuguese
+- Translation files in `client/locales/{en,de,fr,es,it,pt}/translation.json`
+- Browser language auto-detection via i18next-browser-languagedetector
+- Language persisted to localStorage (`app_language`)
+- HTML lang attribute updated on language change
+- Language selector modal on Profile page
+
+### Superset & Drop Set System
+- PlanBuilder: Multi-select mode → "Link as Superset" → colored left border grouping with "Superset" label, "Unlink" option
+- ActiveWorkout: Superset exercises shown with colored left borders; rest timer skipped between exercises in same superset group; rest only starts after last exercise in group
+- Drop sets: "+ Drop Set" button appears after logging 1+ sets; pre-fills weight at -10% (rounded to 2.5kg); purple "Drop" label; counted separately from normal sets for progression
+
+### Recovery & Fatigue Tracking
+- muscle_fatigue table with decay logic (1 pt/24h)
+- Primary muscles get fatigue_score 3, secondary muscles get 1
+- GET /api/recovery returns current recovery % per muscle
+- RecoveryPanel on Dashboard with colored progress bars
+- useRecoveryWarning hook warns if primary muscles <50% recovered before workout
+
+### Push Notifications (PWA)
+- VAPID keys stored as env secrets (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+- Service worker handles push events + notificationclick
+- Subscription stored in push_subscriptions table
+- Permission request in Onboarding + toggle in Profile
+- Server-side cron: inactivity nudge (3 days), weekly summary (Sunday)
 
 ### Design System — Alpha Progression Style (client/index.css)
 - Deep dark background (#0f0f0f), card surfaces (#1c1c1e)
@@ -94,6 +132,7 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 ### Onboarding (client/components/Onboarding.tsx)
 - 5-step guided overlay for first-time users
 - Steps: Welcome → Training Frequency (2-6 days) → Experience Level → Goal → Recommended Split
+- Includes notification permission request
 - Auto-generates workout plans via POST /api/plans/auto-generate
 - Generates: Full Body (2-3 days), Upper/Lower (4 days), PPL (5-6 days)
 - Sets/reps based on goal: muscle 3x10, strength 4x5, fat/fitness 3x13
@@ -105,6 +144,7 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - 4 days → Upper A/B + Lower A/B with exercise variation
 - 5-6 days → Push/Pull/Legs split
 - Goal-based rep ranges: muscle 3x10, strength 4x5, fat/fitness 3x13
+- Equipment parameter: barbell → kettlebell swap mapping available
 
 ### Key Config (client/config.ts)
 - APP_NAME, DEFAULT_REST_SECONDS (90), WEIGHT_STEP (2.5), REP_STEP (1), DEFAULT_SETS (3), DEFAULT_REPS (10)
@@ -114,9 +154,10 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - right + all reps hit → +1 rep
 - right + incomplete reps → same weight/reps
 - hard or RPE 9+ → -2.5kg or -1 rep
+- Drop sets excluded from progression calculations
 
 ### PWA Support
-- Service worker: `client/sw.js` (cache-first for static, network-first for API)
+- Service worker: `client/sw.js` (cache-first for static, network-first for API, push event handler)
 - Manifest: `client/manifest.json`
 - Icon: `client/icon.svg`
 
@@ -139,5 +180,8 @@ Express runs on port 5000 (primary) and port 8081 (Replit proxy compatibility), 
 - `.replit` file has legacy Expo port mappings (8081→80) that cannot be edited directly — dual-port workaround in server/index.ts
 - Weight stored in kg internally; lbs display is frontend-only conversion
 - localStorage backup key: `workout_backup`
+- localStorage language key: `app_language`
 - Old React Native files in `client/screens/` and `client/navigation/` exist but are not imported
 - MuscleWiki API responses cached in exercise_media_cache table (7-day TTL)
+- Equipment values: barbell, dumbbell, kettlebell, cable, machine, bodyweight
+- VAPID keys stored as env secrets (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
