@@ -1425,16 +1425,12 @@ function setupCors(app2) {
       app.get("*", (_req, res) => {
         res.sendFile(path2.resolve(distPath, "index.html"));
       });
+    } else {
+      log("WARNING: dist/public not found \u2014 no static files to serve");
     }
-    const server = app.listen(port, "0.0.0.0", () => {
+    app.listen(port, "0.0.0.0", () => {
       log(`Server running on port ${port}`);
     });
-    const proxyPort = 8081;
-    if (proxyPort !== port) {
-      app.listen(proxyPort, "0.0.0.0", () => {
-        log(`Server also listening on port ${proxyPort} (proxy)`);
-      });
-    }
   } else {
     const { createServer: createHttpServer } = await import("http");
     const httpServer = createHttpServer(app);
