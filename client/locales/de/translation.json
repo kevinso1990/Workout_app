@@ -123,7 +123,8 @@
     "bestSetVol": "Bestes Satzvolumen",
     "bodyWeight": "Körpergewicht",
     "log": "Erfassen",
-    "latest": "Aktuell"
+    "latest": "Aktuell",
+    "weeksAbbr": "W"
   },
   "history": {
     "title": "Verlauf",

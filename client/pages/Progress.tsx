@@ -315,8 +315,8 @@ export default function Progress() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard label={t("progress.workouts")} value={totals?.totalWorkouts || 0} />
             <StatCard label={t("progress.totalVolume")} value={`${Math.round((totals?.totalVolume || 0) / 1000)}k ${t("common.kg")}`} />
-            <StatCard label={t("progress.currentStreak")} value={`${totals?.currentStreak || 0}w`} sub={t("progress.consecutiveWeeks")} />
-            <StatCard label={t("progress.longestStreak")} value={`${totals?.longestStreak || 0}w`} sub={t("progress.allTime")} />
+            <StatCard label={t("progress.currentStreak")} value={`${totals?.currentStreak || 0} ${t("progress.weeksAbbr")}`} sub={t("progress.consecutiveWeeks")} />
+            <StatCard label={t("progress.longestStreak")} value={`${totals?.longestStreak || 0} ${t("progress.weeksAbbr")}`} sub={t("progress.allTime")} />
           </div>
 
           <WeeklyVolumeChart data={weeklyHistory} />

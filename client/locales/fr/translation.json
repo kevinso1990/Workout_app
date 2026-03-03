@@ -123,7 +123,8 @@
     "bestSetVol": "Meilleur vol. série",
     "bodyWeight": "Poids corporel",
     "log": "Enregistrer",
-    "latest": "Dernier"
+    "latest": "Dernier",
+    "weeksAbbr": "sem"
   },
   "history": {
     "title": "Historique",

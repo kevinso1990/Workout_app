@@ -184,11 +184,11 @@ export default function PlanBuilder() {
               className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-all ${selectMode ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`}
               style={selectMode ? { background: "var(--color-accent-gradient)" } : {}}
             >
-              Superset
+              {t("planBuilder.superset")}
             </button>
             {selectMode && selected.size >= 2 ? (
               <button onClick={linkSuperset} className="text-xs px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: "var(--color-accent-gradient)" }}>
-                Link as Superset
+                {t("planBuilder.linkSuperset")}
               </button>
             ) : null}
           </div>
@@ -207,10 +207,10 @@ export default function PlanBuilder() {
                     <div className="flex items-center justify-between pt-2 pb-1 px-1">
                       <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-xs font-semibold" style={{ color }}>Superset</span>
+                        <span className="text-xs font-semibold" style={{ color }}>{t("planBuilder.superset")}</span>
                       </div>
                       <button onClick={() => unlinkSuperset(ex.superset_group!)} className="text-xs text-[var(--color-text-muted)] hover:text-red-400">
-                        Unlink
+                        {t("planBuilder.unlink")}
                       </button>
                     </div>
                   ) : null}

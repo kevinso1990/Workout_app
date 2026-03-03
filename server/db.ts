@@ -124,6 +124,9 @@ function migrateSupersetsDropSets() {
   try {
     db.exec("ALTER TABLE sets ADD COLUMN parent_set_id INTEGER REFERENCES sets(id) ON DELETE SET NULL");
   } catch {}
+  try {
+    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_muscle_fatigue_session_muscle ON muscle_fatigue(session_id, muscle_group)");
+  } catch {}
 }
 
 function seedExercises() {

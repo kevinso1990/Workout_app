@@ -123,7 +123,8 @@
     "bestSetVol": "Best Set Vol",
     "bodyWeight": "Body Weight",
     "log": "Log",
-    "latest": "Latest"
+    "latest": "Latest",
+    "weeksAbbr": "w"
   },
   "history": {
     "title": "History",
