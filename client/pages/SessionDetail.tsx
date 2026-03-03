@@ -3,8 +3,10 @@ import { useParams, useLocation } from "wouter";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import ExerciseChart from "../components/ExerciseChart";
+import { useTranslation } from "react-i18next";
 
 export default function SessionDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const [session, setSession] = useState<any>(null);
@@ -34,7 +36,7 @@ export default function SessionDetail() {
   if (!session) {
     return (
       <div className="min-h-[100dvh] bg-[var(--color-bg)] flex items-center justify-center">
-        <p className="text-[var(--color-text-secondary)]">Session not found</p>
+        <p className="text-[var(--color-text-secondary)]">{t("sessionDetail.sessionNotFound")}</p>
       </div>
     );
   }
@@ -69,21 +71,21 @@ export default function SessionDetail() {
       <div className="px-4 pt-4 pb-8 max-w-lg mx-auto">
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="card p-3 text-center">
-            <div className="text-xs text-[var(--color-text-secondary)]">Volume</div>
-            <div className="text-lg font-bold tabular-nums">{Math.round(session.totalVolume).toLocaleString()} <span className="text-sm text-[var(--color-text-muted)]">kg</span></div>
+            <div className="text-xs text-[var(--color-text-secondary)]">{t("sessionDetail.volume")}</div>
+            <div className="text-lg font-bold tabular-nums">{Math.round(session.totalVolume).toLocaleString()} <span className="text-sm text-[var(--color-text-muted)]">{t("common.kg")}</span></div>
           </div>
           <div className="card p-3 text-center">
-            <div className="text-xs text-[var(--color-text-secondary)]">Duration</div>
-            <div className="text-lg font-bold">{session.duration ? `${session.duration} min` : "—"}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">{t("sessionDetail.duration")}</div>
+            <div className="text-lg font-bold">{session.duration ? `${session.duration} ${t("common.min")}` : "\u2014"}</div>
           </div>
           {session.rpe ? (
             <div className="card p-3 text-center">
-              <div className="text-xs text-[var(--color-text-secondary)]">RPE</div>
+              <div className="text-xs text-[var(--color-text-secondary)]">{t("sessionDetail.rpe")}</div>
               <div className="text-lg font-bold">{session.rpe}</div>
             </div>
           ) : (
             <div className="card p-3 text-center">
-              <div className="text-xs text-[var(--color-text-secondary)]">Sets</div>
+              <div className="text-xs text-[var(--color-text-secondary)]">{t("sessionDetail.sets")}</div>
               <div className="text-lg font-bold">{session.sets?.length || 0}</div>
             </div>
           )}
@@ -91,7 +93,7 @@ export default function SessionDetail() {
 
         {session.notes ? (
           <div className="card p-4 mb-6">
-            <div className="text-xs text-[var(--color-text-muted)] mb-1 uppercase font-semibold">Notes</div>
+            <div className="text-xs text-[var(--color-text-muted)] mb-1 uppercase font-semibold">{t("sessionDetail.notes")}</div>
             <p className="text-sm text-[var(--color-text-secondary)]">{session.notes}</p>
           </div>
         ) : null}
@@ -108,16 +110,16 @@ export default function SessionDetail() {
                 <div className="space-y-0 mb-2">
                   {group.sets.map((s: any) => (
                     <div key={s.id} className="flex justify-between text-sm py-1.5" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                      <span className="text-[var(--color-text-muted)]">Set {s.set_number}</span>
-                      <span className="font-bold tabular-nums">{s.weight} kg x {s.reps}</span>
+                      <span className="text-[var(--color-text-muted)]">{t("sessionDetail.set", { number: s.set_number })}</span>
+                      <span className="font-bold tabular-nums">{s.weight} {t("common.kg")} x {s.reps}</span>
                     </div>
                   ))}
                 </div>
                 <ExerciseChart exerciseId={exId} exerciseName={group.name} />
                 {rec && rec.reason !== "No previous data" ? (
                   <div className="mt-3 p-3 rounded-xl" style={{ background: "rgba(79, 142, 247, 0.1)" }}>
-                    <div className="text-xs text-[var(--color-accent)] font-bold mb-0.5">Next session</div>
-                    <div className="text-sm font-bold">{rec.suggested_sets} x {rec.suggested_reps} @ {rec.suggested_weight} kg</div>
+                    <div className="text-xs text-[var(--color-accent)] font-bold mb-0.5">{t("sessionDetail.nextSession")}</div>
+                    <div className="text-sm font-bold">{rec.suggested_sets} x {rec.suggested_reps} @ {rec.suggested_weight} {t("common.kg")}</div>
                     <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{rec.reason}</div>
                   </div>
                 ) : null}
@@ -128,16 +130,16 @@ export default function SessionDetail() {
 
         {recommendations.some(r => r.reason !== "No previous data") ? (
           <button onClick={acceptAll} className="btn-primary w-full mt-6">
-            Accept All Recommendations
+            {t("sessionDetail.acceptAll")}
           </button>
         ) : null}
       </div>
 
       <ConfirmModal
         open={showApplied}
-        title="Recommendations Applied"
-        message="Your plan has been updated with the new targets."
-        confirmLabel="OK"
+        title={t("sessionDetail.recommendationsApplied")}
+        message={t("sessionDetail.planUpdated")}
+        confirmLabel={t("sessionDetail.ok")}
         cancelLabel=""
         onConfirm={() => setShowApplied(false)}
         onCancel={() => setShowApplied(false)}

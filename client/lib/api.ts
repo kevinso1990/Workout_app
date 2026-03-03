@@ -29,7 +29,7 @@ export const api = {
   getSessions: () => request<any[]>("/api/sessions"),
   getSession: (id: number) => request<any>(`/api/sessions/${id}`),
 
-  logSet: (data: { session_id: number; exercise_id: number; set_number: number; weight: number; reps: number }) =>
+  logSet: (data: { session_id: number; exercise_id: number; set_number: number; weight: number; reps: number; is_drop_set?: boolean; parent_set_id?: number }) =>
     request<any>("/api/sets", { method: "POST", body: JSON.stringify(data) }),
   deleteSet: (id: number) => request<any>(`/api/sets/${id}`, { method: "DELETE" }),
 
@@ -61,4 +61,12 @@ export const api = {
 
   autoGeneratePlans: (data: { frequency: number; experience: string; goal: string }) =>
     request<any>("/api/plans/auto-generate", { method: "POST", body: JSON.stringify(data) }),
+
+  getRecovery: () => request<any[]>("/api/recovery"),
+
+  getVapidPublicKey: () => request<{ publicKey: string }>("/api/push/vapid-public"),
+  subscribePush: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+    request<any>("/api/push/subscribe", { method: "POST", body: JSON.stringify(subscription) }),
+  unsubscribePush: (endpoint: string) =>
+    request<any>("/api/push/unsubscribe", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
 };

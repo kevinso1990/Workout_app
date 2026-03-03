@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const BAR_WEIGHT_KG = 20;
 const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function PlateCalculator({ unit, onClose }: Props) {
+  const { t } = useTranslation();
   const [targetWeight, setTargetWeight] = useState(60);
 
   const barWeight = unit === "lbs" ? Math.round(BAR_WEIGHT_KG * 2.205) : BAR_WEIGHT_KG;
@@ -53,7 +55,7 @@ export default function PlateCalculator({ unit, onClose }: Props) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-bold text-lg">Plate Calculator</h2>
+          <h2 className="font-bold text-lg">{t("plateCalculator.title")}</h2>
           <button onClick={onClose} className="text-[var(--color-text-muted)] p-1">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -73,7 +75,7 @@ export default function PlateCalculator({ unit, onClose }: Props) {
               onChange={e => setTargetWeight(parseFloat(e.target.value) || 0)}
               className="pill-input w-24 text-2xl"
             />
-            <div className="text-xs text-[var(--color-text-muted)] mt-1">{unit} total</div>
+            <div className="text-xs text-[var(--color-text-muted)] mt-1">{unit} {t("plateCalculator.total")}</div>
           </div>
           <button
             onClick={() => setTargetWeight(w => w + (unit === "lbs" ? 10 : 5))}
@@ -82,7 +84,7 @@ export default function PlateCalculator({ unit, onClose }: Props) {
         </div>
 
         <div className="text-center text-sm text-[var(--color-text-secondary)] mb-4">
-          Bar: {barWeight} {unit} · Each side:
+          {t("plateCalculator.barEachSide", { weight: barWeight, unit })}
         </div>
 
         {plates.length > 0 ? (
@@ -108,7 +110,7 @@ export default function PlateCalculator({ unit, onClose }: Props) {
           </div>
         ) : (
           <div className="text-center text-[var(--color-text-muted)] text-sm py-6">
-            {targetKg <= BAR_WEIGHT_KG ? "Bar only — no plates needed" : "Invalid weight"}
+            {targetKg <= BAR_WEIGHT_KG ? t("plateCalculator.barOnly") : t("plateCalculator.invalidWeight")}
           </div>
         )}
 

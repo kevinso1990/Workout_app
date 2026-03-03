@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { api } from "../lib/api";
 import { DEFAULT_SETS, DEFAULT_REPS, DEFAULT_WEIGHT } from "../config";
 import ExerciseMedia from "../components/ExerciseMedia";
+import { useTranslation } from "react-i18next";
 
 interface PlanExercise {
   exercise_id: number;
@@ -14,6 +15,7 @@ interface PlanExercise {
 }
 
 export default function PlanBuilder() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const params = useParams<{ id?: string }>();
   const isEdit = !!params.id;
@@ -111,11 +113,11 @@ export default function PlanBuilder() {
       <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-xl px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <button onClick={() => navigate("/plans")} className="btn-ghost min-h-0 px-2 py-1 text-sm">
-            Cancel
+            {t("planBuilder.cancel")}
           </button>
-          <h1 className="font-bold">{isEdit ? "Edit Plan" : "New Plan"}</h1>
+          <h1 className="font-bold">{isEdit ? t("planBuilder.editPlan") : t("planBuilder.newPlan")}</h1>
           <button onClick={handleSave} disabled={saving || !name.trim()} className="btn-primary min-h-0 px-4 py-1.5 text-sm">
-            {saving ? "..." : "Save"}
+            {saving ? t("planBuilder.saving") : t("planBuilder.save")}
           </button>
         </div>
       </header>
@@ -125,7 +127,7 @@ export default function PlanBuilder() {
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="Plan name (e.g. Push Day A)"
+          placeholder={t("planBuilder.planNamePlaceholder")}
           className="input w-full text-lg font-bold mb-6"
           autoFocus
         />
@@ -154,15 +156,15 @@ export default function PlanBuilder() {
                 </div>
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">Sets</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.setsLabel")}</label>
                     <input type="number" value={ex.default_sets} onChange={e => updateExercise(idx, "default_sets", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">Reps</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.repsLabel")}</label>
                     <input type="number" value={ex.default_reps} onChange={e => updateExercise(idx, "default_reps", parseInt(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">kg</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">{t("planBuilder.kgLabel")}</label>
                     <input type="number" value={ex.default_weight} onChange={e => updateExercise(idx, "default_weight", parseFloat(e.target.value) || 0)} className="input w-full text-sm py-1.5 mt-0.5" step="2.5" />
                   </div>
                 </div>
@@ -173,10 +175,10 @@ export default function PlanBuilder() {
 
         <button onClick={() => setShowLibrary(true)} className="btn-outline w-full mb-2">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-          Add Exercise
+          {t("planBuilder.addExercise")}
         </button>
         <button onClick={() => setShowCustom(true)} className="btn-ghost w-full text-sm">
-          Create Custom Exercise
+          {t("planBuilder.createCustom")}
         </button>
       </div>
 
@@ -184,8 +186,8 @@ export default function PlanBuilder() {
         <div className="fixed inset-0 bg-black/80 z-50 flex flex-col">
           <div className="flex-1 bg-[var(--color-bg)] flex flex-col mt-8 rounded-t-2xl overflow-hidden">
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--color-border)" }}>
-              <h2 className="font-bold text-lg">Exercise Library</h2>
-              <button onClick={() => setShowLibrary(false)} className="btn-ghost min-h-0 px-2 py-1 text-sm">Done</button>
+              <h2 className="font-bold text-lg">{t("planBuilder.exerciseLibrary")}</h2>
+              <button onClick={() => setShowLibrary(false)} className="btn-ghost min-h-0 px-2 py-1 text-sm">{t("planBuilder.done")}</button>
             </div>
 
             <div className="px-4 py-3 space-y-2">
@@ -193,12 +195,12 @@ export default function PlanBuilder() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search exercises..."
+                placeholder={t("planBuilder.searchPlaceholder")}
                 className="input w-full"
                 autoFocus
               />
               <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-                <button onClick={() => setFilterGroup("")} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${!filterGroup ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`} style={!filterGroup ? { background: "var(--color-accent-gradient)" } : {}}>All</button>
+                <button onClick={() => setFilterGroup("")} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${!filterGroup ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`} style={!filterGroup ? { background: "var(--color-accent-gradient)" } : {}}>{t("planBuilder.all")}</button>
                 {muscleGroups.map(mg => (
                   <button key={mg} onClick={() => setFilterGroup(mg)} className={`text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${filterGroup === mg ? "text-white" : "bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"}`} style={filterGroup === mg ? { background: "var(--color-accent-gradient)" } : {}}>{mg}</button>
                 ))}
@@ -232,16 +234,16 @@ export default function PlanBuilder() {
       {showCustom ? (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
           <div className="w-full bg-[var(--color-surface)] rounded-t-2xl p-5 pb-8">
-            <h2 className="font-bold text-lg mb-4">Custom Exercise</h2>
-            <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder="Exercise name" className="input w-full mb-3" autoFocus />
+            <h2 className="font-bold text-lg mb-4">{t("planBuilder.customExercise")}</h2>
+            <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder={t("planBuilder.exerciseName")} className="input w-full mb-3" autoFocus />
             <select value={customGroup} onChange={e => setCustomGroup(e.target.value)} className="input w-full mb-4">
               {(muscleGroups.length > 0 ? muscleGroups : ["Chest", "Back", "Shoulders", "Legs", "Biceps", "Triceps", "Core"]).map(mg => (
                 <option key={mg} value={mg}>{mg}</option>
               ))}
             </select>
             <div className="flex gap-3">
-              <button onClick={() => setShowCustom(false)} className="btn-ghost flex-1">Cancel</button>
-              <button onClick={handleCreateCustom} className="btn-primary flex-1">Create</button>
+              <button onClick={() => setShowCustom(false)} className="btn-ghost flex-1">{t("planBuilder.cancel")}</button>
+              <button onClick={handleCreateCustom} className="btn-primary flex-1">{t("planBuilder.create")}</button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 interface ExerciseMediaProps {
   exerciseName: string;
@@ -10,6 +11,7 @@ interface ExerciseMediaProps {
 const mediaCache = new Map<string, any[]>();
 
 export default function ExerciseMedia({ exerciseName, compact = false, showInstructions = false }: ExerciseMediaProps) {
+  const { t } = useTranslation();
   const [data, setData] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -84,7 +86,7 @@ export default function ExerciseMedia({ exerciseName, compact = false, showInstr
             </div>
           )}
           {match.difficulty && (
-            <span className="text-[10px] text-[var(--color-text-muted)]">Difficulty: {match.difficulty}</span>
+            <span className="text-[10px] text-[var(--color-text-muted)]">{t("exerciseMedia.difficulty", { level: match.difficulty })}</span>
           )}
           {match.body_map_front && (
             <div className="flex gap-1 mt-1">
@@ -101,7 +103,7 @@ export default function ExerciseMedia({ exerciseName, compact = false, showInstr
             onClick={() => setExpanded(!expanded)}
             className="text-xs text-[var(--color-accent)] font-semibold"
           >
-            {expanded ? "Hide Instructions" : "Show Instructions"}
+            {expanded ? t("exerciseMedia.hideInstructions") : t("exerciseMedia.showInstructions")}
           </button>
           {expanded && (
             <ol className="mt-2 space-y-1.5 text-xs text-[var(--color-text-secondary)] list-decimal list-inside">

@@ -71,3 +71,9 @@ outputType = "webview"
 task = "shell.exec"
 args = "npx tsx server/index.ts"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BHw5e76SwY8YxrOW4lftJkY36a-BlrK0lFk2Svj0ISuzlCHXvh2WLjHwas9j81ZJUJBXoBZoXWmZvZfkSNq8Pfs"
+VAPID_PRIVATE_KEY = "dVqTBjz-0Opai04PQ2ScH0G3ux8wGyH3IRKv-RYJc8k"

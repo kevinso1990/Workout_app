@@ -2,26 +2,27 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { isOnboardingDone, markOnboardingDone } from "../lib/onboarding";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 const FREQUENCIES = [
-  { days: 2, split: "Full Body" },
-  { days: 3, split: "Full Body or PPL (3-day)" },
-  { days: 4, split: "Upper / Lower Split" },
-  { days: 5, split: "Upper / Lower + Full Body" },
-  { days: 6, split: "Push / Pull / Legs (PPL x2)" },
+  { days: 2, splitKey: "splits.fullBody" },
+  { days: 3, splitKey: "splits.fullBodyOrPPL3" },
+  { days: 4, splitKey: "splits.upperLower" },
+  { days: 5, splitKey: "splits.upperLowerFull" },
+  { days: 6, splitKey: "splits.pplx2" },
 ];
 
 const EXPERIENCES = [
-  { key: "beginner", label: "Beginner", sub: "Under 1 year" },
-  { key: "intermediate", label: "Intermediate", sub: "1–3 years" },
-  { key: "advanced", label: "Advanced", sub: "3+ years" },
+  { key: "beginner", labelKey: "onboarding.beginner", subKey: "onboarding.beginnerSub" },
+  { key: "intermediate", labelKey: "onboarding.intermediate", subKey: "onboarding.intermediateSub" },
+  { key: "advanced", labelKey: "onboarding.advanced", subKey: "onboarding.advancedSub" },
 ];
 
 const GOALS = [
-  { key: "muscle", label: "Build Muscle", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" },
-  { key: "strength", label: "Gain Strength", icon: "M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2.71 7l1.43 1.43L2.71 9.86 4.14 11.29 7 8.43 15.57 17l-2.86 2.86 1.43 1.43 1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 2.14-2.14 1.43 1.43" },
-  { key: "fat", label: "Lose Fat", icon: "M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 16.89 19.17C18.55 17.36 19.07 14.68 17.66 12.55L17.66 11.2Z" },
-  { key: "fitness", label: "General Fitness", icon: "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" },
+  { key: "muscle", labelKey: "onboarding.buildMuscle", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" },
+  { key: "strength", labelKey: "onboarding.gainStrength", icon: "M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2.71 7l1.43 1.43L2.71 9.86 4.14 11.29 7 8.43 15.57 17l-2.86 2.86 1.43 1.43 1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 2.14-2.14 1.43 1.43" },
+  { key: "fat", labelKey: "onboarding.loseFat", icon: "M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 16.89 19.17C18.55 17.36 19.07 14.68 17.66 12.55L17.66 11.2Z" },
+  { key: "fitness", labelKey: "onboarding.generalFitness", icon: "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" },
 ];
 
 function getSplitRecommendation(freq: number, exp: string) {
@@ -32,6 +33,7 @@ function getSplitRecommendation(freq: number, exp: string) {
 }
 
 export default function Onboarding() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
   const [frequency, setFrequency] = useState<number | null>(null);
@@ -101,16 +103,16 @@ export default function Onboarding() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold">Let's build your perfect workout plan</h2>
+              <h2 className="text-xl font-bold">{t("onboarding.welcome")}</h2>
               <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                Answer 3 quick questions and we'll set everything up for you
+                {t("onboarding.welcomeSub")}
               </p>
             </div>
           )}
 
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-center">How many days per week can you train?</h2>
+              <h2 className="text-lg font-bold text-center">{t("onboarding.frequencyQuestion")}</h2>
               <div className="grid grid-cols-2 gap-2">
                 {FREQUENCIES.map(f => (
                   <button
@@ -123,8 +125,8 @@ export default function Onboarding() {
                     }`}
                   >
                     <span className="text-2xl font-bold">{f.days}</span>
-                    <span className="text-sm text-[var(--color-text-secondary)] ml-1">days</span>
-                    <div className="text-[10px] text-[var(--color-text-muted)] mt-1">{f.split}</div>
+                    <span className="text-sm text-[var(--color-text-secondary)] ml-1">{t("onboarding.daysUnit")}</span>
+                    <div className="text-[10px] text-[var(--color-text-muted)] mt-1">{t(f.splitKey)}</div>
                   </button>
                 ))}
               </div>
@@ -133,7 +135,7 @@ export default function Onboarding() {
 
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-center">What is your training experience?</h2>
+              <h2 className="text-lg font-bold text-center">{t("onboarding.experienceQuestion")}</h2>
               <div className="space-y-2">
                 {EXPERIENCES.map(e => (
                   <button
@@ -145,8 +147,8 @@ export default function Onboarding() {
                         : "border-transparent bg-[var(--color-surface-alt)]"
                     }`}
                   >
-                    <div className="font-semibold">{e.label}</div>
-                    <div className="text-xs text-[var(--color-text-muted)]">{e.sub}</div>
+                    <div className="font-semibold">{t(e.labelKey)}</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">{t(e.subKey)}</div>
                   </button>
                 ))}
               </div>
@@ -155,7 +157,7 @@ export default function Onboarding() {
 
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-center">What is your main goal?</h2>
+              <h2 className="text-lg font-bold text-center">{t("onboarding.goalQuestion")}</h2>
               <div className="grid grid-cols-2 gap-2">
                 {GOALS.map(g => (
                   <button
@@ -167,7 +169,7 @@ export default function Onboarding() {
                         : "border-transparent bg-[var(--color-surface-alt)]"
                     }`}
                   >
-                    <div className="font-semibold text-sm">{g.label}</div>
+                    <div className="font-semibold text-sm">{t(g.labelKey)}</div>
                   </button>
                 ))}
               </div>
@@ -176,7 +178,7 @@ export default function Onboarding() {
 
           {step === 4 && rec && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-center">Your Recommended Plan</h2>
+              <h2 className="text-lg font-bold text-center">{t("onboarding.recommendedPlan")}</h2>
               <div className="p-4 rounded-xl bg-[var(--color-surface-alt)]">
                 <div className="font-bold text-[var(--color-accent)] mb-1">{rec.name}</div>
                 <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">{rec.desc}</p>
@@ -186,10 +188,10 @@ export default function Onboarding() {
                 disabled={generating}
                 className="w-full btn-primary min-h-[3rem] text-sm"
               >
-                {generating ? "Creating plans..." : "Use Recommended Split"}
+                {generating ? t("onboarding.creatingPlans") : t("onboarding.useRecommended")}
               </button>
               <button onClick={buildOwn} className="w-full btn-ghost min-h-[2.75rem] text-sm">
-                Build My Own
+                {t("onboarding.buildOwn")}
               </button>
             </div>
           )}
@@ -208,16 +210,16 @@ export default function Onboarding() {
 
               <div className="flex gap-3">
                 {step > 0 ? (
-                  <button onClick={prev} className="flex-1 btn-ghost min-h-[2.75rem] text-sm">Back</button>
+                  <button onClick={prev} className="flex-1 btn-ghost min-h-[2.75rem] text-sm">{t("onboarding.back")}</button>
                 ) : (
-                  <button onClick={dismiss} className="flex-1 btn-ghost min-h-[2.75rem] text-sm">Skip</button>
+                  <button onClick={dismiss} className="flex-1 btn-ghost min-h-[2.75rem] text-sm">{t("onboarding.skip")}</button>
                 )}
                 <button
                   onClick={next}
                   disabled={!canProceed()}
                   className="flex-1 btn-primary min-h-[2.75rem] text-sm"
                 >
-                  {step === 0 ? "Get Started" : "Next"}
+                  {step === 0 ? t("onboarding.getStarted") : t("onboarding.next")}
                 </button>
               </div>
             </>

@@ -2,15 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { api } from "../lib/api";
 import { APP_NAME } from "../config";
-
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
   const [, navigate] = useLocation();
   const [plans, setPlans] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [weeklyVolume, setWeeklyVolume] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const DAYS = [
+    t("days.mon"), t("days.tue"), t("days.wed"), t("days.thu"),
+    t("days.fri"), t("days.sat"), t("days.sun"),
+  ];
 
   useEffect(() => {
     Promise.all([api.getPlans(), api.getSessions(), api.getWeeklyVolume()])
@@ -43,6 +48,8 @@ export default function Dashboard() {
     navigate(`/workout/${session.id}`);
   };
 
+  const locale = i18n.language || "en";
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60dvh]">
@@ -63,9 +70,9 @@ export default function Dashboard() {
             style={{ background: "linear-gradient(135deg, rgba(79,142,247,0.15), rgba(124,91,245,0.1))" }}
           >
             <div className="flex-1">
-              <div className="text-xs font-semibold text-[var(--color-accent)] mb-1 uppercase tracking-wider">Next Workout</div>
+              <div className="text-xs font-semibold text-[var(--color-accent)] mb-1 uppercase tracking-wider">{t("dashboard.nextWorkout")}</div>
               <div className="font-bold text-xl mb-1">{plans[0].name}</div>
-              <div className="text-sm text-[var(--color-text-secondary)]">{plans[0].exercises?.length || 0} exercises</div>
+              <div className="text-sm text-[var(--color-text-secondary)]">{t("dashboard.exercises", { count: plans[0].exercises?.length || 0 })}</div>
             </div>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "var(--color-accent-gradient)" }}>
               <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -84,7 +91,7 @@ export default function Dashboard() {
                 >
                   <div>
                     <div className="font-semibold">{plan.name}</div>
-                    <div className="text-sm text-[var(--color-text-secondary)]">{plan.exercises?.length || 0} exercises</div>
+                    <div className="text-sm text-[var(--color-text-secondary)]">{t("dashboard.exercises", { count: plan.exercises?.length || 0 })}</div>
                   </div>
                   <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -102,16 +109,16 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <p className="text-[var(--color-text-secondary)] mb-4">Create your first workout plan</p>
+            <p className="text-[var(--color-text-secondary)] mb-4">{t("dashboard.createFirst")}</p>
             <Link href="/plans/new">
-              <button className="btn-primary">Get Started</button>
+              <button className="btn-primary">{t("dashboard.getStarted")}</button>
             </Link>
           </div>
         </section>
       )}
 
       <section className="mb-6">
-        <div className="section-label">This Week</div>
+        <div className="section-label">{t("dashboard.thisWeek")}</div>
         <div className="card p-4">
           <div className="flex justify-between">
             {DAYS.map((day, i) => (
@@ -140,7 +147,7 @@ export default function Dashboard() {
 
       {weeklyVolume.length > 0 ? (
         <section className="mb-6">
-          <div className="section-label">Volume by Muscle</div>
+          <div className="section-label">{t("dashboard.volumeByMuscle")}</div>
           <div className="card p-4">
             <div className="space-y-3">
               {weeklyVolume.map((wv: any) => {
@@ -150,7 +157,7 @@ export default function Dashboard() {
                   <div key={wv.muscle_group}>
                     <div className="flex justify-between text-sm mb-1.5">
                       <span className="text-[var(--color-text)]">{wv.muscle_group}</span>
-                      <span className="text-[var(--color-text-secondary)] tabular-nums">{Math.round(wv.volume).toLocaleString()} kg</span>
+                      <span className="text-[var(--color-text-secondary)] tabular-nums">{Math.round(wv.volume).toLocaleString(locale)} {t("common.kg")}</span>
                     </div>
                     <div className="h-2 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
                       <div
@@ -168,7 +175,7 @@ export default function Dashboard() {
 
       {recentSessions.length > 0 ? (
         <section>
-          <div className="section-label">Recent Activity</div>
+          <div className="section-label">{t("dashboard.recentActivity")}</div>
           <div className="space-y-2">
             {recentSessions.map((s: any) => (
               <Link key={s.id} href={`/session/${s.id}`}>
@@ -177,13 +184,13 @@ export default function Dashboard() {
                     <div>
                       <div className="font-semibold">{s.plan_name}</div>
                       <div className="text-sm text-[var(--color-text-secondary)]">
-                        {new Date(s.started_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                        {s.duration ? ` · ${s.duration} min` : ""}
+                        {new Date(s.started_at).toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" })}
+                        {s.duration ? ` · ${s.duration} ${t("dashboard.min")}` : ""}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-[var(--color-accent)] tabular-nums">{Math.round(s.totalVolume).toLocaleString()} kg</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{s.sets?.length || 0} sets</div>
+                      <div className="text-sm font-bold text-[var(--color-accent)] tabular-nums">{Math.round(s.totalVolume).toLocaleString(locale)} {t("common.kg")}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">{s.sets?.length || 0} {t("dashboard.sets")}</div>
                     </div>
                   </div>
                 </div>

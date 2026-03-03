@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 interface DataPoint {
   date: string;
@@ -8,6 +9,8 @@ interface DataPoint {
 }
 
 export default function ExerciseChart({ exerciseId, exerciseName }: { exerciseId: number; exerciseName: string }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "en";
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +46,7 @@ export default function ExerciseChart({ exerciseId, exerciseName }: { exerciseId
   return (
     <div className="mt-3">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-xs text-[var(--color-text-muted)]">Weight Progression</div>
+        <div className="text-xs text-[var(--color-text-muted)]">{t("exerciseChart.weightProgression")}</div>
         {improvement > 0 ? (
           <div className="text-xs font-bold text-green-400">+{improvement}%</div>
         ) : null}
@@ -64,9 +67,9 @@ export default function ExerciseChart({ exerciseId, exerciseName }: { exerciseId
         })}
       </svg>
       <div className="flex justify-between text-[10px] text-[var(--color-text-muted)]">
-        <span>{data[0]?.date ? new Date(data[0].date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
-        <span className="font-bold text-[var(--color-text)]">{maxWeight} kg</span>
-        <span>{data[data.length - 1]?.date ? new Date(data[data.length - 1].date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
+        <span>{data[0]?.date ? new Date(data[0].date).toLocaleDateString(locale, { month: "short", day: "numeric" }) : ""}</span>
+        <span className="font-bold text-[var(--color-text)]">{maxWeight} {t("common.kg")}</span>
+        <span>{data[data.length - 1]?.date ? new Date(data[data.length - 1].date).toLocaleDateString(locale, { month: "short", day: "numeric" }) : ""}</span>
       </div>
     </div>
   );

@@ -2,18 +2,21 @@ import React, { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import ConsistencyCalendar from "../components/ConsistencyCalendar";
 import MuscleHeatmap from "../components/MuscleHeatmap";
+import { useTranslation } from "react-i18next";
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="card p-4 flex flex-col items-center justify-center">
       <span className="text-2xl font-bold" style={{ color: "var(--color-accent)" }}>{value}</span>
       <span className="text-xs text-[var(--color-text-secondary)] mt-1">{label}</span>
-      {sub && <span className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{sub}</span>}
+      {sub ? <span className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{sub}</span> : null}
     </div>
   );
 }
 
 function WeeklyVolumeChart({ data }: { data: any[] }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "en";
   const weeks: { label: string; volume: number }[] = [];
   const today = new Date();
   for (let i = 7; i >= 0; i--) {
@@ -21,7 +24,7 @@ function WeeklyVolumeChart({ data }: { data: any[] }) {
     d.setDate(d.getDate() - i * 7);
     const weekStart = new Date(d);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-    const label = weekStart.toLocaleDateString("default", { month: "short", day: "numeric" });
+    const label = weekStart.toLocaleDateString(locale, { month: "short", day: "numeric" });
     const dateStr = weekStart.toISOString().split("T")[0];
     const match = data.find(w => w.week_start && w.week_start.startsWith(dateStr.substring(0, 8)));
     weeks.push({ label, volume: match?.volume || 0 });
@@ -31,7 +34,7 @@ function WeeklyVolumeChart({ data }: { data: any[] }) {
 
   return (
     <div className="card p-4">
-      <h3 className="section-label">Weekly Volume</h3>
+      <h3 className="section-label">{t("progress.weeklyVolume")}</h3>
       <div className="flex items-end gap-2 h-32">
         {weeks.map((w, i) => {
           const h = w.volume > 0 ? Math.max((w.volume / maxVol) * 100, 4) : 4;
@@ -56,6 +59,7 @@ function WeeklyVolumeChart({ data }: { data: any[] }) {
 }
 
 function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exerciseId: number; exerciseName: string; onClose: () => void }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +74,7 @@ function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exercis
         <h3 className="font-bold">{exerciseName}</h3>
         <button onClick={onClose} className="text-[var(--color-text-muted)] text-lg">&times;</button>
       </div>
-      <p className="text-sm text-[var(--color-text-secondary)]">No data yet</p>
+      <p className="text-sm text-[var(--color-text-secondary)]">{t("progress.noData")}</p>
     </div>
   );
 
@@ -100,7 +104,7 @@ function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exercis
       </div>
 
       <div>
-        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Est. 1RM</span>
+        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">{t("progress.est1RM")}</span>
         <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-20 mt-1">
           <defs>
             <linearGradient id="g1rm" x1="0" y1="0" x2="0" y2="1">
@@ -120,7 +124,7 @@ function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exercis
       </div>
 
       <div>
-        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Best Weight</span>
+        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">{t("progress.bestWeight")}</span>
         <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-20 mt-1">
           <defs>
             <linearGradient id="gwt" x1="0" y1="0" x2="0" y2="1">
@@ -140,7 +144,7 @@ function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exercis
       </div>
 
       <div>
-        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Volume / Session</span>
+        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">{t("progress.volumePerSession")}</span>
         <div className="flex items-end gap-1 h-16 mt-1">
           {sessions.slice(-10).map((s: any, i: number) => (
             <div
@@ -157,16 +161,16 @@ function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exercis
 
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="p-2 rounded-lg bg-[var(--color-surface-alt)]">
-          <div className="text-sm font-bold">{prs?.max_weight || 0} kg</div>
-          <div className="text-[10px] text-[var(--color-text-muted)]">Best Weight</div>
+          <div className="text-sm font-bold">{prs?.max_weight || 0} {t("common.kg")}</div>
+          <div className="text-[10px] text-[var(--color-text-muted)]">{t("progress.bestWeight")}</div>
         </div>
         <div className="p-2 rounded-lg bg-[var(--color-surface-alt)]">
           <div className="text-sm font-bold">{prs?.max_reps || 0}</div>
-          <div className="text-[10px] text-[var(--color-text-muted)]">Best Reps</div>
+          <div className="text-[10px] text-[var(--color-text-muted)]">{t("progress.bestReps")}</div>
         </div>
         <div className="p-2 rounded-lg bg-[var(--color-surface-alt)]">
-          <div className="text-sm font-bold">{Math.round(prs?.max_volume_set || 0)} kg</div>
-          <div className="text-[10px] text-[var(--color-text-muted)]">Best Set Vol</div>
+          <div className="text-sm font-bold">{Math.round(prs?.max_volume_set || 0)} {t("common.kg")}</div>
+          <div className="text-[10px] text-[var(--color-text-muted)]">{t("progress.bestSetVol")}</div>
         </div>
       </div>
     </div>
@@ -174,6 +178,8 @@ function ExerciseProgressDetail({ exerciseId, exerciseName, onClose }: { exercis
 }
 
 function BodyWeightSection() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "en";
   const [entries, setEntries] = useState<any[]>([]);
   const [weight, setWeight] = useState("");
   const [loading, setLoading] = useState(true);
@@ -199,17 +205,17 @@ function BodyWeightSection() {
 
   return (
     <div className="card p-4">
-      <h3 className="section-label">Body Weight</h3>
+      <h3 className="section-label">{t("progress.bodyWeight")}</h3>
       <div className="flex gap-2 mb-3">
         <input
           type="number"
           value={weight}
           onChange={e => setWeight(e.target.value)}
-          placeholder="kg"
+          placeholder={t("common.kg")}
           className="input flex-1 text-sm"
           step="0.1"
         />
-        <button onClick={logWeight} className="btn-primary text-sm px-4 min-h-[2.5rem]">Log</button>
+        <button onClick={logWeight} className="btn-primary text-sm px-4 min-h-[2.5rem]">{t("progress.log")}</button>
       </div>
       {sorted.length > 1 && (
         <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-16">
@@ -239,7 +245,7 @@ function BodyWeightSection() {
       )}
       {sorted.length > 0 && (
         <div className="text-xs text-[var(--color-text-secondary)] mt-1">
-          Latest: {sorted[sorted.length - 1].weight_kg} kg ({sorted[sorted.length - 1].logged_date})
+          {t("progress.latest")}: {sorted[sorted.length - 1].weight_kg} {t("common.kg")} ({sorted[sorted.length - 1].logged_date})
         </div>
       )}
     </div>
@@ -247,6 +253,7 @@ function BodyWeightSection() {
 }
 
 export default function Progress() {
+  const { t } = useTranslation();
   const [totals, setTotals] = useState<any>(null);
   const [weeklyHistory, setWeeklyHistory] = useState<any[]>([]);
   const [exercises, setExercises] = useState<any[]>([]);
@@ -284,21 +291,21 @@ export default function Progress() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
-      <h1 className="text-2xl font-bold">Progress</h1>
+      <h1 className="text-2xl font-bold">{t("progress.title")}</h1>
 
       <div className="flex gap-1 p-1 rounded-xl bg-[var(--color-surface)]">
-        {(["overview", "exercises", "body"] as const).map(t => (
+        {(["overview", "exercises", "body"] as const).map(tb => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tb}
+            onClick={() => setTab(tb)}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-              tab === t
+              tab === tb
                 ? "text-white"
                 : "text-[var(--color-text-secondary)]"
             }`}
-            style={tab === t ? { background: "var(--color-accent-gradient)" } : {}}
+            style={tab === tb ? { background: "var(--color-accent-gradient)" } : {}}
           >
-            {t === "overview" ? "Overview" : t === "exercises" ? "Exercises" : "Body"}
+            {tb === "overview" ? t("progress.overview") : tb === "exercises" ? t("progress.exercises") : t("progress.body")}
           </button>
         ))}
       </div>
@@ -306,10 +313,10 @@ export default function Progress() {
       {tab === "overview" && (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Workouts" value={totals?.totalWorkouts || 0} />
-            <StatCard label="Total Volume" value={`${Math.round((totals?.totalVolume || 0) / 1000)}k kg`} />
-            <StatCard label="Current Streak" value={`${totals?.currentStreak || 0}w`} sub="consecutive weeks" />
-            <StatCard label="Longest Streak" value={`${totals?.longestStreak || 0}w`} sub="all time" />
+            <StatCard label={t("progress.workouts")} value={totals?.totalWorkouts || 0} />
+            <StatCard label={t("progress.totalVolume")} value={`${Math.round((totals?.totalVolume || 0) / 1000)}k ${t("common.kg")}`} />
+            <StatCard label={t("progress.currentStreak")} value={`${totals?.currentStreak || 0}w`} sub={t("progress.consecutiveWeeks")} />
+            <StatCard label={t("progress.longestStreak")} value={`${totals?.longestStreak || 0}w`} sub={t("progress.allTime")} />
           </div>
 
           <WeeklyVolumeChart data={weeklyHistory} />
@@ -332,7 +339,7 @@ export default function Progress() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search exercises..."
+                placeholder={t("progress.searchExercises")}
                 className="input w-full text-sm"
               />
               <div className="space-y-1">
@@ -344,7 +351,7 @@ export default function Progress() {
                   >
                     <div className="text-left">
                       <div className="text-sm font-semibold">{ex.name}</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{ex.muscle_group} &middot; {ex.total_sets} sets logged</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">{ex.muscle_group} &middot; {t("progress.setsLogged", { count: ex.total_sets })}</div>
                     </div>
                     <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -352,7 +359,7 @@ export default function Progress() {
                   </button>
                 ))}
                 {filteredExercises.length === 0 && (
-                  <p className="text-sm text-[var(--color-text-secondary)] text-center py-8">No exercises found</p>
+                  <p className="text-sm text-[var(--color-text-secondary)] text-center py-8">{t("progress.noExercises")}</p>
                 )}
               </div>
             </>

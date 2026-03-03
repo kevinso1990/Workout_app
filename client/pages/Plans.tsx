@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import { useTranslation } from "react-i18next";
 
 export default function Plans() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,22 +40,22 @@ export default function Plans() {
   return (
     <div className="px-4 pt-8 pb-4 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Plans</h1>
+        <h1 className="text-2xl font-bold">{t("plans.title")}</h1>
         <Link href="/plans/new">
           <button className="btn-primary text-sm px-4 py-2 min-h-0">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            New
+            {t("plans.new")}
           </button>
         </Link>
       </div>
 
       {plans.length === 0 ? (
         <div className="card p-8 text-center">
-          <p className="text-[var(--color-text-secondary)] mb-4">No plans yet. Create one to get started.</p>
+          <p className="text-[var(--color-text-secondary)] mb-4">{t("plans.noPlans")}</p>
           <Link href="/plans/new">
-            <button className="btn-primary">Create Plan</button>
+            <button className="btn-primary">{t("plans.createPlan")}</button>
           </Link>
         </div>
       ) : (
@@ -63,7 +65,7 @@ export default function Plans() {
               <div className="mb-3">
                 <h3 className="font-bold text-lg">{plan.name}</h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  {plan.exercises?.length || 0} exercises
+                  {t("plans.exercises", { count: plan.exercises?.length || 0 })}
                 </p>
               </div>
 
@@ -77,10 +79,10 @@ export default function Plans() {
 
               <div className="flex gap-2">
                 <button onClick={(e) => startWorkout(plan.id, e)} className="btn-primary flex-1 text-sm min-h-11">
-                  Start
+                  {t("plans.start")}
                 </button>
                 <Link href={`/plans/${plan.id}/edit`}>
-                  <button className="btn-ghost text-sm min-h-11">Edit</button>
+                  <button className="btn-ghost text-sm min-h-11">{t("plans.edit")}</button>
                 </Link>
                 <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteId(plan.id); }} className="btn-ghost text-red-400/70 text-sm min-h-11">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -95,9 +97,9 @@ export default function Plans() {
 
       <ConfirmModal
         open={deleteId !== null}
-        title="Delete Plan"
-        message="Are you sure? This can't be undone."
-        confirmLabel="Delete"
+        title={t("plans.deletePlan")}
+        message={t("plans.deleteConfirm")}
+        confirmLabel={t("plans.delete")}
         destructive
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 export default function ConsistencyCalendar() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "en";
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,7 @@ export default function ConsistencyCalendar() {
   weeks.forEach((week, i) => {
     const m = week[0].getMonth();
     if (m !== lastMonth) {
-      months.push({ label: week[0].toLocaleString("default", { month: "short" }), col: i });
+      months.push({ label: week[0].toLocaleString(locale, { month: "short" }), col: i });
       lastMonth = m;
     }
   });
@@ -42,7 +45,7 @@ export default function ConsistencyCalendar() {
 
   return (
     <div className="card p-4">
-      <h3 className="section-label">Consistency</h3>
+      <h3 className="section-label">{t("consistency.title")}</h3>
       <div className="flex gap-0.5 mb-1">
         {months.map((m, i) => (
           <span
@@ -85,9 +88,9 @@ export default function ConsistencyCalendar() {
         ))}
       </div>
       <div className="flex items-center gap-3 mt-2 text-[10px] text-[var(--color-text-muted)]">
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "var(--color-surface-alt)", opacity: 0.3 }} /> No workout</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "var(--color-accent)" }} /> Workout</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#7c5bf5" }} /> PR day</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "var(--color-surface-alt)", opacity: 0.3 }} /> {t("consistency.noWorkout")}</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "var(--color-accent)" }} /> {t("consistency.workout")}</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#7c5bf5" }} /> {t("consistency.prDay")}</span>
       </div>
     </div>
   );

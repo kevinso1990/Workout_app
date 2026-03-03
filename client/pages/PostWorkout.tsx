@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 function ConfettiPiece({ delay, left, color }: { delay: number; left: number; color: string }) {
   return (
@@ -18,6 +19,7 @@ function ConfettiPiece({ delay, left, color }: { delay: number; left: number; co
 }
 
 export default function PostWorkout() {
+  const { t } = useTranslation();
   const params = useParams<{ sessionId: string }>();
   const [, navigate] = useLocation();
   const sessionId = parseInt(params.sessionId!);
@@ -85,6 +87,14 @@ export default function PostWorkout() {
 
   const rpeColors = ["#22c55e", "#22c55e", "#4ade80", "#84cc16", "#a3e635", "#eab308", "#f59e0b", "#f97316", "#ef4444", "#dc2626"];
 
+  const rpeLabel = (val: number) => {
+    if (val <= 3) return t("postWorkout.easy");
+    if (val <= 5) return t("postWorkout.moderate");
+    if (val <= 7) return t("postWorkout.hard");
+    if (val <= 9) return t("postWorkout.veryHard");
+    return t("postWorkout.maxEffort");
+  };
+
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)] px-4 py-6 max-w-lg mx-auto">
       {showConfetti ? confettiPieces.map((p, i) => (
@@ -97,7 +107,7 @@ export default function PostWorkout() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold mb-1">Workout Complete</h1>
+        <h1 className="text-2xl font-bold mb-1">{t("postWorkout.workoutComplete")}</h1>
         <p className="text-[var(--color-text-secondary)]">{session?.plan_name}</p>
       </div>
 
@@ -105,26 +115,26 @@ export default function PostWorkout() {
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-[var(--color-accent)]">{duration}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">minutes</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{t("postWorkout.minutes")}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-[var(--color-accent)]">{Math.round(totalVolume).toLocaleString()}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">kg volume</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{t("postWorkout.kgVolume")}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-[var(--color-accent)]">{totalSets}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">sets</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{t("postWorkout.sets")}</div>
           </div>
         </div>
       </div>
 
       <section className="mb-6">
-        <div className="section-label">Rate Your Effort (RPE)</div>
+        <div className="section-label">{t("postWorkout.rateEffort")}</div>
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-5xl font-bold tabular-nums" style={{ color: rpeColors[rpe - 1] }}>{rpe}</span>
             <span className="text-sm text-[var(--color-text-secondary)] font-medium">
-              {rpe <= 3 ? "Easy" : rpe <= 5 ? "Moderate" : rpe <= 7 ? "Hard" : rpe <= 9 ? "Very Hard" : "Max Effort"}
+              {rpeLabel(rpe)}
             </span>
           </div>
           <input
@@ -146,16 +156,16 @@ export default function PostWorkout() {
 
       {exerciseList.length > 0 ? (
         <section className="mb-6">
-          <div className="section-label">How Did Each Exercise Feel?</div>
+          <div className="section-label">{t("postWorkout.exerciseFeedback")}</div>
           <div className="space-y-2">
             {exerciseList.map((ex: any) => (
               <div key={ex.id} className="card p-4">
                 <div className="font-semibold mb-3">{ex.name}</div>
                 <div className="flex gap-2">
                   {[
-                    { key: "hard", label: "Too Hard", activeClass: "bg-red-500/20 text-red-400 ring-1 ring-red-500/40" },
-                    { key: "right", label: "Just Right", activeClass: "bg-green-500/20 text-green-400 ring-1 ring-green-500/40" },
-                    { key: "easy", label: "Too Easy", activeClass: "bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/40" },
+                    { key: "hard", label: t("postWorkout.tooHard"), activeClass: "bg-red-500/20 text-red-400 ring-1 ring-red-500/40" },
+                    { key: "right", label: t("postWorkout.justRight"), activeClass: "bg-green-500/20 text-green-400 ring-1 ring-green-500/40" },
+                    { key: "easy", label: t("postWorkout.tooEasy"), activeClass: "bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/40" },
                   ].map(opt => (
                     <button
                       key={opt.key}
@@ -177,17 +187,17 @@ export default function PostWorkout() {
       ) : null}
 
       <section className="mb-6">
-        <div className="section-label">Notes (optional)</div>
+        <div className="section-label">{t("postWorkout.notesOptional")}</div>
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          placeholder="How did it go?"
+          placeholder={t("postWorkout.notesPlaceholder")}
           className="input w-full h-24 resize-none"
         />
       </section>
 
       <button onClick={handleSubmit} disabled={saving} className="btn-primary w-full text-lg py-4">
-        {saving ? "Saving..." : "Save & Done"}
+        {saving ? t("postWorkout.saving") : t("postWorkout.saveDone")}
       </button>
     </div>
   );

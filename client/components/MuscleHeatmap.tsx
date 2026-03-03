@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../lib/api";
+import { useTranslation } from "react-i18next";
 
 const MUSCLE_PATHS: Record<string, { d: string; cx: number; cy: number }> = {
   Chest: { d: "M35,28 Q50,25 65,28 L62,40 Q50,42 38,40 Z", cx: 50, cy: 34 },
@@ -14,6 +15,7 @@ const MUSCLE_PATHS: Record<string, { d: string; cx: number; cy: number }> = {
 };
 
 export default function MuscleHeatmap() {
+  const { t } = useTranslation();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +39,7 @@ export default function MuscleHeatmap() {
 
   return (
     <div className="card p-4">
-      <h3 className="section-label">Muscle Balance (7 days)</h3>
+      <h3 className="section-label">{t("muscleHeatmap.title")}</h3>
       <div className="flex items-start gap-4">
         <svg viewBox="10 12 80 82" className="w-36 h-48 flex-shrink-0">
           <ellipse cx="50" cy="18" rx="8" ry="7" fill="var(--color-surface-alt)" opacity="0.5" />

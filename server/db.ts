@@ -31,6 +31,7 @@ export function initDb() {
       default_sets INTEGER DEFAULT 3,
       default_reps INTEGER DEFAULT 10,
       default_weight REAL DEFAULT 0,
+      superset_group INTEGER,
       FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
       FOREIGN KEY (exercise_id) REFERENCES exercises(id)
     );
@@ -52,9 +53,12 @@ export function initDb() {
       set_number INTEGER NOT NULL,
       weight REAL NOT NULL,
       reps INTEGER NOT NULL,
+      is_drop_set INTEGER DEFAULT 0,
+      parent_set_id INTEGER,
       logged_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
-      FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+      FOREIGN KEY (exercise_id) REFERENCES exercises(id),
+      FOREIGN KEY (parent_set_id) REFERENCES sets(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS exercise_feedback (
@@ -80,9 +84,39 @@ export function initDb() {
       fetched_at TEXT DEFAULT (datetime('now'))
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_media_name ON exercise_media_cache(exercise_name);
+
+    CREATE TABLE IF NOT EXISTS muscle_fatigue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      muscle_group TEXT NOT NULL,
+      fatigue_score REAL NOT NULL,
+      last_trained_at TEXT NOT NULL,
+      session_id INTEGER NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      endpoint TEXT NOT NULL UNIQUE,
+      keys_p256dh TEXT NOT NULL,
+      keys_auth TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   seedExercises();
+  migrateSupersetsDropSets();
+}
+
+function migrateSupersetsDropSets() {
+  try {
+    db.exec("ALTER TABLE plan_exercises ADD COLUMN superset_group INTEGER");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE sets ADD COLUMN is_drop_set INTEGER DEFAULT 0");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE sets ADD COLUMN parent_set_id INTEGER REFERENCES sets(id) ON DELETE SET NULL");
+  } catch {}
 }
 
 function seedExercises() {
