@@ -14,6 +14,10 @@ localPort = 5000
 externalPort = 5000
 
 [[ports]]
+localPort = 7777
+externalPort = 3002
+
+[[ports]]
 localPort = 8081
 externalPort = 80
 
@@ -81,3 +85,4 @@ waitForPort = 5000
 [userenv.shared]
 VAPID_PUBLIC_KEY = "BHw5e76SwY8YxrOW4lftJkY36a-BlrK0lFk2Svj0ISuzlCHXvh2WLjHwas9j81ZJUJBXoBZoXWmZvZfkSNq8Pfs"
 VAPID_PRIVATE_KEY = "dVqTBjz-0Opai04PQ2ScH0G3ux8wGyH3IRKv-RYJc8k"
+JWT_SECRET = "a322e3808c129a77ea0390a601581a6ab1f1e9598f304b23e5c2ba81f2da96d44e19a30ee7260ea731cd148ff5582610"

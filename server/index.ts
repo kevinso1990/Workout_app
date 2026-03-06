@@ -1,30 +1,34 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { createServer as createViteServer } from "vite";
-import { registerRoutes } from "./routes";
-import { initDb } from "./db";
 import * as fs from "fs";
 import * as path from "path";
+import { initDb } from "./db";
+import { registerRoutes } from "./routes/index";
+import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 const log = console.log;
 const isProd = process.env.NODE_ENV === "production";
 
-function setupCors(app: express.Application) {
+function setupCors(app: express.Application): void {
   const allowedOrigins = [
     /\.replit\.dev$/,
     /\.repl\.co$/,
     /^http:\/\/localhost(:\d+)?$/,
   ];
 
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const origin = req.header("origin");
-    if (origin && allowedOrigins.some(p => p.test(origin))) {
+    if (origin && allowedOrigins.some((p) => p.test(origin))) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
       res.header("Access-Control-Allow-Headers", "Content-Type");
     }
-    if (req.method === "OPTIONS") return res.sendStatus(200);
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
     next();
   });
 }
@@ -37,7 +41,8 @@ function setupCors(app: express.Application) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
-  app.use((req, res, next) => {
+  // Request logging
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     res.on("finish", () => {
       const duration = Date.now() - start;
@@ -48,24 +53,18 @@ function setupCors(app: express.Application) {
     next();
   });
 
-  await registerRoutes(app);
+  registerRoutes(app);
 
-  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
-    const error = err as { status?: number; statusCode?: number; message?: string };
-    const status = error.status || error.statusCode || 500;
-    const message = error.message || "Internal Server Error";
-    console.error("Server error:", err);
-    if (res.headersSent) return next(err);
-    return res.status(status).json({ message });
-  });
+  // Global error handler — must be registered after all routes
+  app.use(errorHandler);
 
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT ?? "5000", 10);
 
   if (isProd) {
     const distPath = path.resolve(process.cwd(), "dist/public");
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.get("/{*splat}", (_req, res) => {
+      app.get("/{*splat}", (_req: Request, res: Response) => {
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     } else {
@@ -78,8 +77,15 @@ function setupCors(app: express.Application) {
 
     const proxyPort = 8081;
     if (proxyPort !== port) {
-      app.listen(proxyPort, "0.0.0.0", () => {
+      const proxyServer = app.listen(proxyPort, "0.0.0.0", () => {
         log(`Server also listening on port ${proxyPort} (proxy)`);
+      });
+      proxyServer.on("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "EADDRINUSE") {
+          log(`Port ${proxyPort} already in use — skipping proxy listener`);
+        } else {
+          throw err;
+        }
       });
     }
   } else {
@@ -105,6 +111,13 @@ function setupCors(app: express.Application) {
       const httpServer2 = createHttpServer(app);
       httpServer2.listen(proxyPort, "0.0.0.0", () => {
         log(`Server also listening on port ${proxyPort} (proxy)`);
+      });
+      httpServer2.on("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "EADDRINUSE") {
+          log(`Port ${proxyPort} already in use — skipping proxy listener`);
+        } else {
+          throw err;
+        }
       });
     }
   }

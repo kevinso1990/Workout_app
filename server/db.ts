@@ -1,7 +1,8 @@
 import Database from "better-sqlite3";
 import path from "path";
 
-const DB_PATH = path.resolve(process.cwd(), "workout.db");
+// Allow tests to inject ":memory:" via DB_PATH env var
+const DB_PATH = process.env.DB_PATH ?? path.resolve(process.cwd(), "workout.db");
 const db = new Database(DB_PATH);
 
 db.pragma("journal_mode = WAL");
@@ -112,6 +113,36 @@ export function initDb() {
 
   seedExercises();
   migrateSupersetsDropSets();
+  migrateAuth();
+}
+
+function migrateAuth() {
+  // users table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  // add user_id to plans (nullable for backwards compat with existing rows)
+  try {
+    db.exec("ALTER TABLE plans ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE");
+  } catch {}
+
+  // add user_id to sessions (nullable for backwards compat)
+  try {
+    db.exec("ALTER TABLE sessions ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE");
+  } catch {}
+
+  // indexes for common lookups
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_plans_user ON plans(user_id)");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)");
+  } catch {}
 }
 
 function migrateSupersetsDropSets() {
