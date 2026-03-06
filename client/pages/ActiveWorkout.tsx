@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { api } from "../lib/api";
+import { enqueue, dequeue, flushQueue } from "../lib/offlineQueue";
 import { DEFAULT_REST_SECONDS, WEIGHT_STEP, REP_STEP } from "../config";
 import ConfirmModal from "../components/ConfirmModal";
 import PlateCalculator from "../components/PlateCalculator";
@@ -15,6 +16,7 @@ interface LoggedSet {
   reps: number;
   is_drop_set?: boolean;
   parent_set_id?: number | null;
+  rir?: number;
 }
 
 interface ExerciseState {
@@ -62,6 +64,8 @@ export default function ActiveWorkout() {
   const [exercises, setExercises] = useState<ExerciseState[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [votes, setVotes] = useState<Record<number, number>>({});
+  const [rirPickerKey, setRirPickerKey] = useState<string | null>(null); // "exIdx-setIdx"
   const [startTime, setStartTime] = useState(Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [restTimer, setRestTimer] = useState(0);
@@ -80,6 +84,11 @@ export default function ActiveWorkout() {
 
   useEffect(() => {
     loadSession();
+    api.getAllVotes().then(setVotes).catch(() => {});
+    // Flush any offline-queued sets when we come back online
+    const handleOnline = () => flushQueue(api.logSet);
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
   }, [sessionId]);
 
   useEffect(() => {
@@ -195,17 +204,29 @@ export default function ActiveWorkout() {
       }
     }
 
+    const setPayload = { session_id: sessionId, ...newSet };
     try {
-      const saved = await api.logSet({
-        session_id: sessionId,
-        ...newSet,
-      });
+      const saved = await api.logSet(setPayload);
       setExercises(prev => prev.map((e, i) => {
         if (i !== exIdx) return e;
         return { ...e, loggedSets: e.loggedSets.map(s => s === newSet ? { ...s, id: saved.id } : s) };
       }));
-    } catch (err) {
-      console.error("Failed to save set", err);
+    } catch {
+      // Offline — queue for later
+      const localId = enqueue(setPayload);
+      // Try once more when online event fires; dequeue on success
+      const retryOnce = async () => {
+        try {
+          const saved = await api.logSet(setPayload);
+          dequeue(localId);
+          setExercises(prev => prev.map((e, i) => {
+            if (i !== exIdx) return e;
+            return { ...e, loggedSets: e.loggedSets.map(s => s === newSet ? { ...s, id: saved.id } : s) };
+          }));
+        } catch {}
+        window.removeEventListener("online", retryOnce);
+      };
+      window.addEventListener("online", retryOnce);
     }
 
     if (!dropSet && normalSets.length + 1 >= ex.default_sets && exIdx < exercises.length - 1) {
@@ -229,6 +250,23 @@ export default function ActiveWorkout() {
 
   const adjustReps = (exIdx: number, delta: number) => {
     setExercises(prev => prev.map((e, i) => i === exIdx ? { ...e, currentReps: Math.max(0, e.currentReps + delta) } : e));
+  };
+
+  const setRir = (exIdx: number, setIdx: number, rir: number) => {
+    const set = exercises[exIdx]?.loggedSets[setIdx];
+    setExercises(prev => prev.map((e, i) => i !== exIdx ? e : {
+      ...e,
+      loggedSets: e.loggedSets.map((s, j) => j !== setIdx ? s : { ...s, rir }),
+    }));
+    setRirPickerKey(null);
+    if (set?.id) api.updateSetRir(set.id, rir).catch(() => {});
+  };
+
+  const castVote = async (exerciseId: number, vote: number) => {
+    const current = votes[exerciseId] ?? 0;
+    const next = current === vote ? 0 : vote; // toggle off if same
+    setVotes(prev => ({ ...prev, [exerciseId]: next }));
+    api.voteExercise(exerciseId, next).catch(() => {});
   };
 
   const finishWorkout = () => {
@@ -337,28 +375,58 @@ export default function ActiveWorkout() {
                     ...(ex.superset_group ? { borderLeft: `3px solid ${supersetColor}` } : {}),
                   }}
                 >
-                  <button
-                    onClick={() => setActiveIdx(exIdx)}
-                    className={`w-full px-4 py-3.5 flex items-center gap-3 text-left ${isActive ? "" : "opacity-50"}`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                      isDone
-                        ? "bg-green-500/20 text-green-400"
-                        : isActive
-                        ? "text-white"
-                        : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
-                    }`}
-                      style={isActive && !isDone ? { background: "var(--color-accent-gradient)" } : {}}
+                  <div className={`flex items-center ${isActive ? "" : "opacity-50"}`}>
+                    <button
+                      onClick={() => setActiveIdx(exIdx)}
+                      className="flex-1 px-4 py-3.5 flex items-center gap-3 text-left"
                     >
-                      {isDone ? (
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                      ) : exIdx + 1}
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                        isDone
+                          ? "bg-green-500/20 text-green-400"
+                          : isActive
+                          ? "text-white"
+                          : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
+                      }`}
+                        style={isActive && !isDone ? { background: "var(--color-accent-gradient)" } : {}}
+                      >
+                        {isDone ? (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        ) : exIdx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-base">{ex.name}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group} · {normalSets.length}/{ex.default_sets} {t("activeWorkout.set").toLowerCase()}s</div>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-1 pr-3">
+                      <button
+                        onClick={() => castVote(ex.exercise_id, 1)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                          votes[ex.exercise_id] === 1
+                            ? "bg-green-500/20 text-green-400"
+                            : "text-[var(--color-text-muted)] hover:text-green-400"
+                        }`}
+                        title="Like this exercise"
+                      >
+                        <svg className="w-4 h-4" fill={votes[ex.exercise_id] === 1 ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905a3.61 3.61 0 01-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => castVote(ex.exercise_id, -1)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                          votes[ex.exercise_id] === -1
+                            ? "bg-red-500/20 text-red-400"
+                            : "text-[var(--color-text-muted)] hover:text-red-400"
+                        }`}
+                        title="Dislike this exercise"
+                      >
+                        <svg className="w-4 h-4" fill={votes[ex.exercise_id] === -1 ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a2 2 0 002 2h.095c.5 0 .905-.405.905-.905a3.61 3.61 0 01.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                        </svg>
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-base">{ex.name}</div>
-                      <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group} · {normalSets.length}/{ex.default_sets} {t("activeWorkout.set").toLowerCase()}s</div>
-                    </div>
-                  </button>
+                  </div>
 
                   {isActive ? (
                     <div className="px-4 pb-5">
@@ -386,83 +454,140 @@ export default function ActiveWorkout() {
                         </div>
                         {ex.loggedSets.length > 0 ? ex.loggedSets.map((logged, i) => {
                           const rowKey = `${ex.exercise_id}-${i + 1}`;
+                          const pickerKey = `${exIdx}-${i}`;
+                          const showPicker = rirPickerKey === pickerKey;
                           return (
-                            <div
-                              key={i}
-                              className={`set-row px-3 set-row-done ${pulsingRow === rowKey ? "log-pulse" : ""}`}
-                            >
-                              <span className="text-sm font-bold text-[var(--color-text-muted)]">
-                                {logged.is_drop_set ? (
-                                  <span className="text-[10px] text-purple-400 font-semibold">{t("activeWorkout.drop")}</span>
-                                ) : (
-                                  ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length
-                                )}
-                              </span>
-                              <span className="text-center text-xs text-[var(--color-text-muted)]">
-                                {!logged.is_drop_set && ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1]
-                                  ? `${toDisplayWeight(ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].weight)} x ${ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].reps}`
-                                  : "\u2014"}
-                              </span>
-                              <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
-                                {toDisplayWeight(logged.weight)}
-                              </span>
-                              <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
-                                {logged.reps}
-                              </span>
-                              <span className="flex justify-center">
-                                <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                              </span>
-                            </div>
+                            <React.Fragment key={i}>
+                              <div
+                                className={`set-row px-3 set-row-done ${pulsingRow === rowKey ? "log-pulse" : ""}`}
+                              >
+                                <span className="text-sm font-bold text-[var(--color-text-muted)]">
+                                  {logged.is_drop_set ? (
+                                    <span className="text-[10px] text-purple-400 font-semibold">{t("activeWorkout.drop")}</span>
+                                  ) : (
+                                    ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length
+                                  )}
+                                </span>
+                                <span className="text-center text-xs text-[var(--color-text-muted)]">
+                                  {!logged.is_drop_set && ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1]
+                                    ? `${toDisplayWeight(ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].weight)} x ${ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].reps}`
+                                    : "\u2014"}
+                                </span>
+                                <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
+                                  {toDisplayWeight(logged.weight)}
+                                </span>
+                                <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
+                                  {logged.reps}
+                                </span>
+                                <button
+                                  onClick={() => setRirPickerKey(showPicker ? null : pickerKey)}
+                                  className="flex flex-col items-center justify-center gap-0.5"
+                                  title={t("activeWorkout.rirLabel")}
+                                >
+                                  {logged.rir !== undefined ? (
+                                    <span className="text-xs font-bold text-[var(--color-accent)]">{logged.rir}</span>
+                                  ) : (
+                                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                  <span className="text-[8px] text-[var(--color-text-faint)] leading-none">RiR</span>
+                                </button>
+                              </div>
+                              {showPicker ? (
+                                <div className="flex items-center gap-1 px-3 py-1.5 bg-[var(--color-surface-alt)] rounded-lg mx-3 mb-1">
+                                  <span className="text-[10px] text-[var(--color-text-muted)] mr-1 font-medium">{t("activeWorkout.rirPrompt")}</span>
+                                  {[0, 1, 2, 3, 4].map(v => (
+                                    <button
+                                      key={v}
+                                      onClick={() => setRir(exIdx, i, v)}
+                                      className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${
+                                        logged.rir === v
+                                          ? "text-white"
+                                          : "bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
+                                      }`}
+                                      style={logged.rir === v ? { background: "var(--color-accent-gradient)" } : {}}
+                                    >{v}</button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </React.Fragment>
                           );
                         }) : null}
                         {Array.from({ length: Math.max(0, ex.default_sets - normalSets.length) }, (_, i) => {
                           const setNum = normalSets.length + i + 1;
                           const prev = ex.lastSessionSets[normalSets.length + i];
+                          const isNext = i === 0;
                           return (
-                            <div key={`pending-${i}`} className="set-row px-3">
+                            <div key={`pending-${i}`} className={`set-row px-3 ${isNext ? "set-row-next" : ""}`}>
                               <span className="text-sm font-bold text-[var(--color-text-muted)]">{setNum}</span>
                               <span className="text-center text-xs text-[var(--color-text-muted)]">
                                 {prev ? `${toDisplayWeight(prev.weight)} x ${prev.reps}` : "\u2014"}
                               </span>
-                              <span className="text-center text-sm font-bold">{"\u2014"}</span>
-                              <span className="text-center text-sm font-bold">{"\u2014"}</span>
-                              <span></span>
+                              {isNext ? (
+                                <div className="flex items-center justify-center gap-0.5">
+                                  <button
+                                    onClick={() => adjustWeight(exIdx, -step)}
+                                    className="w-5 h-5 rounded text-[10px] flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-90"
+                                  >−</button>
+                                  <input
+                                    type="number"
+                                    value={toDisplayWeight(ex.currentWeight)}
+                                    onChange={e => {
+                                      const v = parseFloat(e.target.value) || 0;
+                                      const kg = unit === "lbs" ? Math.round(v / 2.205 * 10) / 10 : v;
+                                      setExercises(prev2 => prev2.map((ex2, idx) => idx === exIdx ? { ...ex2, currentWeight: kg } : ex2));
+                                    }}
+                                    className="w-12 text-center text-sm font-bold bg-transparent border-b-2 border-[var(--color-accent)] outline-none py-0.5"
+                                  />
+                                  <button
+                                    onClick={() => adjustWeight(exIdx, step)}
+                                    className="w-5 h-5 rounded text-[10px] flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-90"
+                                  >+</button>
+                                </div>
+                              ) : (
+                                <span className="text-center text-sm text-[var(--color-text-muted)]">{"\u2014"}</span>
+                              )}
+                              {isNext ? (
+                                <div className="flex items-center justify-center gap-0.5">
+                                  <button
+                                    onClick={() => adjustReps(exIdx, -REP_STEP)}
+                                    className="w-5 h-5 rounded text-[10px] flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-90"
+                                  >−</button>
+                                  <input
+                                    type="number"
+                                    value={ex.currentReps}
+                                    onChange={e => {
+                                      const v = parseInt(e.target.value) || 0;
+                                      setExercises(prev2 => prev2.map((ex2, idx) => idx === exIdx ? { ...ex2, currentReps: v } : ex2));
+                                    }}
+                                    className="w-10 text-center text-sm font-bold bg-transparent border-b-2 border-[var(--color-accent)] outline-none py-0.5"
+                                  />
+                                  <button
+                                    onClick={() => adjustReps(exIdx, REP_STEP)}
+                                    className="w-5 h-5 rounded text-[10px] flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-90"
+                                  >+</button>
+                                </div>
+                              ) : (
+                                <span className="text-center text-sm text-[var(--color-text-muted)]">{"\u2014"}</span>
+                              )}
+                              {isNext ? (
+                                <button
+                                  onClick={() => logSet(exIdx)}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center mx-auto"
+                                  style={{ background: "var(--color-accent-gradient)" }}
+                                  title={t("activeWorkout.logSet", { number: setNum })}
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                              ) : (
+                                <span></span>
+                              )}
                             </div>
                           );
                         })}
-                      </div>
-
-                      <div className="flex items-center justify-center gap-4 mb-3">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => adjustWeight(exIdx, -step)} className="stepper-btn">-</button>
-                          <input
-                            type="number"
-                            value={toDisplayWeight(ex.currentWeight)}
-                            onChange={e => {
-                              const v = parseFloat(e.target.value) || 0;
-                              const kg = unit === "lbs" ? Math.round(v / 2.205 * 10) / 10 : v;
-                              setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentWeight: kg } : ex2));
-                            }}
-                            className="pill-input w-20"
-                          />
-                          <button onClick={() => adjustWeight(exIdx, step)} className="stepper-btn">+</button>
-                        </div>
-                        <div className="text-[var(--color-text-muted)] text-lg font-bold">x</div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => adjustReps(exIdx, -REP_STEP)} className="stepper-btn">-</button>
-                          <input
-                            type="number"
-                            value={ex.currentReps}
-                            onChange={e => {
-                              const v = parseInt(e.target.value) || 0;
-                              setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, currentReps: v } : ex2));
-                            }}
-                            className="pill-input w-16"
-                          />
-                          <button onClick={() => adjustReps(exIdx, REP_STEP)} className="stepper-btn">+</button>
-                        </div>
                       </div>
 
                       <button

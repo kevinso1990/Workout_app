@@ -3,7 +3,7 @@ import { AppError } from "../middleware/errorHandler";
 import type { WorkoutSet, LogSetBody } from "../models";
 
 export function logSet(body: LogSetBody): WorkoutSet {
-  const { session_id, exercise_id, set_number, weight, reps, is_drop_set, parent_set_id } = body;
+  const { session_id, exercise_id, set_number, weight, reps, is_drop_set, parent_set_id, rir } = body;
 
   if (
     session_id === undefined ||
@@ -18,8 +18,8 @@ export function logSet(body: LogSetBody): WorkoutSet {
   const result = db
     .prepare(
       `INSERT INTO sets
-         (session_id, exercise_id, set_number, weight, reps, is_drop_set, parent_set_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (session_id, exercise_id, set_number, weight, reps, is_drop_set, parent_set_id, rir)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       session_id,
@@ -29,9 +29,14 @@ export function logSet(body: LogSetBody): WorkoutSet {
       reps,
       is_drop_set ? 1 : 0,
       parent_set_id ?? null,
+      rir ?? null,
     );
 
   return db.prepare("SELECT * FROM sets WHERE id = ?").get(result.lastInsertRowid) as WorkoutSet;
+}
+
+export function updateSetRir(id: number, rir: number): void {
+  db.prepare("UPDATE sets SET rir = ? WHERE id = ?").run(rir, id);
 }
 
 export function deleteSet(id: number): void {

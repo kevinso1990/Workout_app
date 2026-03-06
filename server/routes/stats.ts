@@ -14,5 +14,7 @@ router.get("/consistency", statsController.consistency);
 router.get("/exercise-progress/:exerciseId", statsController.exerciseProgress);
 router.get("/muscle-volume-7d", statsController.muscleVolume7d);
 router.get("/logged-exercises", statsController.loggedExercises);
+router.get("/muscle-balance", statsController.muscleBalance);
+router.get("/weekly-summary", statsController.weeklySummary);
 
 export default router;

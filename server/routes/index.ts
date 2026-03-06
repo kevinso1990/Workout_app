@@ -11,6 +11,8 @@ import bodyWeightRouter from "./bodyWeight";
 import recoveryRouter from "./recovery";
 import muscleWikiRouter from "./muscleWiki";
 import pushRouter from "./push";
+import votesRouter from "./votes";
+import splitRefreshRouter from "./splitRefresh";
 import { startPushScheduler } from "../services/pushService";
 
 /**
@@ -30,6 +32,8 @@ export function registerRoutes(app: Express): void {
   app.use("/api/recovery", recoveryRouter);
   app.use("/api/musclewiki", muscleWikiRouter);
   app.use("/api/push", pushRouter);
+  app.use("/api/votes", votesRouter);
+  app.use("/api/split-refresh", splitRefreshRouter);
 
   startPushScheduler();
 }

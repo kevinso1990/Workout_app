@@ -1,9 +1,19 @@
 const BASE = "";
 
+function getDeviceId(): string {
+  let id = localStorage.getItem("device_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("device_id", id);
+  }
+  return id;
+}
+
 async function request<T>(url: string, opts?: RequestInit): Promise<T> {
+  const existing = (opts?.headers as Record<string, string>) ?? {};
   const res = await fetch(`${BASE}${url}`, {
-    headers: { "Content-Type": "application/json" },
     ...opts,
+    headers: { "Content-Type": "application/json", "x-device-id": getDeviceId(), ...existing },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -29,8 +39,10 @@ export const api = {
   getSessions: () => request<any[]>("/api/sessions"),
   getSession: (id: number) => request<any>(`/api/sessions/${id}`),
 
-  logSet: (data: { session_id: number; exercise_id: number; set_number: number; weight: number; reps: number; is_drop_set?: boolean; parent_set_id?: number }) =>
+  logSet: (data: { session_id: number; exercise_id: number; set_number: number; weight: number; reps: number; is_drop_set?: boolean; parent_set_id?: number | null; rir?: number }) =>
     request<any>("/api/sets", { method: "POST", body: JSON.stringify(data) }),
+  updateSetRir: (id: number, rir: number) =>
+    request<any>(`/api/sets/${id}/rir`, { method: "PATCH", body: JSON.stringify({ rir }) }),
   deleteSet: (id: number) => request<any>(`/api/sets/${id}`, { method: "DELETE" }),
 
   submitFeedback: (data: { session_id: number; exercise_id: number; rating: string }) =>
@@ -52,14 +64,15 @@ export const api = {
   logBodyWeight: (data: { weight_kg: number; logged_date?: string; notes?: string }) =>
     request<any>("/api/body-weight", { method: "POST", body: JSON.stringify(data) }),
 
-  getStatsTotals: () => request<any>("/api/stats/totals"),
   getWeeklyHistory: () => request<any[]>("/api/stats/weekly-history"),
   getConsistency: () => request<any[]>("/api/stats/consistency"),
   getExerciseProgress: (exerciseId: number) => request<any>(`/api/stats/exercise-progress/${exerciseId}`),
   getMuscleVolume7d: () => request<any[]>("/api/stats/muscle-volume-7d"),
   getLoggedExercises: () => request<any[]>("/api/stats/logged-exercises"),
+  getMuscleBalance: () => request<{ muscle_group: string; actual_sets: number; target_sets: number }[]>("/api/stats/muscle-balance"),
+  getWeeklySummary: () => request<{ workouts: number; totalVolume: number; totalSets: number; prevWorkouts: number; prevVolume: number; topMuscle: string | null }>("/api/stats/weekly-summary"),
 
-  autoGeneratePlans: (data: { frequency: number; experience: string; goal: string }) =>
+  autoGeneratePlans: (data: { frequency: number; experience: string; goal: string; equipment?: string }) =>
     request<any>("/api/plans/auto-generate", { method: "POST", body: JSON.stringify(data) }),
 
   getRecovery: () => request<any[]>("/api/recovery"),
@@ -69,4 +82,13 @@ export const api = {
     request<any>("/api/push/subscribe", { method: "POST", body: JSON.stringify(subscription) }),
   unsubscribePush: (endpoint: string) =>
     request<any>("/api/push/unsubscribe", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
+
+  getStatsTotals: () => request<{ totalWorkouts: number; totalVolume: number; currentStreak: number; longestStreak: number }>("/api/stats/totals"),
+
+  getAllVotes: () => request<Record<number, number>>("/api/votes"),
+  voteExercise: (exerciseId: number, vote: number) =>
+    request<{ ok: boolean }>(`/api/votes/${exerciseId}`, { method: "POST", body: JSON.stringify({ vote }) }),
+
+  getSplitAge: () => request<{ planId: number; planName: string; weeksOnPlan: number; shouldPrompt: boolean } | null>("/api/split-refresh"),
+  snoozeSplitRefresh: () => request<{ ok: boolean }>("/api/split-refresh/snooze", { method: "POST" }),
 };

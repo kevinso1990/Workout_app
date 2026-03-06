@@ -32,9 +32,9 @@
   --color-border: #d1d1d6;
   --color-border-light: #c7c7cc;
   --color-text: #1c1c1e;
-  --color-text-secondary: #636366;
-  --color-text-muted: #8e8e93;
-  --color-text-faint: #aeaeb2;
+  --color-text-secondary: #3c3c43;
+  --color-text-muted: #636366;
+  --color-text-faint: #8e8e93;
   --color-nav-bg: rgba(242, 242, 247, 0.95);
   --color-row-highlight: rgba(79, 142, 247, 0.06);
   --color-set-done: rgba(34, 197, 94, 0.08);
@@ -226,6 +226,9 @@
   }
   .set-row:last-child {
     border-bottom: none;
+  }
+  .set-row-next {
+    background-color: rgba(79, 142, 247, 0.04);
   }
   .set-row-done {
     border-left: 3px solid var(--color-set-done-border);

@@ -49,3 +49,11 @@ export const muscleVolume7d = asyncHandler(async (_req: Request, res: Response) 
 export const loggedExercises = asyncHandler(async (_req: Request, res: Response) => {
   res.json(statsService.getLoggedExercises());
 });
+
+export const muscleBalance = asyncHandler(async (_req: Request, res: Response) => {
+  res.json(statsService.getMuscleBalance());
+});
+
+export const weeklySummary = asyncHandler(async (_req: Request, res: Response) => {
+  res.json(statsService.getWeeklySummary());
+});

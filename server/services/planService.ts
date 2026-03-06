@@ -1,5 +1,6 @@
 import db from "../db";
 import { AppError } from "../middleware/errorHandler";
+import { getDislikedExerciseIds } from "./voteService";
 import type {
   Plan,
   PlanExercise,
@@ -29,7 +30,7 @@ function fetchPlanExercises(planId: number): PlanExercise[] {
 export function listPlans(userId?: number): PlanWithExercises[] {
   const plans = userId
     ? (db.prepare("SELECT * FROM plans WHERE user_id = ? ORDER BY created_at DESC").all(userId) as Plan[])
-    : (db.prepare("SELECT * FROM plans ORDER BY created_at DESC").all() as Plan[]);
+    : (db.prepare("SELECT * FROM plans WHERE user_id IS NULL ORDER BY created_at DESC").all() as Plan[]);
   return plans.map((p) => ({ ...p, exercises: fetchPlanExercises(p.id) }));
 }
 
@@ -148,7 +149,7 @@ const KB_SWAP: Record<string, string> = {
   "Pull-Ups": "KB High Pull",
 };
 
-export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number): { planIds: number[] } {
+export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, deviceId?: string): { planIds: number[] } {
   const { frequency, experience, goal, equipment } = body;
   if (!frequency || !experience || !goal) {
     throw new AppError(400, "frequency, experience, goal required");
@@ -162,6 +163,7 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number):
         : { sets: 3, reps: 13 };
 
   const useKB = equipment === "kettlebell";
+  const dislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
 
   const findExercise = (name: string): { id: number } | undefined => {
     const resolved = useKB && KB_SWAP[name] ? KB_SWAP[name] : name;
@@ -175,7 +177,7 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number):
     return names
       .map((n, i) => {
         const ex = findExercise(n);
-        if (!ex || seen.has(ex.id)) return null;
+        if (!ex || seen.has(ex.id) || dislikedIds.includes(ex.id)) return null;
         seen.add(ex.id);
         return {
           exercise_id: ex.id,

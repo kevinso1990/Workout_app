@@ -15,7 +15,12 @@
     "volumeByMuscle": "Volume per muscolo",
     "recentActivity": "Attività recente",
     "min": "min",
-    "sets": "serie"
+    "sets": "serie",
+    "streak": "{{count}} sett. di fila",
+    "splitRefreshTitle": "Tempo di cambiare?",
+    "splitRefreshDesc": "Ti alleni con {{plan}} da {{weeks}} settimane. Nuovi esercizi danno nuovi stimoli al tuo corpo.",
+    "splitRefreshAction": "Esplora nuovi esercizi",
+    "splitRefreshSnooze": "Non ora"
   },
   "days": {
     "mon": "Lun",
@@ -30,13 +35,24 @@
     "title": "Piani",
     "new": "Nuovo",
     "noPlans": "Nessun piano ancora. Creane uno per iniziare.",
+    "noPlansFilter": "Nessun piano corrisponde a questo filtro.",
     "createPlan": "Crea piano",
     "exercises": "{{count}} esercizi",
     "start": "Inizia",
     "edit": "Modifica",
     "deletePlan": "Elimina piano",
     "deleteConfirm": "Sei sicuro? Questa azione non può essere annullata.",
-    "delete": "Elimina"
+    "delete": "Elimina",
+    "seeAllPlans": "Vedi altri {{count}} piani",
+    "showLess": "Mostra meno piani",
+    "descFullBody": "Condizionamento corpo intero",
+    "descUpperA": "Focus forza parte superiore",
+    "descUpperB": "Variazione parte superiore",
+    "descLowerA": "Parte inferiore e gambe",
+    "descLowerB": "Variazione parte inferiore",
+    "descPush": "Petto, spalle e tricipiti",
+    "descPull": "Schiena e bicipiti",
+    "descLegs": "Quadricipiti, femorali e polpacci"
   },
   "planBuilder": {
     "cancel": "Annulla",
@@ -78,7 +94,9 @@
     "finishWorkout": "Termina allenamento",
     "leaveWorkout": "Lasciare l'allenamento?",
     "leaveMessage": "I tuoi progressi sono salvati e puoi riprendere più tardi.",
-    "leave": "Esci"
+    "leave": "Esci",
+    "rirLabel": "Ripetizioni in riserva",
+    "rirPrompt": "RiR:"
   },
   "postWorkout": {
     "workoutComplete": "Allenamento completato",
@@ -124,7 +142,13 @@
     "bodyWeight": "Peso corporeo",
     "log": "Registra",
     "latest": "Ultimo",
-    "weeksAbbr": "sett"
+    "weeksAbbr": "sett",
+    "sets": "serie",
+    "muscleBalance": "Equilibrio muscolare (questa settimana)",
+    "muscleBalanceSub": "Obiettivo: serie settimanali basate su evidenza scientifica",
+    "weeklySummaryTitle": "Questa settimana",
+    "vsLastWeek": "vs settimana scorsa",
+    "topMuscle": "Muscolo principale"
   },
   "history": {
     "title": "Cronologia",
@@ -157,7 +181,15 @@
     "dark": "Scuro",
     "light": "Chiaro",
     "language": "Lingua",
-    "notifications": "Notifiche"
+    "notifications": "Notifiche",
+    "badges": "Badge",
+    "badge_firstWorkout": "Primo allenamento",
+    "badge_fiveWorkouts": "5 allenamenti",
+    "badge_tenWorkouts": "10 allenamenti",
+    "badge_twentyFiveWorkouts": "25 allenamenti",
+    "badge_fiftyWorkouts": "50 allenamenti",
+    "badge_hundredWorkouts": "100 allenamenti",
+    "badge_twoFiftyWorkouts": "250 allenamenti"
   },
   "onboarding": {
     "welcome": "Costruiamo il tuo piano di allenamento perfetto",
@@ -189,10 +221,11 @@
     "notifTitle": "Resta in pista con i promemoria",
     "notifDesc": "Ricevi promemoria di allenamento, riepiloghi settimanali e avvisi di inattività.",
     "equipmentQuestion": "Che attrezzatura hai?",
-    "barbell": "Bilanciere e palestra",
-    "dumbbell": "Manubri",
-    "kettlebell": "Kettlebell",
-    "bodyweight": "Corpo libero",
+    "gym": "Palestra / Studio",
+    "kettlebells": "Kettlebell",
+    "dumbbells": "Manubri",
+    "bands": "Elastici",
+    "noneEquipment": "Nessuno",
     "splitDescFullBody": "{{days}} giorni/settimana lavorando tutti i muscoli per sessione.",
     "splitDescUpperLower": "Alternanza alto e basso corpo. Ogni gruppo muscolare allenato 2x a settimana.",
     "splitDescUpperLowerFull": "Split 5 giorni combinando alto/basso e full body per volume bilanciato.",

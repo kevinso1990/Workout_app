@@ -53,7 +53,7 @@ export async function searchMuscleWiki(name: string): Promise<MuscleWikiResult[]
     }[];
   };
 
-  const results: MuscleWikiResult[] = (data.results ?? []).map((ex) => ({
+  const rawResults: MuscleWikiResult[] = (data.results ?? []).map((ex) => ({
     id: ex.id,
     name: ex.name,
     category: ex.category?.name ?? "",
@@ -69,6 +69,14 @@ export async function searchMuscleWiki(name: string): Promise<MuscleWikiResult[]
     ),
     description: ex.description ?? "",
   }));
+
+  // Sort results so the best name-match is first, preventing wrong-exercise images
+  const queryWords = trimmed.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+  const results = [...rawResults].sort((a, b) => {
+    const scoreA = queryWords.filter((w) => a.name.toLowerCase().includes(w)).length;
+    const scoreB = queryWords.filter((w) => b.name.toLowerCase().includes(w)).length;
+    return scoreB - scoreA;
+  });
 
   db.prepare(
     "INSERT OR REPLACE INTO exercise_media_cache (exercise_name, data, fetched_at) VALUES (?, ?, datetime('now'))",

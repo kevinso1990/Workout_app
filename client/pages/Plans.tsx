@@ -4,12 +4,33 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { useTranslation } from "react-i18next";
 
+const INITIAL_VISIBLE = 2;
+
+function getPlanDescription(name: string, t: (key: string) => string): string {
+  const n = name.toLowerCase().replace(/^kb\s*/, "");
+  if (n.includes("push")) return t("plans.descPush");
+  if (n.includes("pull")) return t("plans.descPull");
+  if (n.includes("legs") || n.includes("leg")) return t("plans.descLegs");
+  if (n === "upper a" || n.startsWith("upper a")) return t("plans.descUpperA");
+  if (n === "upper b" || n.startsWith("upper b")) return t("plans.descUpperB");
+  if (n === "lower a" || n.startsWith("lower a")) return t("plans.descLowerA");
+  if (n === "lower b" || n.startsWith("lower b")) return t("plans.descLowerB");
+  if (n.includes("upper")) return t("plans.descUpperA");
+  if (n.includes("lower")) return t("plans.descLowerA");
+  if (n.includes("full body") || n.includes("full_body")) return t("plans.descFullBody");
+  return "";
+}
+
+const MUSCLE_FILTERS = ["All", "Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps"];
+
 export default function Plans() {
   const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [muscleFilter, setMuscleFilter] = useState("All");
 
   useEffect(() => {
     api.getPlans().then(setPlans).finally(() => setLoading(false));
@@ -28,6 +49,10 @@ export default function Plans() {
     const session = await api.startSession(planId);
     navigate(`/workout/${session.id}`);
   };
+
+  const filteredPlans = muscleFilter === "All"
+    ? plans
+    : plans.filter(p => p.exercises?.some((e: any) => e.muscle_group === muscleFilter));
 
   if (loading) {
     return (
@@ -51,7 +76,30 @@ export default function Plans() {
         </Link>
       </div>
 
-      {plans.length === 0 ? (
+      {plans.length > 0 ? (
+        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 -mx-1 px-1 scrollbar-none">
+          {MUSCLE_FILTERS.map(f => (
+            <button
+              key={f}
+              onClick={() => { setMuscleFilter(f); setShowAll(false); }}
+              className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+                muscleFilter === f
+                  ? "text-white"
+                  : "bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
+              }`}
+              style={muscleFilter === f ? { background: "var(--color-accent-gradient)" } : {}}
+            >
+              {f === "All" ? t("planBuilder.all") : f}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {filteredPlans.length === 0 && plans.length > 0 ? (
+        <div className="card p-6 text-center">
+          <p className="text-[var(--color-text-secondary)] text-sm">{t("plans.noPlansFilter")}</p>
+        </div>
+      ) : filteredPlans.length === 0 ? (
         <div className="card p-8 text-center">
           <p className="text-[var(--color-text-secondary)] mb-4">{t("plans.noPlans")}</p>
           <Link href="/plans/new">
@@ -60,10 +108,15 @@ export default function Plans() {
         </div>
       ) : (
         <div className="space-y-3">
-          {plans.map(plan => (
+          {(showAll ? filteredPlans : filteredPlans.slice(0, INITIAL_VISIBLE)).map(plan => {
+            const desc = getPlanDescription(plan.name, t);
+            return (
             <div key={plan.id} className="card p-4">
               <div className="mb-3">
                 <h3 className="font-bold text-lg">{plan.name}</h3>
+                {desc ? (
+                  <p className="text-xs text-[var(--color-accent)] font-medium mb-0.5">{desc}</p>
+                ) : null}
                 <p className="text-sm text-[var(--color-text-secondary)]">
                   {t("plans.exercises", { count: plan.exercises?.length || 0 })}
                 </p>
@@ -91,7 +144,18 @@ export default function Plans() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
+          {filteredPlans.length > INITIAL_VISIBLE ? (
+            <button
+              onClick={() => setShowAll(v => !v)}
+              className="w-full btn-ghost text-sm min-h-11"
+            >
+              {showAll
+                ? t("plans.showLess")
+                : t("plans.seeAllPlans", { count: filteredPlans.length - INITIAL_VISIBLE })}
+            </button>
+          ) : null}
         </div>
       )}
 

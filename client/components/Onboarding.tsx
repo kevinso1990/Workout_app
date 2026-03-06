@@ -27,11 +27,20 @@ const GOALS = [
 ];
 
 const EQUIPMENT = [
-  { key: "barbell", labelKey: "onboarding.barbell" },
-  { key: "dumbbell", labelKey: "onboarding.dumbbell" },
-  { key: "kettlebell", labelKey: "onboarding.kettlebell" },
-  { key: "bodyweight", labelKey: "onboarding.bodyweight" },
+  { key: "gym", labelKey: "onboarding.gym" },
+  { key: "kettlebells", labelKey: "onboarding.kettlebells" },
+  { key: "dumbbells", labelKey: "onboarding.dumbbells" },
+  { key: "bands", labelKey: "onboarding.bands" },
+  { key: "none", labelKey: "onboarding.noneEquipment" },
 ];
+
+const EQUIPMENT_API_MAP: Record<string, string> = {
+  gym: "barbell",
+  kettlebells: "kettlebell",
+  dumbbells: "dumbbell",
+  bands: "bodyweight",
+  none: "bodyweight",
+};
 
 function getSplitRecommendation(freq: number, t: (key: string, opts?: any) => string) {
   if (freq <= 3) return { name: t("splits.fullBody"), desc: t("onboarding.splitDescFullBody", { days: freq }) };
@@ -93,7 +102,7 @@ export default function Onboarding() {
     if (!frequency || !experience || !goal) return;
     setGenerating(true);
     try {
-      await api.autoGeneratePlans({ frequency, experience, goal, equipment: equipment || "barbell" });
+      await api.autoGeneratePlans({ frequency, experience, goal, equipment: EQUIPMENT_API_MAP[equipment || "gym"] || "barbell" });
       dismiss();
       navigate("/plans");
     } catch {
@@ -127,18 +136,6 @@ export default function Onboarding() {
               <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
                 {t("onboarding.welcomeSub")}
               </p>
-              <div className="pt-2 space-y-2">
-                <div className="p-3 rounded-xl bg-[var(--color-surface-alt)]">
-                  <div className="text-sm font-semibold mb-1">{t("onboarding.notifTitle")}</div>
-                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mb-2">{t("onboarding.notifDesc")}</p>
-                  <button
-                    onClick={handleNotificationRequest}
-                    className={`w-full text-sm py-2 rounded-lg font-semibold ${notifGranted ? "bg-green-500/20 text-green-400" : "btn-primary"}`}
-                  >
-                    {notifGranted ? t("onboarding.notificationsEnabled") : t("onboarding.enableNotifications")}
-                  </button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -153,7 +150,7 @@ export default function Onboarding() {
                     className={`p-3 rounded-xl text-left transition-all border-2 ${
                       frequency === f.days
                         ? "border-[var(--color-accent)] bg-[rgba(79,142,247,0.1)]"
-                        : "border-transparent bg-[var(--color-surface-alt)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface-alt)] hover:border-[var(--color-accent)] hover:bg-[rgba(79,142,247,0.05)]"
                     }`}
                   >
                     <span className="text-2xl font-bold">{f.days}</span>
@@ -176,7 +173,7 @@ export default function Onboarding() {
                     className={`w-full p-4 rounded-xl text-left transition-all border-2 ${
                       experience === e.key
                         ? "border-[var(--color-accent)] bg-[rgba(79,142,247,0.1)]"
-                        : "border-transparent bg-[var(--color-surface-alt)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface-alt)] hover:border-[var(--color-accent)] hover:bg-[rgba(79,142,247,0.05)]"
                     }`}
                   >
                     <div className="font-semibold">{t(e.labelKey)}</div>
@@ -198,7 +195,7 @@ export default function Onboarding() {
                     className={`p-4 rounded-xl text-center transition-all border-2 ${
                       goal === g.key
                         ? "border-[var(--color-accent)] bg-[rgba(79,142,247,0.1)]"
-                        : "border-transparent bg-[var(--color-surface-alt)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface-alt)] hover:border-[var(--color-accent)] hover:bg-[rgba(79,142,247,0.05)]"
                     }`}
                   >
                     <div className="font-semibold text-sm">{t(g.labelKey)}</div>
@@ -219,7 +216,7 @@ export default function Onboarding() {
                     className={`p-4 rounded-xl text-center transition-all border-2 ${
                       equipment === eq.key
                         ? "border-[var(--color-accent)] bg-[rgba(79,142,247,0.1)]"
-                        : "border-transparent bg-[var(--color-surface-alt)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface-alt)] hover:border-[var(--color-accent)] hover:bg-[rgba(79,142,247,0.05)]"
                     }`}
                   >
                     <div className="font-semibold text-sm">{t(eq.labelKey)}</div>

@@ -31,5 +31,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
 
 export const autoGenerate = asyncHandler(async (req: Request, res: Response) => {
   const body = req.body as AutoGeneratePlansBody;
-  res.json(planService.autoGeneratePlans(body, req.user?.sub));
+  const rawDeviceId = req.headers["x-device-id"];
+  const deviceId = Array.isArray(rawDeviceId) ? rawDeviceId[0] : rawDeviceId;
+  res.json(planService.autoGeneratePlans(body, req.user?.sub, deviceId));
 });

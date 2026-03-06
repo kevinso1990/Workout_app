@@ -252,11 +252,88 @@ function BodyWeightSection() {
   );
 }
 
+function MuscleBalanceChart({ data }: { data: { muscle_group: string; actual_sets: number; target_sets: number }[] }) {
+  const { t } = useTranslation();
+  const sorted = [...data].sort((a, b) => b.actual_sets - a.actual_sets);
+  return (
+    <div className="card p-4">
+      <h3 className="section-label">{t("progress.muscleBalance")}</h3>
+      <div className="space-y-2.5">
+        {sorted.map(row => {
+          const pct = Math.min((row.actual_sets / row.target_sets) * 100, 100);
+          const over = row.actual_sets >= row.target_sets;
+          return (
+            <div key={row.muscle_group}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-medium text-[var(--color-text)]">{row.muscle_group}</span>
+                <span className={over ? "text-green-400 font-semibold" : "text-[var(--color-text-muted)]"}>
+                  {row.actual_sets}/{row.target_sets} {t("progress.sets")}
+                </span>
+              </div>
+              <div className="h-1.5 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${pct}%`,
+                    background: over ? "var(--color-accent-gradient)" : "rgba(79,142,247,0.4)",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-[var(--color-text-faint)] mt-3">{t("progress.muscleBalanceSub")}</p>
+    </div>
+  );
+}
+
+function WeeklySummaryCard({ data }: { data: { workouts: number; totalVolume: number; totalSets: number; prevWorkouts: number; prevVolume: number; topMuscle: string | null } }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language || "en";
+  const volDelta = data.prevVolume > 0 ? Math.round(((data.totalVolume - data.prevVolume) / data.prevVolume) * 100) : null;
+  return (
+    <div className="card p-4">
+      <h3 className="section-label">{t("progress.weeklySummaryTitle")}</h3>
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <div className="text-xl font-bold text-[var(--color-accent)]">{data.workouts}</div>
+          <div className="text-[10px] text-[var(--color-text-muted)]">{t("progress.workouts")}</div>
+        </div>
+        <div>
+          <div className="text-xl font-bold text-[var(--color-accent)]">{Math.round(data.totalVolume / 1000).toLocaleString(locale)}k</div>
+          <div className="text-[10px] text-[var(--color-text-muted)]">{t("common.kg")}</div>
+        </div>
+        <div>
+          <div className="text-xl font-bold text-[var(--color-accent)]">{data.totalSets}</div>
+          <div className="text-[10px] text-[var(--color-text-muted)]">{t("progress.sets")}</div>
+        </div>
+      </div>
+      {(volDelta !== null || data.topMuscle) ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {volDelta !== null ? (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${volDelta >= 0 ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+              {volDelta >= 0 ? "+" : ""}{volDelta}% {t("progress.vsLastWeek")}
+            </span>
+          ) : null}
+          {data.topMuscle ? (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[rgba(79,142,247,0.12)] text-[var(--color-accent)]">
+              {t("progress.topMuscle")}: {data.topMuscle}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function Progress() {
   const { t } = useTranslation();
   const [totals, setTotals] = useState<any>(null);
   const [weeklyHistory, setWeeklyHistory] = useState<any[]>([]);
   const [exercises, setExercises] = useState<any[]>([]);
+  const [muscleBalance, setMuscleBalance] = useState<any[]>([]);
+  const [weeklySummary, setWeeklySummary] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -267,10 +344,14 @@ export default function Progress() {
       api.getStatsTotals(),
       api.getWeeklyHistory(),
       api.getLoggedExercises(),
-    ]).then(([t, wh, ex]) => {
-      setTotals(t);
+      api.getMuscleBalance().catch(() => []),
+      api.getWeeklySummary().catch(() => null),
+    ]).then(([tot, wh, ex, mb, ws]) => {
+      setTotals(tot);
       setWeeklyHistory(wh);
       setExercises(ex);
+      setMuscleBalance(mb);
+      setWeeklySummary(ws);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -319,7 +400,9 @@ export default function Progress() {
             <StatCard label={t("progress.longestStreak")} value={`${totals?.longestStreak || 0} ${t("progress.weeksAbbr")}`} sub={t("progress.allTime")} />
           </div>
 
+          {weeklySummary && weeklySummary.workouts > 0 ? <WeeklySummaryCard data={weeklySummary} /> : null}
           <WeeklyVolumeChart data={weeklyHistory} />
+          {muscleBalance.length > 0 ? <MuscleBalanceChart data={muscleBalance} /> : null}
           <MuscleHeatmap />
           <ConsistencyCalendar />
         </>

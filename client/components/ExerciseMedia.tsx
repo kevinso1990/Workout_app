@@ -39,7 +39,16 @@ export default function ExerciseMedia({ exerciseName, compact = false, showInstr
   if (loading) return <div className="h-8 animate-pulse rounded bg-[var(--color-surface-alt)]" />;
   if (!data || data.length === 0) return null;
 
-  const match = data[0];
+  // Pick the result whose name best matches the queried exercise name
+  const words = exerciseName.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  let bestIdx = 0;
+  let bestScore = -1;
+  data.forEach((r: any, i: number) => {
+    const rName = r.name.toLowerCase();
+    const score = words.filter((w: string) => rName.includes(w)).length;
+    if (score > bestScore) { bestScore = score; bestIdx = i; }
+  });
+  const match = data[bestIdx];
 
   if (compact) {
     return (
@@ -50,6 +59,8 @@ export default function ExerciseMedia({ exerciseName, compact = false, showInstr
             alt={match.name}
             className="w-10 h-10 rounded-lg object-cover bg-[var(--color-surface-alt)]"
             loading="lazy"
+            decoding="async"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         )}
         {match.muscles_primary?.length > 0 && (
@@ -72,6 +83,8 @@ export default function ExerciseMedia({ exerciseName, compact = false, showInstr
             alt={match.name}
             className="w-20 h-20 rounded-xl object-cover bg-[var(--color-surface-alt)] flex-shrink-0"
             loading="lazy"
+            decoding="async"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         )}
         <div className="flex-1 min-w-0">

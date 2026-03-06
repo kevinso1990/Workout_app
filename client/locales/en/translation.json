@@ -15,7 +15,12 @@
     "volumeByMuscle": "Volume by Muscle",
     "recentActivity": "Recent Activity",
     "min": "min",
-    "sets": "sets"
+    "sets": "sets",
+    "streak": "{{count}}w streak",
+    "splitRefreshTitle": "Time to mix things up?",
+    "splitRefreshDesc": "You've been training {{plan}} for {{weeks}} weeks. New exercises can give your body fresh stimuli for continued progress.",
+    "splitRefreshAction": "Explore new exercises",
+    "splitRefreshSnooze": "Not now"
   },
   "days": {
     "mon": "Mon",
@@ -30,13 +35,24 @@
     "title": "Plans",
     "new": "New",
     "noPlans": "No plans yet. Create one to get started.",
+    "noPlansFilter": "No plans match this filter.",
     "createPlan": "Create Plan",
     "exercises": "{{count}} exercises",
     "start": "Start",
     "edit": "Edit",
     "deletePlan": "Delete Plan",
     "deleteConfirm": "Are you sure? This can't be undone.",
-    "delete": "Delete"
+    "delete": "Delete",
+    "seeAllPlans": "See {{count}} more plans",
+    "showLess": "Show fewer plans",
+    "descFullBody": "Full body conditioning",
+    "descUpperA": "Upper body strength focus",
+    "descUpperB": "Upper body variation",
+    "descLowerA": "Lower body and legs",
+    "descLowerB": "Lower body variation",
+    "descPush": "Chest, shoulders and triceps",
+    "descPull": "Back and biceps",
+    "descLegs": "Quads, hamstrings and calves"
   },
   "planBuilder": {
     "cancel": "Cancel",
@@ -78,7 +94,9 @@
     "finishWorkout": "Finish Workout",
     "leaveWorkout": "Leave Workout?",
     "leaveMessage": "Your progress is saved and you can resume later.",
-    "leave": "Leave"
+    "leave": "Leave",
+    "rirLabel": "Reps in Reserve",
+    "rirPrompt": "RiR:"
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",
@@ -106,6 +124,7 @@
     "exercises": "Exercises",
     "body": "Body",
     "workouts": "Workouts",
+    "sets": "sets",
     "totalVolume": "Total Volume",
     "currentStreak": "Current Streak",
     "consecutiveWeeks": "consecutive weeks",
@@ -124,7 +143,12 @@
     "bodyWeight": "Body Weight",
     "log": "Log",
     "latest": "Latest",
-    "weeksAbbr": "w"
+    "weeksAbbr": "w",
+    "muscleBalance": "Muscle Balance (this week)",
+    "muscleBalanceSub": "Target: evidence-based weekly sets per muscle group",
+    "weeklySummaryTitle": "This Week",
+    "vsLastWeek": "vs last week",
+    "topMuscle": "Top muscle"
   },
   "history": {
     "title": "History",
@@ -157,7 +181,15 @@
     "dark": "Dark",
     "light": "Light",
     "language": "Language",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "badges": "Badges",
+    "badge_firstWorkout": "First workout",
+    "badge_fiveWorkouts": "5 workouts",
+    "badge_tenWorkouts": "10 workouts",
+    "badge_twentyFiveWorkouts": "25 workouts",
+    "badge_fiftyWorkouts": "50 workouts",
+    "badge_hundredWorkouts": "100 workouts",
+    "badge_twoFiftyWorkouts": "250 workouts"
   },
   "onboarding": {
     "welcome": "Let's build your perfect workout plan",
@@ -189,10 +221,11 @@
     "notifTitle": "Stay on track with reminders",
     "notifDesc": "Get workout reminders, weekly summaries, and inactivity nudges to keep your gains consistent.",
     "equipmentQuestion": "What equipment do you have?",
-    "barbell": "Barbell & Gym",
-    "dumbbell": "Dumbbells",
-    "kettlebell": "Kettlebell",
-    "bodyweight": "Bodyweight",
+    "gym": "Gym / Studio",
+    "kettlebells": "Kettlebells",
+    "dumbbells": "Dumbbells",
+    "bands": "Bands",
+    "noneEquipment": "None",
     "splitDescFullBody": "{{days}} days/week hitting all major muscles each session.",
     "splitDescUpperLower": "Train upper body and lower body on alternating days. Each muscle group gets hit twice per week.",
     "splitDescUpperLowerFull": "5-day split combining upper/lower days with a full body session for balanced weekly volume.",

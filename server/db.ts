@@ -114,6 +114,33 @@ export function initDb() {
   seedExercises();
   migrateSupersetsDropSets();
   migrateAuth();
+  migrateVotes();
+  migrateSplitRefresh();
+}
+
+function migrateVotes() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS exercise_votes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      device_id TEXT NOT NULL,
+      exercise_id INTEGER NOT NULL,
+      vote INTEGER NOT NULL CHECK(vote IN (-1, 1)),
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(device_id, exercise_id),
+      FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+    );
+  `);
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_votes_device ON exercise_votes(device_id)"); } catch {}
+}
+
+function migrateSplitRefresh() {
+  // Tracks when we last prompted a user to refresh their split (per device)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS split_refresh_snooze (
+      device_id TEXT PRIMARY KEY,
+      snoozed_until TEXT NOT NULL
+    );
+  `);
 }
 
 function migrateAuth() {
@@ -154,6 +181,9 @@ function migrateSupersetsDropSets() {
   } catch {}
   try {
     db.exec("ALTER TABLE sets ADD COLUMN parent_set_id INTEGER REFERENCES sets(id) ON DELETE SET NULL");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE sets ADD COLUMN rir INTEGER");
   } catch {}
   try {
     db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_muscle_fatigue_session_muscle ON muscle_fatigue(session_id, muscle_group)");

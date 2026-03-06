@@ -4,6 +4,16 @@ import { api } from "../lib/api";
 import { APP_NAME } from "../config";
 import { useTranslation } from "react-i18next";
 
+const BADGES = [
+  { count: 1,   icon: "🏋️", key: "firstWorkout" },
+  { count: 5,   icon: "🔥", key: "fiveWorkouts" },
+  { count: 10,  icon: "⚡", key: "tenWorkouts" },
+  { count: 25,  icon: "💪", key: "twentyFiveWorkouts" },
+  { count: 50,  icon: "🥇", key: "fiftyWorkouts" },
+  { count: 100, icon: "🏆", key: "hundredWorkouts" },
+  { count: 250, icon: "👑", key: "twoFiftyWorkouts" },
+];
+
 const LANGUAGES = [
   { code: "en", name: "English", flag: "EN" },
   { code: "de", name: "Deutsch", flag: "DE" },
@@ -43,7 +53,7 @@ export default function Profile() {
     <div className="px-4 pt-8 pb-4 max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-8">{APP_NAME}</h1>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="card p-4 text-center">
           <div className="text-2xl font-bold text-[var(--color-accent)]">{stats.totalSessions}</div>
           <div className="text-xs text-[var(--color-text-secondary)] mt-1">{t("profile.workouts")}</div>
@@ -55,6 +65,29 @@ export default function Profile() {
         <div className="card p-4 text-center">
           <div className="text-2xl font-bold text-yellow-400">{stats.totalPRs}</div>
           <div className="text-xs text-[var(--color-text-secondary)] mt-1">{t("profile.prs")}</div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="section-label">{t("profile.badges")}</div>
+        <div className="flex flex-wrap gap-2">
+          {BADGES.map(badge => {
+            const earned = stats.totalSessions >= badge.count;
+            return (
+              <div
+                key={badge.key}
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl min-w-[3.5rem] transition-all ${
+                  earned
+                    ? "bg-[rgba(79,142,247,0.12)] border border-[var(--color-accent)]/30"
+                    : "bg-[var(--color-surface-alt)] opacity-35"
+                }`}
+                title={t(`profile.badge_${badge.key}`, { count: badge.count })}
+              >
+                <span className="text-2xl">{badge.icon}</span>
+                <span className="text-[10px] font-semibold text-[var(--color-text-muted)]">{badge.count}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

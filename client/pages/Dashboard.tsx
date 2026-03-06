@@ -10,6 +10,8 @@ export default function Dashboard() {
   const [plans, setPlans] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [weeklyVolume, setWeeklyVolume] = useState<any[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [splitPrompt, setSplitPrompt] = useState<{ planName: string; weeksOnPlan: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const DAYS = [
@@ -18,9 +20,19 @@ export default function Dashboard() {
   ];
 
   useEffect(() => {
-    Promise.all([api.getPlans(), api.getSessions(), api.getWeeklyVolume()])
-      .then(([p, s, wv]) => { setPlans(p); setSessions(s); setWeeklyVolume(wv); })
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.getPlans(),
+      api.getSessions(),
+      api.getWeeklyVolume(),
+      api.getStatsTotals().catch(() => null),
+      api.getSplitAge().catch(() => null),
+    ]).then(([p, s, wv, totals, splitAge]) => {
+      setPlans(p);
+      setSessions(s);
+      setWeeklyVolume(wv);
+      if (totals) setStreak(totals.currentStreak);
+      if (splitAge?.shouldPrompt) setSplitPrompt({ planName: splitAge.planName, weeksOnPlan: splitAge.weeksOnPlan });
+    }).finally(() => setLoading(false));
   }, []);
 
   const recentSessions = sessions.slice(0, 5);
@@ -46,6 +58,11 @@ export default function Dashboard() {
   const startWorkout = async (planId: number) => {
     const session = await api.startSession(planId);
     navigate(`/workout/${session.id}`);
+  };
+
+  const dismissSplitPrompt = async () => {
+    setSplitPrompt(null);
+    api.snoozeSplitRefresh().catch(() => {});
   };
 
   const locale = i18n.language || "en";
@@ -117,8 +134,46 @@ export default function Dashboard() {
         </section>
       )}
 
+      {splitPrompt ? (
+        <section className="mb-6">
+          <div className="card p-4 border border-[var(--color-accent)]/30" style={{ background: "rgba(79,142,247,0.06)" }}>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: "var(--color-accent-gradient)" }}>
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm mb-0.5">{t("dashboard.splitRefreshTitle")}</div>
+                <div className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                  {t("dashboard.splitRefreshDesc", { weeks: splitPrompt.weeksOnPlan, plan: splitPrompt.planName })}
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Link href="/plans">
+                    <button className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: "var(--color-accent-gradient)" }}>
+                      {t("dashboard.splitRefreshAction")}
+                    </button>
+                  </Link>
+                  <button onClick={dismissSplitPrompt} className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]">
+                    {t("dashboard.splitRefreshSnooze")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="mb-6">
-        <div className="section-label">{t("dashboard.thisWeek")}</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="section-label mb-0">{t("dashboard.thisWeek")}</div>
+          {streak > 0 ? (
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--color-accent)]">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              {t("dashboard.streak", { count: streak })}
+            </div>
+          ) : null}
+        </div>
         <div className="card p-4">
           <div className="flex justify-between">
             {DAYS.map((day, i) => (

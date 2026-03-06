@@ -239,6 +239,76 @@ export function getMuscleVolume7d(): MuscleVolumeRow[] {
     .all() as MuscleVolumeRow[];
 }
 
+export function getWeeklySummary(): {
+  workouts: number; totalVolume: number; totalSets: number;
+  prevWorkouts: number; prevVolume: number; topMuscle: string | null;
+} {
+  const cur = db.prepare(
+    `SELECT COUNT(DISTINCT s.id) as workouts,
+            COALESCE(SUM(st.weight * st.reps), 0) as totalVolume,
+            COUNT(st.id) as totalSets
+     FROM sessions s
+     LEFT JOIN sets st ON st.session_id = s.id
+     WHERE s.finished_at IS NOT NULL
+       AND s.started_at >= datetime('now', '-7 days')`,
+  ).get() as { workouts: number; totalVolume: number; totalSets: number };
+
+  const prev = db.prepare(
+    `SELECT COUNT(DISTINCT s.id) as workouts,
+            COALESCE(SUM(st.weight * st.reps), 0) as totalVolume
+     FROM sessions s
+     LEFT JOIN sets st ON st.session_id = s.id
+     WHERE s.finished_at IS NOT NULL
+       AND s.started_at >= datetime('now', '-14 days')
+       AND s.started_at < datetime('now', '-7 days')`,
+  ).get() as { workouts: number; totalVolume: number };
+
+  const top = db.prepare(
+    `SELECT e.muscle_group, COUNT(st.id) as cnt
+     FROM sets st
+     JOIN exercises e ON e.id = st.exercise_id
+     JOIN sessions s ON s.id = st.session_id
+     WHERE s.finished_at IS NOT NULL AND s.started_at >= datetime('now', '-7 days')
+     GROUP BY e.muscle_group ORDER BY cnt DESC LIMIT 1`,
+  ).get() as { muscle_group: string } | undefined;
+
+  return {
+    workouts: cur.workouts,
+    totalVolume: Math.round(cur.totalVolume),
+    totalSets: cur.totalSets,
+    prevWorkouts: prev.workouts,
+    prevVolume: Math.round(prev.totalVolume),
+    topMuscle: top?.muscle_group ?? null,
+  };
+}
+
+// Recommended weekly sets per muscle group (evidence-based ranges, midpoints)
+const MUSCLE_TARGETS: Record<string, number> = {
+  Chest: 12, Back: 14, Shoulders: 12, Legs: 14,
+  Biceps: 8, Triceps: 8, Core: 10, Traps: 6, Forearms: 4,
+};
+
+export function getMuscleBalance(): { muscle_group: string; actual_sets: number; target_sets: number }[] {
+  const rows = db
+    .prepare(
+      `SELECT e.muscle_group, COUNT(st.id) as actual_sets
+       FROM sets st
+       JOIN exercises e ON e.id = st.exercise_id
+       JOIN sessions s ON s.id = st.session_id
+       WHERE s.finished_at IS NOT NULL AND s.started_at >= datetime('now', '-7 days')
+       GROUP BY e.muscle_group`,
+    )
+    .all() as { muscle_group: string; actual_sets: number }[];
+
+  const actualMap = Object.fromEntries(rows.map(r => [r.muscle_group, r.actual_sets]));
+
+  return Object.entries(MUSCLE_TARGETS).map(([mg, target]) => ({
+    muscle_group: mg,
+    actual_sets: actualMap[mg] ?? 0,
+    target_sets: target,
+  }));
+}
+
 export function getLoggedExercises(): LoggedExerciseRow[] {
   return db
     .prepare(

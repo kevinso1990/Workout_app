@@ -272,6 +272,7 @@ export interface LogSetBody {
   reps: number;
   is_drop_set?: boolean;
   parent_set_id?: number | null;
+  rir?: number | null;
 }
 
 export interface SubmitFeedbackBody {

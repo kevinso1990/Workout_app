@@ -15,7 +15,12 @@
     "volumeByMuscle": "Volume por músculo",
     "recentActivity": "Atividade recente",
     "min": "min",
-    "sets": "séries"
+    "sets": "séries",
+    "streak": "{{count}} sem. seguidas",
+    "splitRefreshTitle": "Hora de mudar?",
+    "splitRefreshDesc": "Você está treinando com {{plan}} há {{weeks}} semanas. Novos exercícios dão novos estímulos ao seu corpo.",
+    "splitRefreshAction": "Explorar novos exercícios",
+    "splitRefreshSnooze": "Agora não"
   },
   "days": {
     "mon": "Seg",
@@ -30,13 +35,24 @@
     "title": "Planos",
     "new": "Novo",
     "noPlans": "Nenhum plano ainda. Crie um para começar.",
+    "noPlansFilter": "Nenhum plano corresponde a este filtro.",
     "createPlan": "Criar plano",
     "exercises": "{{count}} exercícios",
     "start": "Iniciar",
     "edit": "Editar",
     "deletePlan": "Excluir plano",
     "deleteConfirm": "Tem certeza? Esta ação não pode ser desfeita.",
-    "delete": "Excluir"
+    "delete": "Excluir",
+    "seeAllPlans": "Ver mais {{count}} planos",
+    "showLess": "Mostrar menos planos",
+    "descFullBody": "Condicionamento corpo inteiro",
+    "descUpperA": "Foco em força parte superior",
+    "descUpperB": "Variação parte superior",
+    "descLowerA": "Parte inferior e pernas",
+    "descLowerB": "Variação parte inferior",
+    "descPush": "Peito, ombros e tríceps",
+    "descPull": "Costas e bíceps",
+    "descLegs": "Quadríceps, isquiotibiais e panturrilhas"
   },
   "planBuilder": {
     "cancel": "Cancelar",
@@ -78,7 +94,9 @@
     "finishWorkout": "Finalizar treino",
     "leaveWorkout": "Sair do treino?",
     "leaveMessage": "Seu progresso está salvo e você pode continuar mais tarde.",
-    "leave": "Sair"
+    "leave": "Sair",
+    "rirLabel": "Repetições em reserva",
+    "rirPrompt": "RiR:"
   },
   "postWorkout": {
     "workoutComplete": "Treino concluído",
@@ -124,7 +142,13 @@
     "bodyWeight": "Peso corporal",
     "log": "Registrar",
     "latest": "Último",
-    "weeksAbbr": "sem"
+    "weeksAbbr": "sem",
+    "sets": "séries",
+    "muscleBalance": "Equilíbrio muscular (esta semana)",
+    "muscleBalanceSub": "Meta: séries semanais baseadas em evidências científicas",
+    "weeklySummaryTitle": "Esta semana",
+    "vsLastWeek": "vs semana passada",
+    "topMuscle": "Músculo principal"
   },
   "history": {
     "title": "Histórico",
@@ -157,7 +181,15 @@
     "dark": "Escuro",
     "light": "Claro",
     "language": "Idioma",
-    "notifications": "Notificações"
+    "notifications": "Notificações",
+    "badges": "Conquistas",
+    "badge_firstWorkout": "Primeiro treino",
+    "badge_fiveWorkouts": "5 treinos",
+    "badge_tenWorkouts": "10 treinos",
+    "badge_twentyFiveWorkouts": "25 treinos",
+    "badge_fiftyWorkouts": "50 treinos",
+    "badge_hundredWorkouts": "100 treinos",
+    "badge_twoFiftyWorkouts": "250 treinos"
   },
   "onboarding": {
     "welcome": "Vamos construir seu plano de treino perfeito",
@@ -189,10 +221,11 @@
     "notifTitle": "Fique no caminho certo com lembretes",
     "notifDesc": "Receba lembretes de treino, resumos semanais e avisos de inatividade.",
     "equipmentQuestion": "Que equipamento você tem?",
-    "barbell": "Barra e academia",
-    "dumbbell": "Halteres",
-    "kettlebell": "Kettlebell",
-    "bodyweight": "Peso corporal",
+    "gym": "Academia / Studio",
+    "kettlebells": "Kettlebells",
+    "dumbbells": "Halteres",
+    "bands": "Faixas elásticas",
+    "noneEquipment": "Nenhum",
     "splitDescFullBody": "{{days}} dias/semana trabalhando todos os músculos em cada sessão.",
     "splitDescUpperLower": "Alternando superior e inferior. Cada grupo muscular treinado 2x por semana.",
     "splitDescUpperLowerFull": "Split de 5 dias combinando superior/inferior e corpo inteiro para volume equilibrado.",

@@ -15,7 +15,12 @@
     "volumeByMuscle": "Volumen nach Muskel",
     "recentActivity": "Letzte Aktivität",
     "min": "Min",
-    "sets": "Sätze"
+    "sets": "Sätze",
+    "streak": "{{count}}W Streak",
+    "splitRefreshTitle": "Zeit für Abwechslung?",
+    "splitRefreshDesc": "Du trainierst {{plan}} seit {{weeks}} Wochen. Neue Übungen geben deinem Körper neue Reize für weiteren Fortschritt.",
+    "splitRefreshAction": "Neue Übungen entdecken",
+    "splitRefreshSnooze": "Nicht jetzt"
   },
   "days": {
     "mon": "Mo",
@@ -30,13 +35,24 @@
     "title": "Pläne",
     "new": "Neu",
     "noPlans": "Noch keine Pläne. Erstelle einen, um loszulegen.",
+    "noPlansFilter": "Keine Pläne für diesen Filter.",
     "createPlan": "Plan erstellen",
     "exercises": "{{count}} Übungen",
     "start": "Starten",
     "edit": "Bearbeiten",
     "deletePlan": "Plan löschen",
     "deleteConfirm": "Bist du sicher? Dies kann nicht rückgängig gemacht werden.",
-    "delete": "Löschen"
+    "delete": "Löschen",
+    "seeAllPlans": "{{count}} weitere Pläne anzeigen",
+    "showLess": "Weniger Pläne anzeigen",
+    "descFullBody": "Ganzkörper-Konditionierung",
+    "descUpperA": "Oberkörper-Kraftfokus",
+    "descUpperB": "Oberkörper-Variation",
+    "descLowerA": "Unterkörper und Beine",
+    "descLowerB": "Unterkörper-Variation",
+    "descPush": "Brust, Schultern und Trizeps",
+    "descPull": "Rücken und Bizeps",
+    "descLegs": "Quadrizeps, Hamstrings und Waden"
   },
   "planBuilder": {
     "cancel": "Abbrechen",
@@ -78,7 +94,9 @@
     "finishWorkout": "Training beenden",
     "leaveWorkout": "Training verlassen?",
     "leaveMessage": "Dein Fortschritt ist gespeichert und du kannst später fortfahren.",
-    "leave": "Verlassen"
+    "leave": "Verlassen",
+    "rirLabel": "Wiederholungsreserve",
+    "rirPrompt": "WRes:"
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",
@@ -124,7 +142,13 @@
     "bodyWeight": "Körpergewicht",
     "log": "Erfassen",
     "latest": "Aktuell",
-    "weeksAbbr": "W"
+    "weeksAbbr": "W",
+    "sets": "Sätze",
+    "muscleBalance": "Muskelbalance (diese Woche)",
+    "muscleBalanceSub": "Ziel: evidenzbasierte wöchentliche Sätze pro Muskelgruppe",
+    "weeklySummaryTitle": "Diese Woche",
+    "vsLastWeek": "ggü. letzter Woche",
+    "topMuscle": "Top-Muskel"
   },
   "history": {
     "title": "Verlauf",
@@ -157,7 +181,15 @@
     "dark": "Dunkel",
     "light": "Hell",
     "language": "Sprache",
-    "notifications": "Benachrichtigungen"
+    "notifications": "Benachrichtigungen",
+    "badges": "Abzeichen",
+    "badge_firstWorkout": "Erstes Training",
+    "badge_fiveWorkouts": "5 Trainings",
+    "badge_tenWorkouts": "10 Trainings",
+    "badge_twentyFiveWorkouts": "25 Trainings",
+    "badge_fiftyWorkouts": "50 Trainings",
+    "badge_hundredWorkouts": "100 Trainings",
+    "badge_twoFiftyWorkouts": "250 Trainings"
   },
   "onboarding": {
     "welcome": "Lass uns deinen perfekten Trainingsplan erstellen",
@@ -189,10 +221,11 @@
     "notifTitle": "Bleib auf Kurs mit Erinnerungen",
     "notifDesc": "Erhalte Trainingserinnerungen, wöchentliche Zusammenfassungen und Inaktivitäts-Hinweise.",
     "equipmentQuestion": "Welche Ausrüstung hast du?",
-    "barbell": "Langhantel & Studio",
-    "dumbbell": "Kurzhanteln",
-    "kettlebell": "Kettlebell",
-    "bodyweight": "Körpergewicht",
+    "gym": "Fitnessstudio",
+    "kettlebells": "Kettlebells",
+    "dumbbells": "Kurzhanteln",
+    "bands": "Bänder",
+    "noneEquipment": "Keine",
     "splitDescFullBody": "{{days}} Tage/Woche alle Hauptmuskelgruppen pro Einheit.",
     "splitDescUpperLower": "Ober- und Unterkörper im Wechsel. Jede Muskelgruppe wird 2x pro Woche trainiert.",
     "splitDescUpperLowerFull": "5-Tage-Split mit Ober-/Unterkörper und Ganzkörpereinheit für ausgeglichenes Volumen.",

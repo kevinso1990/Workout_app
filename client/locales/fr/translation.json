@@ -15,7 +15,12 @@
     "volumeByMuscle": "Volume par muscle",
     "recentActivity": "Activité récente",
     "min": "min",
-    "sets": "séries"
+    "sets": "séries",
+    "streak": "{{count}} sem. d'affilée",
+    "splitRefreshTitle": "Envie de changement ?",
+    "splitRefreshDesc": "Tu t'entraînes avec {{plan}} depuis {{weeks}} semaines. De nouveaux exercices peuvent offrir à ton corps de nouveaux stimuli.",
+    "splitRefreshAction": "Explorer de nouveaux exercices",
+    "splitRefreshSnooze": "Pas maintenant"
   },
   "days": {
     "mon": "Lun",
@@ -30,13 +35,24 @@
     "title": "Plans",
     "new": "Nouveau",
     "noPlans": "Pas encore de plans. Créez-en un pour commencer.",
+    "noPlansFilter": "Aucun plan ne correspond à ce filtre.",
     "createPlan": "Créer un plan",
     "exercises": "{{count}} exercices",
     "start": "Démarrer",
     "edit": "Modifier",
     "deletePlan": "Supprimer le plan",
     "deleteConfirm": "Êtes-vous sûr ? Cette action est irréversible.",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "seeAllPlans": "Voir {{count}} plans supplémentaires",
+    "showLess": "Afficher moins de plans",
+    "descFullBody": "Conditionnement corps entier",
+    "descUpperA": "Focus force haut du corps",
+    "descUpperB": "Variation haut du corps",
+    "descLowerA": "Bas du corps et jambes",
+    "descLowerB": "Variation bas du corps",
+    "descPush": "Pectoraux, épaules et triceps",
+    "descPull": "Dos et biceps",
+    "descLegs": "Quadriceps, ischio-jambiers et mollets"
   },
   "planBuilder": {
     "cancel": "Annuler",
@@ -78,7 +94,9 @@
     "finishWorkout": "Terminer l'entraînement",
     "leaveWorkout": "Quitter l'entraînement ?",
     "leaveMessage": "Votre progression est sauvegardée et vous pouvez reprendre plus tard.",
-    "leave": "Quitter"
+    "leave": "Quitter",
+    "rirLabel": "Répétitions en réserve",
+    "rirPrompt": "RiR :"
   },
   "postWorkout": {
     "workoutComplete": "Entraînement terminé",
@@ -124,7 +142,13 @@
     "bodyWeight": "Poids corporel",
     "log": "Enregistrer",
     "latest": "Dernier",
-    "weeksAbbr": "sem"
+    "weeksAbbr": "sem",
+    "sets": "séries",
+    "muscleBalance": "Balance musculaire (cette semaine)",
+    "muscleBalanceSub": "Objectif : séries hebdomadaires basées sur les données scientifiques",
+    "weeklySummaryTitle": "Cette semaine",
+    "vsLastWeek": "vs semaine dernière",
+    "topMuscle": "Muscle principal"
   },
   "history": {
     "title": "Historique",
@@ -157,7 +181,15 @@
     "dark": "Sombre",
     "light": "Clair",
     "language": "Langue",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "badges": "Badges",
+    "badge_firstWorkout": "Premier entraînement",
+    "badge_fiveWorkouts": "5 entraînements",
+    "badge_tenWorkouts": "10 entraînements",
+    "badge_twentyFiveWorkouts": "25 entraînements",
+    "badge_fiftyWorkouts": "50 entraînements",
+    "badge_hundredWorkouts": "100 entraînements",
+    "badge_twoFiftyWorkouts": "250 entraînements"
   },
   "onboarding": {
     "welcome": "Construisons votre plan d'entraînement parfait",
@@ -189,10 +221,11 @@
     "notifTitle": "Restez sur la bonne voie avec des rappels",
     "notifDesc": "Recevez des rappels d'entraînement, des résumés hebdomadaires et des rappels d'inactivité.",
     "equipmentQuestion": "Quel équipement avez-vous ?",
-    "barbell": "Barre & salle de sport",
-    "dumbbell": "Haltères",
-    "kettlebell": "Kettlebell",
-    "bodyweight": "Poids du corps",
+    "gym": "Salle de sport",
+    "kettlebells": "Kettlebells",
+    "dumbbells": "Haltères",
+    "bands": "Élastiques",
+    "noneEquipment": "Aucun",
     "splitDescFullBody": "{{days}} jours/semaine travaillant tous les muscles à chaque séance.",
     "splitDescUpperLower": "Alternance haut du corps et bas du corps. Chaque groupe musculaire est travaillé 2x par semaine.",
     "splitDescUpperLowerFull": "Split 5 jours combinant haut/bas et full body pour un volume équilibré.",
