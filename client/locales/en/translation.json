@@ -54,6 +54,28 @@
     "descPull": "Back and biceps",
     "descLegs": "Quads, hamstrings and calves"
   },
+  "createPlan": {
+    "back": "Back",
+    "title": "Create a Plan",
+    "subtitle": "Choose how you want to build your workout plan.",
+    "generateTitle": "Generate for Me",
+    "generateDesc": "Answer a few questions and we'll create an optimized plan tailored to your goals.",
+    "manualTitle": "Build from Scratch",
+    "manualDesc": "Pick your own exercises, sets, and reps. Full control over every detail.",
+    "frequencyHint": "We'll recommend the best split for your schedule.",
+    "experienceHint": "This helps us set the right volume and intensity.",
+    "goalHint": "We'll adjust reps and exercise selection to match.",
+    "equipmentHint": "We'll only include exercises you can actually do.",
+    "daysPerWeek": "{{count}} days / week",
+    "reviewTitle": "Your Plan",
+    "reviewDesc": "Here's what we'll build based on your answers.",
+    "labelFrequency": "Frequency",
+    "labelExperience": "Experience",
+    "labelGoal": "Goal",
+    "labelEquipment": "Equipment",
+    "recommendedSplit": "Recommended Split",
+    "generateNow": "Generate My Plan"
+  },
   "planBuilder": {
     "cancel": "Cancel",
     "editPlan": "Edit Plan",

@@ -54,6 +54,28 @@
     "descPull": "Schiena e bicipiti",
     "descLegs": "Quadricipiti, femorali e polpacci"
   },
+  "createPlan": {
+    "back": "Indietro",
+    "title": "Crea un piano",
+    "subtitle": "Scegli come vuoi costruire il tuo piano di allenamento.",
+    "generateTitle": "Genera per me",
+    "generateDesc": "Rispondi a qualche domanda e creeremo un piano ottimizzato per i tuoi obiettivi.",
+    "manualTitle": "Costruisci da zero",
+    "manualDesc": "Scegli i tuoi esercizi, serie e ripetizioni. Controllo totale su ogni dettaglio.",
+    "frequencyHint": "Ti consiglieremo lo split migliore per i tuoi impegni.",
+    "experienceHint": "Questo ci aiuta a definire il volume e l'intensità giusti.",
+    "goalHint": "Adatteremo ripetizioni e selezione degli esercizi.",
+    "equipmentHint": "Includeremo solo esercizi che puoi fare.",
+    "daysPerWeek": "{{count}} giorni / settimana",
+    "reviewTitle": "Il tuo piano",
+    "reviewDesc": "Ecco cosa creeremo in base alle tue risposte.",
+    "labelFrequency": "Frequenza",
+    "labelExperience": "Esperienza",
+    "labelGoal": "Obiettivo",
+    "labelEquipment": "Attrezzatura",
+    "recommendedSplit": "Split consigliato",
+    "generateNow": "Genera il mio piano"
+  },
   "planBuilder": {
     "cancel": "Annulla",
     "editPlan": "Modifica piano",

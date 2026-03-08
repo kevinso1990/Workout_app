@@ -54,6 +54,28 @@
     "descPull": "Costas e bíceps",
     "descLegs": "Quadríceps, isquiotibiais e panturrilhas"
   },
+  "createPlan": {
+    "back": "Voltar",
+    "title": "Criar um plano",
+    "subtitle": "Escolha como quer construir seu plano de treino.",
+    "generateTitle": "Gerar para mim",
+    "generateDesc": "Responda algumas perguntas e criaremos um plano otimizado para seus objetivos.",
+    "manualTitle": "Construir do zero",
+    "manualDesc": "Escolha seus próprios exercícios, séries e repetições. Controle total sobre cada detalhe.",
+    "frequencyHint": "Vamos recomendar o melhor split para sua agenda.",
+    "experienceHint": "Isso nos ajuda a definir o volume e intensidade certos.",
+    "goalHint": "Vamos ajustar repetições e seleção de exercícios.",
+    "equipmentHint": "Só incluiremos exercícios que você pode fazer.",
+    "daysPerWeek": "{{count}} dias / semana",
+    "reviewTitle": "Seu plano",
+    "reviewDesc": "Aqui está o que vamos criar com base nas suas respostas.",
+    "labelFrequency": "Frequência",
+    "labelExperience": "Experiência",
+    "labelGoal": "Objetivo",
+    "labelEquipment": "Equipamento",
+    "recommendedSplit": "Split recomendado",
+    "generateNow": "Gerar meu plano"
+  },
   "planBuilder": {
     "cancel": "Cancelar",
     "editPlan": "Editar plano",

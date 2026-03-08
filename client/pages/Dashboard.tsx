@@ -122,7 +122,7 @@ export default function Dashboard() {
         <section className="mb-6">
           <div className="card p-6 text-center">
             <p className="text-[var(--color-text-secondary)] mb-4">{t("dashboard.createFirst")}</p>
-            <Link href="/plans/new">
+            <Link href="/plans/create">
               <button className="btn-primary">{t("dashboard.getStarted")}</button>
             </Link>
           </div>

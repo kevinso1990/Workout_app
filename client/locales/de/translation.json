@@ -54,6 +54,28 @@
     "descPull": "Rücken und Bizeps",
     "descLegs": "Quadrizeps, Hamstrings und Waden"
   },
+  "createPlan": {
+    "back": "Zurück",
+    "title": "Plan erstellen",
+    "subtitle": "Wähle, wie du deinen Trainingsplan erstellen möchtest.",
+    "generateTitle": "Für mich generieren",
+    "generateDesc": "Beantworte ein paar Fragen und wir erstellen einen optimierten Plan für deine Ziele.",
+    "manualTitle": "Selbst erstellen",
+    "manualDesc": "Wähle eigene Übungen, Sätze und Wiederholungen. Volle Kontrolle über jedes Detail.",
+    "frequencyHint": "Wir empfehlen den besten Split für deinen Zeitplan.",
+    "experienceHint": "Das hilft uns, das richtige Volumen und Intensität festzulegen.",
+    "goalHint": "Wir passen Wiederholungen und Übungsauswahl an.",
+    "equipmentHint": "Wir zeigen nur Übungen, die du machen kannst.",
+    "daysPerWeek": "{{count}} Tage / Woche",
+    "reviewTitle": "Dein Plan",
+    "reviewDesc": "Das werden wir basierend auf deinen Antworten erstellen.",
+    "labelFrequency": "Häufigkeit",
+    "labelExperience": "Erfahrung",
+    "labelGoal": "Ziel",
+    "labelEquipment": "Ausrüstung",
+    "recommendedSplit": "Empfohlener Split",
+    "generateNow": "Plan generieren"
+  },
   "planBuilder": {
     "cancel": "Abbrechen",
     "editPlan": "Plan bearbeiten",

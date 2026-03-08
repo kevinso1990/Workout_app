@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Plans from "./pages/Plans";
 import PlanBuilder from "./pages/PlanBuilder";
+import CreatePlan from "./pages/CreatePlan";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import PostWorkout from "./pages/PostWorkout";
 import History from "./pages/History";
@@ -30,6 +31,7 @@ export default function App() {
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/plans" component={Plans} />
+              <Route path="/plans/create" component={CreatePlan} />
               <Route path="/plans/new" component={PlanBuilder} />
               <Route path="/plans/:id/edit" component={PlanBuilder} />
               <Route path="/progress" component={Progress} />

@@ -54,6 +54,28 @@
     "descPull": "Dos et biceps",
     "descLegs": "Quadriceps, ischio-jambiers et mollets"
   },
+  "createPlan": {
+    "back": "Retour",
+    "title": "Créer un plan",
+    "subtitle": "Choisissez comment construire votre plan d'entraînement.",
+    "generateTitle": "Générer pour moi",
+    "generateDesc": "Répondez à quelques questions et nous créerons un plan optimisé pour vos objectifs.",
+    "manualTitle": "Construire moi-même",
+    "manualDesc": "Choisissez vos exercices, séries et répétitions. Contrôle total sur chaque détail.",
+    "frequencyHint": "Nous recommanderons le meilleur split pour votre emploi du temps.",
+    "experienceHint": "Cela nous aide à définir le bon volume et l'intensité.",
+    "goalHint": "Nous ajusterons les répétitions et la sélection d'exercices.",
+    "equipmentHint": "Nous n'inclurons que les exercices que vous pouvez faire.",
+    "daysPerWeek": "{{count}} jours / semaine",
+    "reviewTitle": "Votre plan",
+    "reviewDesc": "Voici ce que nous allons créer basé sur vos réponses.",
+    "labelFrequency": "Fréquence",
+    "labelExperience": "Expérience",
+    "labelGoal": "Objectif",
+    "labelEquipment": "Équipement",
+    "recommendedSplit": "Split recommandé",
+    "generateNow": "Générer mon plan"
+  },
   "planBuilder": {
     "cancel": "Annuler",
     "editPlan": "Modifier le plan",

@@ -66,7 +66,7 @@ export default function Plans() {
     <div className="px-4 pt-8 pb-4 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">{t("plans.title")}</h1>
-        <Link href="/plans/new">
+        <Link href="/plans/create">
           <button className="btn-primary text-sm px-4 py-2 min-h-0">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -102,7 +102,7 @@ export default function Plans() {
       ) : filteredPlans.length === 0 ? (
         <div className="card p-8 text-center">
           <p className="text-[var(--color-text-secondary)] mb-4">{t("plans.noPlans")}</p>
-          <Link href="/plans/new">
+          <Link href="/plans/create">
             <button className="btn-primary">{t("plans.createPlan")}</button>
           </Link>
         </div>
