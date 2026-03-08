@@ -13,3 +13,9 @@ export function markOnboardingDone() {
     localStorage.setItem(ONBOARDING_KEY, "true");
   } catch {}
 }
+
+export function resetOnboarding() {
+  try {
+    localStorage.removeItem(ONBOARDING_KEY);
+  } catch {}
+}

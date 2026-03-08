@@ -181,6 +181,7 @@
     "dark": "Oscuro",
     "light": "Claro",
     "language": "Idioma",
+    "redoOnboarding": "Rehacer configuración",
     "notifications": "Notificaciones",
     "badges": "Insignias",
     "badge_firstWorkout": "Primer entrenamiento",
