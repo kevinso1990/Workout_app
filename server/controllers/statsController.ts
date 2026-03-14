@@ -57,3 +57,8 @@ export const muscleBalance = asyncHandler(async (_req: Request, res: Response) =
 export const weeklySummary = asyncHandler(async (_req: Request, res: Response) => {
   res.json(statsService.getWeeklySummary());
 });
+
+export const exerciseBest = asyncHandler(async (req: Request, res: Response) => {
+  const exerciseId = parseInt(req.params.exerciseId, 10);
+  res.json(statsService.getExerciseBest(exerciseId));
+});

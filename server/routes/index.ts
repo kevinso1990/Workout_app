@@ -13,6 +13,7 @@ import muscleWikiRouter from "./muscleWiki";
 import pushRouter from "./push";
 import votesRouter from "./votes";
 import splitRefreshRouter from "./splitRefresh";
+import subscriptionRouter from "./subscriptions";
 import { startPushScheduler } from "../services/pushService";
 
 /**
@@ -34,6 +35,7 @@ export function registerRoutes(app: Express): void {
   app.use("/api/push", pushRouter);
   app.use("/api/votes", votesRouter);
   app.use("/api/split-refresh", splitRefreshRouter);
+  app.use("/api/subscriptions", subscriptionRouter);
 
   startPushScheduler();
 }

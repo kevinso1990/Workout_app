@@ -20,7 +20,9 @@
     "splitRefreshTitle": "Time to mix things up?",
     "splitRefreshDesc": "You've been training {{plan}} for {{weeks}} weeks. New exercises can give your body fresh stimuli for continued progress.",
     "splitRefreshAction": "Explore new exercises",
-    "splitRefreshSnooze": "Not now"
+    "splitRefreshSnooze": "Not now",
+    "coachingReady": "Coaching suggestions ready",
+    "coachingReadyDesc": "Tap to review and apply personalized weight/rep recommendations from your last session."
   },
   "days": {
     "mon": "Mon",
@@ -74,7 +76,9 @@
     "labelGoal": "Goal",
     "labelEquipment": "Equipment",
     "recommendedSplit": "Recommended Split",
-    "generateNow": "Generate My Plan"
+    "generateNow": "Generate My Plan",
+    "whyThisPlan": "Why this plan?",
+    "whyThisPlanDesc": "Training {{days}} days/week as a {{experience}} with a {{goal}} goal, the {{split}} is the most effective structure — it balances frequency and recovery so you make progress without burning out."
   },
   "planBuilder": {
     "cancel": "Cancel",
@@ -108,6 +112,8 @@
     "kg": "kg",
     "reps": "Reps",
     "logSet": "Log Set {{number}}",
+    "addExtraSet": "+ Extra Set",
+    "extraSetHint": "Feeling strong? Add another set — your body will adapt.",
     "undoLastSet": "Undo Last Set",
     "dropSet": "+ Drop Set",
     "drop": "Drop",
@@ -118,7 +124,21 @@
     "leaveMessage": "Your progress is saved and you can resume later.",
     "leave": "Leave",
     "rirLabel": "Reps in Reserve",
-    "rirPrompt": "RiR:"
+    "rirPrompt": "RiR:",
+    "personalBest": "Personal best",
+    "estimated1RM": "Est. 1RM",
+    "tryProgressWeight": "You hit all reps last session — try +{{step}}{{unit}} today",
+    "firstWorkoutTip": "First workout? Adjust weight with the +/− buttons, set your reps, then tap the ✓ to log each set. Use the notes field to write down how it felt.",
+    "modeSimple": "Simple",
+    "modeAdvanced": "Advanced",
+    "switchToAdvanced": "Switch to Advanced mode (RiR, Drop Sets, Plate Calculator)",
+    "switchToSimple": "Switch to Simple mode",
+    "tip1Title": "Welcome to your first workout!",
+    "tip1Body": "Tap +/− to adjust weight and reps, then press the big button to log each set. A rest timer starts automatically after each set.",
+    "tip2Title": "Great work last session!",
+    "tip2Body": "The 'Previous' column shows exactly what you lifted last time — aim to match or beat it. Small weekly improvements add up fast.",
+    "tip3Title": "Progressive overload in action",
+    "tip3Body": "When the app suggests adding weight (green arrow), go for it — that's how muscles grow. Switch to Advanced mode anytime for RiR tracking and drop sets."
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",
@@ -144,6 +164,7 @@
     "title": "Progress",
     "overview": "Overview",
     "exercises": "Exercises",
+    "sessions": "Sessions",
     "body": "Body",
     "workouts": "Workouts",
     "sets": "sets",
@@ -178,7 +199,11 @@
     "kg": "kg",
     "noWorkouts": "No workouts recorded yet.",
     "sets": "{{count}} sets",
-    "rpe": "RPE {{value}}"
+    "rpe": "RPE {{value}}",
+    "repsLabel": "reps",
+    "est1RM": "1RM",
+    "showAllPRs": "Show {{count}} more PRs",
+    "showFewerPRs": "Show fewer PRs"
   },
   "sessionDetail": {
     "volume": "Volume",
@@ -252,7 +277,15 @@
     "splitDescFullBody": "{{days}} days/week hitting all major muscles each session.",
     "splitDescUpperLower": "Train upper body and lower body on alternating days. Each muscle group gets hit twice per week.",
     "splitDescUpperLowerFull": "5-day split combining upper/lower days with a full body session for balanced weekly volume.",
-    "splitDescPPL": "The classic 6-day split: Push, Pull, Legs — each twice per week."
+    "splitDescPPL": "The classic 6-day split: Push, Pull, Legs — each twice per week.",
+    "goalMuscleDesc": "Build size & improve body composition",
+    "goalStrengthDesc": "Get stronger on the big lifts",
+    "goalFatDesc": "Burn fat & tone up",
+    "goalFitnessDesc": "Stay active & feel great",
+    "beginnerTip": "Start with lighter weights and focus on learning correct form. You can always increase the weight next session.",
+    "exercisesPerSession": "~{{count}} exercises",
+    "approxSessionTime": "~{{min}} min/session",
+    "notifOptional": "Workout reminders & weekly summaries"
   },
   "splits": {
     "fullBody": "Full Body",

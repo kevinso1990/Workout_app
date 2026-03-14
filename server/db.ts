@@ -116,6 +116,7 @@ export function initDb() {
   migrateAuth();
   migrateVotes();
   migrateSplitRefresh();
+  migrateSubscriptions();
 }
 
 function migrateVotes() {
@@ -141,6 +142,33 @@ function migrateSplitRefresh() {
       snoozed_until TEXT NOT NULL
     );
   `);
+}
+
+function migrateSubscriptions() {
+  // Add subscription columns to existing users table (safe: try/catch each ALTER)
+  try { db.exec("ALTER TABLE users ADD COLUMN subscription_tier TEXT NOT NULL DEFAULT 'free'"); } catch {}
+  try { db.exec("ALTER TABLE users ADD COLUMN subscription_provider TEXT"); } catch {}
+  try { db.exec("ALTER TABLE users ADD COLUMN subscription_expires_at TEXT"); } catch {}
+
+  // Tracks validated receipts/tokens from Apple and Google
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS subscription_receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      provider TEXT NOT NULL CHECK(provider IN ('apple', 'google')),
+      original_transaction_id TEXT NOT NULL,
+      product_id TEXT,
+      expires_at TEXT,
+      status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'expired', 'cancelled', 'refunded')),
+      raw_response TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, provider, original_transaction_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_receipts_user ON subscription_receipts(user_id)"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_receipts_txn ON subscription_receipts(original_transaction_id)"); } catch {}
 }
 
 function migrateAuth() {

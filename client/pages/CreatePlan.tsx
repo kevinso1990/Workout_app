@@ -314,34 +314,58 @@ export default function CreatePlan() {
       {currentStep === "review" && rec ? (
         <div>
           <h2 className="text-xl font-bold mb-2">{t("createPlan.reviewTitle")}</h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mb-6">{t("createPlan.reviewDesc")}</p>
+          <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("createPlan.reviewDesc")}</p>
 
-          <div className="card p-4 mb-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--color-text-muted)]">{t("createPlan.labelFrequency")}</span>
-              <span className="text-sm font-semibold">{t("createPlan.daysPerWeek", { count: frequency })}</span>
-            </div>
-            <div className="h-px bg-[var(--color-border)]" />
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--color-text-muted)]">{t("createPlan.labelExperience")}</span>
-              <span className="text-sm font-semibold">{t(`onboarding.${experience}`)}</span>
-            </div>
-            <div className="h-px bg-[var(--color-border)]" />
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--color-text-muted)]">{t("createPlan.labelGoal")}</span>
-              <span className="text-sm font-semibold">{t(`onboarding.${goal === "muscle" ? "buildMuscle" : goal === "strength" ? "gainStrength" : goal === "fat" ? "loseFat" : "generalFitness"}`)}</span>
-            </div>
-            <div className="h-px bg-[var(--color-border)]" />
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--color-text-muted)]">{t("createPlan.labelEquipment")}</span>
-              <span className="text-sm font-semibold">{t(`onboarding.${equipment}`)}</span>
-            </div>
+          {/* Quick-edit chips — tap to jump back to that step */}
+          <div className="flex flex-wrap gap-2 mb-5">
+            <button
+              onClick={() => setGenStep(GEN_STEPS.indexOf("frequency"))}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] active:scale-95 transition-transform"
+            >
+              {t("createPlan.daysPerWeek", { count: frequency })}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6m-6 6l-1.5 1.5A2.121 2.121 0 004.5 19.5h0a2.121 2.121 0 002.121-2.121L8 16m1-3l6-6" /></svg>
+            </button>
+            <button
+              onClick={() => setGenStep(GEN_STEPS.indexOf("experience"))}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] active:scale-95 transition-transform"
+            >
+              {t(`onboarding.${experience}`)}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6m-6 6l-1.5 1.5A2.121 2.121 0 004.5 19.5h0a2.121 2.121 0 002.121-2.121L8 16m1-3l6-6" /></svg>
+            </button>
+            <button
+              onClick={() => setGenStep(GEN_STEPS.indexOf("goal"))}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] active:scale-95 transition-transform"
+            >
+              {t(`onboarding.${goal === "muscle" ? "buildMuscle" : goal === "strength" ? "gainStrength" : goal === "fat" ? "loseFat" : "generalFitness"}`)}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6m-6 6l-1.5 1.5A2.121 2.121 0 004.5 19.5h0a2.121 2.121 0 002.121-2.121L8 16m1-3l6-6" /></svg>
+            </button>
+            <button
+              onClick={() => setGenStep(GEN_STEPS.indexOf("equipment"))}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] active:scale-95 transition-transform"
+            >
+              {t(`onboarding.${equipment}`)}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6m-6 6l-1.5 1.5A2.121 2.121 0 004.5 19.5h0a2.121 2.121 0 002.121-2.121L8 16m1-3l6-6" /></svg>
+            </button>
           </div>
 
-          <div className="card p-4 mb-6" style={{ background: "linear-gradient(135deg, rgba(79,142,247,0.1), rgba(124,91,245,0.06))" }}>
+          {/* Recommended split card */}
+          <div className="card-raised accent-bar p-4 mb-4">
             <div className="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider mb-1">{t("createPlan.recommendedSplit")}</div>
-            <div className="font-bold text-lg">{rec.name}</div>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-relaxed">{rec.desc}</p>
+            <div className="font-bold text-lg mb-1">{rec.name}</div>
+            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">{rec.desc}</p>
+          </div>
+
+          {/* Why this plan? */}
+          <div className="card p-4 mb-6" style={{ background: "var(--color-accent-subtle)", borderLeft: "3px solid var(--color-accent)" }}>
+            <div className="text-xs font-semibold text-[var(--color-accent)] mb-1.5">{t("createPlan.whyThisPlan")}</div>
+            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+              {t("createPlan.whyThisPlanDesc", {
+                days: frequency,
+                experience: t(`onboarding.${experience}`).toLowerCase(),
+                goal: t(`onboarding.${goal === "muscle" ? "buildMuscle" : goal === "strength" ? "gainStrength" : goal === "fat" ? "loseFat" : "generalFitness"}`).toLowerCase(),
+                split: rec.name,
+              })}
+            </p>
           </div>
 
           <button

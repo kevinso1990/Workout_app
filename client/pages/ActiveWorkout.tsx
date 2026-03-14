@@ -30,12 +30,22 @@ interface ExerciseState {
   currentReps: number;
   loggedSets: LoggedSet[];
   lastSessionSets: any[];
+  lastSessionDate?: string;
   notes: string;
   skipped: boolean;
   superset_group: number | null;
 }
 
+interface ExerciseBest {
+  maxWeight: number;
+  maxReps: number;
+  estimated1rm: number;
+}
+
 const BACKUP_KEY = "workout_backup";
+const FIRST_WORKOUT_TIP_KEY = "workout_first_tip_dismissed";
+const TIP_KEY_PREFIX = "workout_tip_dismissed_";
+const WORKOUT_VIEW_MODE_KEY = "workout_view_mode";
 const SUPERSET_COLORS = ["#4f8ef7", "#7c5bf5", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
 
 function saveBackup(sessionId: number, exerciseStates: ExerciseState[], activeIdx: number, startedAt: number) {
@@ -65,6 +75,7 @@ export default function ActiveWorkout() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [votes, setVotes] = useState<Record<number, number>>({});
+  const [exerciseBests, setExerciseBests] = useState<Record<number, ExerciseBest>>({});
   const [rirPickerKey, setRirPickerKey] = useState<string | null>(null); // "exIdx-setIdx"
   const [startTime, setStartTime] = useState(Date.now());
   const [elapsed, setElapsed] = useState(0);
@@ -74,6 +85,12 @@ export default function ActiveWorkout() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [pulsingRow, setPulsingRow] = useState<string | null>(null);
+  const [showFirstTip, setShowFirstTip] = useState(false);
+  const [activeTip, setActiveTip] = useState<number | null>(null); // 1, 2, or 3
+  const [simpleMode, setSimpleMode] = useState<boolean>(() => {
+    const stored = localStorage.getItem(WORKOUT_VIEW_MODE_KEY);
+    return stored ? stored === "simple" : true; // default simple
+  });
   const restIntervalRef = useRef<number | null>(null);
   const activeExRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +102,6 @@ export default function ActiveWorkout() {
   useEffect(() => {
     loadSession();
     api.getAllVotes().then(setVotes).catch(() => {});
-    // Flush any offline-queued sets when we come back online
     const handleOnline = () => flushQueue(api.logSet);
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
@@ -100,6 +116,17 @@ export default function ActiveWorkout() {
   useEffect(() => {
     activeExRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [activeIdx]);
+
+  // Lazily load the all-time best for whichever exercise is now active
+  useEffect(() => {
+    const ex = exercises[activeIdx];
+    if (!ex || exerciseBests[ex.exercise_id] !== undefined) return;
+    api.getExerciseBest(ex.exercise_id)
+      .then(best => {
+        setExerciseBests(prev => ({ ...prev, [ex.exercise_id]: best }));
+      })
+      .catch(() => {});
+  }, [activeIdx, exercises]);
 
   const loadSession = async () => {
     try {
@@ -120,6 +147,10 @@ export default function ActiveWorkout() {
           const lastSets = await api.getLastSets(pe.exercise_id).catch(() => []);
           const lastWeight = lastSets.length > 0 ? lastSets[0].weight : pe.default_weight;
           const lastReps = lastSets.length > 0 ? lastSets[0].reps : pe.default_reps;
+          // Extract date from the first set's logged_at so we can display "Last: Mon 3 Jun"
+          const lastSessionDate = lastSets[0]?.logged_at
+            ? new Date(lastSets[0].logged_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+            : undefined;
           return {
             exercise_id: pe.exercise_id,
             name: pe.name,
@@ -131,6 +162,7 @@ export default function ActiveWorkout() {
             currentReps: lastReps,
             loggedSets: [],
             lastSessionSets: lastSets,
+            lastSessionDate,
             notes: "",
             skipped: false,
             superset_group: pe.superset_group || null,
@@ -139,6 +171,27 @@ export default function ActiveWorkout() {
       );
 
       setExercises(states);
+
+      // Determine which contextual tip to show based on workout history
+      const exercisesWithHistory = states.filter(s => s.lastSessionSets.length > 0).length;
+      const totalExercises = states.length;
+      // tip 1: first ever workout (no history at all)
+      // tip 2: second workout (some exercises have history but not all)
+      // tip 3: third workout (all or most have history, but tip 3 not yet seen)
+      let tipToShow: number | null = null;
+      if (exercisesWithHistory === 0 && !localStorage.getItem(`${TIP_KEY_PREFIX}1`)) {
+        tipToShow = 1;
+      } else if (exercisesWithHistory > 0 && exercisesWithHistory < totalExercises && !localStorage.getItem(`${TIP_KEY_PREFIX}2`)) {
+        tipToShow = 2;
+      } else if (exercisesWithHistory >= totalExercises && !localStorage.getItem(`${TIP_KEY_PREFIX}3`)) {
+        tipToShow = 3;
+      }
+      setActiveTip(tipToShow);
+
+      // Legacy: also default simple mode for first-time users
+      if (exercisesWithHistory === 0 && !localStorage.getItem(WORKOUT_VIEW_MODE_KEY)) {
+        setSimpleMode(true);
+      }
     } catch (err) {
       console.error("Failed to load session", err);
     } finally {
@@ -153,8 +206,8 @@ export default function ActiveWorkout() {
     return !nextEx || nextEx.superset_group !== ex.superset_group;
   };
 
-  const startRest = useCallback(() => {
-    setRestTimer(DEFAULT_REST_SECONDS);
+  const startRest = useCallback((customSeconds?: number) => {
+    setRestTimer(customSeconds ?? DEFAULT_REST_SECONDS);
     setIsResting(true);
     if (restIntervalRef.current) clearInterval(restIntervalRef.current);
     restIntervalRef.current = window.setInterval(() => {
@@ -173,6 +226,10 @@ export default function ActiveWorkout() {
     setIsResting(false);
     setRestTimer(0);
     if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+  };
+
+  const adjustRestTime = (delta: number) => {
+    setRestTimer(prev => Math.max(5, prev + delta));
   };
 
   const logSet = async (exIdx: number, dropSet = false) => {
@@ -212,9 +269,7 @@ export default function ActiveWorkout() {
         return { ...e, loggedSets: e.loggedSets.map(s => s === newSet ? { ...s, id: saved.id } : s) };
       }));
     } catch {
-      // Offline — queue for later
       const localId = enqueue(setPayload);
-      // Try once more when online event fires; dequeue on success
       const retryOnce = async () => {
         try {
           const saved = await api.logSet(setPayload);
@@ -229,7 +284,8 @@ export default function ActiveWorkout() {
       window.addEventListener("online", retryOnce);
     }
 
-    if (!dropSet && normalSets.length + 1 >= ex.default_sets && exIdx < exercises.length - 1) {
+    // Auto-advance only when completing exactly the last planned set (not extra sets)
+    if (!dropSet && normalSets.length + 1 === ex.default_sets && exIdx < exercises.length - 1) {
       setTimeout(() => setActiveIdx(exIdx + 1), 300);
     }
   };
@@ -249,7 +305,7 @@ export default function ActiveWorkout() {
   };
 
   const adjustReps = (exIdx: number, delta: number) => {
-    setExercises(prev => prev.map((e, i) => i === exIdx ? { ...e, currentReps: Math.max(0, e.currentReps + delta) } : e));
+    setExercises(prev => prev.map((e, i) => i === exIdx ? { ...e, currentReps: Math.max(1, e.currentReps + delta) } : e));
   };
 
   const setRir = (exIdx: number, setIdx: number, rir: number) => {
@@ -264,7 +320,7 @@ export default function ActiveWorkout() {
 
   const castVote = async (exerciseId: number, vote: number) => {
     const current = votes[exerciseId] ?? 0;
-    const next = current === vote ? 0 : vote; // toggle off if same
+    const next = current === vote ? 0 : vote;
     setVotes(prev => ({ ...prev, [exerciseId]: next }));
     api.voteExercise(exerciseId, next).catch(() => {});
   };
@@ -274,13 +330,31 @@ export default function ActiveWorkout() {
     navigate(`/workout/${sessionId}/finish`);
   };
 
+  const dismissFirstTip = () => {
+    try { localStorage.setItem(FIRST_WORKOUT_TIP_KEY, "1"); } catch {}
+    setShowFirstTip(false);
+  };
+
+  const dismissTip = (tipNum: number) => {
+    try { localStorage.setItem(`${TIP_KEY_PREFIX}${tipNum}`, "1"); } catch {}
+    setActiveTip(null);
+  };
+
+  const toggleMode = () => {
+    setSimpleMode(prev => {
+      const next = !prev;
+      try { localStorage.setItem(WORKOUT_VIEW_MODE_KEY, next ? "simple" : "advanced"); } catch {}
+      return next;
+    });
+  };
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
   const toDisplayWeight = (kg: number) => unit === "lbs" ? Math.round(kg * 2.205 * 10) / 10 : kg;
   const step = unit === "lbs" ? 5 : WEIGHT_STEP;
 
   const restProgress = DEFAULT_REST_SECONDS > 0 ? restTimer / DEFAULT_REST_SECONDS : 0;
   const circumference = 2 * Math.PI * 28;
-  const strokeDashoffset = circumference * (1 - restProgress);
+  const strokeDashoffset = circumference * (1 - Math.min(restProgress, 1));
 
   const getSupersetColor = (group: number | null) => {
     if (group === null) return undefined;
@@ -306,21 +380,56 @@ export default function ActiveWorkout() {
             <div className="text-base font-bold tabular-nums">{formatTime(elapsed)}</div>
             <div className="text-[10px] text-[var(--color-text-secondary)]">{t("activeWorkout.setsLogged", { count: exercises.reduce((a, e) => a + e.loggedSets.length, 0) })}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowPlateCalc(true)} className="p-2 text-[var(--color-text-muted)]">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <circle cx="12" cy="12" r="9" />
-                <circle cx="12" cy="12" r="4" />
-                <line x1="12" y1="3" x2="12" y2="8" />
-                <line x1="12" y1="16" x2="12" y2="21" />
-              </svg>
-            </button>
+          <div className="flex items-center gap-1.5">
+            {!simpleMode ? (
+              <button onClick={() => setShowPlateCalc(true)} className="p-2 text-[var(--color-text-muted)]">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="4" />
+                  <line x1="12" y1="3" x2="12" y2="8" />
+                  <line x1="12" y1="16" x2="12" y2="21" />
+                </svg>
+              </button>
+            ) : null}
             <button onClick={() => setUnit(u => u === "kg" ? "lbs" : "kg")} className="text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
               {unit}
+            </button>
+            <button
+              onClick={toggleMode}
+              className="text-xs font-bold px-2.5 py-1 rounded-full transition-colors"
+              style={simpleMode
+                ? { background: "var(--color-surface-alt)", color: "var(--color-text-muted)" }
+                : { background: "var(--color-accent-gradient)", color: "white" }
+              }
+              title={simpleMode ? t("activeWorkout.switchToAdvanced") : t("activeWorkout.switchToSimple")}
+            >
+              {simpleMode ? t("activeWorkout.modeSimple") : t("activeWorkout.modeAdvanced")}
             </button>
           </div>
         </div>
       </header>
+
+      {/* Contextual guidance tips (workouts 1–3) */}
+      {activeTip !== null ? (
+        <div className="bg-[var(--color-surface)] px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <div className="max-w-lg mx-auto flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "var(--color-accent-gradient)" }}>
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold mb-0.5">{t(`activeWorkout.tip${activeTip}Title`)}</p>
+              <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                {t(`activeWorkout.tip${activeTip}Body`)}
+              </p>
+            </div>
+            <button onClick={() => dismissTip(activeTip)} className="text-[var(--color-text-muted)] p-1 -mt-0.5 flex-shrink-0">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {isResting ? (
         <div className="bg-[var(--color-surface)] px-4 py-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
@@ -342,15 +451,25 @@ export default function ActiveWorkout() {
                 <span className="text-lg font-bold tabular-nums">{formatTime(restTimer)}</span>
               </div>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <span className="text-sm text-[var(--color-text-secondary)]">{t("activeWorkout.restTimer")}</span>
-              <button onClick={skipRest} className="text-sm font-semibold text-[var(--color-accent)]">{t("activeWorkout.skip")}</button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => adjustRestTime(-30)}
+                  className="text-xs font-semibold px-2 py-1 rounded-lg bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
+                >−30s</button>
+                <button
+                  onClick={() => adjustRestTime(30)}
+                  className="text-xs font-semibold px-2 py-1 rounded-lg bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]"
+                >+30s</button>
+                <button onClick={skipRest} className="text-sm font-semibold text-[var(--color-accent)]">{t("activeWorkout.skip")}</button>
+              </div>
             </div>
           </div>
         </div>
       ) : null}
 
-      <div className="flex-1 overflow-y-auto pb-24">
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 7rem)" }}>
         <div className="max-w-lg mx-auto">
           {exercises.map((ex, exIdx) => {
             const isActive = exIdx === activeIdx;
@@ -358,10 +477,19 @@ export default function ActiveWorkout() {
             const isDone = normalSets.length >= ex.default_sets;
             const supersetColor = getSupersetColor(ex.superset_group);
             const isFirstInGroup = ex.superset_group !== null && (exIdx === 0 || exercises[exIdx - 1].superset_group !== ex.superset_group);
+            const best = exerciseBests[ex.exercise_id];
+
+            // Progressive overload suggestion: last session hit all target reps → suggest +step
+            const allRepsHitLastSession =
+              ex.lastSessionSets.length >= ex.default_sets &&
+              ex.lastSessionSets
+                .slice(0, ex.default_sets)
+                .every((s: any) => s.reps >= ex.default_reps);
+            const showProgressSuggestion = isActive && allRepsHitLastSession && normalSets.length === 0;
 
             return (
               <div key={ex.exercise_id}>
-                {isFirstInGroup ? (
+                {isFirstInGroup && !simpleMode ? (
                   <div className="flex items-center gap-1.5 px-4 pt-3 pb-1">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: supersetColor }} />
                     <span className="text-xs font-semibold" style={{ color: supersetColor }}>{t("activeWorkout.superset")}</span>
@@ -430,15 +558,48 @@ export default function ActiveWorkout() {
 
                   {isActive ? (
                     <div className="px-4 pb-5">
+                      {/* Personal Best + estimated 1RM chip */}
+                      {best && best.maxWeight > 0 ? (
+                        <div className="mb-3 flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-semibold">
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                            {t("activeWorkout.personalBest")}: {toDisplayWeight(best.maxWeight)}{unit} × {best.maxReps}
+                          </div>
+                          {best.estimated1rm > 0 ? (
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[rgba(79,142,247,0.1)] text-[var(--color-accent)] text-xs font-semibold">
+                              {t("activeWorkout.estimated1RM")}: ~{Math.round(toDisplayWeight(best.estimated1rm))}{unit}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {/* Progressive overload suggestion */}
+                      {showProgressSuggestion ? (
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
+                          <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                          <span className="text-xs text-green-400 font-medium">
+                            {t("activeWorkout.tryProgressWeight", { step: toDisplayWeight(step), unit })}
+                          </span>
+                        </div>
+                      ) : null}
+
                       <div className="mb-3">
                         <ExerciseMedia exerciseName={ex.name} showInstructions />
                       </div>
+
                       {ex.lastSessionSets.length > 0 ? (
                         <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-surface)]">
-                          <div className="text-[10px] text-[var(--color-text-muted)] mb-1 uppercase tracking-wider font-semibold">{t("activeWorkout.previous")}</div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">{t("activeWorkout.previous")}</div>
+                            {ex.lastSessionDate ? (
+                              <div className="text-[10px] text-[var(--color-text-faint)]">{ex.lastSessionDate}</div>
+                            ) : null}
+                          </div>
                           <div className="flex gap-3 flex-wrap">
                             {ex.lastSessionSets.map((s: any, i: number) => (
-                              <span key={i} className="text-sm text-[var(--color-text-secondary)]">{toDisplayWeight(s.weight)}{unit} x {s.reps}</span>
+                              <span key={i} className="text-sm text-[var(--color-text-secondary)]">{toDisplayWeight(s.weight)}{unit} × {s.reps}</span>
                             ))}
                           </div>
                         </div>
@@ -450,7 +611,7 @@ export default function ActiveWorkout() {
                           <span className="text-center">{t("activeWorkout.previous")}</span>
                           <span className="text-center">{t("activeWorkout.kg")}</span>
                           <span className="text-center">{t("activeWorkout.reps")}</span>
-                          <span></span>
+                          <span className="text-center">{simpleMode ? "" : "RiR"}</span>
                         </div>
                         {ex.loggedSets.length > 0 ? ex.loggedSets.map((logged, i) => {
                           const rowKey = `${ex.exercise_id}-${i + 1}`;
@@ -458,9 +619,7 @@ export default function ActiveWorkout() {
                           const showPicker = rirPickerKey === pickerKey;
                           return (
                             <React.Fragment key={i}>
-                              <div
-                                className={`set-row px-3 set-row-done ${pulsingRow === rowKey ? "log-pulse" : ""}`}
-                              >
+                              <div className={`set-row px-3 set-row-done ${pulsingRow === rowKey ? "log-pulse" : ""}`}>
                                 <span className="text-sm font-bold text-[var(--color-text-muted)]">
                                   {logged.is_drop_set ? (
                                     <span className="text-[10px] text-purple-400 font-semibold">{t("activeWorkout.drop")}</span>
@@ -470,8 +629,8 @@ export default function ActiveWorkout() {
                                 </span>
                                 <span className="text-center text-xs text-[var(--color-text-muted)]">
                                   {!logged.is_drop_set && ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1]
-                                    ? `${toDisplayWeight(ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].weight)} x ${ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].reps}`
-                                    : "\u2014"}
+                                    ? `${toDisplayWeight(ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].weight)} × ${ex.lastSessionSets[ex.loggedSets.filter((s, j) => j <= i && !s.is_drop_set).length - 1].reps}`
+                                    : "—"}
                                 </span>
                                 <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
                                   {toDisplayWeight(logged.weight)}
@@ -479,22 +638,28 @@ export default function ActiveWorkout() {
                                 <span className={`text-center text-sm font-bold ${logged.is_drop_set ? "text-purple-400" : ""}`}>
                                   {logged.reps}
                                 </span>
-                                <button
-                                  onClick={() => setRirPickerKey(showPicker ? null : pickerKey)}
-                                  className="flex flex-col items-center justify-center gap-0.5"
-                                  title={t("activeWorkout.rirLabel")}
-                                >
-                                  {logged.rir !== undefined ? (
-                                    <span className="text-xs font-bold text-[var(--color-accent)]">{logged.rir}</span>
-                                  ) : (
-                                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                  <span className="text-[8px] text-[var(--color-text-faint)] leading-none">RiR</span>
-                                </button>
+                                {simpleMode ? (
+                                  <svg className="w-4 h-4 text-green-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <button
+                                    onClick={() => setRirPickerKey(showPicker ? null : pickerKey)}
+                                    className="flex flex-col items-center justify-center gap-0.5"
+                                    title={t("activeWorkout.rirLabel")}
+                                  >
+                                    {logged.rir !== undefined ? (
+                                      <span className="text-xs font-bold text-[var(--color-accent)]">{logged.rir}</span>
+                                    ) : (
+                                      <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                    <span className="text-[8px] text-[var(--color-text-faint)] leading-none">RiR</span>
+                                  </button>
+                                )}
                               </div>
-                              {showPicker ? (
+                              {showPicker && !simpleMode ? (
                                 <div className="flex items-center gap-1 px-3 py-1.5 bg-[var(--color-surface-alt)] rounded-lg mx-3 mb-1">
                                   <span className="text-[10px] text-[var(--color-text-muted)] mr-1 font-medium">{t("activeWorkout.rirPrompt")}</span>
                                   {[0, 1, 2, 3, 4].map(v => (
@@ -514,6 +679,8 @@ export default function ActiveWorkout() {
                             </React.Fragment>
                           );
                         }) : null}
+
+                        {/* Pending sets (still to log) */}
                         {Array.from({ length: Math.max(0, ex.default_sets - normalSets.length) }, (_, i) => {
                           const setNum = normalSets.length + i + 1;
                           const prev = ex.lastSessionSets[normalSets.length + i];
@@ -522,7 +689,7 @@ export default function ActiveWorkout() {
                             <div key={`pending-${i}`} className={`set-row px-3 ${isNext ? "set-row-next" : ""}`}>
                               <span className="text-sm font-bold text-[var(--color-text-muted)]">{setNum}</span>
                               <span className="text-center text-xs text-[var(--color-text-muted)]">
-                                {prev ? `${toDisplayWeight(prev.weight)} x ${prev.reps}` : "\u2014"}
+                                {prev ? `${toDisplayWeight(prev.weight)} × ${prev.reps}` : "—"}
                               </span>
                               {isNext ? (
                                 <div className="flex items-center justify-center gap-0.5">
@@ -532,6 +699,7 @@ export default function ActiveWorkout() {
                                   >−</button>
                                   <input
                                     type="number"
+                                    inputMode="decimal"
                                     value={toDisplayWeight(ex.currentWeight)}
                                     onChange={e => {
                                       const v = parseFloat(e.target.value) || 0;
@@ -546,7 +714,7 @@ export default function ActiveWorkout() {
                                   >+</button>
                                 </div>
                               ) : (
-                                <span className="text-center text-sm text-[var(--color-text-muted)]">{"\u2014"}</span>
+                                <span className="text-center text-sm text-[var(--color-text-muted)]">—</span>
                               )}
                               {isNext ? (
                                 <div className="flex items-center justify-center gap-0.5">
@@ -556,9 +724,10 @@ export default function ActiveWorkout() {
                                   >−</button>
                                   <input
                                     type="number"
+                                    inputMode="numeric"
                                     value={ex.currentReps}
                                     onChange={e => {
-                                      const v = parseInt(e.target.value) || 0;
+                                      const v = parseInt(e.target.value) || 1;
                                       setExercises(prev2 => prev2.map((ex2, idx) => idx === exIdx ? { ...ex2, currentReps: v } : ex2));
                                     }}
                                     className="w-10 text-center text-sm font-bold bg-transparent border-b-2 border-[var(--color-accent)] outline-none py-0.5"
@@ -569,7 +738,7 @@ export default function ActiveWorkout() {
                                   >+</button>
                                 </div>
                               ) : (
-                                <span className="text-center text-sm text-[var(--color-text-muted)]">{"\u2014"}</span>
+                                <span className="text-center text-sm text-[var(--color-text-muted)]">—</span>
                               )}
                               {isNext ? (
                                 <button
@@ -594,17 +763,26 @@ export default function ActiveWorkout() {
                         onClick={() => logSet(exIdx)}
                         className="w-full btn-primary text-base py-3.5 font-bold"
                       >
-                        {t("activeWorkout.logSet", { number: normalSets.length + 1 })}
+                        {normalSets.length >= ex.default_sets
+                          ? t("activeWorkout.addExtraSet")
+                          : t("activeWorkout.logSet", { number: normalSets.length + 1 })}
                       </button>
+                      {normalSets.length >= ex.default_sets && simpleMode ? (
+                        <p className="text-center text-xs text-[var(--color-text-muted)] mt-1.5 px-2">
+                          {t("activeWorkout.extraSetHint")}
+                        </p>
+                      ) : null}
 
                       {ex.loggedSets.length > 0 ? (
                         <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => logSet(exIdx, true)}
-                            className="flex-1 text-center text-sm py-2 font-semibold rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                          >
-                            {t("activeWorkout.dropSet")}
-                          </button>
+                          {!simpleMode ? (
+                            <button
+                              onClick={() => logSet(exIdx, true)}
+                              className="flex-1 text-center text-sm py-2 font-semibold rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                            >
+                              {t("activeWorkout.dropSet")}
+                            </button>
+                          ) : null}
                           <button onClick={() => deleteLastSet(exIdx)} className="flex-1 text-center text-sm py-2 text-red-400/70 font-medium">
                             {t("activeWorkout.undoLastSet")}
                           </button>
@@ -619,6 +797,7 @@ export default function ActiveWorkout() {
                             const val = e.target.value;
                             setExercises(prev => prev.map((ex2, i) => i === exIdx ? { ...ex2, notes: val } : ex2));
                           }}
+                          onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 300)}
                           placeholder={t("activeWorkout.notesPlaceholder")}
                           className="input w-full text-sm py-2"
                         />
@@ -632,7 +811,10 @@ export default function ActiveWorkout() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-xl p-4 z-50" style={{ borderTop: "1px solid var(--color-border)" }}>
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-xl px-4 pt-3 z-50"
+        style={{ borderTop: "1px solid var(--color-border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+      >
         <div className="max-w-lg mx-auto">
           <button onClick={finishWorkout} className="w-full btn bg-green-600 text-white hover:bg-green-700 min-h-12 text-base font-semibold rounded-xl">
             {t("activeWorkout.finishWorkout")}

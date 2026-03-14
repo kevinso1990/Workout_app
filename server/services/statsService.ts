@@ -148,12 +148,51 @@ export function getTotals(): StatsTotals {
   }
   longestStreak = Math.max(longestStreak, streak);
 
+  // Fix: streak is only "current" if the most recent training week is this week
+  // or last week. If it was earlier, the streak has been broken.
+  if (weeks.length > 0) {
+    const nowRow = db
+      .prepare("SELECT strftime('%Y-%W', 'now') as wk")
+      .get() as { wk: string };
+    const [nowY, nowW] = nowRow.wk.split("-").map(Number);
+    const [lastY, lastW] = weeks[0].wk.split("-").map(Number);
+
+    const isThisWeek = nowY === lastY && nowW === lastW;
+    const isLastWeek =
+      (nowY === lastY && nowW - lastW === 1) ||
+      (nowY - lastY === 1 && lastW >= 52 && nowW <= 1);
+
+    if (!isThisWeek && !isLastWeek) {
+      streak = 0;
+    }
+  }
+
   return {
     totalWorkouts,
     totalVolume: Math.round(totalVolume),
     currentStreak: streak,
     longestStreak,
   };
+}
+
+/** Returns the all-time best set for an exercise plus its Epley estimated 1RM. */
+export function getExerciseBest(exerciseId: number): {
+  maxWeight: number;
+  maxReps: number;
+  estimated1rm: number;
+} {
+  const row = db
+    .prepare(
+      `SELECT
+         COALESCE(MAX(st.weight), 0) as maxWeight,
+         COALESCE(MAX(st.reps), 0) as maxReps,
+         COALESCE(MAX(st.weight * (1 + st.reps / 30.0)), 0) as estimated1rm
+       FROM sets st
+       JOIN sessions s ON s.id = st.session_id
+       WHERE st.exercise_id = ? AND s.finished_at IS NOT NULL`,
+    )
+    .get(exerciseId) as { maxWeight: number; maxReps: number; estimated1rm: number } | undefined;
+  return row ?? { maxWeight: 0, maxReps: 0, estimated1rm: 0 };
 }
 
 export function getWeeklyHistory(): WeeklyHistoryRow[] {

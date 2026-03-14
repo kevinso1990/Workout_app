@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { APP_NAME } from "../config";
 import { getStoredTheme, applyTheme, type Theme } from "../lib/theme";
 import { useTranslation } from "react-i18next";
+import { ToastContainer } from "./Toast";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
@@ -13,10 +14,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     applyTheme(theme);
   }, [theme]);
 
+  // History lives inside Progress as the "sessions" sub-tab.
+  // We keep /history as a valid route for back-compat but treat it
+  // as part of the Progress tab for nav-highlight purposes.
   const NAV_ITEMS = [
     {
       path: "/",
       label: t("nav.home"),
+      matchExact: true,
       icon: (active: boolean) => (
         <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
           {active
@@ -29,6 +34,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     {
       path: "/plans",
       label: t("nav.plans"),
+      matchExact: false,
       icon: (active: boolean) => (
         <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
           {active
@@ -39,8 +45,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       ),
     },
     {
+      // Progress tab also covers /history (sessions sub-tab)
       path: "/progress",
       label: t("nav.progress"),
+      matchExact: false,
+      extraPaths: ["/history"],
       icon: (active: boolean) => (
         <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
           {active
@@ -51,20 +60,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       ),
     },
     {
-      path: "/history",
-      label: t("nav.history"),
-      icon: (active: boolean) => (
-        <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
-          {active
-            ? <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v5l4 2.5-.9 1.5L12 13.5V7h1z" />
-            : <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          }
-        </svg>
-      ),
-    },
-    {
       path: "/profile",
       label: t("nav.profile"),
+      matchExact: false,
       icon: (active: boolean) => (
         <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
           {active
@@ -78,23 +76,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)] flex flex-col">
-      <main className="flex-1 pb-20 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}>{children}</main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-xl z-50" style={{ borderTop: "1px solid var(--color-border)" }}>
+      <nav
+        className="fixed bottom-0 left-0 right-0 bg-[var(--color-nav-bg)] backdrop-blur-xl z-50"
+        style={{ borderTop: "1px solid var(--color-border)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         <div className="flex items-center justify-around max-w-lg mx-auto h-16">
           {NAV_ITEMS.map(item => {
-            const active = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+            const active =
+              (item.matchExact ? location === item.path : (location === item.path || location.startsWith(item.path + "/"))) ||
+              (!!(item as any).extraPaths?.some((p: string) => location === p || location.startsWith(p + "/")));
             return (
               <Link key={item.path} href={item.path}>
-                <button className={`flex flex-col items-center gap-0.5 px-5 py-2 transition-colors ${active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}>
+                <button
+                  className={`relative flex flex-col items-center gap-0.5 px-5 py-2 transition-colors ${
+                    active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"
+                  }`}
+                >
                   {item.icon(active)}
                   <span className="text-[10px] font-semibold">{item.label}</span>
+                  {/* Active indicator dot */}
+                  {active && (
+                    <span
+                      className="absolute bottom-1 w-1 h-1 rounded-full"
+                      style={{ background: "var(--color-accent)" }}
+                    />
+                  )}
                 </button>
               </Link>
             );
           })}
         </div>
       </nav>
+
+      <ToastContainer />
     </div>
   );
 }

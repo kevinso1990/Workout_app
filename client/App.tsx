@@ -7,7 +7,6 @@ import PlanBuilder from "./pages/PlanBuilder";
 import CreatePlan from "./pages/CreatePlan";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import PostWorkout from "./pages/PostWorkout";
-import History from "./pages/History";
 import SessionDetail from "./pages/SessionDetail";
 import Profile from "./pages/Profile";
 import Progress from "./pages/Progress";
@@ -35,7 +34,8 @@ export default function App() {
               <Route path="/plans/new" component={PlanBuilder} />
               <Route path="/plans/:id/edit" component={PlanBuilder} />
               <Route path="/progress" component={Progress} />
-              <Route path="/history" component={History} />
+              {/* /history is now the "Sessions" sub-tab inside Progress */}
+              <Route path="/history" component={() => <Progress initialTab="sessions" />} />
               <Route path="/profile" component={Profile} />
             </Switch>
           </Layout>

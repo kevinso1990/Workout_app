@@ -1,12 +1,18 @@
 // All domain types for the workout tracker API.
 // ── Auth entities ────────────────────────────────────────────────────────────
 
+export type SubscriptionTier = "free" | "pro";
+export type SubscriptionProvider = "apple" | "google";
+
 export interface User {
   id: number;
   username: string;
   email: string;
   password_hash: string;
   created_at: string;
+  subscription_tier: SubscriptionTier;
+  subscription_provider: SubscriptionProvider | null;
+  subscription_expires_at: string | null;
 }
 
 /** Safe public shape — never include password_hash in responses */
@@ -15,6 +21,40 @@ export interface PublicUser {
   username: string;
   email: string;
   created_at: string;
+  subscription_tier: SubscriptionTier;
+  subscription_provider: SubscriptionProvider | null;
+  subscription_expires_at: string | null;
+}
+
+export interface SubscriptionStatus {
+  tier: SubscriptionTier;
+  isPro: boolean;
+  provider: SubscriptionProvider | null;
+  expiresAt: string | null;
+}
+
+export interface SubscriptionReceiptRow {
+  id: number;
+  user_id: number;
+  provider: SubscriptionProvider;
+  original_transaction_id: string;
+  product_id: string | null;
+  expires_at: string | null;
+  status: "active" | "expired" | "cancelled" | "refunded";
+  raw_response: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ValidateAppleReceiptBody {
+  receiptData: string; // base64-encoded receipt from StoreKit
+  isSandbox?: boolean;
+}
+
+export interface ValidateGooglePurchaseBody {
+  packageName: string;
+  subscriptionId: string; // matches GOOGLE_PRODUCT_ID env var
+  purchaseToken: string;
 }
 
 export interface JwtPayload {

@@ -60,7 +60,7 @@ export default function SessionDetail() {
     <div className="min-h-[100dvh] bg-[var(--color-bg)]">
       <header className="sticky top-0 z-40 bg-[var(--color-nav-bg)] backdrop-blur-xl px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={() => navigate("/history")} className="p-2 -ml-2 text-[var(--color-text-secondary)]">
+          <button onClick={() => navigate("/progress")} className="p-2 -ml-2 text-[var(--color-text-secondary)]">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
           <h1 className="font-bold">{session.plan_name}</h1>

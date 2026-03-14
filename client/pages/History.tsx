@@ -3,12 +3,18 @@ import { Link } from "wouter";
 import { api } from "../lib/api";
 import { useTranslation } from "react-i18next";
 
+function estimated1RM(weight: number, reps: number): number {
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30));
+}
+
 export default function History() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "en";
   const [sessions, setSessions] = useState<any[]>([]);
   const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllPRs, setShowAllPRs] = useState(false);
 
   useEffect(() => {
     Promise.all([api.getSessions(), api.getPRs()])
@@ -25,6 +31,8 @@ export default function History() {
   }
 
   const prMap = new Map(prs.map((p: any) => [p.exercise_id, p]));
+  const visiblePRs = showAllPRs ? prs : prs.slice(0, 6);
+  const hasMorePRs = prs.length > 6;
 
   return (
     <div className="px-4 pt-8 pb-4 max-w-lg mx-auto">
@@ -34,18 +42,39 @@ export default function History() {
         <section className="mb-6">
           <div className="section-label">{t("history.personalRecords")}</div>
           <div className="grid grid-cols-2 gap-2">
-            {prs.slice(0, 6).map((pr: any) => (
-              <div key={pr.exercise_id} className="card p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-yellow-400">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                  </span>
-                  <span className="text-xs text-[var(--color-text-secondary)] truncate">{pr.name}</span>
+            {visiblePRs.map((pr: any) => {
+              const e1rm = estimated1RM(pr.max_weight, pr.reps);
+              return (
+                <div key={pr.exercise_id} className="card p-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="text-yellow-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                    </span>
+                    <span className="text-xs text-[var(--color-text-secondary)] truncate">{pr.name}</span>
+                  </div>
+                  <div className="text-xl font-bold tabular-nums">
+                    {pr.max_weight} <span className="text-sm text-[var(--color-text-muted)]">{t("history.kg")}</span>
+                  </div>
+                  <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    × {pr.reps} {t("history.repsLabel")}
+                    {e1rm > pr.max_weight ? (
+                      <span className="ml-2 text-[var(--color-accent)]">≈{e1rm} {t("history.est1RM")}</span>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="text-xl font-bold tabular-nums">{pr.max_weight} <span className="text-sm text-[var(--color-text-muted)]">{t("history.kg")}</span></div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+          {hasMorePRs ? (
+            <button
+              onClick={() => setShowAllPRs(v => !v)}
+              className="mt-2 w-full text-center text-sm font-medium text-[var(--color-accent)] py-2"
+            >
+              {showAllPRs
+                ? t("history.showFewerPRs")
+                : t("history.showAllPRs", { count: prs.length - 6 })}
+            </button>
+          ) : null}
         </section>
       ) : null}
 

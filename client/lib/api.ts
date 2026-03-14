@@ -91,4 +91,21 @@ export const api = {
 
   getSplitAge: () => request<{ planId: number; planName: string; weeksOnPlan: number; shouldPrompt: boolean } | null>("/api/split-refresh"),
   snoozeSplitRefresh: () => request<{ ok: boolean }>("/api/split-refresh/snooze", { method: "POST" }),
+
+  getExerciseBest: (exerciseId: number) =>
+    request<{ maxWeight: number; maxReps: number; estimated1rm: number }>(`/api/stats/exercise-best/${exerciseId}`),
+
+  // ── Subscriptions ──────────────────────────────────────────────────────────
+  getSubscriptionStatus: () =>
+    request<{ tier: "free" | "pro"; isPro: boolean; provider: string | null; expiresAt: string | null }>("/api/subscriptions/status"),
+  validateAppleReceipt: (data: { receiptData: string; isSandbox?: boolean }) =>
+    request<{ ok: boolean; tier: string; expiresAt: string | null; provider: string }>("/api/subscriptions/validate/apple", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  validateGooglePurchase: (data: { packageName: string; subscriptionId: string; purchaseToken: string }) =>
+    request<{ ok: boolean; tier: string; expiresAt: string | null; provider: string }>("/api/subscriptions/validate/google", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

@@ -191,6 +191,7 @@ export default function PostWorkout() {
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
+          onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 300)}
           placeholder={t("postWorkout.notesPlaceholder")}
           className="input w-full h-24 resize-none"
         />

@@ -13,7 +13,15 @@ function getJwtSecret(): string {
 }
 
 function toPublicUser(user: User): PublicUser {
-  return { id: user.id, username: user.username, email: user.email, created_at: user.created_at };
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    created_at: user.created_at,
+    subscription_tier: user.subscription_tier ?? "free",
+    subscription_provider: user.subscription_provider ?? null,
+    subscription_expires_at: user.subscription_expires_at ?? null,
+  };
 }
 
 function signToken(user: User): string {

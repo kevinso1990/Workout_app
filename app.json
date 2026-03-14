@@ -42,6 +42,12 @@
     ],
     "experiments": {
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f2fe52cd-fa6a-4cb1-89b5-da49ecaf31cf"
+      }
+    },
+    "owner": "ks15"
   }
 }

@@ -314,7 +314,10 @@ export default function PlanBuilder() {
 
       {showCustom ? (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
-          <div className="w-full bg-[var(--color-surface)] rounded-t-2xl p-5 pb-8">
+          <div
+            className="w-full bg-[var(--color-surface)] rounded-t-2xl p-5 overflow-y-auto"
+            style={{ maxHeight: "80dvh", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.25rem)" }}
+          >
             <h2 className="font-bold text-lg mb-4">{t("planBuilder.customExercise")}</h2>
             <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder={t("planBuilder.exerciseName")} className="input w-full mb-3" autoFocus />
             <select value={customGroup} onChange={e => setCustomGroup(e.target.value)} className="input w-full mb-4">
