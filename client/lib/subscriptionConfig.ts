@@ -25,7 +25,7 @@
  *   Your Android app package name, e.g. "com.yourapp.fitplan".
  */
 
-// Vite exposes env at import.meta.env; Expo exposes it at process.env.
+// Env-Variablen kommen hier nur aus process.env (Expo/Hermes).
 // In React Native/Expo (Hermes) verwenden wir nur process.env.
 const viteEnv: Record<string, string | undefined> = {};
 
