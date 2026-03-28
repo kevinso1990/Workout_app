@@ -1,5 +1,5 @@
 /**
- * Subscription feature flags and product IDs. v2
+ * Subscription feature flags and product IDs.
  *
  * All values are read from environment variables at build time so you can
  * enable sandbox testing in a dev build without touching production.
@@ -25,8 +25,7 @@
  *   Your Android app package name, e.g. "com.yourapp.fitplan".
  */
 
-// Env-Variablen kommen hier nur aus process.env (Expo/Hermes).
-// In React Native/Expo (Hermes) verwenden wir nur process.env.
+// Env-Variablen: in React Native/Expo (Hermes) verwenden wir nur process.env.
 const viteEnv: Record<string, string | undefined> = {};
 
 function envBool(viteKey: string, expoKey: string): boolean {
