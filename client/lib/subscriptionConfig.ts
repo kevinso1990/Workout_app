@@ -26,9 +26,7 @@
  */
 
 // Vite exposes env at import.meta.env; Expo exposes it at process.env.
-// We read both so the same file works in both build systems.
-// NOTE: Vite-spezifisches import.meta funktioniert nicht mit Hermes.
-// Für React Native/Expo setzen wir das bewusst leer.
+// In React Native/Expo (Hermes) verwenden wir nur process.env.
 const viteEnv: Record<string, string | undefined> = {};
 
 function envBool(viteKey: string, expoKey: string): boolean {
