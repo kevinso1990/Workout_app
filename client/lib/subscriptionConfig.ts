@@ -1,5 +1,5 @@
 /**
- * Subscription feature flags and product IDs.
+ * Subscription feature flags and product IDs. v2
  *
  * All values are read from environment variables at build time so you can
  * enable sandbox testing in a dev build without touching production.
