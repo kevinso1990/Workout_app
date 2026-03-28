@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TrackYourWorkout",
-    "slug": "trackyourworkout",
+    "name": "FitPlan",
+    "slug": "FitPlan",
     "version": "1.0.0",
     "extra": {
       "eas": {
