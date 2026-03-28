@@ -28,8 +28,9 @@
 // Vite exposes env at import.meta.env; Expo exposes it at process.env.
 // We read both so the same file works in both build systems.
 const viteEnv: Record<string, string | undefined> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (typeof import.meta !== "undefined" && (import.meta as any).env) || {};
+  (typeof process !== "undefined"
+    ? (process.env as Record<string, string | undefined>)
+    : {}) || {};
 
 function envBool(viteKey: string, expoKey: string): boolean {
   const expoVal = typeof process !== "undefined" ? process.env?.[expoKey] : undefined;
