@@ -1510,7 +1510,7 @@ export default function ActiveWorkoutScreen() {
           </Pressable>
         </View>
 
-        <KeyboardAwareScrollView
+        <KeyboardAwareScrollViewCompat
           style={styles.scrollContent}
           contentContainerStyle={styles.scrollContentContainer}
           showsVerticalScrollIndicator={false}
@@ -1577,7 +1577,7 @@ export default function ActiveWorkoutScreen() {
               ))}
             </View>
           </Animated.View>
-        </KeyboardAwareScrollView>
+        </KeyboardAwareScrollViewCompat>
 
         <View
           style={[
