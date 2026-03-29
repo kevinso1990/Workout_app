@@ -4,7 +4,6 @@ type Props = ScrollViewProps;
 
 /**
  * Temporary fallback without react-native-keyboard-controller
- * to isolate iOS startup crash.
  */
 export function KeyboardAwareScrollViewCompat({
   children,
