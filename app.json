@@ -3,16 +3,17 @@
     "name": "FitPlan",
     "slug": "fitplan",
     "version": "1.0.0",
-    "extra": {
-      "eas": {
-        "projectId": "f2fe52cd-fa6a-4cb1-89b5-da49ecaf31cf"
-      }
-    },
     "ios": {
       "bundleIdentifier": "com.kevinsonnen.workoutapp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSHealthShareUsageDescription": "FitPlan braucht Zugriff auf Apple Health für Workout-Tracking",
+        "NSHealthUpdateUsageDescription": "FitPlan speichert deine Workouts in Apple Health",
+        "NSUserTrackingUsageDescription": "FitPlan nutzt Tracking für personalisierte Empfehlungen"
       }
-    }
+    },
+    "plugins": [
+      "expo-healthkit"
+    ]
   }
 }
