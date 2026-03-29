@@ -14,7 +14,7 @@ import {
 import Slider from "@react-native-community/slider";
 import * as Sharing from "expo-sharing";
 import { captureRef } from "react-native-view-shot";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
