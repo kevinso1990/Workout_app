@@ -1,46 +1,10 @@
-import React, { useEffect } from "react";
-import { Route, Switch } from "wouter";
-import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
-import Plans from "./pages/Plans";
-import PlanBuilder from "./pages/PlanBuilder";
-import CreatePlan from "./pages/CreatePlan";
-import ActiveWorkout from "./pages/ActiveWorkout";
-import PostWorkout from "./pages/PostWorkout";
-import SessionDetail from "./pages/SessionDetail";
-import Profile from "./pages/Profile";
-import Progress from "./pages/Progress";
-import Onboarding from "./components/Onboarding";
-import { getStoredTheme, applyTheme } from "./lib/theme";
+import React from "react";
+import { SafeAreaView, Text } from "react-native";
 
 export default function App() {
-  useEffect(() => {
-    applyTheme(getStoredTheme());
-  }, []);
-
   return (
-    <>
-      <Onboarding />
-      <Switch>
-        <Route path="/workout/:sessionId/finish" component={PostWorkout} />
-        <Route path="/workout/:sessionId" component={ActiveWorkout} />
-        <Route path="/session/:id" component={SessionDetail} />
-        <Route>
-          <Layout>
-            <Switch>
-              <Route path="/" component={Dashboard} />
-              <Route path="/plans" component={Plans} />
-              <Route path="/plans/create" component={CreatePlan} />
-              <Route path="/plans/new" component={PlanBuilder} />
-              <Route path="/plans/:id/edit" component={PlanBuilder} />
-              <Route path="/progress" component={Progress} />
-              {/* /history is now the "Sessions" sub-tab inside Progress */}
-              <Route path="/history" component={() => <Progress initialTab="sessions" />} />
-              <Route path="/profile" component={Profile} />
-            </Switch>
-          </Layout>
-        </Route>
-      </Switch>
-    </>
+    <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Text>FitPlan Test</Text>
+    </SafeAreaView>
   );
 }
