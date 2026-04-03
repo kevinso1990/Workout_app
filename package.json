@@ -3,6 +3,10 @@
   "main": "client/index.js",
   "version": "1.0.0",
   "scripts": {
+    "start": "npx expo start --localhost",
+    "android": "npx expo start --android --localhost",
+    "ios": "npx expo start --ios --localhost",
+    "web": "npx expo start --web --localhost",
     "expo:dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_DEV_DOMAIN REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN:5000 npx expo start --localhost",
     "server:dev": "NODE_ENV=development tsx server/index.ts",
     "expo:start:static:build": "npx expo start --no-dev --minify --localhost",
