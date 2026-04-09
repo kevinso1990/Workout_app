@@ -39,7 +39,7 @@ export default function WelcomeScreen() {
   };
 
   const handleGetStarted = () => {
-    navigation.navigate("FitnessLevel");
+   navigation.navigate("Equipment");
   };
 
   return (

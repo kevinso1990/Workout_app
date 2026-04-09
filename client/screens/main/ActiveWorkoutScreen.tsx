@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   StyleSheet,
   Pressable,
   TextInput,
   Alert,
-  Platform,
   Dimensions,
   Modal,
   ScrollView,
@@ -21,7 +20,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
   FadeIn,
   FadeInDown,
   FadeInUp,
@@ -98,7 +96,7 @@ function getExerciseImageUrl(exerciseName: string): string | null {
     "Lateral Raises": "Side_Lateral_Raise",
     "Front Raises": "Front_Dumbbell_Raise",
     "Rear Delt Flyes": "Seated_Bent-Over_Rear_Delt_Raise",
-    "Shrugs": "Barbell_Shrug",
+    Shrugs: "Barbell_Shrug",
     "Barbell Curl": "Barbell_Curl",
     "Dumbbell Curl": "Dumbbell_Bicep_Curl",
     "Hammer Curl": "Hammer_Curls",
@@ -106,30 +104,29 @@ function getExerciseImageUrl(exerciseName: string): string | null {
     "Tricep Pushdown": "Triceps_Pushdown",
     "Skull Crushers": "EZ-Bar_Skullcrusher",
     "Overhead Tricep Extension": "Dumbbell_One-Arm_Triceps_Extension",
-    "Dips": "Dips_-_Triceps_Version",
-    "Deadlift": "Barbell_Deadlift",
-    "Plank": "Plank",
+    Dips: "Dips_-_Triceps_Version",
+    Deadlift: "Barbell_Deadlift",
+    Plank: "Plank",
     "Russian Twists": "Russian_Twist",
     "Hanging Leg Raise": "Hanging_Leg_Raise",
     "Cable Crunch": "Cable_Crunch",
     "Hip Thrust": "Barbell_Hip_Thrust",
-    "Lunges": "Dumbbell_Lunges",
+    Lunges: "Dumbbell_Lunges",
     "Bulgarian Split Squat": "Dumbbell_Single_Leg_Split_Squat",
   };
-  
+
   const id = nameToId[exerciseName];
   if (!id) return null;
   return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${id}/0.jpg`;
 }
 
-type SetType = "working" | "warmup" | "failure" | "dropset";
+
 
 interface SetData {
   weight: string;
   reps: string;
   rating: SetRating;
   completed: boolean;
-  setType?: SetType;
 }
 
 interface ExerciseProgress {
@@ -390,11 +387,11 @@ function WorkoutSummary({
 
   const handleShare = async () => {
     if (!shareCardRef.current) return;
-    
+
     try {
       setIsSharing(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
+
       const uri = await captureRef(shareCardRef, {
         format: "png",
         quality: 1,
@@ -419,18 +416,19 @@ function WorkoutSummary({
 
   if (!visible) return null;
 
-  const today = new Date().toLocaleDateString("en-US", { 
-    weekday: "long", 
-    month: "short", 
-    day: "numeric" 
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
   });
 
   return (
     <Modal visible={visible} animationType="slide">
-      <ThemedView style={[styles.summaryContainer, { paddingTop: insets.top + Spacing.xl }]}>
-        {/* Shareable card - captured for sharing */}
-        <View 
-          ref={shareCardRef} 
+      <ThemedView
+        style={[styles.summaryContainer, { paddingTop: insets.top + Spacing.xl }]}
+      >
+        <View
+          ref={shareCardRef}
           collapsable={false}
           style={[styles.shareableCard, { backgroundColor: theme.backgroundRoot }]}
         >
@@ -445,30 +443,69 @@ function WorkoutSummary({
             <ThemedText style={styles.shareCardDate}>{today}</ThemedText>
           </LinearGradient>
 
-          <View style={[styles.shareCardContent, { backgroundColor: theme.backgroundDefault }]}>
+          <View
+            style={[
+              styles.shareCardContent,
+              { backgroundColor: theme.backgroundDefault },
+            ]}
+          >
             <View style={styles.shareCardBadge}>
-              <Feather name="check-circle" size={32} color={Colors.light.primary} />
+              <Feather
+                name="check-circle"
+                size={32}
+                color={Colors.light.primary}
+              />
             </View>
-            
+
             <ThemedText style={styles.shareCardTitle}>{workoutName}</ThemedText>
-            <ThemedText style={[styles.shareCardSubtitle, { color: theme.textSecondary }]}>
+            <ThemedText
+              style={[styles.shareCardSubtitle, { color: theme.textSecondary }]}
+            >
               Workout Complete
             </ThemedText>
 
             <View style={styles.shareCardStats}>
               <View style={styles.shareCardStat}>
-                <ThemedText style={styles.shareCardStatValue}>{formatTime(duration)}</ThemedText>
-                <ThemedText style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}>Duration</ThemedText>
+                <ThemedText style={styles.shareCardStatValue}>
+                  {formatTime(duration)}
+                </ThemedText>
+                <ThemedText
+                  style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
+                >
+                  Duration
+                </ThemedText>
               </View>
-              <View style={[styles.shareCardStatDivider, { backgroundColor: theme.border }]} />
+              <View
+                style={[
+                  styles.shareCardStatDivider,
+                  { backgroundColor: theme.border },
+                ]}
+              />
               <View style={styles.shareCardStat}>
-                <ThemedText style={styles.shareCardStatValue}>{completedSets}</ThemedText>
-                <ThemedText style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}>Sets</ThemedText>
+                <ThemedText style={styles.shareCardStatValue}>
+                  {completedSets}
+                </ThemedText>
+                <ThemedText
+                  style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
+                >
+                  Sets
+                </ThemedText>
               </View>
-              <View style={[styles.shareCardStatDivider, { backgroundColor: theme.border }]} />
+              <View
+                style={[
+                  styles.shareCardStatDivider,
+                  { backgroundColor: theme.border },
+                ]}
+              />
               <View style={styles.shareCardStat}>
-                <ThemedText style={styles.shareCardStatValue}>{totalVolume.toLocaleString()}</ThemedText>
-                <ThemedText style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}>kg Volume</ThemedText>
+                <ThemedText style={styles.shareCardStatValue}>
+                  {totalVolume.toLocaleString()}
+                </ThemedText>
+                <ThemedText
+                  style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
+                >
+                  kg Volume
+                </ThemedText>
               </View>
             </View>
 
@@ -487,13 +524,18 @@ function WorkoutSummary({
           entering={FadeInUp.delay(400).duration(400)}
           style={styles.shareActions}
         >
-          <Pressable 
+          <Pressable
             onPress={handleShare}
             disabled={isSharing}
             style={[styles.shareButton, { opacity: isSharing ? 0.6 : 1 }]}
           >
             <Feather name="share-2" size={20} color={Colors.light.primary} />
-            <ThemedText style={[styles.shareButtonText, { color: Colors.light.primary }]}>
+            <ThemedText
+              style={[
+                styles.shareButtonText,
+                { color: Colors.light.primary },
+              ]}
+            >
               {isSharing ? "Sharing..." : "Share Workout"}
             </ThemedText>
           </Pressable>
@@ -501,7 +543,10 @@ function WorkoutSummary({
 
         <Animated.View
           entering={FadeInUp.delay(500).duration(400)}
-          style={[styles.summaryBottom, { paddingBottom: insets.bottom + Spacing.lg }]}
+          style={[
+            styles.summaryBottom,
+            { paddingBottom: insets.bottom + Spacing.lg },
+          ]}
         >
           <Pressable onPress={onClose}>
             <LinearGradient
@@ -541,7 +586,8 @@ function RIRButton({
       onPress={onPress}
       disabled={disabled}
       onPressIn={() => {
-        if (!disabled) scale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
+        if (!disabled)
+          scale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
       }}
       onPressOut={() => {
         scale.value = withSpring(1, { damping: 15, stiffness: 200 });
@@ -589,7 +635,7 @@ function QuickAdjustButton({
   type: "increase" | "decrease";
 }) {
   const { theme } = useTheme();
-  
+
   return (
     <Pressable
       onPress={() => {
@@ -598,18 +644,25 @@ function QuickAdjustButton({
       }}
       style={[
         styles.quickAdjustButton,
-        { 
-          backgroundColor: type === "increase" 
-            ? Colors.light.primary + "15" 
-            : theme.backgroundSecondary,
-          borderColor: type === "increase" ? Colors.light.primary : theme.border,
+        {
+          backgroundColor:
+            type === "increase"
+              ? Colors.light.primary + "15"
+              : theme.backgroundSecondary,
+          borderColor:
+            type === "increase" ? Colors.light.primary : theme.border,
         },
       ]}
     >
       <ThemedText
         style={[
           styles.quickAdjustText,
-          { color: type === "increase" ? Colors.light.primary : theme.textSecondary },
+          {
+            color:
+              type === "increase"
+                ? Colors.light.primary
+                : theme.textSecondary,
+          },
         ]}
       >
         {label}
@@ -619,12 +672,57 @@ function QuickAdjustButton({
 }
 
 const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
-  Chest: ["Bench Press", "Incline Dumbbell Press", "Cable Flyes", "Push-ups", "Dumbbell Flyes", "Machine Chest Press", "Dips"],
-  Back: ["Deadlift", "Barbell Rows", "Lat Pulldown", "Pull-ups", "Seated Cable Row", "Dumbbell Rows", "T-Bar Row"],
-  Shoulders: ["Overhead Press", "Dumbbell Shoulder Press", "Lateral Raises", "Face Pulls", "Arnold Press", "Front Raises"],
-  Legs: ["Squat", "Leg Press", "Lunges", "Leg Extension", "Leg Curl", "Romanian Deadlift", "Bulgarian Split Squat"],
-  Arms: ["Bicep Curls", "Tricep Pushdowns", "Hammer Curls", "Skull Crushers", "Preacher Curls", "Cable Curls"],
-  Core: ["Plank", "Crunches", "Leg Raises", "Russian Twists", "Cable Crunches", "Hanging Leg Raises"],
+  Chest: [
+    "Bench Press",
+    "Incline Dumbbell Press",
+    "Cable Flyes",
+    "Push-ups",
+    "Dumbbell Flyes",
+    "Machine Chest Press",
+    "Dips",
+  ],
+  Back: [
+    "Deadlift",
+    "Barbell Rows",
+    "Lat Pulldown",
+    "Pull-ups",
+    "Seated Cable Row",
+    "Dumbbell Rows",
+    "T-Bar Row",
+  ],
+  Shoulders: [
+    "Overhead Press",
+    "Dumbbell Shoulder Press",
+    "Lateral Raises",
+    "Face Pulls",
+    "Arnold Press",
+    "Front Raises",
+  ],
+  Legs: [
+    "Squat",
+    "Leg Press",
+    "Lunges",
+    "Leg Extension",
+    "Leg Curl",
+    "Romanian Deadlift",
+    "Bulgarian Split Squat",
+  ],
+  Arms: [
+    "Bicep Curls",
+    "Tricep Pushdowns",
+    "Hammer Curls",
+    "Skull Crushers",
+    "Preacher Curls",
+    "Cable Curls",
+  ],
+  Core: [
+    "Plank",
+    "Crunches",
+    "Leg Raises",
+    "Russian Twists",
+    "Cable Crunches",
+    "Hanging Leg Raises",
+  ],
 };
 
 function ExerciseSwapModal({
@@ -643,8 +741,11 @@ function ExerciseSwapModal({
 
   if (!visible || !currentExercise) return null;
 
-  const alternatives = EXERCISE_ALTERNATIVES[currentExercise.muscleGroup] || [];
-  const filteredAlternatives = alternatives.filter((ex) => ex !== currentExercise.name);
+  const alternatives =
+    EXERCISE_ALTERNATIVES[currentExercise.muscleGroup] || [];
+  const filteredAlternatives = alternatives.filter(
+    (ex) => ex !== currentExercise.name
+  );
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -652,13 +753,21 @@ function ExerciseSwapModal({
         <View
           style={[
             styles.swapModalContent,
-            { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg },
+            {
+              backgroundColor: theme.backgroundDefault,
+              paddingBottom: insets.bottom + Spacing.lg,
+            },
           ]}
         >
           <View style={styles.swapModalHeader}>
             <View>
               <ThemedText style={styles.swapModalTitle}>Swap Exercise</ThemedText>
-              <ThemedText style={[styles.swapModalSubtitle, { color: theme.textSecondary }]}>
+              <ThemedText
+                style={[
+                  styles.swapModalSubtitle,
+                  { color: theme.textSecondary },
+                ]}
+              >
                 Equipment busy? Pick an alternative
               </ThemedText>
             </View>
@@ -667,11 +776,16 @@ function ExerciseSwapModal({
             </Pressable>
           </View>
 
-          <ThemedText style={[styles.swapCurrentLabel, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[styles.swapCurrentLabel, { color: theme.textSecondary }]}
+          >
             Current: {currentExercise.name}
           </ThemedText>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.swapList}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.swapList}
+          >
             {filteredAlternatives.map((exercise) => (
               <Pressable
                 key={exercise}
@@ -680,7 +794,10 @@ function ExerciseSwapModal({
                   onSwap(exercise);
                   onClose();
                 }}
-                style={[styles.swapOption, { backgroundColor: theme.backgroundSecondary }]}
+                style={[
+                  styles.swapOption,
+                  { backgroundColor: theme.backgroundSecondary },
+                ]}
               >
                 {getExerciseImageUrl(exercise) ? (
                   <Image
@@ -689,12 +806,25 @@ function ExerciseSwapModal({
                     resizeMode="cover"
                   />
                 ) : (
-                  <View style={[styles.swapOptionImagePlaceholder, { backgroundColor: Colors.light.primary + "15" }]}>
-                    <Feather name="activity" size={20} color={Colors.light.primary} />
+                  <View
+                    style={[
+                      styles.swapOptionImagePlaceholder,
+                      { backgroundColor: Colors.light.primary + "15" },
+                    ]}
+                  >
+                    <Feather
+                      name="activity"
+                      size={20}
+                      color={Colors.light.primary}
+                    />
                   </View>
                 )}
                 <ThemedText style={styles.swapOptionText}>{exercise}</ThemedText>
-                <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+                <Feather
+                  name="chevron-right"
+                  size={20}
+                  color={theme.textSecondary}
+                />
               </Pressable>
             ))}
           </ScrollView>
@@ -754,13 +884,22 @@ function SetInput({
 
   if (!isActive && !setData.completed) {
     return (
-      <View style={[styles.setRowInactive, { backgroundColor: theme.backgroundSecondary }]}>
+      <View
+        style={[
+          styles.setRowInactive,
+          { backgroundColor: theme.backgroundSecondary },
+        ]}
+      >
         <View style={[styles.setNumber, { backgroundColor: theme.border }]}>
-          <ThemedText style={[styles.setNumberText, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[styles.setNumberText, { color: theme.textSecondary }]}
+          >
             {setIndex + 1}
           </ThemedText>
         </View>
-        <ThemedText style={[styles.upcomingText, { color: theme.textSecondary }]}>
+        <ThemedText
+          style={[styles.upcomingText, { color: theme.textSecondary }]}
+        >
           Set {setIndex + 1}
         </ThemedText>
       </View>
@@ -768,33 +907,32 @@ function SetInput({
   }
 
   if (setData.completed) {
-    const setTypeColors: Record<SetType, string> = {
-      working: Colors.light.primary,
-      warmup: "#FFB347",
-      failure: "#FF5252",
-      dropset: "#9C27B0",
-    };
-    const setTypeLabels: Record<SetType, string> = {
-      working: "Working",
-      warmup: "Warm-up",
-      failure: "Failure",
-      dropset: "Drop",
-    };
-    const currentSetType = setData.setType || "working";
-    
+   
+   
+ 
     const completedWeight = parseFloat(setData.weight) || 0;
-    const targetWeight = progressionSuggestion?.suggestedWeight || (lastWeekData ? parseFloat(lastWeekData.weight) : 0);
-    const performanceStatus = completedWeight > targetWeight 
-      ? "exceeded" 
-      : completedWeight === targetWeight 
-      ? "hit" 
-      : completedWeight > 0 && targetWeight > 0
-      ? "below"
-      : null;
-    
+    const targetWeight =
+      progressionSuggestion?.suggestedWeight ||
+      (lastWeekData ? parseFloat(lastWeekData.weight) : 0);
+    const performanceStatus =
+      completedWeight > targetWeight
+        ? "exceeded"
+        : completedWeight === targetWeight
+        ? "hit"
+        : completedWeight > 0 && targetWeight > 0
+        ? "below"
+        : null;
+
     return (
-      <View style={[styles.setRowCompleted, { backgroundColor: theme.backgroundSecondary }]}>
-        <View style={[styles.setNumber, { backgroundColor: Colors.light.primary }]}>
+      <View
+        style={[
+          styles.setRowCompleted,
+          { backgroundColor: theme.backgroundSecondary },
+        ]}
+      >
+        <View
+          style={[styles.setNumber, { backgroundColor: Colors.light.primary }]}
+        >
           <Feather name="check" size={14} color="#FFFFFF" />
         </View>
         <View style={styles.completedSetInfo}>
@@ -802,28 +940,46 @@ function SetInput({
             {setData.weight}kg x {setData.reps} reps
           </ThemedText>
           {performanceStatus === "exceeded" ? (
-            <View style={[styles.performanceBadge, { backgroundColor: "#4CAF50" + "20" }]}>
+            <View
+              style={[
+                styles.performanceBadge,
+                { backgroundColor: "#4CAF50" + "20" },
+              ]}
+            >
               <Feather name="trending-up" size={10} color="#4CAF50" />
-              <ThemedText style={[styles.performanceBadgeText, { color: "#4CAF50" }]}>
+              <ThemedText
+                style={[
+                  styles.performanceBadgeText,
+                  { color: "#4CAF50" },
+                ]}
+              >
                 +{(completedWeight - targetWeight).toFixed(1)}kg
               </ThemedText>
             </View>
           ) : performanceStatus === "hit" && targetWeight > 0 ? (
-            <View style={[styles.performanceBadge, { backgroundColor: Colors.light.primary + "20" }]}>
-              <Feather name="check" size={10} color={Colors.light.primary} />
-              <ThemedText style={[styles.performanceBadgeText, { color: Colors.light.primary }]}>
+            <View
+              style={[
+                styles.performanceBadge,
+                { backgroundColor: Colors.light.primary + "20" },
+              ]}
+            >
+              <Feather
+                name="check"
+                size={10}
+                color={Colors.light.primary}
+              />
+              <ThemedText
+                style={[
+                  styles.performanceBadgeText,
+                  { color: Colors.light.primary },
+                ]}
+              >
                 Target hit
               </ThemedText>
             </View>
           ) : null}
         </View>
-        {currentSetType !== "working" ? (
-          <View style={[styles.setTypeBadge, { backgroundColor: setTypeColors[currentSetType] + "20" }]}>
-            <ThemedText style={[styles.setTypeBadgeText, { color: setTypeColors[currentSetType] }]}>
-              {setTypeLabels[currentSetType]}
-            </ThemedText>
-          </View>
-        ) : null}
+        
         {setData.rating ? (
           <View
             style={[
@@ -839,17 +995,34 @@ function SetInput({
   return (
     <Animated.View
       entering={FadeInDown.duration(300)}
-      style={[styles.activeSetContainer, { backgroundColor: theme.backgroundDefault }]}
+      style={[
+        styles.activeSetContainer,
+        { backgroundColor: theme.backgroundDefault },
+      ]}
     >
       <View style={styles.activeSetHeader}>
-        <View style={[styles.setNumberLarge, { backgroundColor: Colors.light.primary }]}>
-          <ThemedText style={styles.setNumberLargeText}>{setIndex + 1}</ThemedText>
+        <View
+          style={[
+            styles.setNumberLarge,
+            { backgroundColor: Colors.light.primary },
+          ]}
+        >
+          <ThemedText style={styles.setNumberLargeText}>
+            {setIndex + 1}
+          </ThemedText>
         </View>
         <View style={styles.activeSetInfo}>
-          <ThemedText style={styles.activeSetTitle}>Set {setIndex + 1}</ThemedText>
+          <ThemedText style={styles.activeSetTitle}>
+            Set {setIndex + 1}
+          </ThemedText>
           {lastWeekData ? (
             <View style={styles.lastWeekBadge}>
-              <ThemedText style={[styles.lastWeekLabel, { color: theme.textSecondary }]}>
+              <ThemedText
+                style={[
+                  styles.lastWeekLabel,
+                  { color: theme.textSecondary },
+                ]}
+              >
                 Last session: {lastWeekData.weight}kg x {lastWeekData.reps}
               </ThemedText>
               {lastWeekData.rating ? (
@@ -866,32 +1039,62 @@ function SetInput({
       </View>
 
       {progressionSuggestion ? (
-        <View style={[styles.targetCard, { backgroundColor: Colors.light.primary + "10", borderColor: Colors.light.primary + "30" }]}>
+        <View
+          style={[
+            styles.targetCard,
+            {
+              backgroundColor: Colors.light.primary + "10",
+              borderColor: Colors.light.primary + "30",
+            },
+          ]}
+        >
           <View style={styles.targetHeader}>
             <View style={styles.targetIconContainer}>
-              <Feather name="target" size={16} color={Colors.light.primary} />
+              <Feather
+                name="target"
+                size={16}
+                color={Colors.light.primary}
+              />
             </View>
-            <ThemedText style={[styles.targetTitle, { color: Colors.light.primary }]}>
-              Today's Target
+            <ThemedText
+              style={[
+                styles.targetTitle,
+                { color: Colors.light.primary },
+              ]}
+            >
+              Today&apos;s Target
             </ThemedText>
           </View>
           <View style={styles.targetContent}>
             <ThemedText style={styles.targetWeight}>
               {progressionSuggestion.suggestedWeight}kg
             </ThemedText>
-            <ThemedText style={[styles.targetReps, { color: theme.textSecondary }]}>
+            <ThemedText
+              style={[styles.targetReps, { color: theme.textSecondary }]}
+            >
               x {lastWeekData?.reps || "8-10"}
             </ThemedText>
           </View>
           <View style={styles.targetReason}>
-            <Feather 
-              name={lastWeekData?.rating === "green" ? "trending-up" : lastWeekData?.rating === "red" ? "trending-down" : "minus"} 
-              size={12} 
-              color={theme.textSecondary} 
+            <Feather
+              name={
+                lastWeekData?.rating === "green"
+                  ? "trending-up"
+                  : lastWeekData?.rating === "red"
+                  ? "trending-down"
+                  : "minus"
+              }
+              size={12}
+              color={theme.textSecondary}
             />
-            <ThemedText style={[styles.targetReasonText, { color: theme.textSecondary }]}>
-              {lastWeekData?.rating === "green" 
-                ? "Last set felt easy - time to progress!" 
+            <ThemedText
+              style={[
+                styles.targetReasonText,
+                { color: theme.textSecondary },
+              ]}
+            >
+              {lastWeekData?.rating === "green"
+                ? "Last set felt easy - time to progress!"
                 : lastWeekData?.rating === "red"
                 ? "Last session was tough - lighter today"
                 : "Maintain weight - build consistency"}
@@ -899,16 +1102,37 @@ function SetInput({
           </View>
         </View>
       ) : !lastWeekData ? (
-        <View style={[styles.targetCard, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+        <View
+          style={[
+            styles.targetCard,
+            {
+              backgroundColor: theme.backgroundSecondary,
+              borderColor: theme.border,
+            },
+          ]}
+        >
           <View style={styles.targetHeader}>
-            <View style={[styles.targetIconContainer, { backgroundColor: theme.border }]}>
-              <Feather name="plus" size={16} color={theme.textSecondary} />
+            <View
+              style={[
+                styles.targetIconContainer,
+                { backgroundColor: theme.border },
+              ]}
+            >
+              <Feather
+                name="plus"
+                size={16}
+                color={theme.textSecondary}
+              />
             </View>
-            <ThemedText style={[styles.targetTitle, { color: theme.text }]}>
+            <ThemedText
+              style={[styles.targetTitle, { color: theme.text }]}
+            >
               First Time
             </ThemedText>
           </View>
-          <ThemedText style={[styles.firstTimeHint, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[styles.firstTimeHint, { color: theme.textSecondary }]}
+          >
             Start with a weight you can lift for 8-10 reps with good form
           </ThemedText>
         </View>
@@ -920,57 +1144,23 @@ function SetInput({
         onClose={() => setShowPlateCalc(false)}
       />
 
-      <View style={styles.setTypeRow}>
-        {(["working", "warmup", "failure", "dropset"] as SetType[]).map((type) => {
-          const isSelected = (setData.setType || "working") === type;
-          const typeConfig = {
-            working: { label: "Working", icon: "target" as const, color: Colors.light.primary },
-            warmup: { label: "Warm-up", icon: "sun" as const, color: "#FFB347" },
-            failure: { label: "Failure", icon: "zap" as const, color: "#FF5252" },
-            dropset: { label: "Drop", icon: "chevrons-down" as const, color: "#9C27B0" },
-          };
-          const config = typeConfig[type];
-          return (
-            <Pressable
-              key={type}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onUpdate({ setType: type });
-              }}
-              style={[
-                styles.setTypeButton,
-                {
-                  backgroundColor: isSelected ? config.color + "20" : theme.backgroundSecondary,
-                  borderColor: isSelected ? config.color : "transparent",
-                  borderWidth: isSelected ? 1.5 : 0,
-                },
-              ]}
-            >
-              <Feather name={config.icon} size={14} color={isSelected ? config.color : theme.textSecondary} />
-              <ThemedText
-                style={[
-                  styles.setTypeText,
-                  { color: isSelected ? config.color : theme.textSecondary },
-                ]}
-              >
-                {config.label}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
+     
 
       <View style={styles.sliderSection}>
         <View style={styles.sliderWrapper}>
           <View style={styles.sliderLabelRow}>
-            <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+            <ThemedText
+              style={[styles.inputLabel, { color: theme.textSecondary }]}
+            >
               Weight
             </ThemedText>
             <View style={styles.sliderValueContainer}>
               <ThemedText style={styles.sliderValue}>
                 {parseFloat(setData.weight) || 0}
               </ThemedText>
-              <ThemedText style={[styles.sliderUnit, { color: theme.textSecondary }]}>
+              <ThemedText
+                style={[styles.sliderUnit, { color: theme.textSecondary }]}
+              >
                 kg
               </ThemedText>
               <Pressable
@@ -978,10 +1168,17 @@ function SetInput({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowPlateCalc(true);
                 }}
-                style={[styles.plateButton, { backgroundColor: Colors.light.primary + "15" }]}
+                style={[
+                  styles.plateButton,
+                  { backgroundColor: Colors.light.primary + "15" },
+                ]}
                 testID={`button-plate-calc-${setIndex}`}
               >
-                <Feather name="disc" size={12} color={Colors.light.primary} />
+                <Feather
+                  name="disc"
+                  size={12}
+                  color={Colors.light.primary}
+                />
               </Pressable>
             </View>
           </View>
@@ -1007,7 +1204,9 @@ function SetInput({
               label="-2.5"
               onPress={() => {
                 const current = parseFloat(setData.weight) || 0;
-                onUpdate({ weight: Math.max(0, current - 2.5).toString() });
+                onUpdate({
+                  weight: Math.max(0, current - 2.5).toString(),
+                });
               }}
               type="decrease"
             />
@@ -1032,7 +1231,9 @@ function SetInput({
 
         <View style={styles.sliderWrapper}>
           <View style={styles.sliderLabelRow}>
-            <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+            <ThemedText
+              style={[styles.inputLabel, { color: theme.textSecondary }]}
+            >
               Reps
             </ThemedText>
             <ThemedText style={styles.sliderValue}>
@@ -1061,7 +1262,9 @@ function SetInput({
               label="-1"
               onPress={() => {
                 const current = parseInt(setData.reps) || 0;
-                onUpdate({ reps: Math.max(0, current - 1).toString() });
+                onUpdate({
+                  reps: Math.max(0, current - 1).toString(),
+                });
               }}
               type="decrease"
             />
@@ -1089,7 +1292,9 @@ function SetInput({
         <ThemedText style={[styles.rirQuestion, { color: theme.text }]}>
           Reps in Reserve (RIR)
         </ThemedText>
-        <ThemedText style={[styles.rirHelpText, { color: theme.textSecondary }]}>
+        <ThemedText
+          style={[styles.rirHelpText, { color: theme.textSecondary }]}
+        >
           How many more reps could you have done?
         </ThemedText>
         <View style={styles.rirButtonsRow}>
@@ -1097,14 +1302,18 @@ function SetInput({
             <RIRButton
               key={rir}
               rir={rir}
-              selected={setData.rating === RIR_TO_RATING[rir] && selectedRIR === rir}
+              selected={
+                setData.rating === RIR_TO_RATING[rir] && selectedRIR === rir
+              }
               onPress={() => handleRIR(rir)}
               disabled={!canRate}
             />
           ))}
         </View>
         {!canRate ? (
-          <ThemedText style={[styles.rirHint, { color: theme.textSecondary }]}>
+          <ThemedText
+            style={[styles.rirHint, { color: theme.textSecondary }]}
+          >
             Enter weight and reps first
           </ThemedText>
         ) : null}
@@ -1116,13 +1325,16 @@ function SetInput({
 export default function ActiveWorkoutScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<ActiveWorkoutRouteProp>();
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
-  const [lastWeekProgress, setLastWeekProgress] = useState<ExerciseProgress[]>([]);
+  const [lastWeekProgress, setLastWeekProgress] = useState<ExerciseProgress[]>(
+    []
+  );
   const [allHistory, setAllHistory] = useState<WorkoutSession[]>([]);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -1151,13 +1363,15 @@ export default function ActiveWorkoutScreen() {
   }, [startTime]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (showRestTimer && restTimeLeft > 0) {
       interval = setInterval(() => {
         setRestTimeLeft((prev) => {
           if (prev <= 1) {
             setShowRestTimer(false);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success
+            );
             return DEFAULT_REST_TIME;
           }
           return prev - 1;
@@ -1203,14 +1417,20 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  const checkForPR = (exerciseName: string, weight: number, reps: number) => {
+  const checkForPR = (
+    exerciseName: string,
+    weight: number,
+    reps: number
+  ) => {
     const exerciseHistory = allHistory.flatMap((session) =>
       (session.exerciseProgress || []).flatMap((ep, idx) =>
         session.exercises[idx]?.name === exerciseName
-          ? ep.sets.filter((s) => s.completed).map((s) => ({
-              weight: parseFloat(s.weight) || 0,
-              reps: parseInt(s.reps) || 0,
-            }))
+          ? ep.sets
+              .filter((s) => s.completed)
+              .map((s) => ({
+                weight: parseFloat(s.weight) || 0,
+                reps: parseInt(s.reps) || 0,
+              }))
           : []
       )
     );
@@ -1225,7 +1445,9 @@ export default function ActiveWorkoutScreen() {
       setCurrentPR({ exerciseName, weight, reps });
       setShowPRCelebration(true);
       setPrsThisSession((prev) => prev + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      );
     }
   };
 
@@ -1260,7 +1482,9 @@ export default function ActiveWorkoutScreen() {
       setRestTimeLeft(DEFAULT_REST_TIME);
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < day.exercises.length - 1) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      );
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setCurrentSetIndex(0);
     }
@@ -1293,7 +1517,10 @@ export default function ActiveWorkoutScreen() {
   const handleFinishWorkout = async () => {
     if (!plan) return;
 
-    const totalSets = progress.reduce((acc, ex) => acc + ex.sets.length, 0);
+    const totalSets = progress.reduce(
+      (acc, ex) => acc + ex.sets.length,
+      0
+    );
     const completedSets = progress.reduce(
       (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
       0
@@ -1329,7 +1556,9 @@ export default function ActiveWorkoutScreen() {
     };
 
     await addWorkoutSession(session);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    );
     setShowSummary(true);
   };
 
@@ -1361,15 +1590,22 @@ export default function ActiveWorkoutScreen() {
   const exerciseProgress = progress[currentExerciseIndex];
   const lastWeekExercise = lastWeekProgress[currentExerciseIndex];
 
-  const totalSets = progress.reduce((acc, ex) => acc + ex.sets.length, 0);
+  const totalSets = progress.reduce(
+    (acc, ex) => acc + ex.sets.length,
+    0
+  );
   const completedSets = progress.reduce(
     (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
     0
   );
-  const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+  const progressPercent =
+    totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
-  const isLastExercise = currentExerciseIndex === day.exercises.length - 1;
-  const exerciseComplete = exerciseProgress.sets.every((s) => s.completed);
+  const isLastExercise =
+    currentExerciseIndex === day.exercises.length - 1;
+  const exerciseComplete = exerciseProgress.sets.every(
+    (s) => s.completed
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -1392,10 +1628,18 @@ export default function ActiveWorkoutScreen() {
             if (!prev) return prev;
             const updated = { ...prev };
             updated.days = [...updated.days];
-            updated.days[route.params.dayIndex] = { ...updated.days[route.params.dayIndex] };
-            updated.days[route.params.dayIndex].exercises = [...updated.days[route.params.dayIndex].exercises];
-            updated.days[route.params.dayIndex].exercises[currentExerciseIndex] = {
-              ...updated.days[route.params.dayIndex].exercises[currentExerciseIndex],
+            updated.days[route.params.dayIndex] = {
+              ...updated.days[route.params.dayIndex],
+            };
+            updated.days[route.params.dayIndex].exercises = [
+              ...updated.days[route.params.dayIndex].exercises,
+            ];
+            updated.days[route.params.dayIndex].exercises[
+              currentExerciseIndex
+            ] = {
+              ...updated.days[route.params.dayIndex].exercises[
+                currentExerciseIndex
+              ],
               name: newExerciseName,
             };
             return updated;
@@ -1424,7 +1668,9 @@ export default function ActiveWorkoutScreen() {
         completedSets={completedSets}
         totalVolume={calculateTotalVolume()}
         prs={prsThisSession}
-        workoutName={plan?.days[route.params.dayIndex]?.dayName || "Workout"}
+        workoutName={
+          plan?.days[route.params.dayIndex]?.dayName || "Workout"
+        }
         onClose={() => navigation.goBack()}
       />
 
@@ -1447,10 +1693,21 @@ export default function ActiveWorkoutScreen() {
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
             <View style={styles.headerInfo}>
-              <ThemedText style={styles.dayTitle}>{day.dayName}</ThemedText>
+              <ThemedText style={styles.dayTitle}>
+                {day.dayName}
+              </ThemedText>
               <View style={styles.timerBadge}>
-                <Feather name="clock" size={12} color={Colors.light.primary} />
-                <ThemedText style={[styles.timerBadgeText, { color: Colors.light.primary }]}>
+                <Feather
+                  name="clock"
+                  size={12}
+                  color={Colors.light.primary}
+                />
+                <ThemedText
+                  style={[
+                    styles.timerBadgeText,
+                    { color: Colors.light.primary },
+                  ]}
+                >
                   {formatTime(elapsedTime)}
                 </ThemedText>
               </View>
@@ -1459,20 +1716,36 @@ export default function ActiveWorkoutScreen() {
           </View>
 
           <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBarBg, { backgroundColor: theme.border }]}>
+            <View
+              style={[
+                styles.progressBarBg,
+                { backgroundColor: theme.border },
+              ]}
+            >
               <Animated.View
                 entering={FadeIn.duration(300)}
-                style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progressPercent}%` },
+                ]}
               >
                 <LinearGradient
-                  colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+                  colors={[
+                    Colors.light.primary,
+                    Colors.light.primaryGradientEnd,
+                  ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.progressGradient}
                 />
               </Animated.View>
             </View>
-            <ThemedText style={[styles.progressLabel, { color: theme.textSecondary }]}>
+            <ThemedText
+              style={[
+                styles.progressLabel,
+                { color: theme.textSecondary },
+              ]}
+            >
               {completedSets}/{totalSets}
             </ThemedText>
           </View>
@@ -1492,8 +1765,14 @@ export default function ActiveWorkoutScreen() {
           </Pressable>
 
           <View style={styles.exerciseIndicator}>
-            <ThemedText style={[styles.exerciseCounter, { color: theme.textSecondary }]}>
-              Exercise {currentExerciseIndex + 1} of {day.exercises.length}
+            <ThemedText
+              style={[
+                styles.exerciseCounter,
+                { color: theme.textSecondary },
+              ]}
+            >
+              Exercise {currentExerciseIndex + 1} of{" "}
+              {day.exercises.length}
             </ThemedText>
           </View>
 
@@ -1524,40 +1803,85 @@ export default function ActiveWorkoutScreen() {
             <View style={styles.exerciseHeader}>
               {getExerciseImageUrl(currentExercise.name) ? (
                 <Image
-                  source={{ uri: getExerciseImageUrl(currentExercise.name)! }}
+                  source={{
+                    uri: getExerciseImageUrl(currentExercise.name)!,
+                  }}
                   style={styles.exerciseImage}
                   resizeMode="cover"
                 />
               ) : (
-                <View style={[styles.exerciseImagePlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
-                  <Feather name="image" size={32} color={theme.textSecondary} />
+                <View
+                  style={[
+                    styles.exerciseImagePlaceholder,
+                    { backgroundColor: theme.backgroundSecondary },
+                  ]}
+                >
+                  <Feather
+                    name="image"
+                    size={32}
+                    color={theme.textSecondary}
+                  />
                 </View>
               )}
               <View style={styles.exerciseNameRow}>
-                <ThemedText style={[styles.exerciseName, { flex: 1 }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+                <ThemedText
+                  style={[styles.exerciseName, { flex: 1 }]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {currentExercise.name}
                 </ThemedText>
                 <Pressable
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Light
+                    );
                     setShowSwapModal(true);
                   }}
-                  style={[styles.swapButton, { backgroundColor: theme.backgroundSecondary }]}
+                  style={[
+                    styles.swapButton,
+                    { backgroundColor: theme.backgroundSecondary },
+                  ]}
                   testID="button-swap-exercise"
                 >
-                  <Feather name="refresh-cw" size={16} color={theme.textSecondary} />
-                  <ThemedText style={[styles.swapButtonText, { color: theme.textSecondary }]}>
+                  <Feather
+                    name="refresh-cw"
+                    size={16}
+                    color={theme.textSecondary}
+                  />
+                  <ThemedText
+                    style={[
+                      styles.swapButtonText,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
                     Swap
                   </ThemedText>
                 </Pressable>
               </View>
               <View style={styles.exerciseMeta}>
-                <View style={[styles.metaBadge, { backgroundColor: Colors.light.primary + "15" }]}>
-                  <ThemedText style={[styles.metaText, { color: Colors.light.primary }]}>
+                <View
+                  style={[
+                    styles.metaBadge,
+                    { backgroundColor: Colors.light.primary + "15" },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.metaText,
+                      { color: Colors.light.primary },
+                    ]}
+                  >
                     {currentExercise.muscleGroup}
                   </ThemedText>
                 </View>
-                <ThemedText style={[styles.targetText, { color: theme.textSecondary }]}>
+                <ThemedText
+                  style={[
+                    styles.targetText,
+                    { color: theme.textSecondary },
+                  ]}
+                >
                   {currentExercise.sets} sets x {currentExercise.reps}
                 </ThemedText>
               </View>
@@ -1592,21 +1916,32 @@ export default function ActiveWorkoutScreen() {
             <AnimatedPressable
               onPress={handleNextExercise}
               onPressIn={() => {
-                buttonScale.value = withSpring(0.96, { damping: 15, stiffness: 150 });
+                buttonScale.value = withSpring(0.96, {
+                  damping: 15,
+                  stiffness: 150,
+                });
               }}
               onPressOut={() => {
-                buttonScale.value = withSpring(1, { damping: 15, stiffness: 150 });
+                buttonScale.value = withSpring(1, {
+                  damping: 15,
+                  stiffness: 150,
+                });
               }}
               style={animatedButtonStyle}
               testID="button-next"
             >
               <LinearGradient
-                colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+                colors={[
+                  Colors.light.primary,
+                  Colors.light.primaryGradientEnd,
+                ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.nextButton}
               >
-                <ThemedText style={styles.nextButtonText}>Next Exercise</ThemedText>
+                <ThemedText style={styles.nextButtonText}>
+                  Next Exercise
+                </ThemedText>
                 <Feather name="arrow-right" size={20} color="#FFFFFF" />
               </LinearGradient>
             </AnimatedPressable>
@@ -1614,22 +1949,33 @@ export default function ActiveWorkoutScreen() {
             <AnimatedPressable
               onPress={handleFinishWorkout}
               onPressIn={() => {
-                buttonScale.value = withSpring(0.96, { damping: 15, stiffness: 150 });
+                buttonScale.value = withSpring(0.96, {
+                  damping: 15,
+                  stiffness: 150,
+                });
               }}
               onPressOut={() => {
-                buttonScale.value = withSpring(1, { damping: 15, stiffness: 150 });
+                buttonScale.value = withSpring(1, {
+                  damping: 15,
+                  stiffness: 150,
+                });
               }}
               style={animatedButtonStyle}
               testID="button-finish"
             >
               <LinearGradient
-                colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
+                colors={[
+                  Colors.light.primary,
+                  Colors.light.primaryGradientEnd,
+                ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.finishButton}
               >
                 <Feather name="check" size={20} color="#FFFFFF" />
-                <ThemedText style={styles.finishButtonText}>Finish Workout</ThemedText>
+                <ThemedText style={styles.finishButtonText}>
+                  Finish Workout
+                </ThemedText>
               </LinearGradient>
             </AnimatedPressable>
           ) : (
@@ -1638,7 +1984,12 @@ export default function ActiveWorkoutScreen() {
               style={[styles.skipButton, { borderColor: theme.border }]}
               testID="button-skip-finish"
             >
-              <ThemedText style={[styles.skipButtonText, { color: theme.textSecondary }]}>
+              <ThemedText
+                style={[
+                  styles.skipButtonText,
+                  { color: theme.textSecondary },
+                ]}
+              >
                 Finish Early
               </ThemedText>
             </Pressable>
@@ -2481,35 +2832,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
   },
-  setTypeRow: {
-    flexDirection: "row",
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  setTypeButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-    gap: 4,
-  },
-  setTypeText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  setTypeBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.xs,
-    marginLeft: Spacing.sm,
-  },
-  setTypeBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-  },
+ 
   exerciseNameRow: {
     flexDirection: "row",
     alignItems: "flex-start",

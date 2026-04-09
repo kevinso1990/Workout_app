@@ -63,7 +63,7 @@ export default function GoalsScreen() {
   const handleContinue = () => {
     if (state.fitnessGoals.length > 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      navigation.navigate("FocusMuscles");
+      navigation.navigate("Frequency");
     }
   };
 

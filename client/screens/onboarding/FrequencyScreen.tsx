@@ -114,7 +114,7 @@ export default function FrequencyScreen() {
   };
 
   const handleNext = () => {
-    navigation.navigate("CardioSports");
+    navigation.navigate("SplitPreference");
   };
 
   return (
