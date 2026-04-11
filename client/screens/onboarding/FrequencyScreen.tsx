@@ -138,7 +138,7 @@ export default function FrequencyScreen() {
             style={styles.questionContainer}
           >
             <ThemedText style={styles.question}>
-              How many days per week{"\n"}do you want to gym?
+              How many days per week{"\n"}do you want to train?
             </ThemedText>
             <ThemedText
               style={[styles.hint, { color: theme.textSecondary }]}

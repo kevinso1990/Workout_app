@@ -17,7 +17,12 @@ import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator"
 
 type NavigationProp = NativeStackNavigationProp<OnboardingStackParamList, "Goals">;
 
-const GOAL_OPTIONS: { id: FitnessGoal; title: string; description: string; icon: keyof typeof Feather.glyphMap }[] = [
+const GOAL_OPTIONS: {
+  id: FitnessGoal;
+  title: string;
+  description: string;
+  icon: keyof typeof Feather.glyphMap;
+}[] = [
   {
     id: "build_muscle",
     title: "Build Muscle",
@@ -44,6 +49,26 @@ const GOAL_OPTIONS: { id: FitnessGoal; title: string; description: string; icon:
   },
 ];
 
+function ProgressBar({ step, total }: { step: number; total: number }) {
+  const { theme } = useTheme();
+  return (
+    <View style={styles.progressContainer}>
+      {Array.from({ length: total }).map((_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.progressDot,
+            {
+              backgroundColor:
+                index < step ? Colors.light.primary : theme.border,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 export default function GoalsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -69,6 +94,8 @@ export default function GoalsScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top + Spacing.xl }]}>
+      <ProgressBar step={2} total={3} />
+
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
         <ThemedText style={styles.title}>What are your goals?</ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
@@ -95,7 +122,11 @@ export default function GoalsScreen() {
                 <View
                   style={[
                     styles.iconContainer,
-                    { backgroundColor: isSelected ? Colors.light.primary + "20" : theme.backgroundSecondary },
+                    {
+                      backgroundColor: isSelected
+                        ? Colors.light.primary + "20"
+                        : theme.backgroundSecondary,
+                    },
                   ]}
                 >
                   <Feather
@@ -106,7 +137,9 @@ export default function GoalsScreen() {
                 </View>
                 <View style={styles.optionContent}>
                   <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
-                  <ThemedText style={[styles.optionDescription, { color: theme.textSecondary }]}>
+                  <ThemedText
+                    style={[styles.optionDescription, { color: theme.textSecondary }]}
+                  >
                     {option.description}
                   </ThemedText>
                 </View>
@@ -119,7 +152,9 @@ export default function GoalsScreen() {
                     },
                   ]}
                 >
-                  {isSelected ? <Feather name="check" size={14} color="#FFFFFF" /> : null}
+                  {isSelected ? (
+                    <Feather name="check" size={14} color="#FFFFFF" />
+                  ) : null}
                 </View>
               </Pressable>
             </Animated.View>
@@ -150,6 +185,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
+  },
+  progressContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  progressDot: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
   },
   header: {
     marginBottom: Spacing.xl,

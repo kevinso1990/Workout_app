@@ -17,24 +17,29 @@ import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator"
 
 type NavigationProp = NativeStackNavigationProp<OnboardingStackParamList, "Equipment">;
 
-const EQUIPMENT_OPTIONS: { id: Equipment; title: string; description: string; icon: keyof typeof Feather.glyphMap }[] = [
+const EQUIPMENT_OPTIONS: {
+  id: Equipment;
+  title: string;
+  description: string;
+  icon: keyof typeof Feather.glyphMap;
+}[] = [
   {
     id: "full_gym",
     title: "Full Gym Access",
     description: "Barbells, dumbbells, cables, machines",
-    icon: "home",
+    icon: "zap",
   },
   {
     id: "dumbbells_only",
     title: "Dumbbells Only",
     description: "Home setup with adjustable dumbbells",
-    icon: "package",
+    icon: "disc",
   },
   {
     id: "home_minimal",
     title: "Minimal Equipment",
     description: "Pull-up bar, resistance bands",
-    icon: "box",
+    icon: "sliders",
   },
   {
     id: "bodyweight",
@@ -43,6 +48,26 @@ const EQUIPMENT_OPTIONS: { id: Equipment; title: string; description: string; ic
     icon: "user",
   },
 ];
+
+function ProgressBar({ step, total }: { step: number; total: number }) {
+  const { theme } = useTheme();
+  return (
+    <View style={styles.progressContainer}>
+      {Array.from({ length: total }).map((_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.progressDot,
+            {
+              backgroundColor:
+                index < step ? Colors.light.primary : theme.border,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
 
 export default function EquipmentScreen() {
   const insets = useSafeAreaInsets();
@@ -64,10 +89,12 @@ export default function EquipmentScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top + Spacing.xl }]}>
+      <ProgressBar step={1} total={3} />
+
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
         <ThemedText style={styles.title}>What equipment do you have?</ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-          We'll suggest exercises that match your setup
+          Tell us about your training environment
         </ThemedText>
       </Animated.View>
 
@@ -90,7 +117,11 @@ export default function EquipmentScreen() {
                 <View
                   style={[
                     styles.iconContainer,
-                    { backgroundColor: isSelected ? Colors.light.primary + "20" : theme.backgroundSecondary },
+                    {
+                      backgroundColor: isSelected
+                        ? Colors.light.primary + "20"
+                        : theme.backgroundSecondary,
+                    },
                   ]}
                 >
                   <Feather
@@ -101,7 +132,9 @@ export default function EquipmentScreen() {
                 </View>
                 <View style={styles.optionContent}>
                   <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
-                  <ThemedText style={[styles.optionDescription, { color: theme.textSecondary }]}>
+                  <ThemedText
+                    style={[styles.optionDescription, { color: theme.textSecondary }]}
+                  >
                     {option.description}
                   </ThemedText>
                 </View>
@@ -137,6 +170,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
+  },
+  progressContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  progressDot: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
   },
   header: {
     marginBottom: Spacing.xl,
