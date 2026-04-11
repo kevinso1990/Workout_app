@@ -397,19 +397,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const getSplitDescription = () => {
-    if (!preferences) return "Not set";
-    return preferences.splitPreference === "recommended"
-      ? "Recommended"
-      : "Custom";
-  };
-
-  const getExerciseDescription = () => {
-    if (!preferences) return "Not set";
-    return preferences.exercisePreference === "default"
-      ? "Default exercises"
-      : "Custom selection";
-  };
 
   const handleSaveMeasurement = async (measurement: BodyMeasurement) => {
     await addBodyMeasurement(measurement);
@@ -489,18 +476,6 @@ export default function ProfileScreen() {
               : "Not set"
           }
           index={0}
-        />
-        <SettingsItem
-          icon="layout"
-          label="Split Type"
-          value={getSplitDescription()}
-          index={1}
-        />
-        <SettingsItem
-          icon="list"
-          label="Exercise Selection"
-          value={getExerciseDescription()}
-          index={2}
         />
       </View>
 

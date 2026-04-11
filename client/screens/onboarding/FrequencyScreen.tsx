@@ -114,7 +114,7 @@ export default function FrequencyScreen() {
   };
 
   const handleNext = () => {
-    navigation.navigate("SplitPreference");
+    navigation.navigate("SplitSelection");
   };
 
   return (
@@ -130,7 +130,7 @@ export default function FrequencyScreen() {
       >
         <View>
           <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-            <ProgressBar step={1} total={4} />
+            <ProgressBar step={3} total={3} />
           </Animated.View>
 
           <Animated.View

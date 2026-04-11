@@ -222,10 +222,7 @@ export default function SplitSelectionScreen() {
 
     setIsLoading(true);
     try {
-      const preferences = getPreferences();
-      if (preferences) {
-        await setUserPreferences(preferences);
-      }
+      await setUserPreferences(getPreferences());
 
       const daysPerWeek = state.workoutDaysPerWeek;
       const splitDays: string[] = [];
