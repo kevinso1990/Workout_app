@@ -1797,49 +1797,7 @@ export default function ActiveWorkoutScreen() {
         pr={currentPR}
         onClose={() => setShowPRCelebration(false)}
       />
-      <ExerciseSwapModal
-        visible={showSwapModal}
-        currentExercise={currentExercise}
-        onClose={() => setShowSwapModal(false)}
-        onSwap={(newExerciseName) => {
-          // Reset image so the new exercise image loads fresh
-          setImageError(false);
-          setPlan((prev) => {
-            if (!prev) return prev;
-            const updated = { ...prev };
-            updated.days = [...updated.days];
-            updated.days[route.params.dayIndex] = {
-              ...updated.days[route.params.dayIndex],
-            };
-            updated.days[route.params.dayIndex].exercises = [
-              ...updated.days[route.params.dayIndex].exercises,
-            ];
-            const oldEx = updated.days[route.params.dayIndex].exercises[currentExerciseIndex];
-            updated.days[route.params.dayIndex].exercises[currentExerciseIndex] = {
-              ...oldEx,
-              name: newExerciseName,
-              id: newExerciseName.toLowerCase().replace(/\s+/g, '-'),
-              // Preserve the original muscleGroup so subsequent swaps still resolve correctly
-            };
-            return updated;
-          });
-          setProgress((prev) => {
-            const updated = [...prev];
-            updated[currentExerciseIndex] = {
-              exerciseId: newExerciseName.toLowerCase().replace(/\s+/g, '-'),
-              sets: updated[currentExerciseIndex].sets.map((s) => ({
-                ...s,
-                weight: "",
-                reps: "",
-                rating: null,
-                completed: false,
-              })),
-            };
-            return updated;
-          });
-          setCurrentSetIndex(0);
-        }}
-      />
+      {/* ExerciseSwapModal hidden for MVP — not release-ready on native */}
       <WorkoutSummary
         visible={showSummary}
         duration={elapsedTime}
@@ -2007,40 +1965,13 @@ export default function ActiveWorkoutScreen() {
               )}
               <View style={styles.exerciseNameRow}>
                 <ThemedText
-                  style={[styles.exerciseName, { flex: 1 }]}
+                  style={styles.exerciseName}
                   numberOfLines={2}
                   adjustsFontSizeToFit
                   minimumFontScale={0.7}
                 >
                   {currentExercise.name}
                 </ThemedText>
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(
-                      Haptics.ImpactFeedbackStyle.Light
-                    );
-                    setShowSwapModal(true);
-                  }}
-                  style={[
-                    styles.swapButton,
-                    { backgroundColor: theme.backgroundSecondary },
-                  ]}
-                  testID="button-swap-exercise"
-                >
-                  <Feather
-                    name="refresh-cw"
-                    size={16}
-                    color={theme.textSecondary}
-                  />
-                  <ThemedText
-                    style={[
-                      styles.swapButtonText,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Swap
-                  </ThemedText>
-                </Pressable>
               </View>
               <View style={styles.exerciseMeta}>
                 <View
