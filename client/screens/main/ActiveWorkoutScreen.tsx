@@ -45,6 +45,10 @@ import {
   WorkoutSession,
   calculateProgressionWeight,
 } from "@/lib/storage";
+import {
+  getExerciseImageUrl,
+  getMuscleGroupMeta,
+} from "@/lib/exerciseImages";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -75,50 +79,6 @@ const RIR_DESCRIPTIONS: Record<RIRValue, string> = {
   3: "Comfortable",
 };
 
-function getExerciseImageUrl(exerciseName: string): string | null {
-  const nameToId: Record<string, string> = {
-    "Bench Press": "Barbell_Bench_Press_-_Medium_Grip",
-    "Incline Dumbbell Press": "Incline_Dumbbell_Press",
-    "Cable Flyes": "Cable_Crossover",
-    "Dumbbell Flyes": "Dumbbell_Flyes",
-    "Barbell Squat": "Barbell_Full_Squat",
-    "Leg Press": "Leg_Press",
-    "Leg Curl": "Lying_Leg_Curls",
-    "Leg Extension": "Leg_Extensions",
-    "Romanian Deadlift": "Romanian_Deadlift_With_Dumbbells",
-    "Calf Raises": "Standing_Calf_Raises",
-    "Pull Ups": "Pullups",
-    "Lat Pulldown": "Wide-Grip_Lat_Pulldown",
-    "Barbell Row": "Bent_Over_Barbell_Row",
-    "Seated Cable Row": "Seated_Cable_Rows",
-    "Face Pulls": "Face_Pull",
-    "Overhead Press": "Standing_Military_Press",
-    "Lateral Raises": "Side_Lateral_Raise",
-    "Front Raises": "Front_Dumbbell_Raise",
-    "Rear Delt Flyes": "Seated_Bent-Over_Rear_Delt_Raise",
-    Shrugs: "Barbell_Shrug",
-    "Barbell Curl": "Barbell_Curl",
-    "Dumbbell Curl": "Dumbbell_Bicep_Curl",
-    "Hammer Curl": "Hammer_Curls",
-    "Preacher Curl": "Preacher_Curl",
-    "Tricep Pushdown": "Triceps_Pushdown",
-    "Skull Crushers": "EZ-Bar_Skullcrusher",
-    "Overhead Tricep Extension": "Dumbbell_One-Arm_Triceps_Extension",
-    Dips: "Dips_-_Triceps_Version",
-    Deadlift: "Barbell_Deadlift",
-    Plank: "Plank",
-    "Russian Twists": "Russian_Twist",
-    "Hanging Leg Raise": "Hanging_Leg_Raise",
-    "Cable Crunch": "Cable_Crunch",
-    "Hip Thrust": "Barbell_Hip_Thrust",
-    Lunges: "Dumbbell_Lunges",
-    "Bulgarian Split Squat": "Dumbbell_Single_Leg_Split_Squat",
-  };
-
-  const id = nameToId[exerciseName];
-  if (!id) return null;
-  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${id}/0.jpg`;
-}
 
 
 
@@ -1497,6 +1457,7 @@ export default function ActiveWorkoutScreen() {
   const [showSummary, setShowSummary] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   const buttonScale = useSharedValue(1);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -1519,6 +1480,7 @@ export default function ActiveWorkoutScreen() {
     "";
   useEffect(() => {
     setImageError(false);
+    setImageLoading(true);
   }, [currentExerciseIndex, currentExerciseName]);
 
   useEffect(() => {
@@ -1940,29 +1902,53 @@ export default function ActiveWorkoutScreen() {
             style={styles.exerciseContent}
           >
             <View style={styles.exerciseHeader}>
-              {getExerciseImageUrl(currentExercise.name) && !imageError ? (
-                <Image
-                  source={{
-                    uri: getExerciseImageUrl(currentExercise.name)!,
-                  }}
-                  style={styles.exerciseImage}
-                  resizeMode="cover"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.exerciseImagePlaceholder,
-                    { backgroundColor: theme.backgroundSecondary },
-                  ]}
-                >
-                  <Feather
-                    name="image"
-                    size={32}
-                    color={theme.textSecondary}
-                  />
-                </View>
-              )}
+              {(() => {
+                const imageUrl = getExerciseImageUrl(currentExercise.name);
+                const meta = getMuscleGroupMeta(currentExercise.muscleGroup);
+                if (imageUrl && !imageError) {
+                  return (
+                    <View style={styles.exerciseImageWrapper}>
+                      {imageLoading && (
+                        <LinearGradient
+                          colors={[meta.color + "18", meta.color + "30"]}
+                          style={styles.exerciseImageSkeleton}
+                        >
+                          <Feather
+                            name={meta.icon as any}
+                            size={32}
+                            color={meta.color + "80"}
+                          />
+                        </LinearGradient>
+                      )}
+                      <Image
+                        source={{ uri: imageUrl }}
+                        style={[
+                          styles.exerciseImage,
+                          imageLoading && { opacity: 0 },
+                        ]}
+                        resizeMode="cover"
+                        onLoadStart={() => setImageLoading(true)}
+                        onLoad={() => setImageLoading(false)}
+                        onError={() => {
+                          setImageError(true);
+                          setImageLoading(false);
+                        }}
+                      />
+                    </View>
+                  );
+                }
+                return (
+                  <LinearGradient
+                    colors={[meta.color + "18", meta.color + "35"]}
+                    style={styles.exerciseImagePlaceholder}
+                  >
+                    <Feather name={meta.icon as any} size={36} color={meta.color} />
+                    <ThemedText style={[styles.exerciseFallbackLabel, { color: meta.color }]}>
+                      {meta.label}
+                    </ThemedText>
+                  </LinearGradient>
+                );
+              })()}
               <View style={styles.exerciseNameRow}>
                 <ThemedText
                   style={styles.exerciseName}
@@ -2920,12 +2906,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  exerciseImage: {
+  exerciseImageWrapper: {
     width: "100%",
     height: 160,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
-    backgroundColor: "#F0F0F0",
+    overflow: "hidden",
+  },
+  exerciseImageSkeleton: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  exerciseImage: {
+    width: "100%",
+    height: 160,
   },
   exerciseImagePlaceholder: {
     width: "100%",
@@ -2934,6 +2933,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     alignItems: "center",
     justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  exerciseFallbackLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    letterSpacing: 0.5,
   },
   exerciseNameRow: {
     flexDirection: "row",
