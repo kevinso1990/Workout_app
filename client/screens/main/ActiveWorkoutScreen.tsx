@@ -698,6 +698,13 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Arnold Press",
     "Front Raises",
   ],
+  "Rear Delts": [
+    "Face Pulls",
+    "Rear Delt Flyes",
+    "Reverse Pec Deck",
+    "Band Pull-Aparts",
+    "Seated Rear Delt Raises",
+  ],
   Legs: [
     "Squat",
     "Leg Press",
@@ -707,6 +714,38 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Romanian Deadlift",
     "Bulgarian Split Squat",
   ],
+  Quads: [
+    "Barbell Squat",
+    "Leg Press",
+    "Lunges",
+    "Leg Extension",
+    "Hack Squat",
+    "Bulgarian Split Squat",
+    "Front Squat",
+  ],
+  Hamstrings: [
+    "Romanian Deadlift",
+    "Leg Curl",
+    "Stiff-Leg Deadlift",
+    "Good Mornings",
+    "Nordic Curl",
+    "Glute Ham Raise",
+  ],
+  Calves: [
+    "Standing Calf Raises",
+    "Seated Calf Raises",
+    "Leg Press Calf Raises",
+    "Donkey Calf Raises",
+    "Single-Leg Calf Raises",
+  ],
+  Glutes: [
+    "Hip Thrust",
+    "Romanian Deadlift",
+    "Bulgarian Split Squat",
+    "Glute Bridge",
+    "Cable Kickback",
+    "Sumo Deadlift",
+  ],
   Arms: [
     "Bicep Curls",
     "Tricep Pushdowns",
@@ -714,6 +753,24 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Skull Crushers",
     "Preacher Curls",
     "Cable Curls",
+  ],
+  Biceps: [
+    "Barbell Curl",
+    "Dumbbell Curl",
+    "Hammer Curls",
+    "Preacher Curl",
+    "Cable Curl",
+    "Concentration Curl",
+    "Incline Dumbbell Curl",
+  ],
+  Triceps: [
+    "Tricep Pushdown",
+    "Skull Crushers",
+    "Overhead Tricep Extension",
+    "Dips",
+    "Close-Grip Bench Press",
+    "Cable Overhead Extension",
+    "Diamond Push-ups",
   ],
   Core: [
     "Plank",
@@ -723,7 +780,96 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Cable Crunches",
     "Hanging Leg Raises",
   ],
+  Traps: [
+    "Barbell Shrug",
+    "Dumbbell Shrug",
+    "Upright Row",
+    "Cable Shrug",
+    "Farmer's Walk",
+  ],
+  Forearms: [
+    "Wrist Curl",
+    "Reverse Wrist Curl",
+    "Hammer Curls",
+    "Reverse Curl",
+    "Plate Pinch",
+  ],
+  "Full Body": [
+    "Kettlebell Swings",
+    "Burpees",
+    "Thrusters",
+    "Clean and Press",
+    "Box Jumps",
+    "Battle Ropes",
+  ],
 };
+
+// Fallback map: handles lowercase, snake_case, alternate names, and server db values
+const MUSCLE_GROUP_FALLBACK: Record<string, string> = {
+  chest: "Chest",
+  back: "Back",
+  shoulders: "Shoulders",
+  shoulder: "Shoulders",
+  delts: "Shoulders",
+  "rear delts": "Rear Delts",
+  "rear delt": "Rear Delts",
+  legs: "Legs",
+  leg: "Legs",
+  quads: "Quads",
+  quad: "Quads",
+  quadriceps: "Quads",
+  hamstrings: "Hamstrings",
+  hamstring: "Hamstrings",
+  calves: "Calves",
+  calf: "Calves",
+  glutes: "Glutes",
+  glute: "Glutes",
+  arms: "Arms",
+  arm: "Arms",
+  biceps: "Biceps",
+  bicep: "Biceps",
+  triceps: "Triceps",
+  tricep: "Triceps",
+  core: "Core",
+  abs: "Core",
+  ab: "Core",
+  traps: "Traps",
+  trap: "Traps",
+  trapezius: "Traps",
+  forearms: "Forearms",
+  forearm: "Forearms",
+  "full body": "Full Body",
+  fullbody: "Full Body",
+  cardio: "Core",
+};
+
+function getAlternativesForMuscleGroup(muscleGroup: string | undefined): string[] {
+  if (!muscleGroup) {
+    // No muscle group at all — return everything across all categories
+    return Object.values(EXERCISE_ALTERNATIVES).flat();
+  }
+
+  // Direct match first (handles correct Title Case from DEFAULT_EXERCISES)
+  if (EXERCISE_ALTERNATIVES[muscleGroup]) {
+    return EXERCISE_ALTERNATIVES[muscleGroup];
+  }
+
+  // Case-insensitive match against known keys
+  const lower = muscleGroup.trim().toLowerCase();
+  const directKey = Object.keys(EXERCISE_ALTERNATIVES).find(
+    (k) => k.toLowerCase() === lower
+  );
+  if (directKey) return EXERCISE_ALTERNATIVES[directKey];
+
+  // Fallback map for alternate names, old data, snake_case, etc.
+  const fallbackKey = MUSCLE_GROUP_FALLBACK[lower];
+  if (fallbackKey && EXERCISE_ALTERNATIVES[fallbackKey]) {
+    return EXERCISE_ALTERNATIVES[fallbackKey];
+  }
+
+  // Last resort: return all exercises so the user is never stuck with nothing
+  return Object.values(EXERCISE_ALTERNATIVES).flat();
+}
 
 function ExerciseSwapModal({
   visible,
@@ -741,15 +887,14 @@ function ExerciseSwapModal({
 
   if (!visible || !currentExercise) return null;
 
-  const alternatives =
-    EXERCISE_ALTERNATIVES[currentExercise.muscleGroup] || [];
+  const alternatives = getAlternativesForMuscleGroup(currentExercise.muscleGroup);
   const filteredAlternatives = alternatives.filter(
     (ex) => ex !== currentExercise.name
   );
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.swapModalOverlay}>
+      <View style={styles.swapModalOverlay} pointerEvents="box-none">
         <View
           style={[
             styles.swapModalContent,
@@ -785,7 +930,18 @@ function ExerciseSwapModal({
           <ScrollView
             showsVerticalScrollIndicator={false}
             style={styles.swapList}
+            keyboardShouldPersistTaps="handled"
           >
+            {filteredAlternatives.length === 0 ? (
+              <View style={styles.swapEmptyState}>
+                <Feather name="info" size={24} color={theme.textSecondary} />
+                <ThemedText
+                  style={[styles.swapEmptyText, { color: theme.textSecondary }]}
+                >
+                  No alternatives available for this exercise
+                </ThemedText>
+              </View>
+            ) : null}
             {filteredAlternatives.map((exercise) => (
               <Pressable
                 key={exercise}
@@ -907,9 +1063,6 @@ function SetInput({
   }
 
   if (setData.completed) {
-   
-   
- 
     const completedWeight = parseFloat(setData.weight) || 0;
     const targetWeight =
       progressionSuggestion?.suggestedWeight ||
@@ -1144,8 +1297,6 @@ function SetInput({
         onClose={() => setShowPlateCalc(false)}
       />
 
-     
-
       <View style={styles.sliderSection}>
         <View style={styles.sliderWrapper}>
           <View style={styles.sliderLabelRow}>
@@ -1155,7 +1306,7 @@ function SetInput({
               Weight
             </ThemedText>
             <View style={styles.sliderValueContainer}>
-              <ThemedText style={styles.sliderValue}>
+              <ThemedText style={[styles.sliderValue, { color: theme.text }]}>
                 {parseFloat(setData.weight) || 0}
               </ThemedText>
               <ThemedText
@@ -1236,7 +1387,7 @@ function SetInput({
             >
               Reps
             </ThemedText>
-            <ThemedText style={styles.sliderValue}>
+            <ThemedText style={[styles.sliderValue, { color: theme.text }]}>
               {parseInt(setData.reps) || 0}
             </ThemedText>
           </View>
@@ -1345,6 +1496,7 @@ export default function ActiveWorkoutScreen() {
   const [prsThisSession, setPrsThisSession] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const buttonScale = useSharedValue(1);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -1361,6 +1513,13 @@ export default function ActiveWorkoutScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [startTime]);
+
+  const currentExerciseName =
+    plan?.days[route.params.dayIndex]?.exercises[currentExerciseIndex]?.name ??
+    "";
+  useEffect(() => {
+    setImageError(false);
+  }, [currentExerciseIndex, currentExerciseName]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -1501,16 +1660,26 @@ export default function ActiveWorkoutScreen() {
 
     if (currentExerciseIndex < day.exercises.length - 1) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setCurrentSetIndex(0);
+      const nextIdx = currentExerciseIndex + 1;
+      const nextEp = progress[nextIdx];
+      const firstIncomplete = nextEp
+        ? nextEp.sets.findIndex((s) => !s.completed)
+        : 0;
+      setCurrentExerciseIndex(nextIdx);
+      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
     }
   };
 
   const handlePreviousExercise = () => {
     if (currentExerciseIndex > 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setCurrentExerciseIndex(currentExerciseIndex - 1);
-      setCurrentSetIndex(0);
+      const prevIdx = currentExerciseIndex - 1;
+      const prevEp = progress[prevIdx];
+      const firstIncomplete = prevEp
+        ? prevEp.sets.findIndex((s) => !s.completed)
+        : 0;
+      setCurrentExerciseIndex(prevIdx);
+      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
     }
   };
 
@@ -1555,10 +1724,17 @@ export default function ActiveWorkoutScreen() {
       duration: elapsedTime,
     };
 
-    await addWorkoutSession(session);
-    Haptics.notificationAsync(
-      Haptics.NotificationFeedbackType.Success
-    );
+    try {
+      await addWorkoutSession(session);
+    } catch (error) {
+      console.error("Failed to save workout:", error);
+      Alert.alert(
+        "Save Error",
+        "Your workout couldn't be saved to storage. Your results are still shown below.",
+        [{ text: "OK" }],
+      );
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowSummary(true);
   };
 
@@ -1588,7 +1764,9 @@ export default function ActiveWorkoutScreen() {
   const day = plan.days[route.params.dayIndex];
   const currentExercise = day.exercises[currentExerciseIndex];
   const exerciseProgress = progress[currentExerciseIndex];
-  const lastWeekExercise = lastWeekProgress[currentExerciseIndex];
+  const lastWeekExercise = lastWeekProgress.find(
+    (ep) => ep.exerciseId === exerciseProgress.exerciseId,
+  );
 
   const totalSets = progress.reduce(
     (acc, ex) => acc + ex.sets.length,
@@ -1624,6 +1802,8 @@ export default function ActiveWorkoutScreen() {
         currentExercise={currentExercise}
         onClose={() => setShowSwapModal(false)}
         onSwap={(newExerciseName) => {
+          // Reset image so the new exercise image loads fresh
+          setImageError(false);
           setPlan((prev) => {
             if (!prev) return prev;
             const updated = { ...prev };
@@ -1634,20 +1814,19 @@ export default function ActiveWorkoutScreen() {
             updated.days[route.params.dayIndex].exercises = [
               ...updated.days[route.params.dayIndex].exercises,
             ];
-            updated.days[route.params.dayIndex].exercises[
-              currentExerciseIndex
-            ] = {
-              ...updated.days[route.params.dayIndex].exercises[
-                currentExerciseIndex
-              ],
+            const oldEx = updated.days[route.params.dayIndex].exercises[currentExerciseIndex];
+            updated.days[route.params.dayIndex].exercises[currentExerciseIndex] = {
+              ...oldEx,
               name: newExerciseName,
+              id: newExerciseName.toLowerCase().replace(/\s+/g, '-'),
+              // Preserve the original muscleGroup so subsequent swaps still resolve correctly
             };
             return updated;
           });
           setProgress((prev) => {
             const updated = [...prev];
             updated[currentExerciseIndex] = {
-              exerciseId: newExerciseName,
+              exerciseId: newExerciseName.toLowerCase().replace(/\s+/g, '-'),
               sets: updated[currentExerciseIndex].sets.map((s) => ({
                 ...s,
                 weight: "",
@@ -1671,7 +1850,9 @@ export default function ActiveWorkoutScreen() {
         workoutName={
           plan?.days[route.params.dayIndex]?.dayName || "Workout"
         }
-        onClose={() => navigation.goBack()}
+        onClose={() => {
+          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        }}
       />
 
       <View style={styles.mainContainer}>
@@ -1801,13 +1982,14 @@ export default function ActiveWorkoutScreen() {
             style={styles.exerciseContent}
           >
             <View style={styles.exerciseHeader}>
-              {getExerciseImageUrl(currentExercise.name) ? (
+              {getExerciseImageUrl(currentExercise.name) && !imageError ? (
                 <Image
                   source={{
                     uri: getExerciseImageUrl(currentExercise.name)!,
                   }}
                   style={styles.exerciseImage}
                   resizeMode="cover"
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <View
@@ -1983,11 +2165,14 @@ export default function ActiveWorkoutScreen() {
               onPress={handleFinishWorkout}
               style={[styles.skipButton, { borderColor: theme.border }]}
               testID="button-skip-finish"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Finish Early"
             >
               <ThemedText
                 style={[
                   styles.skipButtonText,
-                  { color: theme.textSecondary },
+                  { color: theme.text },
                 ]}
               >
                 Finish Early
@@ -2362,13 +2547,14 @@ const styles = StyleSheet.create({
   skipButton: {
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 52,
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   skipButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "600",
   },
   restModalOverlay: {
     flex: 1,
@@ -2812,27 +2998,12 @@ const styles = StyleSheet.create({
   },
   exerciseImagePlaceholder: {
     width: "100%",
-    height: 120,
+    height: 160,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     alignItems: "center",
     justifyContent: "center",
   },
-  doneButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
-  doneButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
-  },
- 
   exerciseNameRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -2882,6 +3053,17 @@ const styles = StyleSheet.create({
   },
   swapList: {
     flex: 1,
+  },
+  swapEmptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["3xl"],
+    gap: Spacing.md,
+  },
+  swapEmptyText: {
+    fontSize: 15,
+    textAlign: "center",
   },
   swapOption: {
     flexDirection: "row",
