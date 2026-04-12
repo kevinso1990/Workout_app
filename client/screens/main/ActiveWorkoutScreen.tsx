@@ -378,6 +378,8 @@ function WorkoutSummary({
     }
   };
 
+  // Render nothing when invisible — safe because this is a JS overlay,
+  // not a native Modal. No UIKit presentation context to clean up.
   if (!visible) return null;
 
   const today = new Date().toLocaleDateString("en-US", {
@@ -386,8 +388,17 @@ function WorkoutSummary({
     day: "numeric",
   });
 
+  // Use an absolute-fill overlay instead of a native <Modal>.
+  // A native Modal that is force-unmounted (vs. properly dismissed) leaves
+  // iOS's UIKit presentation context in a transitioning state, which causes
+  // a blank/black frame when navigation.reset() fires in the same render.
+  // A plain View overlay has no native presentation layer — navigation.reset()
+  // can fire immediately and safely destroy the entire screen.
   return (
-    <Modal visible={visible} animationType="slide">
+    <Animated.View
+      entering={FadeIn.duration(220)}
+      style={[StyleSheet.absoluteFillObject, styles.summaryOverlay]}
+    >
       <ThemedView
         style={[styles.summaryContainer, { paddingTop: insets.top + Spacing.xl }]}
       >
@@ -522,7 +533,7 @@ function WorkoutSummary({
           </Pressable>
         </Animated.View>
       </ThemedView>
-    </Modal>
+    </Animated.View>
   );
 }
 
@@ -1398,8 +1409,9 @@ export default function ActiveWorkoutScreen() {
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
-  const [shouldNavigateHome, setShouldNavigateHome] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const navFiredRef = useRef(false);
+  const isSavingRef = useRef(false);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -1437,14 +1449,6 @@ export default function ActiveWorkoutScreen() {
     setImageError(false);
     setImageLoading(true);
   }, [currentExerciseIndex, currentExerciseName]);
-
-  // Navigate home only after the summary modal has fully dismissed to prevent
-  // a blank screen caused by navigation.reset() firing while a Modal is mounted.
-  useEffect(() => {
-    if (shouldNavigateHome && !showSummary) {
-      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-    }
-  }, [shouldNavigateHome, showSummary]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -1641,7 +1645,15 @@ export default function ActiveWorkoutScreen() {
   };
 
   const saveAndShowSummary = async () => {
-    if (!plan) return;
+    if (!plan || isSavingRef.current) return;
+    isSavingRef.current = true;
+
+    // Close all native Modals before showing the summary overlay.
+    // Any native Modal still mounted when navigation.reset() fires will
+    // leave UIKit in a bad state and produce a black screen on iOS.
+    setShowRestTimer(false);
+    setShowPRCelebration(false);
+    setShowExerciseDetail(false);
 
     const day = plan.days[route.params.dayIndex];
     const session: WorkoutSession = {
@@ -1746,8 +1758,9 @@ export default function ActiveWorkoutScreen() {
           plan?.days[route.params.dayIndex]?.dayName || "Workout"
         }
         onClose={() => {
-          setShouldNavigateHome(true);
-          setShowSummary(false);
+          if (navFiredRef.current) return;
+          navFiredRef.current = true;
+          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
         }}
       />
 
@@ -2590,6 +2603,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  summaryOverlay: {
+    // Sits above all workout content; zIndex keeps it above sibling views.
+    // No elevation needed because it's within the same RN view hierarchy.
+    zIndex: 200,
   },
   summaryContainer: {
     flex: 1,
