@@ -49,6 +49,7 @@ import {
   getExerciseImageUrl,
   getMuscleGroupMeta,
 } from "@/lib/exerciseImages";
+import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -1456,6 +1457,7 @@ export default function ActiveWorkoutScreen() {
   const [prsThisSession, setPrsThisSession] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const [showExerciseDetail, setShowExerciseDetail] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const buttonScale = useSharedValue(1);
@@ -1760,6 +1762,12 @@ export default function ActiveWorkoutScreen() {
         onClose={() => setShowPRCelebration(false)}
       />
       {/* ExerciseSwapModal hidden for MVP — not release-ready on native */}
+      <ExerciseDetailModal
+        visible={showExerciseDetail}
+        exerciseName={currentExercise.name}
+        muscleGroup={currentExercise.muscleGroup}
+        onClose={() => setShowExerciseDetail(false)}
+      />
       <WorkoutSummary
         visible={showSummary}
         duration={elapsedTime}
@@ -1902,54 +1910,77 @@ export default function ActiveWorkoutScreen() {
             style={styles.exerciseContent}
           >
             <View style={styles.exerciseHeader}>
-              {(() => {
-                const imageUrl = getExerciseImageUrl(currentExercise.name);
-                const meta = getMuscleGroupMeta(currentExercise.muscleGroup);
-                if (imageUrl && !imageError) {
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowExerciseDetail(true);
+                }}
+                style={styles.exerciseMediaTouchable}
+              >
+                {(() => {
+                  const imageUrl = getExerciseImageUrl(currentExercise.name);
+                  const meta = getMuscleGroupMeta(currentExercise.muscleGroup);
+                  if (imageUrl && !imageError) {
+                    return (
+                      <View style={styles.exerciseImageWrapper}>
+                        {imageLoading && (
+                          <LinearGradient
+                            colors={[meta.color + "18", meta.color + "30"]}
+                            style={styles.exerciseImageSkeleton}
+                          >
+                            <Feather
+                              name={meta.icon as any}
+                              size={32}
+                              color={meta.color + "80"}
+                            />
+                          </LinearGradient>
+                        )}
+                        <Image
+                          source={{ uri: imageUrl }}
+                          style={[
+                            styles.exerciseImage,
+                            imageLoading && { opacity: 0 },
+                          ]}
+                          resizeMode="cover"
+                          onLoadStart={() => setImageLoading(true)}
+                          onLoad={() => setImageLoading(false)}
+                          onError={() => {
+                            setImageError(true);
+                            setImageLoading(false);
+                          }}
+                        />
+                        <View style={styles.exerciseImageInfoHint}>
+                          <Feather name="info" size={12} color="#FFFFFF" />
+                        </View>
+                      </View>
+                    );
+                  }
                   return (
-                    <View style={styles.exerciseImageWrapper}>
-                      {imageLoading && (
-                        <LinearGradient
-                          colors={[meta.color + "18", meta.color + "30"]}
-                          style={styles.exerciseImageSkeleton}
-                        >
-                          <Feather
-                            name={meta.icon as any}
-                            size={32}
-                            color={meta.color + "80"}
-                          />
-                        </LinearGradient>
-                      )}
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={[
-                          styles.exerciseImage,
-                          imageLoading && { opacity: 0 },
-                        ]}
-                        resizeMode="cover"
-                        onLoadStart={() => setImageLoading(true)}
-                        onLoad={() => setImageLoading(false)}
-                        onError={() => {
-                          setImageError(true);
-                          setImageLoading(false);
-                        }}
-                      />
-                    </View>
+                    <LinearGradient
+                      colors={[meta.color + "18", meta.color + "35"]}
+                      style={styles.exerciseImagePlaceholder}
+                    >
+                      <Feather name={meta.icon as any} size={36} color={meta.color} />
+                      <ThemedText style={[styles.exerciseFallbackLabel, { color: meta.color }]}>
+                        {meta.label}
+                      </ThemedText>
+                      <View style={styles.exerciseFallbackHint}>
+                        <Feather name="info" size={11} color={meta.color + "80"} />
+                        <ThemedText style={[styles.exerciseFallbackHintText, { color: meta.color + "80" }]}>
+                          Tap for cues
+                        </ThemedText>
+                      </View>
+                    </LinearGradient>
                   );
-                }
-                return (
-                  <LinearGradient
-                    colors={[meta.color + "18", meta.color + "35"]}
-                    style={styles.exerciseImagePlaceholder}
-                  >
-                    <Feather name={meta.icon as any} size={36} color={meta.color} />
-                    <ThemedText style={[styles.exerciseFallbackLabel, { color: meta.color }]}>
-                      {meta.label}
-                    </ThemedText>
-                  </LinearGradient>
-                );
-              })()}
-              <View style={styles.exerciseNameRow}>
+                })()}
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowExerciseDetail(true);
+                }}
+                style={styles.exerciseNameRow}
+              >
                 <ThemedText
                   style={styles.exerciseName}
                   numberOfLines={2}
@@ -1958,7 +1989,8 @@ export default function ActiveWorkoutScreen() {
                 >
                   {currentExercise.name}
                 </ThemedText>
-              </View>
+                <Feather name="info" size={14} color={Colors.light.primary + "80"} />
+              </Pressable>
               <View style={styles.exerciseMeta}>
                 <View
                   style={[
@@ -2941,10 +2973,34 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_600SemiBold",
     letterSpacing: 0.5,
   },
+  exerciseFallbackHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: Spacing.xs,
+  },
+  exerciseFallbackHintText: {
+    fontSize: 11,
+  },
+  exerciseMediaTouchable: {
+    marginBottom: Spacing.sm,
+  },
+  exerciseImageInfoHint: {
+    position: "absolute",
+    bottom: Spacing.sm,
+    right: Spacing.sm,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   exerciseNameRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   swapButton: {
     flexDirection: "row",

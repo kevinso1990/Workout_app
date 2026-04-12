@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
 
 export type FitnessLevel = "beginner" | "intermediate" | "advanced";
 export type FitnessGoal = "build_muscle" | "lose_fat" | "get_stronger" | "stay_fit";
-export type Equipment = "full_gym" | "dumbbells_only" | "home_minimal" | "bodyweight";
+export type Equipment = "full_gym" | "dumbbells_only" | "home_minimal" | "bodyweight" | "kettlebell";
 export type MuscleGroupType = "chest" | "back" | "shoulders" | "arms" | "legs" | "core";
 
 export interface UserPreferences {
@@ -559,6 +559,337 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
     },
   ],
 };
+
+// ── Equipment-aware exercise pools ───────────────────────────────────────────
+// Each key is an equipment type from the onboarding screen.
+// Each value maps split-day names to a list of exercises using only that
+// equipment (plus bodyweight which is always allowed as a fallback).
+// The SplitSelectionScreen reads from here so the generated plan is
+// guaranteed to respect the user's selection — no LLM prompt needed.
+
+const DUMBBELL_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "db-bench-press",    name: "Dumbbell Bench Press",    muscleGroup: "Chest",      sets: 4, reps: "8-10" },
+    { id: "incline-db-press",  name: "Incline Dumbbell Press",  muscleGroup: "Chest",      sets: 3, reps: "10-12" },
+    { id: "db-shoulder-press", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders",  sets: 3, reps: "8-10" },
+    { id: "lateral-raises",    name: "Lateral Raises",          muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "overhead-tricep",   name: "Overhead Tricep Extension", muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+  ],
+  Pull: [
+    { id: "db-row",            name: "Dumbbell Row",            muscleGroup: "Back",       sets: 4, reps: "8-10" },
+    { id: "chest-sup-row",     name: "Chest Supported Row",     muscleGroup: "Back",       sets: 3, reps: "10-12" },
+    { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "dumbbell-curl",     name: "Dumbbell Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+  ],
+  Legs: [
+    { id: "goblet-squat",      name: "Goblet Squat",            muscleGroup: "Quads",      sets: 4, reps: "8-10" },
+    { id: "romanian-deadlift", name: "Romanian Deadlift",       muscleGroup: "Hamstrings", sets: 3, reps: "8-10" },
+    { id: "bulgarian-ss",      name: "Bulgarian Split Squat",   muscleGroup: "Quads",      sets: 3, reps: "10-12" },
+    { id: "walking-lunges",    name: "Walking Lunges",          muscleGroup: "Quads",      sets: 3, reps: "10-12" },
+    { id: "glute-bridge",      name: "Glute Bridge",            muscleGroup: "Glutes",     sets: 3, reps: "12-15" },
+  ],
+  Upper: [
+    { id: "db-bench-press",    name: "Dumbbell Bench Press",    muscleGroup: "Chest",      sets: 4, reps: "8-10" },
+    { id: "db-row",            name: "Dumbbell Row",            muscleGroup: "Back",       sets: 4, reps: "8-10" },
+    { id: "db-shoulder-press", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders",  sets: 3, reps: "8-10" },
+    { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+  ],
+  Lower: [
+    { id: "goblet-squat",      name: "Goblet Squat",            muscleGroup: "Quads",      sets: 4, reps: "8-10" },
+    { id: "romanian-deadlift", name: "Romanian Deadlift",       muscleGroup: "Hamstrings", sets: 4, reps: "8-10" },
+    { id: "bulgarian-ss",      name: "Bulgarian Split Squat",   muscleGroup: "Quads",      sets: 3, reps: "10-12" },
+    { id: "walking-lunges",    name: "Walking Lunges",          muscleGroup: "Quads",      sets: 3, reps: "10-12" },
+    { id: "glute-bridge",      name: "Glute Bridge",            muscleGroup: "Glutes",     sets: 3, reps: "12-15" },
+  ],
+  "Full Body": [
+    { id: "goblet-squat",      name: "Goblet Squat",            muscleGroup: "Quads",      sets: 3, reps: "8-10" },
+    { id: "db-bench-press",    name: "Dumbbell Bench Press",    muscleGroup: "Chest",      sets: 3, reps: "8-10" },
+    { id: "db-row",            name: "Dumbbell Row",            muscleGroup: "Back",       sets: 3, reps: "8-10" },
+    { id: "romanian-deadlift", name: "Romanian Deadlift",       muscleGroup: "Hamstrings", sets: 3, reps: "8-10" },
+    { id: "db-shoulder-press", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders",  sets: 3, reps: "10-12" },
+  ],
+  Chest: [
+    { id: "db-bench-press",    name: "Dumbbell Bench Press",    muscleGroup: "Chest",      sets: 4, reps: "8-10" },
+    { id: "incline-db-press",  name: "Incline Dumbbell Press",  muscleGroup: "Chest",      sets: 3, reps: "10-12" },
+    { id: "db-flyes",          name: "Dumbbell Flyes",          muscleGroup: "Chest",      sets: 3, reps: "12-15" },
+    { id: "overhead-tricep",   name: "Overhead Tricep Extension", muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+    { id: "tricep-kickback",   name: "Tricep Kickback",         muscleGroup: "Triceps",    sets: 3, reps: "12-15" },
+  ],
+  Back: [
+    { id: "db-row",            name: "Dumbbell Row",            muscleGroup: "Back",       sets: 4, reps: "8-10" },
+    { id: "chest-sup-row",     name: "Chest Supported Row",     muscleGroup: "Back",       sets: 3, reps: "10-12" },
+    { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "dumbbell-curl",     name: "Dumbbell Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+  ],
+  Shoulders: [
+    { id: "db-shoulder-press", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders",  sets: 4, reps: "8-10" },
+    { id: "lateral-raises",    name: "Lateral Raises",          muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
+    { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "front-raises",      name: "Front Raises",            muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "db-shrug",          name: "Dumbbell Shrug",          muscleGroup: "Traps",      sets: 3, reps: "12-15" },
+  ],
+  Arms: [
+    { id: "dumbbell-curl",     name: "Dumbbell Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "overhead-tricep",   name: "Overhead Tricep Extension", muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+    { id: "tricep-kickback",   name: "Tricep Kickback",         muscleGroup: "Triceps",    sets: 3, reps: "12-15" },
+    { id: "incline-db-curl",   name: "Incline Dumbbell Curl",   muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+  ],
+};
+
+const BODYWEIGHT_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",    sets: 4, reps: "10-15" },
+    { id: "chest-dips",      name: "Chest Dips",       muscleGroup: "Chest",    sets: 3, reps: "8-12" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
+  ],
+  Pull: [
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",     sets: 4, reps: "5-10" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",     sets: 3, reps: "5-10" },
+    { id: "hyperextension",  name: "Hyperextension",   muscleGroup: "Back",     sets: 3, reps: "12-15" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",     sets: 3, reps: "10-12" },
+    { id: "hanging-lr",      name: "Hanging Leg Raise",muscleGroup: "Core",     sets: 3, reps: "8-12" },
+  ],
+  Legs: [
+    { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",    sets: 4, reps: "10-12" },
+    { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",   sets: 4, reps: "12-15" },
+    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",    sets: 3, reps: "8-12" },
+    { id: "mtn-climbers",    name: "Mountain Climbers",muscleGroup: "Core",     sets: 3, reps: "20-30" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
+  ],
+  Upper: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",    sets: 4, reps: "10-15" },
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",     sets: 4, reps: "5-10" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",     sets: 3, reps: "5-10" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+  ],
+  Lower: [
+    { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",    sets: 4, reps: "10-12" },
+    { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",   sets: 4, reps: "12-15" },
+    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",    sets: 3, reps: "8-12" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",     sets: 3, reps: "10-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
+  ],
+  "Full Body": [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",    sets: 3, reps: "10-15" },
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",     sets: 3, reps: "5-10" },
+    { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",    sets: 3, reps: "10-12" },
+    { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",   sets: 3, reps: "12-15" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
+  ],
+  Chest: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",    sets: 4, reps: "10-15" },
+    { id: "chest-dips",      name: "Chest Dips",       muscleGroup: "Chest",    sets: 4, reps: "8-12" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
+  ],
+  Back: [
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",     sets: 4, reps: "5-10" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",     sets: 4, reps: "5-10" },
+    { id: "hyperextension",  name: "Hyperextension",   muscleGroup: "Back",     sets: 3, reps: "12-15" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",     sets: 3, reps: "10-12" },
+    { id: "mtn-climbers",    name: "Mountain Climbers",muscleGroup: "Core",     sets: 3, reps: "20-30" },
+  ],
+  Shoulders: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",    sets: 4, reps: "10-15" },
+    { id: "chest-dips",      name: "Chest Dips",       muscleGroup: "Chest",    sets: 3, reps: "8-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 4, reps: "45-60s" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",     sets: 3, reps: "10-12" },
+    { id: "mtn-climbers",    name: "Mountain Climbers",muscleGroup: "Core",     sets: 3, reps: "20-30" },
+  ],
+  Arms: [
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",     sets: 4, reps: "5-10" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",  sets: 4, reps: "8-12" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",  sets: 3, reps: "8-12" },
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",    sets: 3, reps: "10-15" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
+  ],
+};
+
+// home_minimal = pull-up bar + resistance bands → mix of bodyweight and dumbbell
+const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
+    { id: "chest-dips",      name: "Chest Dips",       muscleGroup: "Chest",      sets: 3, reps: "8-12" },
+    { id: "lateral-raises",  name: "Lateral Raises",   muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
+  ],
+  Pull: [
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",       sets: 4, reps: "5-10" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 3, reps: "5-10" },
+    { id: "rear-delt-fly",   name: "Rear Delt Fly",    muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "hammer-curls",    name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  Legs: [
+    { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",      sets: 4, reps: "10-12" },
+    { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",     sets: 4, reps: "12-15" },
+    { id: "bulgarian-ss",    name: "Bulgarian Split Squat", muscleGroup: "Quads", sets: 3, reps: "10-12" },
+    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",      sets: 3, reps: "8-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
+  ],
+  Upper: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",       sets: 4, reps: "5-10" },
+    { id: "lateral-raises",  name: "Lateral Raises",   muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 3, reps: "5-10" },
+    { id: "hammer-curls",    name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+  ],
+  Lower: [
+    { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",      sets: 4, reps: "10-12" },
+    { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",     sets: 4, reps: "12-15" },
+    { id: "bulgarian-ss",    name: "Bulgarian Split Squat", muscleGroup: "Quads", sets: 3, reps: "10-12" },
+    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",      sets: 3, reps: "8-12" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  "Full Body": [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 3, reps: "10-15" },
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",       sets: 3, reps: "5-10" },
+    { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",      sets: 3, reps: "10-12" },
+    { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",     sets: 3, reps: "12-15" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
+  ],
+  Chest: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
+    { id: "chest-dips",      name: "Chest Dips",       muscleGroup: "Chest",      sets: 4, reps: "8-12" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
+  ],
+  Back: [
+    { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",       sets: 4, reps: "5-10" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 4, reps: "5-10" },
+    { id: "rear-delt-fly",   name: "Rear Delt Fly",    muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "hammer-curls",    name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  Shoulders: [
+    { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
+    { id: "lateral-raises",  name: "Lateral Raises",   muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 3, reps: "5-10" },
+    { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  Arms: [
+    { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 4, reps: "5-10" },
+    { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",    sets: 4, reps: "8-12" },
+    { id: "hammer-curls",    name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
+    { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
+  ],
+};
+
+const KETTLEBELL_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "kb-floor-press",  name: "KB Floor Press",             muscleGroup: "Chest",     sets: 4, reps: "8-10" },
+    { id: "kb-squeeze-press",name: "KB Squeeze Press",           muscleGroup: "Chest",     sets: 3, reps: "10-12" },
+    { id: "kb-press",        name: "KB Press",                   muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+    { id: "kb-lateral",      name: "KB Lateral Raise",           muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "kb-overhead-tri", name: "KB Overhead Tricep Extension",muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+  ],
+  Pull: [
+    { id: "kb-row",          name: "KB Row",                     muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "kb-renegade",     name: "KB Renegade Row",            muscleGroup: "Back",      sets: 3, reps: "8-10" },
+    { id: "kb-high-pull",    name: "KB High Pull",               muscleGroup: "Back",      sets: 3, reps: "10-12" },
+    { id: "kb-curl",         name: "KB Curl",                    muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+    { id: "kb-hammer-curl",  name: "KB Hammer Curl",             muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+  ],
+  Legs: [
+    { id: "kb-goblet",       name: "KB Goblet Squat",            muscleGroup: "Quads",     sets: 4, reps: "8-10" },
+    { id: "kb-swing",        name: "KB Swing",                   muscleGroup: "Hamstrings",sets: 4, reps: "12-15" },
+    { id: "kb-rdl",          name: "KB Romanian Deadlift",       muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "kb-lunges",       name: "KB Lunges",                  muscleGroup: "Quads",     sets: 3, reps: "10-12" },
+    { id: "kb-calf-raise",   name: "KB Calf Raise",              muscleGroup: "Calves",    sets: 3, reps: "12-15" },
+  ],
+  Upper: [
+    { id: "kb-floor-press",  name: "KB Floor Press",             muscleGroup: "Chest",     sets: 4, reps: "8-10" },
+    { id: "kb-row",          name: "KB Row",                     muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "kb-press",        name: "KB Press",                   muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+    { id: "kb-renegade",     name: "KB Renegade Row",            muscleGroup: "Back",      sets: 3, reps: "8-10" },
+    { id: "kb-curl",         name: "KB Curl",                    muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+  ],
+  Lower: [
+    { id: "kb-goblet",       name: "KB Goblet Squat",            muscleGroup: "Quads",     sets: 4, reps: "8-10" },
+    { id: "kb-swing",        name: "KB Swing",                   muscleGroup: "Hamstrings",sets: 4, reps: "12-15" },
+    { id: "kb-rdl",          name: "KB Romanian Deadlift",       muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "kb-bss",          name: "KB Bulgarian Split Squat",   muscleGroup: "Quads",     sets: 3, reps: "10-12" },
+    { id: "kb-calf-raise",   name: "KB Calf Raise",              muscleGroup: "Calves",    sets: 3, reps: "12-15" },
+  ],
+  "Full Body": [
+    { id: "kb-goblet",       name: "KB Goblet Squat",            muscleGroup: "Quads",     sets: 3, reps: "8-10" },
+    { id: "kb-swing",        name: "KB Swing",                   muscleGroup: "Hamstrings",sets: 3, reps: "12-15" },
+    { id: "kb-floor-press",  name: "KB Floor Press",             muscleGroup: "Chest",     sets: 3, reps: "8-10" },
+    { id: "kb-row",          name: "KB Row",                     muscleGroup: "Back",       sets: 3, reps: "8-10" },
+    { id: "kb-tgu",          name: "KB Turkish Get-Up",          muscleGroup: "Core",       sets: 2, reps: "3-5" },
+  ],
+  Chest: [
+    { id: "kb-floor-press",  name: "KB Floor Press",             muscleGroup: "Chest",     sets: 4, reps: "8-10" },
+    { id: "kb-squeeze-press",name: "KB Squeeze Press",           muscleGroup: "Chest",     sets: 4, reps: "10-12" },
+    { id: "kb-push-press",   name: "KB Push Press",              muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+    { id: "kb-overhead-tri", name: "KB Overhead Tricep Extension",muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+    { id: "kb-skull",        name: "KB Skull Crusher",           muscleGroup: "Triceps",   sets: 3, reps: "10-12" },
+  ],
+  Back: [
+    { id: "kb-row",          name: "KB Row",                     muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "kb-renegade",     name: "KB Renegade Row",            muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "kb-high-pull",    name: "KB High Pull",               muscleGroup: "Back",      sets: 3, reps: "10-12" },
+    { id: "kb-curl",         name: "KB Curl",                    muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+    { id: "kb-hammer-curl",  name: "KB Hammer Curl",             muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+  ],
+  Shoulders: [
+    { id: "kb-press",        name: "KB Press",                   muscleGroup: "Shoulders", sets: 4, reps: "8-10" },
+    { id: "kb-push-press",   name: "KB Push Press",              muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+    { id: "kb-lateral",      name: "KB Lateral Raise",           muscleGroup: "Shoulders", sets: 4, reps: "12-15" },
+    { id: "kb-halo",         name: "KB Halo",                    muscleGroup: "Shoulders", sets: 3, reps: "10-12" },
+    { id: "kb-high-pull",    name: "KB High Pull",               muscleGroup: "Back",      sets: 3, reps: "10-12" },
+  ],
+  Arms: [
+    { id: "kb-curl",         name: "KB Curl",                    muscleGroup: "Biceps",    sets: 4, reps: "10-12" },
+    { id: "kb-hammer-curl",  name: "KB Hammer Curl",             muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+    { id: "kb-overhead-tri", name: "KB Overhead Tricep Extension",muscleGroup: "Triceps",  sets: 4, reps: "10-12" },
+    { id: "kb-skull",        name: "KB Skull Crusher",           muscleGroup: "Triceps",   sets: 3, reps: "10-12" },
+    { id: "kb-floor-press",  name: "KB Floor Press",             muscleGroup: "Chest",     sets: 3, reps: "8-10" },
+  ],
+};
+
+/**
+ * Returns the exercise list for a given equipment type and split-day name.
+ * Guaranteed to return valid exercises — falls back gracefully.
+ * This is the single authoritative source of truth for equipment filtering
+ * in the native onboarding flow.
+ */
+export function getEquipmentExercises(
+  equipment: Equipment | null | undefined,
+  dayName: string
+): Exercise[] {
+  let pool: Record<string, Exercise[]>;
+  switch (equipment) {
+    case "dumbbells_only":
+      pool = DUMBBELL_EXERCISES;
+      break;
+    case "home_minimal":
+      pool = HOME_MINIMAL_EXERCISES;
+      break;
+    case "bodyweight":
+      pool = BODYWEIGHT_EXERCISES;
+      break;
+    case "kettlebell":
+      pool = KETTLEBELL_EXERCISES;
+      break;
+    case "full_gym":
+    default:
+      pool = DEFAULT_EXERCISES;
+  }
+  return pool[dayName] ?? pool["Full Body"] ?? DEFAULT_EXERCISES["Full Body"];
+}
 
 export const SPLIT_RECOMMENDATIONS: Record<number, string[]> = {
   1: ["Full Body"],

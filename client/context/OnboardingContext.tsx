@@ -3,7 +3,7 @@ import { UserPreferences } from "@/lib/storage";
 
 export type FitnessLevel = "beginner" | "intermediate" | "advanced";
 export type FitnessGoal = "build_muscle" | "lose_fat" | "get_stronger" | "stay_fit";
-export type Equipment = "full_gym" | "dumbbells_only" | "home_minimal" | "bodyweight";
+export type Equipment = "full_gym" | "dumbbells_only" | "home_minimal" | "bodyweight" | "kettlebell";
 export type MuscleGroup = "chest" | "back" | "shoulders" | "arms" | "legs" | "core";
 
 interface OnboardingState {

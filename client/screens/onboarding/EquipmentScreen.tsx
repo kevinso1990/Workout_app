@@ -36,6 +36,12 @@ const EQUIPMENT_OPTIONS: {
     icon: "disc",
   },
   {
+    id: "kettlebell",
+    title: "Kettlebells Only",
+    description: "Kettlebell-exclusive training",
+    icon: "anchor",
+  },
+  {
     id: "home_minimal",
     title: "Minimal Equipment",
     description: "Pull-up bar, resistance bands",

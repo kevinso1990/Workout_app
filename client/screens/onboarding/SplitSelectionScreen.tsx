@@ -28,7 +28,7 @@ import {
   setOnboardingComplete,
   setUserPreferences,
   saveWorkoutPlan,
-  DEFAULT_EXERCISES,
+  getEquipmentExercises,
   WorkoutDay,
   WorkoutPlan,
 } from "@/lib/storage";
@@ -233,10 +233,10 @@ export default function SplitSelectionScreen() {
         );
       }
 
+      // Equipment-constrained: exercises are filtered to the user's selection
       const days: WorkoutDay[] = splitDays.map((dayName) => ({
         dayName,
-        exercises:
-          DEFAULT_EXERCISES[dayName] || DEFAULT_EXERCISES["Full Body"],
+        exercises: getEquipmentExercises(state.equipment, dayName),
       }));
 
       const plan: WorkoutPlan = {
