@@ -1432,6 +1432,7 @@ export default function ActiveWorkoutScreen() {
   const [imageLoading, setImageLoading] = useState(true);
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
+  const [restTimerEnabled, setRestTimerEnabled] = useState(true);
   const buttonScale = useSharedValue(1);
 
   // Rest duration varies by goal: strength needs longer recovery than endurance/fat-loss
@@ -1492,6 +1493,7 @@ export default function ActiveWorkoutScreen() {
       ]);
       if (prefs?.fitnessLevel) setFitnessLevel(prefs.fitnessLevel);
       if (prefs?.fitnessGoals?.length) setFitnessGoals(prefs.fitnessGoals);
+      setRestTimerEnabled(prefs?.restTimerEnabled !== false); // default true
 
       const targetPlan = plans.find((p) => p.id === route.params.planId);
       if (!targetPlan) return;
@@ -1583,8 +1585,10 @@ export default function ActiveWorkoutScreen() {
     }
 
     if (currentSetIndex < currentExercise.sets - 1) {
-      setShowRestTimer(true);
-      setRestTimeLeft(restDuration);
+      if (restTimerEnabled) {
+        setShowRestTimer(true);
+        setRestTimeLeft(restDuration);
+      }
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < day.exercises.length - 1) {
       Haptics.notificationAsync(

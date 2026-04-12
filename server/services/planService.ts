@@ -473,17 +473,32 @@ function getExerciseCount(experience: string): number {
  * Frequency × experience → training split.
  *
  * Rules:
- * 1-2 days: Full Body for everyone (insufficient frequency for split training)
- * 3 days:   Full Body for beginners (practice same compounds 3×/week — Starting
- *           Strength / GZCLP style), PPL for intermediate/advanced (each
- *           session gets full dedicated volume: Push Mon, Pull Wed, Legs Fri)
- * 4 days:   Upper / Lower for all (2× each per week — solid frequency and recovery)
- * 5+ days:  Upper / Lower for beginners (PPL demands too many distinct patterns),
- *           PPL for intermediate/advanced
+ * 1-2 days: Full Body for everyone — insufficient frequency for split work.
+ *
+ * 3 days:   Beginners → Full Body 3×/week (practice the same compounds
+ *             repeatedly; Starting Strength / GZCLP model).
+ *           Intermediate/Advanced → Upper / Lower / Full Body rotation.
+ *             Each muscle group is hit ~1.5× per week (better than PPL's 1×).
+ *             Upper Mon: chest/back/shoulders/arms
+ *             Lower Wed: quads/hamstrings/glutes/calves
+ *             Full Fri:  full-body compounds revisit everything
+ *           (PPL at 3 days gives only 1× weekly frequency per muscle group —
+ *            less effective than the ULF structure for most lifters.)
+ *
+ * 4 days:   Upper / Lower for all — 2× weekly frequency per muscle group,
+ *           solid for both intermediate and advanced.
+ *
+ * 5+ days:  Beginners → Upper / Lower (PPL is too many distinct patterns
+ *             for someone still building movement competency).
+ *           Intermediate/Advanced → Push / Pull / Legs (higher volume per
+ *             session, appropriate for experienced lifters).
  */
-function getPlanShape(frequency: number, experience: string): "fullBody" | "upperLower" | "ppl" {
+function getPlanShape(
+  frequency: number,
+  experience: string
+): "fullBody" | "upperLowerFull" | "upperLower" | "ppl" {
   if (frequency <= 2) return "fullBody";
-  if (frequency === 3) return experience === "beginner" ? "fullBody" : "ppl";
+  if (frequency === 3) return experience === "beginner" ? "fullBody" : "upperLowerFull";
   if (frequency === 4) return "upperLower";
   // 5+ days
   return experience === "beginner" ? "upperLower" : "ppl";
@@ -557,13 +572,19 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
 
     if (planShape === "fullBody") {
       addPlan("Full Body", tpl.fullBody);
+    } else if (planShape === "upperLowerFull") {
+      // 3-day rotation: Upper → Lower → Full Body
+      // ~1.5× weekly frequency per muscle group vs 1× with PPL
+      addPlan("Upper", tpl.upperA);
+      addPlan("Lower", tpl.lowerA);
+      addPlan("Full Body", tpl.fullBody);
     } else if (planShape === "upperLower") {
       addPlan("Upper A", tpl.upperA);
       addPlan("Lower A", tpl.lowerA);
       addPlan("Upper B", tpl.upperB);
       addPlan("Lower B", tpl.lowerB);
     } else {
-      // PPL — best for intermediate+ training 5+ days
+      // PPL — intermediate/advanced, 5+ days per week
       addPlan("Push", tpl.push);
       addPlan("Pull", tpl.pull);
       addPlan("Legs", tpl.legs);

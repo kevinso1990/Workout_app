@@ -21,6 +21,7 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import {
   UserPreferences,
   getUserPreferences,
+  setUserPreferences,
   clearAllData,
   getWorkoutPlans,
   getWorkoutHistory,
@@ -330,6 +331,7 @@ export default function ProfileScreen() {
     weekdays: [1, 2, 3, 4, 5],
   });
   const [workoutInsight, setWorkoutInsight] = useState<string>("");
+  const [restTimerEnabled, setRestTimerEnabled] = useState(true);
 
   const loadData = useCallback(async () => {
     try {
@@ -345,6 +347,7 @@ export default function ProfileScreen() {
       setStats({ plans: plans.length, workouts: history.length });
       setMeasurements(bodyMeasurements);
       setReminderSettings(reminders);
+      setRestTimerEnabled(prefs?.restTimerEnabled !== false); // default true
       
       if (patterns.lastWorkoutDaysAgo >= 0) {
         if (patterns.lastWorkoutDaysAgo === 0) {
@@ -402,6 +405,17 @@ export default function ProfileScreen() {
     await addBodyMeasurement(measurement);
     setMeasurements([measurement, ...measurements]);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleToggleRestTimer = async (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRestTimerEnabled(value);
+    const current = preferences ?? {
+      workoutDaysPerWeek: 3,
+      splitPreference: "recommended" as const,
+      exercisePreference: "default" as const,
+    };
+    await setUserPreferences({ ...current, restTimerEnabled: value });
   };
 
   const handleToggleReminders = async (value: boolean) => {
@@ -478,6 +492,30 @@ export default function ProfileScreen() {
           index={0}
         />
       </View>
+
+      <Animated.View
+        entering={FadeInDown.delay(150).duration(400)}
+        style={[styles.restTimerCard, { backgroundColor: theme.backgroundDefault }]}
+      >
+        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
+          <Feather name="clock" size={20} color={Colors.light.primary} />
+        </View>
+        <View style={styles.reminderInfo}>
+          <ThemedText style={styles.reminderTitle}>Rest Timer</ThemedText>
+          <ThemedText style={[styles.reminderSubtitle, { color: theme.textSecondary }]}>
+            {restTimerEnabled
+              ? "Auto-starts after each set"
+              : "Train by feel — no countdown"}
+          </ThemedText>
+        </View>
+        <Switch
+          value={restTimerEnabled}
+          onValueChange={handleToggleRestTimer}
+          trackColor={{ false: theme.border, true: Colors.light.primary }}
+          thumbColor="#fff"
+          testID="switch-rest-timer"
+        />
+      </Animated.View>
 
       <Animated.View
         entering={FadeInDown.delay(200).duration(400)}
@@ -621,6 +659,13 @@ const styles = StyleSheet.create({
   settingsValue: {
     fontSize: 14,
     marginRight: Spacing.sm,
+  },
+  restTimerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.sm,
   },
   reminderCard: {
     padding: Spacing.lg,

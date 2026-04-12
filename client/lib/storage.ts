@@ -23,6 +23,8 @@ export interface UserPreferences {
   fitnessGoals?: FitnessGoal[];
   equipment?: Equipment | null;
   focusMuscles?: MuscleGroupType[];
+  /** Whether to show an automatic rest countdown after each set. Default true. */
+  restTimerEnabled?: boolean;
 }
 
 export interface Exercise {
