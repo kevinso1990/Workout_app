@@ -306,6 +306,78 @@ function selectTemplates(equipment: string) {
   }
 }
 
+// ── Evidence-based volume matrix ─────────────────────────────────────────────
+
+/**
+ * Sets × reps determined by the intersection of training goal and experience.
+ * Sources: NSCA guidelines, Renaissance Periodization, 531, GZCLP.
+ *
+ * Beginners respond to low volume and need to master form before adding load.
+ * Intermediate lifters can handle moderate volume and use progressive overload.
+ * Advanced lifters need higher volume and periodised intensity.
+ */
+function getSetsReps(goal: string, experience: string): { sets: number; reps: number } {
+  type Level = "beginner" | "intermediate" | "advanced";
+  const matrix: Record<Level, Record<string, { sets: number; reps: number }>> = {
+    beginner: {
+      get_stronger: { sets: 3, reps: 5 },
+      strength:     { sets: 3, reps: 5 },
+      build_muscle: { sets: 3, reps: 8 },
+      muscle:       { sets: 3, reps: 8 },
+      lose_fat:     { sets: 3, reps: 12 },
+      stay_fit:     { sets: 2, reps: 12 },
+      endurance:    { sets: 2, reps: 15 },
+    },
+    intermediate: {
+      get_stronger: { sets: 4, reps: 5 },
+      strength:     { sets: 4, reps: 5 },
+      build_muscle: { sets: 4, reps: 8 },
+      muscle:       { sets: 4, reps: 8 },
+      lose_fat:     { sets: 3, reps: 12 },
+      stay_fit:     { sets: 3, reps: 10 },
+      endurance:    { sets: 3, reps: 15 },
+    },
+    advanced: {
+      get_stronger: { sets: 5, reps: 3 },
+      strength:     { sets: 5, reps: 3 },
+      build_muscle: { sets: 4, reps: 8 },
+      muscle:       { sets: 4, reps: 8 },
+      lose_fat:     { sets: 4, reps: 12 },
+      stay_fit:     { sets: 3, reps: 12 },
+      endurance:    { sets: 4, reps: 15 },
+    },
+  };
+  const level = (experience as Level) in matrix ? (experience as Level) : "intermediate";
+  return matrix[level][goal] ?? matrix[level]["build_muscle"];
+}
+
+/**
+ * How many exercises per session, scaled by experience.
+ * Beginners benefit from fewer movements practiced repeatedly.
+ * Advanced lifters use more variation across muscle groups.
+ */
+function getExerciseCount(experience: string): number {
+  switch (experience) {
+    case "beginner":     return 4;
+    case "advanced":     return 7;
+    default:             return 6;  // intermediate
+  }
+}
+
+/**
+ * Frequency × experience → training split.
+ * Beginners should not train PPL until they have consistent form on compounds.
+ * - ≤3 days: full body for all levels
+ * - 4 days: full body for beginners (A/B alternating), upper/lower for intermediate+
+ * - 5+ days: upper/lower for beginners, PPL for intermediate+
+ */
+function getPlanShape(frequency: number, experience: string): "fullBody" | "upperLower" | "ppl" {
+  if (frequency <= 3) return "fullBody";
+  if (experience === "beginner") return frequency <= 4 ? "fullBody" : "upperLower";
+  if (frequency === 4) return "upperLower";
+  return "ppl";
+}
+
 // ── Auto-generate plans ──────────────────────────────────────────────────────
 
 export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, deviceId?: string): { planIds: number[] } {
@@ -314,12 +386,9 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
     throw new AppError(400, "frequency, experience, goal required");
   }
 
-  const setsReps =
-    goal === "strength"
-      ? { sets: 4, reps: 5 }
-      : goal === "muscle"
-        ? { sets: 3, reps: 10 }
-        : { sets: 3, reps: 13 };
+  const setsReps = getSetsReps(goal, experience);
+  const exerciseCount = getExerciseCount(experience);
+  const planShape = getPlanShape(frequency, experience);
 
   const allowedEquip = ALLOWED_EQUIPMENT[equipment] ?? ALLOWED_EQUIPMENT["barbell"];
   const dislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
@@ -338,20 +407,22 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
   const createdPlans: number[] = [];
 
   /**
-   * Build plan exercises from a name list, resolving each name against the
+   * Build plan exercises from a name list, resolving each against the
    * equipment constraint.  Duplicates and disliked exercises are dropped.
-   * If resolveExercise returns null the slot is silently skipped — no invalid
-   * exercise is ever inserted.
+   * exercise count is capped by experience level — beginners get fewer
+   * movements to master before adding complexity.
    */
   const buildExercises = (names: string[]) => {
     const seen = new Set<number>();
     const rows: { id: number; sortOrder: number }[] = [];
-    names.forEach((name, i) => {
+    // Slice first so compound movements (listed first in templates) are kept
+    for (const name of names.slice(0, exerciseCount + 2)) {
+      if (rows.length >= exerciseCount) break;
       const resolved = resolveExercise(name, allowedEquip, dislikedIds);
-      if (!resolved || seen.has(resolved.id)) return;
+      if (!resolved || seen.has(resolved.id)) continue;
       seen.add(resolved.id);
-      rows.push({ id: resolved.id, sortOrder: i });
-    });
+      rows.push({ id: resolved.id, sortOrder: rows.length });
+    }
     return rows;
   };
 
@@ -364,14 +435,15 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
       createdPlans.push(pid);
     };
 
-    if (frequency <= 3) {
+    if (planShape === "fullBody") {
       addPlan("Full Body", tpl.fullBody);
-    } else if (frequency === 4) {
+    } else if (planShape === "upperLower") {
       addPlan("Upper A", tpl.upperA);
       addPlan("Lower A", tpl.lowerA);
       addPlan("Upper B", tpl.upperB);
       addPlan("Lower B", tpl.lowerB);
     } else {
+      // PPL — best for intermediate+ training 5+ days
       addPlan("Push", tpl.push);
       addPlan("Pull", tpl.pull);
       addPlan("Legs", tpl.legs);

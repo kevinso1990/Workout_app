@@ -59,31 +59,53 @@ export interface SetData {
   setType?: SetType;
 }
 
+/**
+ * Progression increments by experience level.
+ * Beginners progress in smaller jumps to build form before load.
+ * Intermediate/advanced use standard periodization steps.
+ */
+function progressionIncrement(
+  lastWeight: number,
+  experience: FitnessLevel | null | undefined
+): { up: number; down: number } {
+  const light = lastWeight < 20;
+  const medium = lastWeight < 60;
+  switch (experience) {
+    case "beginner":
+      return { up: 1.25, down: 1.25 };
+    case "advanced":
+      return { up: light ? 2.5 : medium ? 5 : 5, down: light ? 2.5 : 5 };
+    default: // intermediate
+      return { up: light ? 2.5 : medium ? 2.5 : 5, down: light ? 2.5 : 5 };
+  }
+}
+
 export function calculateProgressionWeight(
   lastWeight: number,
-  lastRating: "green" | "yellow" | "red" | null
+  lastRating: "green" | "yellow" | "red" | null,
+  experience?: FitnessLevel | null
 ): { suggestedWeight: number; message: string } {
   if (!lastRating || lastWeight === 0) {
     return { suggestedWeight: lastWeight, message: "Same as last time" };
   }
 
+  const { up, down } = progressionIncrement(lastWeight, experience);
+
   switch (lastRating) {
     case "green":
-      const increase = lastWeight < 20 ? 2.5 : lastWeight < 50 ? 2.5 : 5;
       return {
-        suggestedWeight: lastWeight + increase,
-        message: `+${increase}kg - Last set felt easy!`,
+        suggestedWeight: lastWeight + up,
+        message: `+${up}kg — felt easy, time to progress`,
       };
     case "yellow":
       return {
         suggestedWeight: lastWeight,
-        message: "Maintain weight - Good effort",
+        message: "Same weight — stay consistent",
       };
     case "red":
-      const decrease = lastWeight < 20 ? 2.5 : 5;
       return {
-        suggestedWeight: Math.max(0, lastWeight - decrease),
-        message: `${decrease > 0 ? "-" + decrease + "kg" : "Same"} - Take it easier`,
+        suggestedWeight: Math.max(0, lastWeight - down),
+        message: `-${down}kg — recover and rebuild`,
       };
     default:
       return { suggestedWeight: lastWeight, message: "Same as last time" };

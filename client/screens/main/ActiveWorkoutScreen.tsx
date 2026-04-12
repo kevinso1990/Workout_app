@@ -44,6 +44,8 @@ import {
   getWorkoutHistory,
   WorkoutSession,
   calculateProgressionWeight,
+  getUserPreferences,
+  FitnessLevel,
 } from "@/lib/storage";
 import {
   getExerciseImageUrl,
@@ -958,6 +960,7 @@ function SetInput({
   onUpdate,
   onComplete,
   isActive,
+  experience,
 }: {
   setIndex: number;
   setData: SetData;
@@ -965,6 +968,7 @@ function SetInput({
   onUpdate: (data: Partial<SetData>) => void;
   onComplete: () => void;
   isActive: boolean;
+  experience?: FitnessLevel | null;
 }) {
   const { theme } = useTheme();
   const [showPlateCalc, setShowPlateCalc] = useState(false);
@@ -973,8 +977,8 @@ function SetInput({
   const progressionSuggestion = useMemo(() => {
     if (!lastWeekData || !lastWeekData.weight || !lastWeekData.rating) return null;
     const lastWeight = parseFloat(lastWeekData.weight) || 0;
-    return calculateProgressionWeight(lastWeight, lastWeekData.rating);
-  }, [lastWeekData]);
+    return calculateProgressionWeight(lastWeight, lastWeekData.rating, experience);
+  }, [lastWeekData, experience]);
 
   useEffect(() => {
     if (isActive && lastWeekData && setData.weight === "" && setData.reps === "") {
@@ -1311,34 +1315,6 @@ function SetInput({
             thumbTintColor={Colors.light.primary}
             testID={`slider-weight-${setIndex}`}
           />
-          <View style={styles.quickAdjustRow}>
-            <QuickAdjustButton
-              label="-2.5"
-              onPress={() => {
-                const current = parseFloat(setData.weight) || 0;
-                onUpdate({
-                  weight: Math.max(0, current - 2.5).toString(),
-                });
-              }}
-              type="decrease"
-            />
-            <QuickAdjustButton
-              label="+2.5"
-              onPress={() => {
-                const current = parseFloat(setData.weight) || 0;
-                onUpdate({ weight: (current + 2.5).toString() });
-              }}
-              type="increase"
-            />
-            <QuickAdjustButton
-              label="+5"
-              onPress={() => {
-                const current = parseFloat(setData.weight) || 0;
-                onUpdate({ weight: (current + 5).toString() });
-              }}
-              type="increase"
-            />
-          </View>
         </View>
 
         <View style={styles.sliderWrapper}>
@@ -1402,12 +1378,12 @@ function SetInput({
 
       <View style={styles.rirSection}>
         <ThemedText style={[styles.rirQuestion, { color: theme.text }]}>
-          Reps in Reserve (RIR)
+          Log this set
         </ThemedText>
         <ThemedText
           style={[styles.rirHelpText, { color: theme.textSecondary }]}
         >
-          How many more reps could you have done?
+          {canRate ? "How many more reps could you have done?" : "Set weight and reps above first"}
         </ThemedText>
         <View style={styles.rirButtonsRow}>
           {([0, 1, 2, 3] as RIRValue[]).map((rir) => (
@@ -1422,13 +1398,6 @@ function SetInput({
             />
           ))}
         </View>
-        {!canRate ? (
-          <ThemedText
-            style={[styles.rirHint, { color: theme.textSecondary }]}
-          >
-            Enter weight and reps first
-          </ThemedText>
-        ) : null}
       </View>
     </Animated.View>
   );
@@ -1460,6 +1429,7 @@ export default function ActiveWorkoutScreen() {
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const buttonScale = useSharedValue(1);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -1506,10 +1476,12 @@ export default function ActiveWorkoutScreen() {
 
   const loadData = async () => {
     try {
-      const [plans, history] = await Promise.all([
+      const [plans, history, prefs] = await Promise.all([
         getWorkoutPlans(),
         getWorkoutHistory(),
+        getUserPreferences(),
       ]);
+      if (prefs?.fitnessLevel) setFitnessLevel(prefs.fitnessLevel);
 
       const targetPlan = plans.find((p) => p.id === route.params.planId);
       if (!targetPlan) return;
@@ -2028,6 +2000,7 @@ export default function ActiveWorkoutScreen() {
                   onUpdate={handleUpdateSet}
                   onComplete={handleSetComplete}
                   isActive={index === currentSetIndex}
+                  experience={fitnessLevel}
                 />
               ))}
             </View>
