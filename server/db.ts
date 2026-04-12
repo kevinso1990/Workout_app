@@ -7,6 +7,9 @@ const db = new Database(DB_PATH);
 
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
+// Wait up to 5s for a lock instead of immediately throwing SQLITE_BUSY.
+// Essential when multiple concurrent requests hit the same WAL DB.
+db.pragma("busy_timeout = 5000");
 
 export function initDb() {
   db.exec(`

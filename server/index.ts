@@ -3,9 +3,23 @@ import type { Request, Response, NextFunction } from "express";
 import { createServer as createViteServer } from "vite";
 import * as fs from "fs";
 import * as path from "path";
-import { initDb } from "./db";
+import db, { initDb } from "./db";
 import { registerRoutes } from "./routes/index";
 import { errorHandler } from "./middleware/errorHandler";
+
+// ── Process-level error safety ────────────────────────────────────────────────
+// These are last-resort handlers. Bugs that escape asyncHandler end up here.
+// Log the error and restart (process manager / Replit will restart the dyno).
+
+process.on("uncaughtException", (err) => {
+  console.error("[fatal] uncaughtException:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[fatal] unhandledRejection:", reason);
+  process.exit(1);
+});
 
 const app = express();
 const log = console.log;
@@ -56,14 +70,25 @@ function setupCors(app: express.Application): void {
     res.json({ status: "ok", ts: new Date().toISOString() });
   });
 
-  // Request logging
+  // Attach a short request ID to every request — referenced in error logs
+  // so a user-reported error code can be correlated to a specific log line.
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    (req as any).requestId = Math.random().toString(36).slice(2, 10);
+    next();
+  });
+
+  // Structured request logging: method path status duration [userId] [rid on error]
   app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     res.on("finish", () => {
+      if (!req.path.startsWith("/api") && req.path !== "/") return;
       const duration = Date.now() - start;
-      if (req.path.startsWith("/api") || req.path === "/") {
-        log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
+      const parts: (string | number)[] = [req.method, req.path, res.statusCode, `${duration}ms`];
+      if (req.user?.sub) parts.push(`uid=${req.user.sub}`);
+      if (res.statusCode >= 500) {
+        parts.push(`rid=${(req as any).requestId}`);
       }
+      log(parts.join(" "));
     });
     next();
   });
@@ -74,6 +99,22 @@ function setupCors(app: express.Application): void {
   app.use(errorHandler);
 
   const port = parseInt(process.env.PORT ?? "5000", 10);
+
+  // ── Graceful shutdown ───────────────────────────────────────────────────────
+  // On SIGTERM / SIGINT: stop accepting new requests, close the DB, then exit.
+  // A 10s hard deadline prevents zombie hangs in case of slow in-flight requests.
+  function shutdown(signal: string, server: ReturnType<typeof app.listen>) {
+    log(`[server] ${signal} received — shutting down gracefully`);
+    server.close(() => {
+      try { db.close(); } catch { /* already closed */ }
+      log("[server] shutdown complete");
+      process.exit(0);
+    });
+    (setTimeout(() => {
+      console.error("[server] forced shutdown after 10s timeout");
+      process.exit(1);
+    }, 10_000) as unknown as NodeJS.Timeout).unref();
+  }
 
   if (isProd) {
     const distPath = path.resolve(process.cwd(), "dist/public");
@@ -86,9 +127,11 @@ function setupCors(app: express.Application): void {
       log("WARNING: dist/public not found — no static files to serve");
     }
 
-    app.listen(port, "0.0.0.0", () => {
+    const mainServer = app.listen(port, "0.0.0.0", () => {
       log(`Server running on port ${port}`);
     });
+    process.on("SIGTERM", () => shutdown("SIGTERM", mainServer));
+    process.on("SIGINT",  () => shutdown("SIGINT",  mainServer));
 
     const proxyPort = 8081;
     if (proxyPort !== port) {

@@ -480,8 +480,11 @@ function getExerciseSetsReps(
   const freqBonus = weeklyMuscleFreq <= 1 ? 1 : 0;
 
   if (tier === "primary") {
+    // Strength: 3–5 sets × low reps; clear progression across experience
     if (isStrength) return { sets: (beg ? 3 : adv ? 5 : 4) + freqBonus, reps: beg ? 5 : adv ? 3 : 5 };
-    if (isMuscle)   return { sets: (beg ? 3 : adv ? 4 : 3) + freqBonus, reps: 8 };
+    // Muscle: 3–4 sets × 8 reps; intermediate gets 4 sets (up from 3) —
+    // enough to drive hypertrophy without overwhelming session capacity
+    if (isMuscle)   return { sets: (beg ? 3 : adv ? 4 : 4) + freqBonus, reps: 8 };
     if (isFat)      return { sets: 3 + freqBonus,                        reps: 10 };
     /* fallback */  return { sets: (beg ? 2 : 3) + freqBonus,            reps: 12 };
   }
@@ -598,8 +601,12 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
 
   const createdPlans: number[] = [];
 
-  // Max total working sets per session to prevent unrealistic volume
-  const maxSessionSets = experience === "beginner" ? 14 : experience === "advanced" ? 24 : 18;
+  // Per-session set cap: prevents unrealistic volume while accommodating the
+  // 4-set primary compound load for intermediate (3P×4 + 2S×3 + 1I×3 = 21).
+  //   Beginner:     14 sets  (4 exercises × ~3 sets)
+  //   Intermediate: 21 sets  (6 exercises: 3P×4 + 2S×3 + 1I×3)
+  //   Advanced:     25 sets  (7 exercises: 2P×4 + 2S×4 + 3I×3 = PPL push day)
+  const maxSessionSets = experience === "beginner" ? 14 : experience === "advanced" ? 25 : 21;
 
   /**
    * Build plan exercises from a name list.  Each exercise gets sets/reps
@@ -622,7 +629,10 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
 
       const tier = classifyExercise(name);
       const { sets, reps } = getExerciseSetsReps(tier, goal, experience, weeklyMuscleFreq);
-      if (totalSets + sets > maxSessionSets) break; // session volume cap
+      // Skip this exercise if it would breach the cap, but keep scanning — a
+      // lower-volume exercise later in the list might still fit (e.g. 2-set
+      // isolation when only 1–2 sets of headroom remain).
+      if (totalSets + sets > maxSessionSets) continue;
 
       seen.add(resolved.id);
       totalSets += sets;

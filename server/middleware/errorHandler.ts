@@ -37,12 +37,17 @@ export function asyncHandler(
  */
 export function errorHandler(
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction,
 ): void {
   if (err instanceof AppError) {
+    // 4xx — expected application errors, no stack trace needed
+    if (err.statusCode >= 500) {
+      const rid = (req as any).requestId as string | undefined;
+      console.error(`[error]${rid ? ` rid=${rid}` : ""} ${err.statusCode} ${req.method} ${req.path}:`, err.message);
+    }
     res.status(err.statusCode).json({ error: err.message });
     return;
   }
@@ -53,8 +58,12 @@ export function errorHandler(
   const message = cast.message ?? "Internal Server Error";
 
   if (status >= 500) {
-    console.error("Unhandled server error:", err);
+    const rid = (req as any).requestId as string | undefined;
+    const stack = err instanceof Error ? err.stack : String(err);
+    console.error(`[error]${rid ? ` rid=${rid}` : ""} ${status} ${req.method} ${req.path}:\n${stack}`);
   }
 
-  res.status(status).json({ error: message });
+  // Never leak internal error details to the client
+  const clientMessage = status >= 500 ? "Internal Server Error" : message;
+  res.status(status).json({ error: clientMessage });
 }

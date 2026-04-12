@@ -559,7 +559,18 @@ export default function ProfileScreen() {
       </Animated.View>
 
       <View style={styles.settingsList}>
-        <SettingsItem icon="info" label="App Version" value="1.0.0" index={3} />
+        {/* App Version: informational only — no press handler, no chevron, no animation */}
+        <Animated.View
+          entering={FadeInDown.delay(350).duration(400)}
+          style={[styles.settingsItem, { backgroundColor: theme.backgroundDefault }]}
+        >
+          <View style={[styles.settingsIcon, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="info" size={20} color={theme.textSecondary} />
+          </View>
+          <ThemedText style={[styles.settingsLabel, { color: theme.text }]}>App Version</ThemedText>
+          <ThemedText style={[styles.settingsValue, { color: theme.textSecondary }]}>1.0.0</ThemedText>
+        </Animated.View>
+
         <SettingsItem
           icon="refresh-cw"
           label="Reset Preferences"

@@ -130,13 +130,18 @@ export function finishSession(id: number, body: FinishSessionBody): Session {
     db.prepare(`UPDATE sessions SET ${updates.join(", ")} WHERE id = ?`).run(...values, id);
   }
 
-  // Compute and store muscle fatigue only once per session
+  // Compute and store muscle fatigue only once per session.
+  // Non-fatal: a fatigue-tracking failure must never prevent a session from finishing.
   if (finished_at) {
     const existing = db
       .prepare("SELECT id FROM muscle_fatigue WHERE session_id = ? LIMIT 1")
       .get(id);
     if (!existing) {
-      calculateAndStoreFatigue(id);
+      try {
+        calculateAndStoreFatigue(id);
+      } catch (err) {
+        console.error(`[warn] fatigue calculation failed for session ${id}:`, err);
+      }
     }
   }
 
