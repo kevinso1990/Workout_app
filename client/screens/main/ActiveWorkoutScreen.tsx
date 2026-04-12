@@ -1346,34 +1346,6 @@ function SetInput({
             thumbTintColor={Colors.light.primary}
             testID={`slider-reps-${setIndex}`}
           />
-          <View style={styles.quickAdjustRow}>
-            <QuickAdjustButton
-              label="-1"
-              onPress={() => {
-                const current = parseInt(setData.reps) || 0;
-                onUpdate({
-                  reps: Math.max(0, current - 1).toString(),
-                });
-              }}
-              type="decrease"
-            />
-            <QuickAdjustButton
-              label="+1"
-              onPress={() => {
-                const current = parseInt(setData.reps) || 0;
-                onUpdate({ reps: (current + 1).toString() });
-              }}
-              type="increase"
-            />
-            <QuickAdjustButton
-              label="+2"
-              onPress={() => {
-                const current = parseInt(setData.reps) || 0;
-                onUpdate({ reps: (current + 2).toString() });
-              }}
-              type="increase"
-            />
-          </View>
         </View>
       </View>
 
@@ -1426,6 +1398,7 @@ export default function ActiveWorkoutScreen() {
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
+  const [shouldNavigateHome, setShouldNavigateHome] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -1439,7 +1412,7 @@ export default function ActiveWorkoutScreen() {
   const restDuration = useMemo(() => {
     if (fitnessGoals.includes("get_stronger")) return 180; // 3 min — heavy loads need CNS recovery
     if (fitnessGoals.includes("lose_fat"))     return 45;  // 45 s  — elevated HR is the goal
-    return 90; // default: muscle / stay_fit
+    return 90; // default: muscle / build_muscle
   }, [fitnessGoals]);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -1464,6 +1437,14 @@ export default function ActiveWorkoutScreen() {
     setImageError(false);
     setImageLoading(true);
   }, [currentExerciseIndex, currentExerciseName]);
+
+  // Navigate home only after the summary modal has fully dismissed to prevent
+  // a blank screen caused by navigation.reset() firing while a Modal is mounted.
+  useEffect(() => {
+    if (shouldNavigateHome && !showSummary) {
+      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+    }
+  }, [shouldNavigateHome, showSummary]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -1765,7 +1746,8 @@ export default function ActiveWorkoutScreen() {
           plan?.days[route.params.dayIndex]?.dayName || "Workout"
         }
         onClose={() => {
-          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+          setShouldNavigateHome(true);
+          setShowSummary(false);
         }}
       />
 

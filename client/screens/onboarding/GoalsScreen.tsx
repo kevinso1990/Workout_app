@@ -41,12 +41,6 @@ const GOAL_OPTIONS: {
     description: "Increase lifts and power",
     icon: "trending-up",
   },
-  {
-    id: "stay_fit",
-    title: "Stay Fit",
-    description: "Maintain health and energy",
-    icon: "heart",
-  },
 ];
 
 function ProgressBar({ step, total }: { step: number; total: number }) {

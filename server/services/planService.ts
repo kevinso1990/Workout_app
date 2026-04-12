@@ -439,7 +439,7 @@ function getExerciseSetsReps(
     if (isStrength) return { sets: beg ? 3 : adv ? 5 : 4, reps: beg ? 5 : adv ? 3 : 5 };
     if (isMuscle)   return { sets: beg ? 3 : adv ? 4 : 3, reps: 8 };
     if (isFat)      return { sets: 3, reps: 10 };
-    /* stay_fit / endurance */ return { sets: beg ? 2 : 3, reps: 12 };
+    /* fallback */ return { sets: beg ? 2 : 3, reps: 12 };
   }
 
   if (tier === "secondary") {
