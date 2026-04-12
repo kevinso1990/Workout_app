@@ -31,15 +31,17 @@ import { WorkoutSession, getWorkoutHistory, ExerciseProgress } from "@/lib/stora
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+// Must match the muscle_group values used by the backend exercise seed
+// and the local WorkoutPlan exercise data.
 const MUSCLE_GROUPS = [
   { name: "Chest", color: "#FF4D00" },
   { name: "Back", color: "#3B82F6" },
   { name: "Shoulders", color: "#8B5CF6" },
   { name: "Biceps", color: "#10B981" },
   { name: "Triceps", color: "#F59E0B" },
-  { name: "Quads", color: "#EC4899" },
-  { name: "Hamstrings", color: "#6366F1" },
-  { name: "Calves", color: "#14B8A6" },
+  { name: "Legs", color: "#EC4899" },
+  { name: "Core", color: "#6366F1" },
+  { name: "Traps", color: "#14B8A6" },
 ];
 
 function StatCard({
@@ -200,7 +202,8 @@ function MuscleBalance({
   );
 }
 
-const COMPOUND_LIFTS = ["Bench Press", "Squat", "Deadlift", "Overhead Press", "Barbell Row"];
+// Exact exercise names from the backend seed — must match what the plan generator picks
+const COMPOUND_LIFTS = ["Barbell Bench Press", "Barbell Squat", "Deadlift", "Overhead Press", "Barbell Row"];
 
 function calculate1RM(weight: number, reps: number): number {
   if (reps === 1) return weight;
@@ -427,17 +430,17 @@ function MuscleHeatmap({
             />
           </View>
           <View style={styles.heatmapLegs}>
-            <View 
+            <View
               style={[
-                styles.heatmapLeg, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Quads")?.sets || 0) }
-              ]} 
+                styles.heatmapLeg,
+                { backgroundColor: getIntensityColor(data.find(d => d.name === "Legs")?.sets || 0) }
+              ]}
             />
-            <View 
+            <View
               style={[
-                styles.heatmapLeg, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Hamstrings")?.sets || 0) }
-              ]} 
+                styles.heatmapLeg,
+                { backgroundColor: getIntensityColor(data.find(d => d.name === "Legs")?.sets || 0) }
+              ]}
             />
           </View>
         </View>
@@ -762,8 +765,8 @@ export default function ProgressScreen() {
 
   const getOneRMData = useMemo(() => {
     const liftColors: Record<string, string> = {
-      "Bench Press": Colors.light.primary,
-      "Squat": "#8B5CF6",
+      "Barbell Bench Press": Colors.light.primary,
+      "Barbell Squat": "#8B5CF6",
       "Deadlift": "#10B981",
       "Overhead Press": "#3B82F6",
       "Barbell Row": "#F59E0B",

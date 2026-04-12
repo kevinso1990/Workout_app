@@ -9,12 +9,29 @@ function getDeviceId(): string {
   return id;
 }
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
 async function request<T>(url: string, opts?: RequestInit): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   const existing = (opts?.headers as Record<string, string>) ?? {};
-  const res = await fetch(`${BASE}${url}`, {
-    ...opts,
-    headers: { "Content-Type": "application/json", "x-device-id": getDeviceId(), ...existing },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${url}`, {
+      ...opts,
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", "x-device-id": getDeviceId(), ...existing },
+    });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out — check your connection and try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || body.message || res.statusText);
