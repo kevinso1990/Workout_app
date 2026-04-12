@@ -23,7 +23,7 @@ function setupCors(app: express.Application): void {
     if (origin && allowedOrigins.some((p) => p.test(origin))) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Content-Type");
+      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Device-Id");
     }
     if (req.method === "OPTIONS") {
       res.sendStatus(200);
@@ -38,8 +38,23 @@ function setupCors(app: express.Application): void {
   log("Database initialized");
 
   setupCors(app);
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: false }));
+
+  // Limit request body size to prevent trivial memory abuse
+  app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ extended: false, limit: "100kb" }));
+
+  // Basic security headers — no helmet dep needed for these fundamentals
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    next();
+  });
+
+  // Health check — no auth, cheap, safe for load-balancer / uptime probes
+  app.get("/health", (_req: Request, res: Response) => {
+    res.json({ status: "ok", ts: new Date().toISOString() });
+  });
 
   // Request logging
   app.use((req: Request, res: Response, next: NextFunction) => {

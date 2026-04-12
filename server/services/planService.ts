@@ -1,3 +1,4 @@
+import { z } from "zod";
 import db from "../db";
 import { AppError } from "../middleware/errorHandler";
 import { getDislikedExerciseIds } from "./voteService";
@@ -10,6 +11,42 @@ import type {
   UpdatePlanBody,
   AutoGeneratePlansBody,
 } from "../models";
+
+// ── Input validation schema ───────────────────────────────────────────────────
+
+const VALID_EXPERIENCE = ["beginner", "intermediate", "advanced"] as const;
+const VALID_GOALS      = ["build_muscle", "lose_fat", "get_stronger"] as const;
+const VALID_EQUIPMENT  = [
+  "barbell", "full_gym",
+  "dumbbell", "dumbbells_only",
+  "bodyweight", "home_minimal",
+  "kettlebell",
+] as const;
+
+const autoGenerateSchema = z.object({
+  frequency:  z.number({ invalid_type_error: "frequency must be a number" }).int().min(1).max(7),
+  experience: z.enum(VALID_EXPERIENCE, { message: "experience must be beginner | intermediate | advanced" }),
+  goal:       z.enum(VALID_GOALS,      { message: "goal must be build_muscle | lose_fat | get_stronger" }),
+  equipment:  z.enum(VALID_EQUIPMENT).optional().default("barbell"),
+});
+
+// ── Weekly volume targets (sets per muscle group per week) ────────────────────
+//
+// Derived from RP / NSCA practical ranges for natural lifters.
+// These are targets to hit across the full weekly plan, not per session.
+//
+// Level        | MEV (Minimum) | Target range | MRV (Max recoverable)
+// -------------|---------------|--------------|----------------------
+// Beginner     | 8             | 8–12         | 14
+// Intermediate | 10            | 12–20        | 22
+// Advanced     | 12            | 16–24        | 26
+//
+// How the plan hits these targets:
+//   Full Body 1–2x/week  → 1–2 sessions × ~4–5 sets/compound = 4–10 sets/muscle
+//                           → Primary compound gets +1 set bonus to compensate (see below)
+//   Full Body 3x/week    → 3 sessions × ~3 sets/compound = ~9 sets/muscle ✓ beginner
+//   Upper/Lower 4x/week  → 2 upper sessions × ~3-4 sets + 2 lower × ~3 = ~12–16 ✓ int/adv
+//   PPL 6x/week          → 2 sessions each split × ~4-5 compound sets = ~16–20 ✓ advanced
 
 // ── Shared helper ────────────────────────────────────────────────────────────
 
@@ -414,32 +451,39 @@ function classifyExercise(name: string): "primary" | "secondary" | "isolation" {
 // ── Per-exercise-tier volume prescription ────────────────────────────────────
 
 /**
- * Sets and reps by exercise tier, goal, and experience.
+ * Sets and reps by exercise tier, goal, experience, and weekly muscle frequency.
  *
  * Rules (NSCA / RP principles):
  * - Primary compounds drive the most adaptation → most sets, appropriate rep range
- * - Secondary compounds support the primaries → moderate sets
- * - Isolation exercises have diminishing returns beyond 3 sets → capped at 3
- * - Strength goals use heavier loads (lower reps, more sets for compounds)
- * - Muscle/hypertrophy goals use moderate loads (8–12 rep range)
- * - Fat loss / fitness goals use lighter loads and higher reps
+ * - Secondary compounds support primaries → moderate sets
+ * - Isolation exercises have diminishing returns beyond 3 sets → hard cap at 3
+ * - Strength goals: heavier loads, lower reps, more sets for compounds
+ * - Muscle/hypertrophy: moderate loads, 8–12 rep range
+ * - Fat loss: moderate loads, higher reps / shorter rest
+ *
+ * weeklyMuscleFreq adjusts for how often a muscle group is trained per week:
+ * - When ≤1x/week (e.g. 1-day full body), primary compounds receive +1 set
+ *   to compensate for less frequent stimulus and still hit weekly volume targets.
  */
 function getExerciseSetsReps(
   tier: "primary" | "secondary" | "isolation",
   goal: string,
-  experience: string
+  experience: string,
+  weeklyMuscleFreq = 2,
 ): { sets: number; reps: number } {
   const isStrength = goal === "get_stronger" || goal === "strength";
   const isMuscle   = goal === "build_muscle" || goal === "muscle";
   const isFat      = goal === "lose_fat";
   const adv = experience === "advanced";
   const beg = experience === "beginner";
+  // +1 set bonus when muscle hits only once/week to still reach minimum weekly volume
+  const freqBonus = weeklyMuscleFreq <= 1 ? 1 : 0;
 
   if (tier === "primary") {
-    if (isStrength) return { sets: beg ? 3 : adv ? 5 : 4, reps: beg ? 5 : adv ? 3 : 5 };
-    if (isMuscle)   return { sets: beg ? 3 : adv ? 4 : 3, reps: 8 };
-    if (isFat)      return { sets: 3, reps: 10 };
-    /* fallback */ return { sets: beg ? 2 : 3, reps: 12 };
+    if (isStrength) return { sets: (beg ? 3 : adv ? 5 : 4) + freqBonus, reps: beg ? 5 : adv ? 3 : 5 };
+    if (isMuscle)   return { sets: (beg ? 3 : adv ? 4 : 3) + freqBonus, reps: 8 };
+    if (isFat)      return { sets: 3 + freqBonus,                        reps: 10 };
+    /* fallback */  return { sets: (beg ? 2 : 3) + freqBonus,            reps: 12 };
   }
 
   if (tier === "secondary") {
@@ -458,15 +502,29 @@ function getExerciseSetsReps(
 // ── Evidence-based split selection ───────────────────────────────────────────
 
 /**
- * How many exercises per session, scaled by experience.
- * Beginners master fewer movements; advanced lifters use more variation.
+ * Exercises per session, scaled by both split type and experience.
+ *
+ * Full-body sessions keep a lower count because each slot is a multi-joint
+ * compound covering multiple muscle groups — more exercises would just exceed
+ * practical session length. Split sessions can support more exercises because
+ * each targets a narrower muscle group with dedicated volume.
+ *
+ * Rule matrix:
+ *   Split          | Beginner | Intermediate | Advanced
+ *   ---------------|----------|--------------|----------
+ *   Full Body      |    4     |      5       |    6
+ *   Upper/Lower(F) |    5     |      6       |    7
+ *   Upper/Lower    |    5     |      6       |    7
+ *   Push/Pull/Legs |    5     |      6       |    7
  */
-function getExerciseCount(experience: string): number {
-  switch (experience) {
-    case "beginner": return 4;
-    case "advanced": return 7;
-    default:         return 6; // intermediate
-  }
+function getExerciseCount(experience: string, planShape: string): number {
+  const table: Record<string, Record<string, number>> = {
+    fullBody:       { beginner: 4, intermediate: 5, advanced: 6 },
+    upperLowerFull: { beginner: 5, intermediate: 6, advanced: 7 },
+    upperLower:     { beginner: 5, intermediate: 6, advanced: 7 },
+    ppl:            { beginner: 5, intermediate: 6, advanced: 7 },
+  };
+  return table[planShape]?.[experience] ?? 6;
 }
 
 /**
@@ -507,13 +565,22 @@ function getPlanShape(
 // ── Auto-generate plans ──────────────────────────────────────────────────────
 
 export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, deviceId?: string): { planIds: number[] } {
-  const { frequency, experience, goal, equipment = "barbell" } = body;
-  if (!frequency || !experience || !goal) {
-    throw new AppError(400, "frequency, experience, goal required");
+  // Validate and coerce all inputs — throws 400 with a clear message on failure
+  const parsed = autoGenerateSchema.safeParse(body);
+  if (!parsed.success) {
+    const msg = parsed.error.errors.map((e) => e.message).join("; ");
+    throw new AppError(400, msg);
   }
+  const { frequency, experience, goal, equipment } = parsed.data;
 
-  const exerciseCount = getExerciseCount(experience);
   const planShape = getPlanShape(frequency, experience);
+  const exerciseCount = getExerciseCount(experience, planShape);
+
+  // How often each muscle group is trained per week in this plan shape.
+  // Used to scale per-session sets for low-frequency plans (see getExerciseSetsReps).
+  const weeklyMuscleFreq =
+    planShape === "fullBody" ? Math.min(frequency, 3) :
+    2; // upper/lower, upperLowerFull, ppl all hit each group ~2×/week
 
   const allowedEquip = ALLOWED_EQUIPMENT[equipment] ?? ALLOWED_EQUIPMENT["barbell"];
   const dislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
@@ -536,23 +603,26 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
 
   /**
    * Build plan exercises from a name list.  Each exercise gets sets/reps
-   * appropriate for its tier (primary/secondary/isolation), goal, and
-   * experience.  Duplicates, disliked exercises, and slots that would push the
-   * session over the total-sets cap are silently dropped.
+   * appropriate for its tier (primary/secondary/isolation), goal, experience,
+   * and weekly muscle frequency.  Duplicates, disliked exercises, and slots
+   * that would push the session over the total-sets cap are silently dropped.
+   *
+   * We scan up to exerciseCount + 6 candidates so that disliked/equipment
+   * failures don't leave the session short of exercises.
    */
   const buildExercises = (names: string[]) => {
     const seen = new Set<number>();
     const rows: { id: number; sortOrder: number; sets: number; reps: number }[] = [];
     let totalSets = 0;
 
-    for (const name of names.slice(0, exerciseCount + 3)) {
+    for (const name of names.slice(0, exerciseCount + 6)) {
       if (rows.length >= exerciseCount) break;
       const resolved = resolveExercise(name, allowedEquip, dislikedIds);
       if (!resolved || seen.has(resolved.id)) continue;
 
       const tier = classifyExercise(name);
-      const { sets, reps } = getExerciseSetsReps(tier, goal, experience);
-      if (totalSets + sets > maxSessionSets) break; // volume cap
+      const { sets, reps } = getExerciseSetsReps(tier, goal, experience, weeklyMuscleFreq);
+      if (totalSets + sets > maxSessionSets) break; // session volume cap
 
       seen.add(resolved.id);
       totalSets += sets;

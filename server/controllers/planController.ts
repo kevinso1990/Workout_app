@@ -20,6 +20,8 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
   const body = req.body as UpdatePlanBody;
+  // Ownership check: getPlan throws 403 if plan belongs to a different user
+  planService.getPlan(id, req.user?.sub);
   res.json(planService.updatePlan(id, body));
 });
 

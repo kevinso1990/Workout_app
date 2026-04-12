@@ -305,11 +305,9 @@ function SettingsItem({
             {value}
           </ThemedText>
         ) : null}
-        <Feather
-          name="chevron-right"
-          size={20}
-          color={theme.textSecondary}
-        />
+        {onPress !== undefined ? (
+          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        ) : null}
       </AnimatedPressable>
     </Animated.View>
   );
@@ -479,19 +477,6 @@ export default function ProfileScreen() {
           Preferences
         </ThemedText>
       </Animated.View>
-
-      <View style={styles.settingsList}>
-        <SettingsItem
-          icon="calendar"
-          label="Workout Days"
-          value={
-            preferences
-              ? `${preferences.workoutDaysPerWeek} days/week`
-              : "Not set"
-          }
-          index={0}
-        />
-      </View>
 
       <Animated.View
         entering={FadeInDown.delay(150).duration(400)}
