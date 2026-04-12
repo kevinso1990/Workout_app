@@ -120,6 +120,19 @@ export function initDb() {
   migrateVotes();
   migrateSplitRefresh();
   migrateSubscriptions();
+  migrateIndices();
+}
+
+/**
+ * Adds performance indices that were missing from the original schema.
+ * All are CREATE IF NOT EXISTS — safe to run on every startup.
+ *
+ * sets.session_id        — fetched on every session detail load and fatigue calc
+ * plan_exercises.plan_id — fetched on every plan load / active workout start
+ */
+function migrateIndices() {
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_sets_session ON sets(session_id)"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_plan_exercises_plan ON plan_exercises(plan_id)"); } catch {}
 }
 
 function migrateVotes() {

@@ -209,9 +209,15 @@ const ALL_MUSCLES = [
 const MAX_FATIGUE = 18;
 
 export function getRecovery(): RecoveryStatus[] {
+  // Fatigue fully decays after 18 days (MAX_FATIGUE / 1 point per day).
+  // Capping the scan to 20 days prevents unbounded table growth from affecting
+  // recovery queries on long-lived databases.
   const rows = db
     .prepare(
-      "SELECT muscle_group, fatigue_score, last_trained_at FROM muscle_fatigue ORDER BY last_trained_at DESC",
+      `SELECT muscle_group, fatigue_score, last_trained_at
+       FROM muscle_fatigue
+       WHERE last_trained_at > datetime('now', '-20 days')
+       ORDER BY last_trained_at DESC`,
     )
     .all() as MuscleFatigueRow[];
 

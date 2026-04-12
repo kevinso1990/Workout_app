@@ -20,7 +20,11 @@
     "test:watch": "vitest",
     "check:types": "tsc --noEmit",
     "check:format": "prettier --check \"**/*.{js,ts,tsx,css,json}\"",
-    "format": "prettier --write \"**/*.{js,ts,tsx,css,json}\""
+    "format": "prettier --write \"**/*.{js,ts,tsx,css,json}\"",
+    "load:baseline": "artillery run load-tests/baseline.yml",
+    "load:plan-generate": "artillery run load-tests/plan-generate.yml",
+    "load:workout": "artillery run load-tests/workout-flow.yml",
+    "load:spike": "artillery run load-tests/spike.yml"
   },
   "dependencies": {
     "@expo-google-fonts/montserrat": "^0.4.2",
@@ -93,6 +97,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "artillery": "^2.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "24.10.0",
     "@types/react": "~19.1.0",

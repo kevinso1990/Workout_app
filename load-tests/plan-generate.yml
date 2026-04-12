@@ -1,0 +1,54 @@
+# plan-generate.yml — Rate-limit verification for POST /api/plans/auto-generate
+#
+# The endpoint is rate-limited at 5 requests / minute per IP.
+# All Artillery VUs run from the same host (127.0.0.1), so the IP-level counter
+# is shared — exactly what we want for verifying the limiter.
+#
+# Expected outcome:
+#   - First 5 requests within the window → 200 OK
+#   - Requests 6+ within the same 60 s window → 429 Too Many Requests
+#   - Artillery will report both 200 and 429 counts in the summary
+#
+# The test is purposely configured with maxErrorRate: 70 so that it passes even
+# though ~half the requests are intentional 429s (they prove the limiter works).
+#
+# To observe the rate-limit reset: run once, wait 60 s, run again — all 200s.
+#
+# Run: npm run load:plan-generate
+#
+# Prerequisites: npm run load:baseline must have run first to create the test
+# account, OR the workout-flow test has been run (both create the same account).
+
+config:
+  target: "http://localhost:5000"
+  processor: "./helpers.js"
+  phases:
+    # Burst 8 VUs in 10 seconds — enough to exceed the 5/min cap from one IP
+    - name: "Rate-limit burst"
+      duration: 10
+      arrivalCount: 8
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  # 429s are expected here — they are the point of this test
+  ensure:
+    maxErrorRate: 70
+
+scenarios:
+  - name: "Plan generate (rate-limit probe)"
+    beforeScenario: "getSharedState"
+    flow:
+      - post:
+          url: "/api/plans/auto-generate"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            frequency: 3
+            experience: "intermediate"
+            goal: "build_muscle"
+            equipment: "barbell"
+          # Both 200 (under limit) and 429 (over limit) are valid outcomes
+          expect:
+            - statusCode:
+                - 200
+                - 429

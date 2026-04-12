@@ -1,0 +1,122 @@
+# spike.yml — Spike traffic simulation (burst + recovery)
+#
+# Simulates a traffic spike: normal load → sudden 5× burst → recovery.
+# Exercises all major endpoints simultaneously:
+#   - Read: GET /health, GET /api/exercises
+#   - Write: POST /api/sessions + POST /api/sets × 3 + PUT finish
+#
+# The spike phase intentionally exceeds comfortable concurrency to surface
+# queue depth, latency degradation, and SQLITE_BUSY handling under pressure.
+#
+# Pass/fail thresholds (relaxed for spike): p95 < 1000 ms, error rate < 5 %
+#
+# Run: npm run load:spike
+
+config:
+  target: "http://localhost:5000"
+  processor: "./helpers.js"
+  phases:
+    - name: "Warmup"
+      duration: 20
+      arrivalRate: 3
+    - name: "Normal load"
+      duration: 30
+      arrivalRate: 10
+    - name: "Spike"
+      duration: 20
+      arrivalRate: 50
+    - name: "Recovery"
+      duration: 30
+      arrivalRate: 10
+    - name: "Ramp-down"
+      duration: 15
+      arrivalRate: 3
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  # Relaxed thresholds — spike load will degrade latency
+  ensure:
+    p95: 1000
+    maxErrorRate: 5
+
+scenarios:
+  # ── Read-only traffic (cheap, high weight during spike) ───────────────────
+  - name: "Health probe"
+    weight: 30
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+
+  - name: "Exercise list"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/exercises"
+          expect:
+            - statusCode: 200
+
+  # ── Write-heavy traffic (session + 3 sets + finish) ───────────────────────
+  - name: "Quick workout (3 sets)"
+    weight: 45
+    beforeScenario: "getSharedState"
+    flow:
+      - post:
+          url: "/api/sessions"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            plan_id: "{{ planId }}"
+          capture:
+            - json: "$.id"
+              as: "sessionId"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 1
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 2
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 3
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "setFinishTime"
+      - put:
+          url: "/api/sessions/{{ sessionId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            finished_at: "{{ finishedAt }}"
+            rpe: 6
+          expect:
+            - statusCode: 200
