@@ -46,6 +46,7 @@ import {
   calculateProgressionWeight,
   getUserPreferences,
   FitnessLevel,
+  FitnessGoal,
 } from "@/lib/storage";
 import {
   getExerciseImageUrl,
@@ -961,6 +962,7 @@ function SetInput({
   onComplete,
   isActive,
   experience,
+  targetReps,
 }: {
   setIndex: number;
   setData: SetData;
@@ -969,6 +971,7 @@ function SetInput({
   onComplete: () => void;
   isActive: boolean;
   experience?: FitnessLevel | null;
+  targetReps?: string;
 }) {
   const { theme } = useTheme();
   const [showPlateCalc, setShowPlateCalc] = useState(false);
@@ -1022,6 +1025,11 @@ function SetInput({
           style={[styles.upcomingText, { color: theme.textSecondary }]}
         >
           Set {setIndex + 1}
+          {targetReps ? (
+            <ThemedText style={[styles.upcomingText, { color: theme.textSecondary }]}>
+              {" "}· target {targetReps} reps
+            </ThemedText>
+          ) : null}
         </ThemedText>
       </View>
     );
@@ -1206,16 +1214,9 @@ function SetInput({
               color={theme.textSecondary}
             />
             <ThemedText
-              style={[
-                styles.targetReasonText,
-                { color: theme.textSecondary },
-              ]}
+              style={[styles.targetReasonText, { color: theme.textSecondary }]}
             >
-              {lastWeekData?.rating === "green"
-                ? "Last set felt easy - time to progress!"
-                : lastWeekData?.rating === "red"
-                ? "Last session was tough - lighter today"
-                : "Maintain weight - build consistency"}
+              {progressionSuggestion.message}
             </ThemedText>
           </View>
         </View>
@@ -1430,7 +1431,15 @@ export default function ActiveWorkoutScreen() {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
+  const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
   const buttonScale = useSharedValue(1);
+
+  // Rest duration varies by goal: strength needs longer recovery than endurance/fat-loss
+  const restDuration = useMemo(() => {
+    if (fitnessGoals.includes("get_stronger")) return 180; // 3 min — heavy loads need CNS recovery
+    if (fitnessGoals.includes("lose_fat"))     return 45;  // 45 s  — elevated HR is the goal
+    return 90; // default: muscle / stay_fit
+  }, [fitnessGoals]);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
@@ -1482,6 +1491,7 @@ export default function ActiveWorkoutScreen() {
         getUserPreferences(),
       ]);
       if (prefs?.fitnessLevel) setFitnessLevel(prefs.fitnessLevel);
+      if (prefs?.fitnessGoals?.length) setFitnessGoals(prefs.fitnessGoals);
 
       const targetPlan = plans.find((p) => p.id === route.params.planId);
       if (!targetPlan) return;
@@ -1574,7 +1584,7 @@ export default function ActiveWorkoutScreen() {
 
     if (currentSetIndex < currentExercise.sets - 1) {
       setShowRestTimer(true);
-      setRestTimeLeft(DEFAULT_REST_TIME);
+      setRestTimeLeft(restDuration);
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < day.exercises.length - 1) {
       Haptics.notificationAsync(
@@ -1587,7 +1597,7 @@ export default function ActiveWorkoutScreen() {
 
   const handleSkipRest = () => {
     setShowRestTimer(false);
-    setRestTimeLeft(DEFAULT_REST_TIME);
+    setRestTimeLeft(restDuration);
   };
 
   const handleNextExercise = () => {
@@ -2001,6 +2011,7 @@ export default function ActiveWorkoutScreen() {
                   onComplete={handleSetComplete}
                   isActive={index === currentSetIndex}
                   experience={fitnessLevel}
+                  targetReps={currentExercise.reps}
                 />
               ))}
             </View>

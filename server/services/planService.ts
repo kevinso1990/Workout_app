@@ -306,76 +306,187 @@ function selectTemplates(equipment: string) {
   }
 }
 
-// ── Evidence-based volume matrix ─────────────────────────────────────────────
+// ── Exercise tier classification ─────────────────────────────────────────────
 
 /**
- * Sets × reps determined by the intersection of training goal and experience.
- * Sources: NSCA guidelines, Renaissance Periodization, 531, GZCLP.
+ * Classifies each named exercise as primary compound, secondary compound,
+ * or isolation.  Used to assign different set/rep volumes per exercise.
  *
- * Beginners respond to low volume and need to master form before adding load.
- * Intermediate lifters can handle moderate volume and use progressive overload.
- * Advanced lifters need higher volume and periodised intensity.
+ * Primary compounds:   multi-joint, highest motor-unit recruitment, placed first
+ * Secondary compounds: multi-joint but lower load or more assistance-focused
+ * Isolation:           single-joint, placed last, capped at 3 sets
  */
-function getSetsReps(goal: string, experience: string): { sets: number; reps: number } {
-  type Level = "beginner" | "intermediate" | "advanced";
-  const matrix: Record<Level, Record<string, { sets: number; reps: number }>> = {
-    beginner: {
-      get_stronger: { sets: 3, reps: 5 },
-      strength:     { sets: 3, reps: 5 },
-      build_muscle: { sets: 3, reps: 8 },
-      muscle:       { sets: 3, reps: 8 },
-      lose_fat:     { sets: 3, reps: 12 },
-      stay_fit:     { sets: 2, reps: 12 },
-      endurance:    { sets: 2, reps: 15 },
-    },
-    intermediate: {
-      get_stronger: { sets: 4, reps: 5 },
-      strength:     { sets: 4, reps: 5 },
-      build_muscle: { sets: 4, reps: 8 },
-      muscle:       { sets: 4, reps: 8 },
-      lose_fat:     { sets: 3, reps: 12 },
-      stay_fit:     { sets: 3, reps: 10 },
-      endurance:    { sets: 3, reps: 15 },
-    },
-    advanced: {
-      get_stronger: { sets: 5, reps: 3 },
-      strength:     { sets: 5, reps: 3 },
-      build_muscle: { sets: 4, reps: 8 },
-      muscle:       { sets: 4, reps: 8 },
-      lose_fat:     { sets: 4, reps: 12 },
-      stay_fit:     { sets: 3, reps: 12 },
-      endurance:    { sets: 4, reps: 15 },
-    },
-  };
-  const level = (experience as Level) in matrix ? (experience as Level) : "intermediate";
-  return matrix[level][goal] ?? matrix[level]["build_muscle"];
+const EXERCISE_TIER: Record<string, "primary" | "secondary" | "isolation"> = {
+  // ── Primary compounds ──────────────────────────────────────────────────────
+  "Barbell Squat":           "primary",
+  "Deadlift":                "primary",
+  "Barbell Bench Press":     "primary",
+  "Barbell Row":             "primary",
+  "Overhead Press":          "primary",
+  "Romanian Deadlift":       "primary",
+  "Pull-Ups":                "primary",
+  "Chin-Ups":                "primary",
+  "Goblet Squat":            "primary",
+  "KB Goblet Squat":         "primary",
+  "KB Swing":                "primary",
+  "KB Turkish Get-Up":       "primary",
+  "Push-Ups":                "primary",   // primary in bodyweight context
+  "Dumbbell Row":            "primary",
+  "Chest Dips":              "primary",
+
+  // ── Secondary compounds ────────────────────────────────────────────────────
+  "Incline Dumbbell Press":   "secondary",
+  "Dumbbell Bench Press":     "secondary",
+  "Bulgarian Split Squat":    "secondary",
+  "KB Bulgarian Split Squat": "secondary",
+  "Stiff Leg Deadlift":       "secondary",
+  "Hack Squat":               "secondary",
+  "Lat Pulldown":             "secondary",
+  "Seated Cable Row":         "secondary",
+  "Face Pull":                "secondary",
+  "Dumbbell Shoulder Press":  "secondary",
+  "Leg Press":                "secondary",
+  "Walking Lunges":           "secondary",
+  "Reverse Lunges":           "secondary",
+  "Hip Thrust":               "secondary",
+  "Glute Bridge":             "secondary",
+  "Step Ups":                 "secondary",
+  "Dumbbell Flyes":           "secondary",
+  "Cable Flyes":              "secondary",
+  "Hyperextension":           "secondary",
+  "KB Floor Press":           "secondary",
+  "KB Row":                   "secondary",
+  "KB Press":                 "secondary",
+  "KB Romanian Deadlift":     "secondary",
+  "KB Lunges":                "secondary",
+  "KB Renegade Row":          "secondary",
+  "KB Push Press":            "secondary",
+  "KB Clean":                 "secondary",
+  "KB High Pull":             "secondary",
+  "KB Squeeze Press":         "secondary",
+  "Diamond Push-Ups":         "secondary",
+  "Tricep Dips":              "secondary",
+  "Sissy Squat":              "secondary",
+  "Mountain Climbers":        "secondary",
+
+  // ── Isolation ─────────────────────────────────────────────────────────────
+  "Lateral Raise":               "isolation",
+  "KB Lateral Raise":            "isolation",
+  "Front Raise":                 "isolation",
+  "Rear Delt Fly":               "isolation",
+  "Barbell Curl":                "isolation",
+  "Dumbbell Curl":               "isolation",
+  "Hammer Curl":                 "isolation",
+  "KB Curl":                     "isolation",
+  "KB Hammer Curl":              "isolation",
+  "Preacher Curl":               "isolation",
+  "Incline Dumbbell Curl":       "isolation",
+  "Concentration Curl":          "isolation",
+  "Tricep Pushdown":             "isolation",
+  "Overhead Tricep Extension":   "isolation",
+  "KB Overhead Tricep Extension":"isolation",
+  "Tricep Kickback":             "isolation",
+  "KB Skull Crusher":            "isolation",
+  "Leg Extension":               "isolation",
+  "Leg Curl":                    "isolation",
+  "Seated Leg Curl":             "isolation",
+  "Standing Calf Raise":         "isolation",
+  "Seated Calf Raise":           "isolation",
+  "KB Calf Raise":               "isolation",
+  "Barbell Shrug":               "isolation",
+  "Dumbbell Shrug":              "isolation",
+  "KB Farmer's Walk":            "isolation",
+  "Plank":                       "isolation",
+  "Side Plank":                  "isolation",
+  "Russian Twist":               "isolation",
+  "Hanging Leg Raise":           "isolation",
+  "Cable Crunch":                "isolation",
+  "Ab Wheel Rollout":            "isolation",
+  "Dead Bug":                    "isolation",
+  "Crunches":                    "isolation",
+  "Sit-Ups":                     "isolation",
+};
+
+function classifyExercise(name: string): "primary" | "secondary" | "isolation" {
+  return EXERCISE_TIER[name] ?? "secondary";
 }
+
+// ── Per-exercise-tier volume prescription ────────────────────────────────────
+
+/**
+ * Sets and reps by exercise tier, goal, and experience.
+ *
+ * Rules (NSCA / RP principles):
+ * - Primary compounds drive the most adaptation → most sets, appropriate rep range
+ * - Secondary compounds support the primaries → moderate sets
+ * - Isolation exercises have diminishing returns beyond 3 sets → capped at 3
+ * - Strength goals use heavier loads (lower reps, more sets for compounds)
+ * - Muscle/hypertrophy goals use moderate loads (8–12 rep range)
+ * - Fat loss / fitness goals use lighter loads and higher reps
+ */
+function getExerciseSetsReps(
+  tier: "primary" | "secondary" | "isolation",
+  goal: string,
+  experience: string
+): { sets: number; reps: number } {
+  const isStrength = goal === "get_stronger" || goal === "strength";
+  const isMuscle   = goal === "build_muscle" || goal === "muscle";
+  const isFat      = goal === "lose_fat";
+  const adv = experience === "advanced";
+  const beg = experience === "beginner";
+
+  if (tier === "primary") {
+    if (isStrength) return { sets: beg ? 3 : adv ? 5 : 4, reps: beg ? 5 : adv ? 3 : 5 };
+    if (isMuscle)   return { sets: beg ? 3 : adv ? 4 : 3, reps: 8 };
+    if (isFat)      return { sets: 3, reps: 10 };
+    /* stay_fit / endurance */ return { sets: beg ? 2 : 3, reps: 12 };
+  }
+
+  if (tier === "secondary") {
+    if (isStrength) return { sets: 3, reps: 8 };
+    if (isMuscle)   return { sets: adv ? 4 : 3, reps: 10 };
+    if (isFat)      return { sets: 3, reps: 12 };
+    return { sets: beg ? 2 : 3, reps: 15 };
+  }
+
+  // Isolation — hard cap at 3 sets; higher reps for metabolic stimulus
+  if (isStrength) return { sets: 3, reps: 10 };
+  if (isMuscle)   return { sets: 3, reps: 12 };
+  return { sets: 2, reps: 15 };
+}
+
+// ── Evidence-based split selection ───────────────────────────────────────────
 
 /**
  * How many exercises per session, scaled by experience.
- * Beginners benefit from fewer movements practiced repeatedly.
- * Advanced lifters use more variation across muscle groups.
+ * Beginners master fewer movements; advanced lifters use more variation.
  */
 function getExerciseCount(experience: string): number {
   switch (experience) {
-    case "beginner":     return 4;
-    case "advanced":     return 7;
-    default:             return 6;  // intermediate
+    case "beginner": return 4;
+    case "advanced": return 7;
+    default:         return 6; // intermediate
   }
 }
 
 /**
  * Frequency × experience → training split.
- * Beginners should not train PPL until they have consistent form on compounds.
- * - ≤3 days: full body for all levels
- * - 4 days: full body for beginners (A/B alternating), upper/lower for intermediate+
- * - 5+ days: upper/lower for beginners, PPL for intermediate+
+ *
+ * Rules:
+ * 1-2 days: Full Body for everyone (insufficient frequency for split training)
+ * 3 days:   Full Body for beginners (practice same compounds 3×/week — Starting
+ *           Strength / GZCLP style), PPL for intermediate/advanced (each
+ *           session gets full dedicated volume: Push Mon, Pull Wed, Legs Fri)
+ * 4 days:   Upper / Lower for all (2× each per week — solid frequency and recovery)
+ * 5+ days:  Upper / Lower for beginners (PPL demands too many distinct patterns),
+ *           PPL for intermediate/advanced
  */
 function getPlanShape(frequency: number, experience: string): "fullBody" | "upperLower" | "ppl" {
-  if (frequency <= 3) return "fullBody";
-  if (experience === "beginner") return frequency <= 4 ? "fullBody" : "upperLower";
+  if (frequency <= 2) return "fullBody";
+  if (frequency === 3) return experience === "beginner" ? "fullBody" : "ppl";
   if (frequency === 4) return "upperLower";
-  return "ppl";
+  // 5+ days
+  return experience === "beginner" ? "upperLower" : "ppl";
 }
 
 // ── Auto-generate plans ──────────────────────────────────────────────────────
@@ -386,7 +497,6 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
     throw new AppError(400, "frequency, experience, goal required");
   }
 
-  const setsReps = getSetsReps(goal, experience);
   const exerciseCount = getExerciseCount(experience);
   const planShape = getPlanShape(frequency, experience);
 
@@ -406,22 +516,32 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
 
   const createdPlans: number[] = [];
 
+  // Max total working sets per session to prevent unrealistic volume
+  const maxSessionSets = experience === "beginner" ? 14 : experience === "advanced" ? 24 : 18;
+
   /**
-   * Build plan exercises from a name list, resolving each against the
-   * equipment constraint.  Duplicates and disliked exercises are dropped.
-   * exercise count is capped by experience level — beginners get fewer
-   * movements to master before adding complexity.
+   * Build plan exercises from a name list.  Each exercise gets sets/reps
+   * appropriate for its tier (primary/secondary/isolation), goal, and
+   * experience.  Duplicates, disliked exercises, and slots that would push the
+   * session over the total-sets cap are silently dropped.
    */
   const buildExercises = (names: string[]) => {
     const seen = new Set<number>();
-    const rows: { id: number; sortOrder: number }[] = [];
-    // Slice first so compound movements (listed first in templates) are kept
-    for (const name of names.slice(0, exerciseCount + 2)) {
+    const rows: { id: number; sortOrder: number; sets: number; reps: number }[] = [];
+    let totalSets = 0;
+
+    for (const name of names.slice(0, exerciseCount + 3)) {
       if (rows.length >= exerciseCount) break;
       const resolved = resolveExercise(name, allowedEquip, dislikedIds);
       if (!resolved || seen.has(resolved.id)) continue;
+
+      const tier = classifyExercise(name);
+      const { sets, reps } = getExerciseSetsReps(tier, goal, experience);
+      if (totalSets + sets > maxSessionSets) break; // volume cap
+
       seen.add(resolved.id);
-      rows.push({ id: resolved.id, sortOrder: rows.length });
+      totalSets += sets;
+      rows.push({ id: resolved.id, sortOrder: rows.length, sets, reps });
     }
     return rows;
   };
@@ -430,7 +550,7 @@ export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, 
     const addPlan = (name: string, exerciseNames: string[]) => {
       const pid = insertPlan.run(`${prefix}${name}`, userId ?? null).lastInsertRowid as number;
       for (const ex of buildExercises(exerciseNames)) {
-        insertPE.run(pid, ex.id, ex.sortOrder, setsReps.sets, setsReps.reps, 0);
+        insertPE.run(pid, ex.id, ex.sortOrder, ex.sets, ex.reps, 0);
       }
       createdPlans.push(pid);
     };
