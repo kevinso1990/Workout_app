@@ -925,16 +925,121 @@ export const SPLIT_RECOMMENDATIONS: Record<number, string[]> = {
   7: ["Push", "Pull", "Legs", "Upper", "Lower", "Full Body", "Full Body"],
 };
 
+// ── Full Body variation pools ─────────────────────────────────────────────────
+// Each entry is one "slot" (muscle-group position) in the Full Body template.
+// When multiple Full Body days exist in the same plan, each day picks
+//   variations[dayIndex % variations.length]
+// so no exercise is repeated across days. Works for 1-day, 2-day, 3-day, etc.
+
+interface FullBodySlot {
+  muscleGroup: string;
+  sets: number;
+  reps: string;
+  variations: Array<{ id: string; name: string }>;
+}
+
+const FULL_BODY_SLOT_POOLS: FullBodySlot[] = [
+  {
+    muscleGroup: "Legs",
+    sets: 3,
+    reps: "8-10",
+    variations: [
+      { id: "fb-squat",     name: "Barbell Squat" },
+      { id: "fb-leg-press", name: "Leg Press" },
+      { id: "fb-rdl",       name: "Romanian Deadlift" },
+      { id: "fb-bss",       name: "Bulgarian Split Squat" },
+      { id: "fb-lunges",    name: "Lunges" },
+    ],
+  },
+  {
+    muscleGroup: "Chest",
+    sets: 3,
+    reps: "8-10",
+    variations: [
+      { id: "fb-bench",         name: "Bench Press" },
+      { id: "fb-incline-db",    name: "Incline Dumbbell Press" },
+      { id: "fb-cable-flyes",   name: "Cable Flyes" },
+      { id: "fb-db-flyes",      name: "Dumbbell Flyes" },
+      { id: "fb-machine-chest", name: "Machine Chest Press" },
+    ],
+  },
+  {
+    muscleGroup: "Back",
+    sets: 3,
+    reps: "8-10",
+    variations: [
+      { id: "fb-barbell-row",  name: "Barbell Rows" },
+      { id: "fb-lat-pull",     name: "Lat Pulldown" },
+      { id: "fb-seated-cable", name: "Seated Cable Row" },
+      { id: "fb-pull-ups",     name: "Pull-Ups" },
+      { id: "fb-db-row",       name: "Dumbbell Rows" },
+    ],
+  },
+  {
+    muscleGroup: "Shoulders",
+    sets: 3,
+    reps: "10-12",
+    variations: [
+      { id: "fb-ohp",        name: "Overhead Press" },
+      { id: "fb-db-press",   name: "Dumbbell Shoulder Press" },
+      { id: "fb-lat-raises", name: "Lateral Raises" },
+      { id: "fb-arnold",     name: "Arnold Press" },
+    ],
+  },
+  {
+    muscleGroup: "Arms",
+    sets: 3,
+    reps: "10-12",
+    variations: [
+      { id: "fb-barbell-curl", name: "Barbell Curl" },
+      { id: "fb-hammer-curl",  name: "Hammer Curl" },
+      { id: "fb-tricep-push",  name: "Tricep Pushdown" },
+      { id: "fb-skull-crush",  name: "Skull Crushers" },
+    ],
+  },
+];
+
+/**
+ * Build the exercise list for one Full Body day.
+ * @param dayIndex  0-based ordinal of this Full Body day within the plan
+ *                  (not the overall day index).  Modulo wrapping means it
+ *                  works correctly for any number of Full Body days per week.
+ */
+function buildFullBodyDay(dayIndex: number): Exercise[] {
+  return FULL_BODY_SLOT_POOLS.map((slot) => {
+    const v = slot.variations[dayIndex % slot.variations.length];
+    return {
+      id: `${v.id}-d${dayIndex}`,
+      name: v.name,
+      muscleGroup: slot.muscleGroup,
+      sets: slot.sets,
+      reps: slot.reps,
+    };
+  });
+}
+
 export function generateDefaultPlan(
   daysPerWeek: number,
   name: string = "My Workout Plan"
 ): WorkoutPlan {
-  const splitDays = SPLIT_RECOMMENDATIONS[daysPerWeek] || ["Full Body"];
+  const splitDays = SPLIT_RECOMMENDATIONS[daysPerWeek] ?? ["Full Body"];
 
-  const days: WorkoutDay[] = splitDays.map((dayName) => ({
-    dayName,
-    exercises: DEFAULT_EXERCISES[dayName] || DEFAULT_EXERCISES["Full Body"],
-  }));
+  // Track how many Full Body days we have assigned so far.
+  // Each Full Body day gets a unique dayIndex so it draws from a different
+  // variation slot — no exercise repeats across Full Body days in the week.
+  let fullBodyCount = 0;
+
+  const days: WorkoutDay[] = splitDays.map((dayName) => {
+    if (dayName === "Full Body") {
+      const exercises = buildFullBodyDay(fullBodyCount);
+      fullBodyCount += 1;
+      return { dayName, exercises };
+    }
+    return {
+      dayName,
+      exercises: DEFAULT_EXERCISES[dayName] ?? DEFAULT_EXERCISES["Full Body"],
+    };
+  });
 
   return {
     id: Date.now().toString(),

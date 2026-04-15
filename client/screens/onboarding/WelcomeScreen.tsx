@@ -81,7 +81,7 @@ export default function WelcomeScreen() {
               </View>
             </View>
 
-            <ThemedText style={styles.heroAppName}>FitPlan</ThemedText>
+            <ThemedText style={styles.heroAppName}>TrackYourLift</ThemedText>
           </LinearGradient>
         </Animated.View>
 

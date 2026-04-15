@@ -1,4 +1,4 @@
-# FitPlan - Design Guidelines
+# TrackYourLift - Design Guidelines
 
 ## Brand Identity
 

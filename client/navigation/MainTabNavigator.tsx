@@ -117,7 +117,7 @@ export default function MainTabNavigator() {
           component={MyPlansScreen}
           options={{
             title: "My Plans",
-            headerTitle: () => <HeaderTitle title="FitPlan" />,
+            headerTitle: () => <HeaderTitle title="TrackYourLift" />,
             tabBarIcon: ({ color, size }) => (
               <Feather name="clipboard" size={size} color={color} />
             ),

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import OnboardingStackNavigator from "@/navigation/OnboardingStackNavigator";
 import CreatePlanScreen from "@/screens/CreatePlanScreen";
+import EditPlanScreen from "@/screens/EditPlanScreen";
 import PlanDetailScreen from "@/screens/PlanDetailScreen";
 import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
 import ActiveWorkoutScreen from "@/screens/main/ActiveWorkoutScreen";
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
   CreatePlan: undefined;
+  EditPlan: { planId: string };
   PlanDetail: { planId: string };
   StartWorkout: { planId?: string };
   ActiveWorkout: { planId: string; planName: string; dayIndex: number };
@@ -81,6 +83,13 @@ export default function RootStackNavigator() {
         options={{
           headerTitle: "New Workout Plan",
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="EditPlan"
+        component={EditPlanScreen}
+        options={{
+          headerTitle: "Edit Plan",
         }}
       />
       <Stack.Screen

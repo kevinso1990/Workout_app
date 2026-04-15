@@ -33,42 +33,41 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 function PlanCard({
   plan,
   index,
-  onPress,
   onStartPress,
   onDuplicate,
+  onEdit,
 }: {
   plan: WorkoutPlan;
   index: number;
-  onPress: () => void;
   onStartPress: () => void;
   onDuplicate: () => void;
+  onEdit: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+  const cardOpacity = useSharedValue(1);
   const startScale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    opacity: cardOpacity.value,
   }));
 
   const startAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: startScale.value }],
   }));
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
   return (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
       <AnimatedPressable
-        onPress={onPress}
+        onPress={onEdit}
         onPressIn={() => {
           scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
+          cardOpacity.value = withSpring(0.75, { damping: 15, stiffness: 200 });
         }}
         onPressOut={() => {
           scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+          cardOpacity.value = withSpring(1, { damping: 15, stiffness: 200 });
         }}
         style={[
           animatedStyle,
@@ -77,7 +76,13 @@ function PlanCard({
         ]}
         testID={`card-plan-${plan.id}`}
       >
-        <View style={styles.planCardContent}>
+        {/* Banner: tappable section above Start Workout */}
+        <View
+          style={[
+            styles.planBanner,
+            { borderColor: Colors.light.primary + "4D" },
+          ]}
+        >
           <View
             style={[
               styles.planIcon,
@@ -93,6 +98,9 @@ function PlanCard({
             >
               {plan.daysPerWeek} days/week • {plan.days.length} workouts
             </ThemedText>
+            <ThemedText style={[styles.tapHint, { color: theme.textSecondary }]}>
+              Tap to edit
+            </ThemedText>
           </View>
           <View style={styles.planMeta}>
             <Pressable
@@ -106,7 +114,7 @@ function PlanCard({
             >
               <Feather name="copy" size={16} color={theme.textSecondary} />
             </Pressable>
-            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            <Feather name="chevron-right" size={20} color={Colors.light.primary + "99"} />
           </View>
         </View>
 
@@ -221,14 +229,14 @@ export default function MyPlansScreen() {
     navigation.navigate("CreatePlan");
   };
 
-  const handlePlanPress = (plan: WorkoutPlan) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("PlanDetail", { planId: plan.id });
-  };
-
   const handleStartWorkout = (plan: WorkoutPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("StartWorkout", { planId: plan.id });
+  };
+
+  const handleEditPlan = (plan: WorkoutPlan) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("EditPlan", { planId: plan.id });
   };
 
   const handleDuplicate = async (plan: WorkoutPlan) => {
@@ -249,9 +257,9 @@ export default function MyPlansScreen() {
     <PlanCard
       plan={item}
       index={index}
-      onPress={() => handlePlanPress(item)}
       onStartPress={() => handleStartWorkout(item)}
       onDuplicate={() => handleDuplicate(item)}
+      onEdit={() => handleEditPlan(item)}
     />
   );
 
@@ -320,10 +328,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E8E8E8",
   },
-  planCardContent: {
+  planBanner: {
     flexDirection: "row",
     alignItems: "center",
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
     marginBottom: Spacing.md,
+  },
+  tapHint: {
+    fontSize: 11,
+    marginTop: 3,
+    opacity: 0.8,
   },
   planIcon: {
     width: 48,

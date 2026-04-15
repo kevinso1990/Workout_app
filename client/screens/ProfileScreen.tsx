@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useThemeContext, ThemeMode } from "@/context/ThemeContext";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import {
   UserPreferences,
@@ -219,6 +220,75 @@ function AddMeasurementModal({
         </View>
       </View>
     </Modal>
+  );
+}
+
+const THEME_OPTIONS: Array<{
+  value: ThemeMode;
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+}> = [
+  { value: "system", icon: "smartphone", label: "System" },
+  { value: "light",  icon: "sun",        label: "Light"  },
+  { value: "dark",   icon: "moon",       label: "Dark"   },
+];
+
+function ThemeToggleCard() {
+  const { theme } = useTheme();
+  const { mode, setMode } = useThemeContext();
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(160).duration(400)}
+      style={[styles.themeCard, { backgroundColor: theme.backgroundDefault }]}
+    >
+      <View style={styles.themeCardHeader}>
+        <View
+          style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}
+        >
+          <Feather name="monitor" size={20} color={Colors.light.primary} />
+        </View>
+        <ThemedText style={styles.themeCardTitle}>Appearance</ThemedText>
+      </View>
+      <View style={styles.themeSegments}>
+        {THEME_OPTIONS.map(({ value, icon, label }) => {
+          const isActive = mode === value;
+          return (
+            <Pressable
+              key={value}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setMode(value);
+              }}
+              style={[
+                styles.themeSegment,
+                {
+                  backgroundColor: isActive
+                    ? Colors.light.primary + "15"
+                    : theme.backgroundSecondary,
+                  borderColor: isActive ? Colors.light.primary : theme.border,
+                },
+              ]}
+              testID={`button-theme-${value}`}
+            >
+              <Feather
+                name={icon}
+                size={18}
+                color={isActive ? Colors.light.primary : theme.textSecondary}
+              />
+              <ThemedText
+                style={[
+                  styles.themeSegmentLabel,
+                  { color: isActive ? Colors.light.primary : theme.textSecondary },
+                ]}
+              >
+                {label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </Animated.View>
   );
 }
 
@@ -450,6 +520,8 @@ export default function ProfileScreen() {
         />
       </Animated.View>
 
+      <ThemeToggleCard />
+
       <Animated.View
         entering={FadeInDown.delay(200).duration(400)}
         style={styles.section}
@@ -577,6 +649,39 @@ const styles = StyleSheet.create({
   reminderSubtitle: {
     fontSize: 13,
     marginTop: 2,
+  },
+  themeCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.sm,
+  },
+  themeCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  themeCardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  themeSegments: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  themeSegment: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.xs,
+  },
+  themeSegmentLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
   },
   bodyStatsCard: {
     marginTop: Spacing.xl,

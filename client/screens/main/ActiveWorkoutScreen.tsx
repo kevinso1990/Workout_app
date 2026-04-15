@@ -411,10 +411,7 @@ function WorkoutSummary({
             colors={[Colors.light.primary, Colors.light.primaryGradientEnd]}
             style={styles.shareCardHeader}
           >
-            <View style={styles.shareCardLogo}>
-              <Feather name="activity" size={18} color="#FFFFFF" />
-              <ThemedText style={styles.shareCardAppName}>FitPlan</ThemedText>
-            </View>
+            <Image source={require('../../../assets/icon.png')} style={{ width: 28, height: 28, borderRadius: 6 }} />
             <ThemedText style={styles.shareCardDate}>{today}</ThemedText>
           </LinearGradient>
 

@@ -1,6 +1,6 @@
 # Load Tests
 
-Artillery-based load and stress tests for the FitPlan backend.
+Artillery-based load and stress tests for the TrackYourLift backend.
 
 ## Requirements
 

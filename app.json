@@ -1,16 +1,17 @@
 {
   "expo": {
-    "name": "FitPlan",
+    "name": "TrackYourLift",
     "slug": "fitplan",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon.png",
     "scheme": "fitplan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kevinsonnen.workoutapp",
+      "icon": "./assets/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -18,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FF4D00",
-        "foregroundImage": "./assets/images/android-icon-foreground.png"
+        "foregroundImage": "./assets/icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

@@ -1,5 +1,5 @@
 /**
- * Exercise image utility for FitPlan.
+ * Exercise image utility for TrackYourLift.
  *
  * Images come from the yuhonas/free-exercise-db repository on GitHub.
  * URL format: https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/{ID}/0.jpg
