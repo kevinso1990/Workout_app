@@ -7,7 +7,16 @@ import {
   Pressable,
   RefreshControl,
   Dimensions,
+  Modal,
 } from "react-native";
+import Svg, {
+  Polyline as SvgPolyline,
+  Circle as SvgCircle,
+  Polygon as SvgPolygon,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -26,10 +35,26 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
-import { WorkoutSession, getWorkoutHistory, ExerciseProgress } from "@/lib/storage";
+import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS } from "@/lib/storage";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const CHART_WIDTH = SCREEN_WIDTH - Spacing.xl * 2 - Spacing.lg * 2;
+
+interface ExerciseSessionData {
+  date: string;
+  maxWeight: number;
+  maxWeightReps: number;
+  estimated1RM: number;
+}
+
+interface ExerciseProgressData {
+  exerciseName: string;
+  lastUsed: string;
+  sessions: ExerciseSessionData[];
+  bestSession: ExerciseSessionData;
+  totalSessions: number;
+}
 
 // Must match the muscle_group values used by the backend exercise seed
 // and the local WorkoutPlan exercise data.
@@ -201,9 +226,6 @@ function MuscleBalance({
     </Animated.View>
   );
 }
-
-// Exact exercise names from the backend seed — must match what the plan generator picks
-const COMPOUND_LIFTS = ["Barbell Bench Press", "Barbell Squat", "Deadlift", "Overhead Press", "Barbell Row"];
 
 function calculate1RM(weight: number, reps: number): number {
   if (reps === 1) return weight;
@@ -572,6 +594,348 @@ function WorkoutHistoryItem({
   );
 }
 
+function SvgLineChart({
+  data,
+  color,
+  chartId,
+}: {
+  data: number[];
+  color: string;
+  chartId: string;
+}) {
+  if (data.length < 2) return null;
+
+  const width = CHART_WIDTH;
+  const height = 90;
+  const pad = 6;
+  const plotW = width - pad * 2;
+  const plotH = height - pad * 2;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const gradId = `g_${chartId}`;
+
+  const pts = data.map((val, i) => ({
+    x: pad + (i / (data.length - 1)) * plotW,
+    y: pad + plotH - ((val - min) / range) * plotH,
+  }));
+
+  const lineStr = pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
+  const areaStr = `${pad},${height - pad} ${lineStr} ${(width - pad).toFixed(2)},${height - pad}`;
+
+  return (
+    <Svg width={width} height={height}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <Stop offset="100%" stopColor={color} stopOpacity="0" />
+        </SvgLinearGradient>
+      </Defs>
+      <SvgPolygon points={areaStr} fill={`url(#${gradId})`} />
+      <SvgPolyline
+        points={lineStr}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {pts.map((p, i) => (
+        <SvgCircle key={i} cx={p.x} cy={p.y} r="3.5" fill={color} />
+      ))}
+    </Svg>
+  );
+}
+
+function ExerciseProgressRow({
+  exercise,
+  isLast,
+  onPress,
+}: {
+  exercise: ExerciseProgressData;
+  isLast: boolean;
+  onPress: () => void;
+}) {
+  const { theme } = useTheme();
+
+  const formatLastUsed = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.exerciseRow,
+        !isLast && [styles.exerciseRowBorder, { borderBottomColor: theme.border }],
+        { opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
+      <View style={styles.exerciseRowLeft}>
+        <ThemedText style={styles.exerciseRowName} numberOfLines={1}>
+          {exercise.exerciseName}
+        </ThemedText>
+        <ThemedText style={[styles.exerciseRowMeta, { color: theme.textSecondary }]}>
+          {exercise.totalSessions} session{exercise.totalSessions !== 1 ? "s" : ""} · {formatLastUsed(exercise.lastUsed)}
+        </ThemedText>
+      </View>
+      <View style={styles.exerciseRowRight}>
+        <ThemedText style={[styles.exerciseRowWeight, { color: Colors.light.primary }]}>
+          {exercise.bestSession.maxWeight}kg
+        </ThemedText>
+        <ThemedText style={[styles.exerciseRowWeightLabel, { color: theme.textSecondary }]}>
+          best
+        </ThemedText>
+      </View>
+      <Feather name="chevron-right" size={16} color={theme.textSecondary} style={{ marginLeft: Spacing.xs }} />
+    </Pressable>
+  );
+}
+
+function ExerciseDetailModal({
+  visible,
+  exercise,
+  onClose,
+}: {
+  visible: boolean;
+  exercise: ExerciseProgressData | null;
+  onClose: () => void;
+}) {
+  const { theme } = useTheme();
+
+  if (!exercise) return null;
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  const weightData = exercise.sessions.map((s) => s.maxWeight);
+  const ormData = exercise.sessions.map((s) => s.estimated1RM);
+  const hasChartData = exercise.sessions.length >= 2;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={[styles.modalContainer, { backgroundColor: theme.backgroundRoot }]}>
+        {/* Drag-to-dismiss handle */}
+        <View style={styles.modalDragHandleArea}>
+          <View style={styles.modalDragBar} />
+        </View>
+
+        <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+          <ThemedText style={styles.modalTitle} numberOfLines={1}>
+            {exercise.exerciseName}
+          </ThemedText>
+          <Pressable onPress={onClose} style={styles.modalClose}>
+            <Feather name="x" size={22} color={theme.text} />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.modalContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Summary stat chips */}
+          <View style={styles.modalStatsRow}>
+            <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText style={[styles.modalStatValue, { color: Colors.light.primary }]}>
+                {exercise.totalSessions}
+              </ThemedText>
+              <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
+                Sessions
+              </ThemedText>
+            </View>
+            <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText style={[styles.modalStatValue, { color: "#10B981" }]}>
+                {exercise.bestSession.maxWeight}kg
+              </ThemedText>
+              <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
+                Best Weight
+              </ThemedText>
+            </View>
+            <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText style={[styles.modalStatValue, { color: "#8B5CF6" }]}>
+                {exercise.bestSession.estimated1RM}kg
+              </ThemedText>
+              <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
+                Est. 1RM
+              </ThemedText>
+            </View>
+          </View>
+
+          {hasChartData ? (
+            <>
+              {/* Max Weight chart */}
+              <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.modalChartHeader}>
+                  <ThemedText style={styles.modalChartTitle}>Max Weight</ThemedText>
+                  <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
+                </View>
+                <SvgLineChart data={weightData} color={Colors.light.primary} chartId="weight" />
+                <View style={styles.modalChartFooter}>
+                  <ThemedText style={[styles.modalChartDateLabel, { color: theme.textSecondary }]}>
+                    {formatDate(exercise.sessions[0].date)}
+                  </ThemedText>
+                  <ThemedText style={[styles.modalChartDateLabel, { color: theme.textSecondary }]}>
+                    {formatDate(exercise.sessions[exercise.sessions.length - 1].date)}
+                  </ThemedText>
+                </View>
+              </View>
+
+              {/* Est. 1RM chart */}
+              <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.modalChartHeader}>
+                  <ThemedText style={styles.modalChartTitle}>Estimated 1RM</ThemedText>
+                  <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
+                </View>
+                <SvgLineChart data={ormData} color="#8B5CF6" chartId="orm" />
+                <View style={styles.modalChartFooter}>
+                  <ThemedText style={[styles.modalChartDateLabel, { color: theme.textSecondary }]}>
+                    {formatDate(exercise.sessions[0].date)}
+                  </ThemedText>
+                  <ThemedText style={[styles.modalChartDateLabel, { color: theme.textSecondary }]}>
+                    {formatDate(exercise.sessions[exercise.sessions.length - 1].date)}
+                  </ThemedText>
+                </View>
+              </View>
+            </>
+          ) : (
+            /* 1 session: show stats card + prompt to log again */
+            <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={styles.modalChartHeader}>
+                <ThemedText style={styles.modalChartTitle}>First Session</ThemedText>
+                <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>
+                  {formatDate(exercise.sessions[0].date)}
+                </ThemedText>
+              </View>
+              <View style={styles.singleSessionStatsRow}>
+                <View style={styles.singleSessionStat}>
+                  <View style={styles.singleSessionValueRow}>
+                    <ThemedText style={[styles.singleSessionValue, { color: Colors.light.primary }]}>
+                      {exercise.sessions[0].maxWeight}kg
+                    </ThemedText>
+                    <View style={styles.pbBadge}>
+                      <ThemedText style={styles.pbBadgeText}>PB</ThemedText>
+                    </View>
+                  </View>
+                  <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
+                    Weight
+                  </ThemedText>
+                </View>
+                <View style={[styles.singleSessionDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.singleSessionStat}>
+                  <ThemedText style={[styles.singleSessionValue, { color: theme.text }]}>
+                    {exercise.sessions[0].maxWeightReps}
+                  </ThemedText>
+                  <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
+                    Reps
+                  </ThemedText>
+                </View>
+                <View style={[styles.singleSessionDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.singleSessionStat}>
+                  <ThemedText style={[styles.singleSessionValue, { color: "#8B5CF6" }]}>
+                    {exercise.sessions[0].estimated1RM}kg
+                  </ThemedText>
+                  <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
+                    Est. 1RM
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.logAgainRow}>
+                <Feather name="trending-up" size={13} color={theme.textSecondary} />
+                <ThemedText style={[styles.logAgainText, { color: theme.textSecondary }]}>
+                  Log again to see progress charts
+                </ThemedText>
+              </View>
+            </View>
+          )}
+
+          {/* Best session card with Personal Best badge */}
+          <View style={[styles.modalBestSession, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.bestSessionIcon, { backgroundColor: Colors.light.primary + "15" }]}>
+              <Feather name="award" size={20} color={Colors.light.primary} />
+            </View>
+            <View style={styles.bestSessionInfo}>
+              <ThemedText style={styles.modalChartTitle}>Best Session</ThemedText>
+              <ThemedText style={[styles.bestSessionDate, { color: theme.textSecondary }]}>
+                {formatDate(exercise.bestSession.date)}
+              </ThemedText>
+              <View style={styles.bestSessionWeightRow}>
+                <ThemedText style={[styles.bestSessionStats, { color: theme.text }]}>
+                  {exercise.bestSession.maxWeight}kg × {exercise.bestSession.maxWeightReps} reps
+                </ThemedText>
+                <View style={styles.pbBadge}>
+                  <ThemedText style={styles.pbBadgeText}>Personal Best</ThemedText>
+                </View>
+              </View>
+              <ThemedText style={[styles.bestSessionStats, { color: theme.textSecondary }]}>
+                Est. 1RM: {exercise.bestSession.estimated1RM}kg
+              </ThemedText>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+function ExerciseProgressSection({
+  data,
+  index,
+}: {
+  data: ExerciseProgressData[];
+  index: number;
+}) {
+  const { theme } = useTheme();
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseProgressData | null>(null);
+
+  if (data.length === 0) return null;
+
+  return (
+    <>
+      <Animated.View
+        entering={FadeInDown.delay(index * 100).duration(400)}
+        style={styles.sectionHeader}
+      >
+        <ThemedText style={styles.sectionTitle}>Exercise Progress</ThemedText>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInDown.delay(index * 100 + 50).duration(400)}
+        style={[styles.exerciseProgressList, { backgroundColor: theme.backgroundDefault }]}
+      >
+        {data.map((exercise, idx) => (
+          <ExerciseProgressRow
+            key={exercise.exerciseName}
+            exercise={exercise}
+            isLast={idx === data.length - 1}
+            onPress={() => setSelectedExercise(exercise)}
+          />
+        ))}
+      </Animated.View>
+
+      <ExerciseDetailModal
+        visible={selectedExercise !== null}
+        exercise={selectedExercise}
+        onClose={() => setSelectedExercise(null)}
+      />
+    </>
+  );
+}
+
 function EmptyState() {
   const { theme } = useTheme();
 
@@ -766,10 +1130,11 @@ export default function ProgressScreen() {
   const getOneRMData = useMemo(() => {
     const liftColors: Record<string, string> = {
       "Barbell Bench Press": Colors.light.primary,
-      "Barbell Squat": "#8B5CF6",
-      "Deadlift": "#10B981",
-      "Overhead Press": "#3B82F6",
-      "Barbell Row": "#F59E0B",
+      "Barbell Back Squat": "#8B5CF6",
+      "Barbell Deadlift": "#10B981",
+      "Barbell Overhead Press": "#3B82F6",
+      "Barbell Bent-Over Row": "#F59E0B",
+      "Machine Leg Press": "#06B6D4",
     };
 
     return COMPOUND_LIFTS.map(liftName => {
@@ -832,6 +1197,74 @@ export default function ProgressScreen() {
       sets: muscleData[mg.name] || 0,
       intensity: muscleData[mg.name] || 0,
     }));
+  }, [history]);
+
+  const getExerciseProgressData = useMemo((): ExerciseProgressData[] => {
+    const exerciseMap = new Map<string, ExerciseProgressData>();
+
+    const sortedHistory = [...history].sort(
+      (a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+    );
+
+    sortedHistory.forEach((session) => {
+      session.exercises.forEach((exercise, idx) => {
+        const progress = session.exerciseProgress?.[idx];
+        if (!progress) return;
+
+        const completedSets = progress.sets.filter((s) => s.completed);
+        if (completedSets.length === 0) return;
+
+        let bestEst1RM = 0;
+        let bestWeight = 0;
+        let bestReps = 0;
+
+        completedSets.forEach((set) => {
+          const w = parseFloat(set.weight) || 0;
+          const r = parseInt(set.reps) || 0;
+          if (w <= 0 || r <= 0) return;
+          const est = calculate1RM(w, r);
+          if (est > bestEst1RM) {
+            bestEst1RM = est;
+            bestWeight = w;
+            bestReps = r;
+          }
+        });
+
+        if (bestWeight === 0) return;
+
+        const name = exercise.name;
+        const sessionData: ExerciseSessionData = {
+          date: session.completedAt,
+          maxWeight: bestWeight,
+          maxWeightReps: bestReps,
+          estimated1RM: bestEst1RM,
+        };
+
+        if (!exerciseMap.has(name)) {
+          exerciseMap.set(name, {
+            exerciseName: name,
+            lastUsed: session.completedAt,
+            sessions: [sessionData],
+            bestSession: sessionData,
+            totalSessions: 1,
+          });
+        } else {
+          const entry = exerciseMap.get(name)!;
+          entry.sessions.push(sessionData);
+          entry.totalSessions++;
+          if (new Date(session.completedAt) > new Date(entry.lastUsed)) {
+            entry.lastUsed = session.completedAt;
+          }
+          if (bestEst1RM > entry.bestSession.estimated1RM) {
+            entry.bestSession = sessionData;
+          }
+        }
+      });
+    });
+
+    return Array.from(exerciseMap.values()).sort(
+      (a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
+    );
   }, [history]);
 
   if (isLoading) {
@@ -911,6 +1344,8 @@ export default function ProgressScreen() {
           <MuscleHeatmap data={getWeeklyHeatmapData} index={6} />
 
           <MuscleBalance data={getMuscleBalanceData} index={7} />
+
+          <ExerciseProgressSection data={getExerciseProgressData} index={8} />
 
           <Animated.View
             entering={FadeInDown.delay(500).duration(400)}
@@ -1361,5 +1796,223 @@ const styles = StyleSheet.create({
   heatmapLegendValue: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  // Exercise Progress List
+  exerciseProgressList: {
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+    overflow: "hidden",
+  },
+  exerciseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  exerciseRowBorder: {
+    borderBottomWidth: 1,
+  },
+  exerciseRowLeft: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  exerciseRowName: {
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    marginBottom: 2,
+  },
+  exerciseRowMeta: {
+    fontSize: 12,
+  },
+  exerciseRowRight: {
+    alignItems: "flex-end",
+  },
+  exerciseRowWeight: {
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  exerciseRowWeightLabel: {
+    fontSize: 11,
+  },
+  // Modal
+  modalContainer: {
+    flex: 1,
+  },
+  modalDragHandleArea: {
+    alignItems: "center",
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  modalDragBar: {
+    width: 40,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#C7C7CC",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  modalClose: {
+    padding: Spacing.sm,
+    marginLeft: Spacing.sm,
+  },
+  modalContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing["4xl"],
+  },
+  modalStatsRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  modalStatCard: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+  },
+  modalStatValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+    marginBottom: 2,
+  },
+  modalStatLabel: {
+    fontSize: 11,
+    textAlign: "center",
+  },
+  modalChartCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+  },
+  modalChartHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  modalChartTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  modalChartUnit: {
+    fontSize: 12,
+  },
+  modalChartFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: Spacing.sm,
+  },
+  modalChartDateLabel: {
+    fontSize: 11,
+  },
+  modalBestSession: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+  },
+  bestSessionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+    flexShrink: 0,
+  },
+  bestSessionInfo: {
+    flex: 1,
+  },
+  bestSessionDate: {
+    fontSize: 12,
+    marginBottom: Spacing.xs,
+    marginTop: 2,
+  },
+  bestSessionStats: {
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
+  },
+  bestSessionWeightRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+    marginTop: 2,
+  },
+  pbBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.primary + "20",
+  },
+  pbBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    color: Colors.light.primary,
+  },
+  singleSessionStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  singleSessionStat: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  singleSessionValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  singleSessionValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
+  },
+  singleSessionLabel: {
+    fontSize: 11,
+  },
+  singleSessionDivider: {
+    width: 1,
+    height: 32,
+  },
+  logAgainRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "#E8E8E8",
+  },
+  logAgainText: {
+    fontSize: 12,
   },
 });

@@ -42,7 +42,13 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "iosDisplayInForeground": false
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

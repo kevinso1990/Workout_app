@@ -62,56 +62,65 @@ export interface SetData {
 }
 
 /**
- * Progression increments by experience level.
- * Beginners progress in smaller jumps to build form before load.
- * Intermediate/advanced use standard periodization steps.
+ * Compound lifts get larger weight jumps because they recruit more muscle mass
+ * and adapt faster than isolation or cable movements.
+ * Shared with ProgressScreen (1RM tracking) and ActiveWorkoutScreen (progression UI).
  */
-function progressionIncrement(
-  lastWeight: number,
-  experience: FitnessLevel | null | undefined
-): { up: number; down: number } {
-  const light = lastWeight < 20;
-  const medium = lastWeight < 60;
-  switch (experience) {
-    case "beginner":
-      return { up: 1.25, down: 1.25 };
-    case "advanced":
-      return { up: light ? 2.5 : medium ? 5 : 5, down: light ? 2.5 : 5 };
-    default: // intermediate
-      return { up: light ? 2.5 : medium ? 2.5 : 5, down: light ? 2.5 : 5 };
-  }
-}
+export const COMPOUND_LIFTS = [
+  "Barbell Back Squat",
+  "Barbell Deadlift",
+  "Barbell Bench Press",
+  "Barbell Bent-Over Row",
+  "Barbell Overhead Press",
+  "Machine Leg Press",
+];
 
+/**
+ * Suggests the next session's weight based on how the last set felt and
+ * whether the exercise is a compound or isolation movement.
+ *
+ * Compound lifts (big multi-joint barbell/machine moves):
+ *   green  → +5 kg   (easy — load up)
+ *   yellow → +2.5 kg (moderate — small step)
+ *   red    → same    (hard — consolidate before progressing)
+ *
+ * Isolation / cable / dumbbell exercises:
+ *   green  → +2.5 kg
+ *   yellow → +1.25 kg
+ *   red    → same weight
+ */
 export function calculateProgressionWeight(
   lastWeight: number,
   lastRating: "green" | "yellow" | "red" | null,
-  experience?: FitnessLevel | null
+  exerciseName: string
 ): { suggestedWeight: number; message: string } {
   if (!lastRating || lastWeight === 0) {
     return { suggestedWeight: lastWeight, message: "Same as last time" };
   }
 
-  const { up, down } = progressionIncrement(lastWeight, experience);
+  const isCompound = COMPOUND_LIFTS.includes(exerciseName);
 
-  switch (lastRating) {
-    case "green":
-      return {
-        suggestedWeight: lastWeight + up,
-        message: `+${up}kg — felt easy, time to progress`,
-      };
-    case "yellow":
-      return {
-        suggestedWeight: lastWeight,
-        message: "Same weight — stay consistent",
-      };
-    case "red":
-      return {
-        suggestedWeight: Math.max(0, lastWeight - down),
-        message: `-${down}kg — recover and rebuild`,
-      };
-    default:
-      return { suggestedWeight: lastWeight, message: "Same as last time" };
+  if (isCompound) {
+    switch (lastRating) {
+      case "green":
+        return { suggestedWeight: lastWeight + 5,   message: "+5kg — logged Easy last session" };
+      case "yellow":
+        return { suggestedWeight: lastWeight + 2.5, message: "+2.5kg — logged Good last session" };
+      case "red":
+        return { suggestedWeight: lastWeight,        message: "Same weight — logged Hard last session" };
+    }
+  } else {
+    switch (lastRating) {
+      case "green":
+        return { suggestedWeight: lastWeight + 2.5,  message: "+2.5kg — logged Easy last session" };
+      case "yellow":
+        return { suggestedWeight: lastWeight + 1.25, message: "+1.25kg — logged Good last session" };
+      case "red":
+        return { suggestedWeight: lastWeight,         message: "Same weight — logged Hard last session" };
+    }
   }
+
+  return { suggestedWeight: lastWeight, message: "Same as last time" };
 }
 
 export interface ExerciseProgress {
@@ -243,14 +252,14 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Push: [
     {
       id: "bench-press",
-      name: "Bench Press",
+      name: "Barbell Bench Press",
       muscleGroup: "Chest",
       sets: 4,
       reps: "8-10",
     },
     {
       id: "overhead-press",
-      name: "Overhead Press",
+      name: "Barbell Overhead Press",
       muscleGroup: "Shoulders",
       sets: 3,
       reps: "8-10",
@@ -264,14 +273,14 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
     },
     {
       id: "lateral-raises",
-      name: "Lateral Raises",
+      name: "Dumbbell Lateral Raises",
       muscleGroup: "Shoulders",
       sets: 3,
       reps: "12-15",
     },
     {
       id: "tricep-pushdowns",
-      name: "Tricep Pushdowns",
+      name: "Cable Tricep Pushdown",
       muscleGroup: "Triceps",
       sets: 3,
       reps: "10-12",
@@ -280,28 +289,28 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Pull: [
     {
       id: "deadlift",
-      name: "Deadlift",
+      name: "Barbell Deadlift",
       muscleGroup: "Back",
       sets: 4,
       reps: "5-6",
     },
     {
       id: "barbell-rows",
-      name: "Barbell Rows",
+      name: "Barbell Bent-Over Row",
       muscleGroup: "Back",
       sets: 4,
       reps: "8-10",
     },
     {
       id: "lat-pulldowns",
-      name: "Lat Pulldowns",
+      name: "Wide-Grip Lat Pulldown",
       muscleGroup: "Back",
       sets: 3,
       reps: "10-12",
     },
     {
       id: "face-pulls",
-      name: "Face Pulls",
+      name: "Cable Face Pulls",
       muscleGroup: "Rear Delts",
       sets: 3,
       reps: "12-15",
@@ -317,7 +326,7 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Legs: [
     {
       id: "squats",
-      name: "Squats",
+      name: "Barbell Back Squat",
       muscleGroup: "Quads",
       sets: 4,
       reps: "6-8",
@@ -331,21 +340,21 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
     },
     {
       id: "leg-press",
-      name: "Leg Press",
+      name: "Machine Leg Press",
       muscleGroup: "Quads",
       sets: 3,
       reps: "10-12",
     },
     {
       id: "leg-curls",
-      name: "Leg Curls",
+      name: "Lying Leg Curl",
       muscleGroup: "Hamstrings",
       sets: 3,
       reps: "10-12",
     },
     {
       id: "calf-raises",
-      name: "Calf Raises",
+      name: "Standing Calf Raises",
       muscleGroup: "Calves",
       sets: 4,
       reps: "12-15",
@@ -354,28 +363,28 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Upper: [
     {
       id: "bench-press",
-      name: "Bench Press",
+      name: "Barbell Bench Press",
       muscleGroup: "Chest",
       sets: 4,
       reps: "8-10",
     },
     {
       id: "barbell-rows",
-      name: "Barbell Rows",
+      name: "Barbell Bent-Over Row",
       muscleGroup: "Back",
       sets: 4,
       reps: "8-10",
     },
     {
       id: "overhead-press",
-      name: "Overhead Press",
+      name: "Barbell Overhead Press",
       muscleGroup: "Shoulders",
       sets: 3,
       reps: "8-10",
     },
     {
       id: "lat-pulldowns",
-      name: "Lat Pulldowns",
+      name: "Wide-Grip Lat Pulldown",
       muscleGroup: "Back",
       sets: 3,
       reps: "10-12",
@@ -391,7 +400,7 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Lower: [
     {
       id: "squats",
-      name: "Squats",
+      name: "Barbell Back Squat",
       muscleGroup: "Quads",
       sets: 4,
       reps: "6-8",
@@ -405,21 +414,21 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
     },
     {
       id: "leg-press",
-      name: "Leg Press",
+      name: "Machine Leg Press",
       muscleGroup: "Quads",
       sets: 3,
       reps: "10-12",
     },
     {
       id: "leg-curls",
-      name: "Leg Curls",
+      name: "Lying Leg Curl",
       muscleGroup: "Hamstrings",
       sets: 3,
       reps: "10-12",
     },
     {
       id: "calf-raises",
-      name: "Calf Raises",
+      name: "Standing Calf Raises",
       muscleGroup: "Calves",
       sets: 4,
       reps: "12-15",
@@ -428,28 +437,28 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   "Full Body": [
     {
       id: "squats",
-      name: "Squats",
+      name: "Barbell Back Squat",
       muscleGroup: "Quads",
       sets: 3,
       reps: "8-10",
     },
     {
       id: "bench-press",
-      name: "Bench Press",
+      name: "Barbell Bench Press",
       muscleGroup: "Chest",
       sets: 3,
       reps: "8-10",
     },
     {
       id: "barbell-rows",
-      name: "Barbell Rows",
+      name: "Barbell Bent-Over Row",
       muscleGroup: "Back",
       sets: 3,
       reps: "8-10",
     },
     {
       id: "overhead-press",
-      name: "Overhead Press",
+      name: "Barbell Overhead Press",
       muscleGroup: "Shoulders",
       sets: 3,
       reps: "8-10",
@@ -465,7 +474,7 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Chest: [
     {
       id: "bench-press",
-      name: "Bench Press",
+      name: "Barbell Bench Press",
       muscleGroup: "Chest",
       sets: 4,
       reps: "8-10",
@@ -495,21 +504,21 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Back: [
     {
       id: "deadlift",
-      name: "Deadlift",
+      name: "Barbell Deadlift",
       muscleGroup: "Back",
       sets: 4,
       reps: "5-6",
     },
     {
       id: "barbell-rows",
-      name: "Barbell Rows",
+      name: "Barbell Bent-Over Row",
       muscleGroup: "Back",
       sets: 4,
       reps: "8-10",
     },
     {
       id: "lat-pulldowns",
-      name: "Lat Pulldowns",
+      name: "Wide-Grip Lat Pulldown",
       muscleGroup: "Back",
       sets: 3,
       reps: "10-12",
@@ -525,28 +534,28 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
   Shoulders: [
     {
       id: "overhead-press",
-      name: "Overhead Press",
+      name: "Barbell Overhead Press",
       muscleGroup: "Shoulders",
       sets: 4,
       reps: "8-10",
     },
     {
       id: "lateral-raises",
-      name: "Lateral Raises",
+      name: "Dumbbell Lateral Raises",
       muscleGroup: "Shoulders",
       sets: 4,
       reps: "12-15",
     },
     {
       id: "face-pulls",
-      name: "Face Pulls",
+      name: "Cable Face Pulls",
       muscleGroup: "Rear Delts",
       sets: 3,
       reps: "12-15",
     },
     {
       id: "front-raises",
-      name: "Front Raises",
+      name: "Dumbbell Front Raises",
       muscleGroup: "Shoulders",
       sets: 3,
       reps: "12-15",
@@ -562,7 +571,7 @@ export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
     },
     {
       id: "tricep-pushdowns",
-      name: "Tricep Pushdowns",
+      name: "Cable Tricep Pushdown",
       muscleGroup: "Triceps",
       sets: 4,
       reps: "10-12",
@@ -596,14 +605,14 @@ const DUMBBELL_EXERCISES: Record<string, Exercise[]> = {
     { id: "db-bench-press",    name: "Dumbbell Bench Press",    muscleGroup: "Chest",      sets: 4, reps: "8-10" },
     { id: "incline-db-press",  name: "Incline Dumbbell Press",  muscleGroup: "Chest",      sets: 3, reps: "10-12" },
     { id: "db-shoulder-press", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders",  sets: 3, reps: "8-10" },
-    { id: "lateral-raises",    name: "Lateral Raises",          muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "lateral-raises",    name: "Dumbbell Lateral Raises",          muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
     { id: "overhead-tricep",   name: "Overhead Tricep Extension", muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
   ],
   Pull: [
     { id: "db-row",            name: "Dumbbell Row",            muscleGroup: "Back",       sets: 4, reps: "8-10" },
     { id: "chest-sup-row",     name: "Chest Supported Row",     muscleGroup: "Back",       sets: 3, reps: "10-12" },
     { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
-    { id: "dumbbell-curl",     name: "Dumbbell Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "dumbbell-curl",     name: "Dumbbell Bicep Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
     { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
   ],
   Legs: [
@@ -645,18 +654,18 @@ const DUMBBELL_EXERCISES: Record<string, Exercise[]> = {
     { id: "db-row",            name: "Dumbbell Row",            muscleGroup: "Back",       sets: 4, reps: "8-10" },
     { id: "chest-sup-row",     name: "Chest Supported Row",     muscleGroup: "Back",       sets: 3, reps: "10-12" },
     { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
-    { id: "dumbbell-curl",     name: "Dumbbell Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "dumbbell-curl",     name: "Dumbbell Bicep Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
     { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
   ],
   Shoulders: [
     { id: "db-shoulder-press", name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders",  sets: 4, reps: "8-10" },
-    { id: "lateral-raises",    name: "Lateral Raises",          muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
+    { id: "lateral-raises",    name: "Dumbbell Lateral Raises",          muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
     { id: "rear-delt-fly",     name: "Rear Delt Fly",           muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
-    { id: "front-raises",      name: "Front Raises",            muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "front-raises",      name: "Dumbbell Front Raises",            muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
     { id: "db-shrug",          name: "Dumbbell Shrug",          muscleGroup: "Traps",      sets: 3, reps: "12-15" },
   ],
   Arms: [
-    { id: "dumbbell-curl",     name: "Dumbbell Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "dumbbell-curl",     name: "Dumbbell Bicep Curl",           muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
     { id: "hammer-curls",      name: "Hammer Curls",            muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
     { id: "overhead-tricep",   name: "Overhead Tricep Extension", muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
     { id: "tricep-kickback",   name: "Tricep Kickback",         muscleGroup: "Triceps",    sets: 3, reps: "12-15" },
@@ -742,7 +751,7 @@ const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
   Push: [
     { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
     { id: "chest-dips",      name: "Chest Dips",       muscleGroup: "Chest",      sets: 3, reps: "8-12" },
-    { id: "lateral-raises",  name: "Lateral Raises",   muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "lateral-raises",  name: "Dumbbell Lateral Raises",   muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
     { id: "diamond-push",    name: "Diamond Push-Ups", muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
     { id: "tricep-dips",     name: "Tricep Dips",      muscleGroup: "Triceps",    sets: 3, reps: "8-12" },
   ],
@@ -763,7 +772,7 @@ const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
   Upper: [
     { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
     { id: "pull-ups",        name: "Pull-Ups",         muscleGroup: "Back",       sets: 4, reps: "5-10" },
-    { id: "lateral-raises",  name: "Lateral Raises",   muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
+    { id: "lateral-raises",  name: "Dumbbell Lateral Raises",   muscleGroup: "Shoulders",  sets: 3, reps: "12-15" },
     { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 3, reps: "5-10" },
     { id: "hammer-curls",    name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
   ],
@@ -797,7 +806,7 @@ const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
   ],
   Shoulders: [
     { id: "push-ups",        name: "Push-Ups",         muscleGroup: "Chest",      sets: 4, reps: "10-15" },
-    { id: "lateral-raises",  name: "Lateral Raises",   muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
+    { id: "lateral-raises",  name: "Dumbbell Lateral Raises",   muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
     { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
     { id: "chin-ups",        name: "Chin-Ups",         muscleGroup: "Back",       sets: 3, reps: "5-10" },
     { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
@@ -944,11 +953,11 @@ const FULL_BODY_SLOT_POOLS: FullBodySlot[] = [
     sets: 3,
     reps: "8-10",
     variations: [
-      { id: "fb-squat",     name: "Barbell Squat" },
-      { id: "fb-leg-press", name: "Leg Press" },
+      { id: "fb-squat",     name: "Barbell Back Squat" },
+      { id: "fb-leg-press", name: "Machine Leg Press" },
       { id: "fb-rdl",       name: "Romanian Deadlift" },
       { id: "fb-bss",       name: "Bulgarian Split Squat" },
-      { id: "fb-lunges",    name: "Lunges" },
+      { id: "fb-lunges",    name: "Dumbbell Lunges" },
     ],
   },
   {
@@ -956,7 +965,7 @@ const FULL_BODY_SLOT_POOLS: FullBodySlot[] = [
     sets: 3,
     reps: "8-10",
     variations: [
-      { id: "fb-bench",         name: "Bench Press" },
+      { id: "fb-bench",         name: "Barbell Bench Press" },
       { id: "fb-incline-db",    name: "Incline Dumbbell Press" },
       { id: "fb-cable-flyes",   name: "Cable Flyes" },
       { id: "fb-db-flyes",      name: "Dumbbell Flyes" },
@@ -968,8 +977,8 @@ const FULL_BODY_SLOT_POOLS: FullBodySlot[] = [
     sets: 3,
     reps: "8-10",
     variations: [
-      { id: "fb-barbell-row",  name: "Barbell Rows" },
-      { id: "fb-lat-pull",     name: "Lat Pulldown" },
+      { id: "fb-barbell-row",  name: "Barbell Bent-Over Row" },
+      { id: "fb-lat-pull",     name: "Wide-Grip Lat Pulldown" },
       { id: "fb-seated-cable", name: "Seated Cable Row" },
       { id: "fb-pull-ups",     name: "Pull-Ups" },
       { id: "fb-db-row",       name: "Dumbbell Rows" },
@@ -980,9 +989,9 @@ const FULL_BODY_SLOT_POOLS: FullBodySlot[] = [
     sets: 3,
     reps: "10-12",
     variations: [
-      { id: "fb-ohp",        name: "Overhead Press" },
+      { id: "fb-ohp",        name: "Barbell Overhead Press" },
       { id: "fb-db-press",   name: "Dumbbell Shoulder Press" },
-      { id: "fb-lat-raises", name: "Lateral Raises" },
+      { id: "fb-lat-raises", name: "Dumbbell Lateral Raises" },
       { id: "fb-arnold",     name: "Arnold Press" },
     ],
   },
@@ -991,9 +1000,9 @@ const FULL_BODY_SLOT_POOLS: FullBodySlot[] = [
     sets: 3,
     reps: "10-12",
     variations: [
-      { id: "fb-barbell-curl", name: "Barbell Curl" },
+      { id: "fb-barbell-curl", name: "Barbell Bicep Curl" },
       { id: "fb-hammer-curl",  name: "Hammer Curl" },
-      { id: "fb-tricep-push",  name: "Tricep Pushdown" },
+      { id: "fb-tricep-push",  name: "Cable Tricep Pushdown" },
       { id: "fb-skull-crush",  name: "Skull Crushers" },
     ],
   },

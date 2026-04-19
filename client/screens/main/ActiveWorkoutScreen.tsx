@@ -9,10 +9,13 @@ import {
   Modal,
   ScrollView,
   Image,
+  Share,
+  AppState,
+  AppStateStatus,
 } from "react-native";
+import * as Notifications from "expo-notifications";
+import { SchedulableTriggerInputTypes } from "expo-notifications";
 import Slider from "@react-native-community/slider";
-import * as Sharing from "expo-sharing";
-import { captureRef } from "react-native-view-shot";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -60,28 +63,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 type ActiveWorkoutRouteProp = RouteProp<RootStackParamList, "ActiveWorkout">;
 
 type SetRating = "green" | "yellow" | "red" | null;
-type RIRValue = 0 | 1 | 2 | 3;
-
-const RIR_TO_RATING: Record<RIRValue, SetRating> = {
-  0: "red",
-  1: "yellow",
-  2: "yellow",
-  3: "green",
-};
-
-const RIR_LABELS: Record<RIRValue, string> = {
-  0: "0 RIR",
-  1: "1 RIR",
-  2: "2 RIR",
-  3: "3+ RIR",
-};
-
-const RIR_DESCRIPTIONS: Record<RIRValue, string> = {
-  0: "Failure",
-  1: "Very hard",
-  2: "Challenging",
-  3: "Comfortable",
-};
+type DifficultyRating = "easy" | "good" | "hard";
 
 
 
@@ -340,42 +322,35 @@ function WorkoutSummary({
   totalSets: number;
   completedSets: number;
   totalVolume: number;
-  prs: number;
+  prs: PRRecord[];
   workoutName: string;
   onClose: () => void;
 }) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const shareCardRef = useRef<View>(null);
-  const [isSharing, setIsSharing] = useState(false);
 
-  const handleShare = async () => {
-    if (!shareCardRef.current) return;
+  const handleShare = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    try {
-      setIsSharing(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const today = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
 
-      const uri = await captureRef(shareCardRef, {
-        format: "png",
-        quality: 1,
-        result: "tmpfile",
-      });
+    const prLine =
+      prs.length > 0
+        ? `\n🏆 PRs: ${prs.map((pr) => `${pr.exerciseName} (${pr.weight}kg × ${pr.reps})`).join(", ")}`
+        : "";
 
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        await Sharing.shareAsync(uri, {
-          mimeType: "image/png",
-          dialogTitle: "Share your workout",
-        });
-      } else {
-        Alert.alert("Sharing not available", "Sharing is not available on this device");
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-    } finally {
-      setIsSharing(false);
-    }
+    const text =
+      `💪 Workout Complete — ${workoutName}\n` +
+      `📅 ${today}\n` +
+      `⏱ ${formatTime(duration)} · ${completedSets} sets · ${totalVolume.toLocaleString()} kg volume` +
+      prLine +
+      `\n\nTracked with TrackYourLift`;
+
+    Share.share({ message: text });
   };
 
   // Render nothing when invisible — safe because this is a JS overlay,
@@ -403,8 +378,6 @@ function WorkoutSummary({
         style={[styles.summaryContainer, { paddingTop: insets.top + Spacing.xl }]}
       >
         <View
-          ref={shareCardRef}
-          collapsable={false}
           style={[styles.shareableCard, { backgroundColor: theme.backgroundRoot }]}
         >
           <LinearGradient
@@ -481,12 +454,16 @@ function WorkoutSummary({
               </View>
             </View>
 
-            {prs > 0 ? (
-              <View style={styles.shareCardPR}>
-                <Feather name="award" size={16} color="#FFD700" />
-                <ThemedText style={styles.shareCardPRText}>
-                  {prs} New PR{prs > 1 ? "s" : ""}
-                </ThemedText>
+            {prs.length > 0 ? (
+              <View style={styles.shareCardPRList}>
+                {prs.map((pr) => (
+                  <View key={pr.exerciseName} style={styles.shareCardPR}>
+                    <Feather name="award" size={14} color="#B8860B" />
+                    <ThemedText style={styles.shareCardPRText}>
+                      {pr.exerciseName} — {pr.weight}kg × {pr.reps}
+                    </ThemedText>
+                  </View>
+                ))}
               </View>
             ) : null}
           </View>
@@ -498,8 +475,7 @@ function WorkoutSummary({
         >
           <Pressable
             onPress={handleShare}
-            disabled={isSharing}
-            style={[styles.shareButton, { opacity: isSharing ? 0.6 : 1 }]}
+            style={styles.shareButton}
           >
             <Feather name="share-2" size={20} color={Colors.light.primary} />
             <ThemedText
@@ -508,7 +484,7 @@ function WorkoutSummary({
                 { color: Colors.light.primary },
               ]}
             >
-              {isSharing ? "Sharing..." : "Share Workout"}
+              Share Workout
             </ThemedText>
           </Pressable>
         </Animated.View>
@@ -531,69 +507,6 @@ function WorkoutSummary({
         </Animated.View>
       </ThemedView>
     </Animated.View>
-  );
-}
-
-function RIRButton({
-  rir,
-  selected,
-  onPress,
-  disabled,
-}: {
-  rir: RIRValue;
-  selected: boolean;
-  onPress: () => void;
-  disabled: boolean;
-}) {
-  const scale = useSharedValue(1);
-  const rating = RIR_TO_RATING[rir] as "green" | "yellow" | "red";
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: disabled ? 0.5 : 1,
-  }));
-
-  return (
-    <AnimatedPressable
-      onPress={onPress}
-      disabled={disabled}
-      onPressIn={() => {
-        if (!disabled)
-          scale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-      }}
-      style={[
-        animatedStyle,
-        styles.rirButton,
-        {
-          backgroundColor: selected
-            ? RATING_COLORS[rating]
-            : RATING_COLORS[rating] + "15",
-          borderColor: RATING_COLORS[rating],
-          borderWidth: selected ? 0 : 1.5,
-        },
-      ]}
-      testID={`button-rir-${rir}`}
-    >
-      <ThemedText
-        style={[
-          styles.rirValue,
-          { color: selected ? "#FFFFFF" : RATING_COLORS[rating] },
-        ]}
-      >
-        {rir === 3 ? "3+" : rir}
-      </ThemedText>
-      <ThemedText
-        style={[
-          styles.rirLabel,
-          { color: selected ? "#FFFFFF" : RATING_COLORS[rating] },
-        ]}
-      >
-        {RIR_DESCRIPTIONS[rir]}
-      </ThemedText>
-    </AnimatedPressable>
   );
 }
 
@@ -645,7 +558,7 @@ function QuickAdjustButton({
 
 const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
   Chest: [
-    "Bench Press",
+    "Barbell Bench Press",
     "Incline Dumbbell Press",
     "Cable Flyes",
     "Push-ups",
@@ -654,50 +567,50 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Dips",
   ],
   Back: [
-    "Deadlift",
-    "Barbell Rows",
-    "Lat Pulldown",
+    "Barbell Deadlift",
+    "Barbell Bent-Over Row",
+    "Wide-Grip Lat Pulldown",
     "Pull-ups",
     "Seated Cable Row",
     "Dumbbell Rows",
     "T-Bar Row",
   ],
   Shoulders: [
-    "Overhead Press",
+    "Barbell Overhead Press",
     "Dumbbell Shoulder Press",
-    "Lateral Raises",
-    "Face Pulls",
+    "Dumbbell Lateral Raises",
+    "Cable Face Pulls",
     "Arnold Press",
-    "Front Raises",
+    "Dumbbell Front Raises",
   ],
   "Rear Delts": [
-    "Face Pulls",
-    "Rear Delt Flyes",
+    "Cable Face Pulls",
+    "Bent-Over Rear Delt Flyes",
     "Reverse Pec Deck",
     "Band Pull-Aparts",
     "Seated Rear Delt Raises",
   ],
   Legs: [
-    "Squat",
-    "Leg Press",
-    "Lunges",
-    "Leg Extension",
-    "Leg Curl",
+    "Barbell Back Squat",
+    "Machine Leg Press",
+    "Dumbbell Lunges",
+    "Machine Leg Extension",
+    "Lying Leg Curl",
     "Romanian Deadlift",
     "Bulgarian Split Squat",
   ],
   Quads: [
-    "Barbell Squat",
-    "Leg Press",
-    "Lunges",
-    "Leg Extension",
+    "Barbell Back Squat",
+    "Machine Leg Press",
+    "Dumbbell Lunges",
+    "Machine Leg Extension",
     "Hack Squat",
     "Bulgarian Split Squat",
     "Front Squat",
   ],
   Hamstrings: [
     "Romanian Deadlift",
-    "Leg Curl",
+    "Lying Leg Curl",
     "Stiff-Leg Deadlift",
     "Good Mornings",
     "Nordic Curl",
@@ -711,7 +624,7 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Single-Leg Calf Raises",
   ],
   Glutes: [
-    "Hip Thrust",
+    "Barbell Hip Thrust",
     "Romanian Deadlift",
     "Bulgarian Split Squat",
     "Glute Bridge",
@@ -719,16 +632,16 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Sumo Deadlift",
   ],
   Arms: [
-    "Bicep Curls",
-    "Tricep Pushdowns",
+    "Barbell Bicep Curl",
+    "Cable Tricep Pushdown",
     "Hammer Curls",
     "Skull Crushers",
     "Preacher Curls",
     "Cable Curls",
   ],
   Biceps: [
-    "Barbell Curl",
-    "Dumbbell Curl",
+    "Barbell Bicep Curl",
+    "Dumbbell Bicep Curl",
     "Hammer Curls",
     "Preacher Curl",
     "Cable Curl",
@@ -736,7 +649,7 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Incline Dumbbell Curl",
   ],
   Triceps: [
-    "Tricep Pushdown",
+    "Cable Tricep Pushdown",
     "Skull Crushers",
     "Overhead Tricep Extension",
     "Dips",
@@ -753,7 +666,7 @@ const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
     "Hanging Leg Raises",
   ],
   Traps: [
-    "Barbell Shrug",
+    "Barbell Shrugs",
     "Dumbbell Shrug",
     "Upright Row",
     "Cable Shrug",
@@ -969,7 +882,7 @@ function SetInput({
   onUpdate,
   onComplete,
   isActive,
-  experience,
+  exerciseName,
   targetReps,
 }: {
   setIndex: number;
@@ -978,18 +891,18 @@ function SetInput({
   onUpdate: (data: Partial<SetData>) => void;
   onComplete: () => void;
   isActive: boolean;
-  experience?: FitnessLevel | null;
+  exerciseName: string;
   targetReps?: string;
 }) {
   const { theme } = useTheme();
   const [showPlateCalc, setShowPlateCalc] = useState(false);
-  const [selectedRIR, setSelectedRIR] = useState<RIRValue | null>(null);
+  const [showDifficulty, setShowDifficulty] = useState(false);
 
   const progressionSuggestion = useMemo(() => {
     if (!lastWeekData || !lastWeekData.weight || !lastWeekData.rating) return null;
     const lastWeight = parseFloat(lastWeekData.weight) || 0;
-    return calculateProgressionWeight(lastWeight, lastWeekData.rating, experience);
-  }, [lastWeekData, experience]);
+    return calculateProgressionWeight(lastWeight, lastWeekData.rating, exerciseName);
+  }, [lastWeekData, exerciseName]);
 
   useEffect(() => {
     if (isActive && lastWeekData && setData.weight === "" && setData.reps === "") {
@@ -1004,15 +917,20 @@ function SetInput({
     }
   }, [isActive]);
 
-  const handleRIR = (rir: RIRValue) => {
+  // Reset difficulty panel if user changes weight/reps after opening it
+  useEffect(() => {
+    if (showDifficulty) setShowDifficulty(false);
+  }, [setData.weight, setData.reps]);
+
+  const handleDifficulty = (difficulty: DifficultyRating) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSelectedRIR(rir);
-    const rating = RIR_TO_RATING[rir];
+    const rating: SetRating =
+      difficulty === "easy" ? "green" : difficulty === "hard" ? "red" : "yellow";
     onUpdate({ rating, completed: true });
     onComplete();
   };
 
-  const canRate = setData.weight.trim() !== "" && setData.reps.trim() !== "";
+  const canLog = setData.weight.trim() !== "" && setData.reps.trim() !== "";
 
   if (!isActive && !setData.completed) {
     return (
@@ -1357,29 +1275,74 @@ function SetInput({
         </View>
       </View>
 
-      <View style={styles.rirSection}>
-        <ThemedText style={[styles.rirQuestion, { color: theme.text }]}>
-          Log this set
-        </ThemedText>
-        <ThemedText
-          style={[styles.rirHelpText, { color: theme.textSecondary }]}
-        >
-          {canRate ? "How many more reps could you have done?" : "Set weight and reps above first"}
-        </ThemedText>
-        <View style={styles.rirButtonsRow}>
-          {([0, 1, 2, 3] as RIRValue[]).map((rir) => (
-            <RIRButton
-              key={rir}
-              rir={rir}
-              selected={
-                setData.rating === RIR_TO_RATING[rir] && selectedRIR === rir
+      {!showDifficulty ? (
+        <View style={styles.logSection}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setShowDifficulty(true);
+            }}
+            disabled={!canLog}
+            testID={`button-log-set-${setIndex}`}
+          >
+            <LinearGradient
+              colors={
+                canLog
+                  ? [Colors.light.primary, Colors.light.primaryGradientEnd]
+                  : [theme.border, theme.border]
               }
-              onPress={() => handleRIR(rir)}
-              disabled={!canRate}
-            />
-          ))}
+              style={styles.logButton}
+            >
+              <ThemedText style={styles.logButtonText}>Log this set</ThemedText>
+            </LinearGradient>
+          </Pressable>
+          {!canLog ? (
+            <ThemedText style={[styles.logHint, { color: theme.textSecondary }]}>
+              Enter weight and reps above first
+            </ThemedText>
+          ) : null}
         </View>
-      </View>
+      ) : (
+        <Animated.View entering={FadeInDown.duration(200)} style={styles.difficultySection}>
+          <ThemedText style={[styles.difficultyPrompt, { color: theme.textSecondary }]}>
+            How did it feel?
+          </ThemedText>
+          <View style={styles.difficultyRow}>
+            <Pressable
+              onPress={() => handleDifficulty("easy")}
+              style={[styles.difficultyBtn, { borderColor: RATING_COLORS.green, backgroundColor: RATING_COLORS.green + "15" }]}
+              testID={`button-difficulty-easy-${setIndex}`}
+            >
+              <ThemedText style={styles.difficultyEmoji}>😤</ThemedText>
+              <ThemedText style={[styles.difficultyLabel, { color: RATING_COLORS.green }]}>Easy</ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => handleDifficulty("good")}
+              style={[styles.difficultyBtn, { borderColor: Colors.light.primary, backgroundColor: Colors.light.primary + "15" }]}
+              testID={`button-difficulty-good-${setIndex}`}
+            >
+              <ThemedText style={styles.difficultyEmoji}>😐</ThemedText>
+              <ThemedText style={[styles.difficultyLabel, { color: Colors.light.primary }]}>Good</ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => handleDifficulty("hard")}
+              style={[styles.difficultyBtn, { borderColor: RATING_COLORS.red, backgroundColor: RATING_COLORS.red + "15" }]}
+              testID={`button-difficulty-hard-${setIndex}`}
+            >
+              <ThemedText style={styles.difficultyEmoji}>💀</ThemedText>
+              <ThemedText style={[styles.difficultyLabel, { color: RATING_COLORS.red }]}>Hard</ThemedText>
+            </Pressable>
+          </View>
+          <Pressable
+            onPress={() => setShowDifficulty(false)}
+            style={styles.difficultyBack}
+          >
+            <ThemedText style={[styles.difficultyBackText, { color: theme.textSecondary }]}>
+              ← Back
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
+      )}
     </Animated.View>
   );
 }
@@ -1404,11 +1367,13 @@ export default function ActiveWorkoutScreen() {
   const [restTimeLeft, setRestTimeLeft] = useState(DEFAULT_REST_TIME);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
-  const [prsThisSession, setPrsThisSession] = useState(0);
+  const [prsThisSession, setPrsThisSession] = useState<PRRecord[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const navFiredRef = useRef(false);
   const isSavingRef = useRef(false);
+  const timerEndTimeRef = useRef<number | null>(null);
+  const scheduledNotifIdRef = useRef<string | null>(null);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -1427,6 +1392,74 @@ export default function ActiveWorkoutScreen() {
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
+
+  // Cancels the pending rest notification and clears end-time tracking.
+  const cancelRestNotification = () => {
+    if (scheduledNotifIdRef.current) {
+      Notifications.cancelScheduledNotificationAsync(scheduledNotifIdRef.current);
+      scheduledNotifIdRef.current = null;
+    }
+    timerEndTimeRef.current = null;
+  };
+
+  // Schedules a notification for `seconds` from now and records the end time.
+  const scheduleRestNotification = async (seconds: number) => {
+    cancelRestNotification();
+    timerEndTimeRef.current = Date.now() + seconds * 1000;
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Rest complete",
+          body: "Next set ready",
+          sound: true,
+        },
+        trigger: {
+          type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds,
+          repeats: false,
+        },
+      });
+      scheduledNotifIdRef.current = id;
+    } catch {
+      // Notification permission may be denied — timer still works visually.
+    }
+  };
+
+  // Request notification permissions and set up AppState sync for background timer.
+  useEffect(() => {
+    Notifications.requestPermissionsAsync();
+
+    // Play sound even when notification arrives while app is foregrounded,
+    // but suppress the visual alert banner (the in-app modal is the UI).
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: false,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+
+    // When the app returns to foreground, correct the countdown for time
+    // elapsed while the screen was locked (JS timers freeze on iOS background).
+    const sub = AppState.addEventListener("change", (nextState: AppStateStatus) => {
+      if (nextState === "active" && timerEndTimeRef.current !== null) {
+        const remaining = Math.ceil((timerEndTimeRef.current - Date.now()) / 1000);
+        if (remaining <= 0) {
+          // Timer already fired while screen was off.
+          scheduledNotifIdRef.current = null;
+          timerEndTimeRef.current = null;
+          setShowRestTimer(false);
+          setRestTimeLeft(DEFAULT_REST_TIME);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+          // Snap the countdown to the real remaining time.
+          setRestTimeLeft(remaining);
+        }
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -1453,6 +1486,9 @@ export default function ActiveWorkoutScreen() {
       interval = setInterval(() => {
         setRestTimeLeft((prev) => {
           if (prev <= 1) {
+            // Cancel the scheduled notification — the timer finished while the
+            // app was in the foreground, so the notification is redundant.
+            cancelRestNotification();
             setShowRestTimer(false);
             Haptics.notificationAsync(
               Haptics.NotificationFeedbackType.Success
@@ -1533,7 +1569,13 @@ export default function ActiveWorkoutScreen() {
     if (currentVolume > maxPreviousVolume && currentVolume > 0) {
       setCurrentPR({ exerciseName, weight, reps });
       setShowPRCelebration(true);
-      setPrsThisSession((prev) => prev + 1);
+      setPrsThisSession((prev) =>
+        prev.some((pr) => pr.exerciseName === exerciseName)
+          ? prev.map((pr) =>
+              pr.exerciseName === exerciseName ? { exerciseName, weight, reps } : pr
+            )
+          : [...prev, { exerciseName, weight, reps }]
+      );
       Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
       );
@@ -1570,6 +1612,7 @@ export default function ActiveWorkoutScreen() {
       if (restTimerEnabled) {
         setShowRestTimer(true);
         setRestTimeLeft(restDuration);
+        scheduleRestNotification(restDuration);
       }
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < day.exercises.length - 1) {
@@ -1582,6 +1625,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleSkipRest = () => {
+    cancelRestNotification();
     setShowRestTimer(false);
     setRestTimeLeft(restDuration);
   };
@@ -1644,6 +1688,10 @@ export default function ActiveWorkoutScreen() {
   const saveAndShowSummary = async () => {
     if (!plan || isSavingRef.current) return;
     isSavingRef.current = true;
+
+    // Cancel any pending rest notification so it doesn't fire after the
+    // workout is complete.
+    cancelRestNotification();
 
     // Close all native Modals before showing the summary overlay.
     // Any native Modal still mounted when navigation.reset() fires will
@@ -1963,7 +2011,7 @@ export default function ActiveWorkoutScreen() {
                   style={styles.exerciseName}
                   numberOfLines={2}
                   adjustsFontSizeToFit
-                  minimumFontScale={0.7}
+                  minimumFontScale={0.6}
                 >
                   {currentExercise.name}
                 </ThemedText>
@@ -2006,7 +2054,7 @@ export default function ActiveWorkoutScreen() {
                   onUpdate={handleUpdateSet}
                   onComplete={handleSetComplete}
                   isActive={index === currentSetIndex}
-                  experience={fitnessLevel}
+                  exerciseName={currentExercise.name}
                   targetReps={currentExercise.reps}
                 />
               ))}
@@ -2222,6 +2270,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
     marginBottom: Spacing.sm,
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
   exerciseMeta: {
     flexDirection: "row",
@@ -2757,20 +2807,25 @@ const styles = StyleSheet.create({
     width: 1,
     height: 30,
   },
+  shareCardPRList: {
+    marginTop: Spacing.md,
+    gap: Spacing.xs,
+    alignSelf: "stretch",
+  },
   shareCardPR: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
-    marginTop: Spacing.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     backgroundColor: "rgba(255,215,0,0.1)",
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.md,
   },
   shareCardPRText: {
     fontSize: 13,
     fontWeight: "600",
     color: "#B8860B",
+    flexShrink: 1,
   },
   shareActions: {
     paddingHorizontal: Spacing.lg,
@@ -2866,45 +2921,63 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
   },
-  rirButton: {
+  logSection: {
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  logButton: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    flex: 1,
+    borderRadius: BorderRadius.lg,
+    width: "100%",
   },
-  rirValue: {
-    fontSize: 18,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-  },
-  rirLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  rirSection: {
-    alignItems: "center",
-  },
-  rirQuestion: {
-    fontSize: 15,
+  logButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    marginBottom: 4,
   },
-  rirHelpText: {
+  logHint: {
     fontSize: 12,
-    marginBottom: Spacing.md,
+    textAlign: "center",
   },
-  rirButtonsRow: {
+  difficultySection: {
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  difficultyPrompt: {
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  difficultyRow: {
     flexDirection: "row",
     gap: Spacing.sm,
     width: "100%",
   },
-  rirHint: {
+  difficultyBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    gap: 4,
+  },
+  difficultyEmoji: {
+    fontSize: 22,
+  },
+  difficultyLabel: {
     fontSize: 12,
-    marginTop: Spacing.sm,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  difficultyBack: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+  },
+  difficultyBackText: {
+    fontSize: 13,
   },
   quickAdjustRow: {
     flexDirection: "row",
@@ -2983,7 +3056,7 @@ const styles = StyleSheet.create({
   },
   exerciseNameRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: Spacing.sm,
     paddingVertical: Spacing.xs,
   },

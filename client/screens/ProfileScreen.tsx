@@ -288,6 +288,11 @@ function ThemeToggleCard() {
           );
         })}
       </View>
+      {mode === "system" && (
+        <ThemedText style={[styles.themeSystemDesc, { color: theme.textSecondary }]}>
+          Follows your device setting
+        </ThemedText>
+      )}
     </Animated.View>
   );
 }
@@ -577,14 +582,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   profileHeader: {
+    flexDirection: "column",
     alignItems: "center",
     marginBottom: Spacing["2xl"],
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: Spacing.lg,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginBottom: 16,
   },
   greeting: {
     fontSize: 22,
@@ -682,6 +688,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  themeSystemDesc: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: Spacing.sm,
   },
   bodyStatsCard: {
     marginTop: Spacing.xl,
