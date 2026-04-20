@@ -42,12 +42,6 @@ const EQUIPMENT_OPTIONS: {
     icon: "anchor",
   },
   {
-    id: "home_minimal",
-    title: "Minimal Equipment",
-    description: "Pull-up bar, resistance bands",
-    icon: "sliders",
-  },
-  {
     id: "bodyweight",
     title: "Bodyweight Only",
     description: "No equipment needed",

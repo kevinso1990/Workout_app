@@ -1,8 +1,7 @@
 import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Feather } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -46,43 +45,12 @@ export default function WelcomeScreen() {
           },
         ]}
       >
-        {/* Branded gradient hero — no external image dependency */}
-        <Animated.View
-          entering={FadeInUp.delay(100).duration(600)}
-          style={styles.heroWrapper}
-        >
-          <LinearGradient
-            colors={[Colors.light.primary + "28", Colors.light.primaryGradientEnd + "12"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroCard}
-          >
-            <View style={styles.iconRow}>
-              <View
-                style={[
-                  styles.iconBubbleSm,
-                  { backgroundColor: Colors.light.primary + "22" },
-                ]}
-              >
-                <Feather name="activity" size={26} color={Colors.light.primary} />
-              </View>
-
-              <View style={[styles.iconBubbleLg, { backgroundColor: Colors.light.primary }]}>
-                <Feather name="zap" size={38} color="#FFFFFF" />
-              </View>
-
-              <View
-                style={[
-                  styles.iconBubbleSm,
-                  { backgroundColor: Colors.light.primary + "22" },
-                ]}
-              >
-                <Feather name="trending-up" size={26} color={Colors.light.primary} />
-              </View>
-            </View>
-
-            <ThemedText style={styles.heroAppName}>TrackYourLift</ThemedText>
-          </LinearGradient>
+        <Animated.View entering={FadeInUp.delay(100).duration(600)}>
+          <Image
+            source={require("../../assets/images/icon.png")}
+            style={{ width: 160, height: 160, borderRadius: 32, alignSelf: "center", marginBottom: 32 }}
+            resizeMode="contain"
+          />
         </Animated.View>
 
         {/* Title + subtitle */}
@@ -139,50 +107,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing["2xl"],
     justifyContent: "space-between",
-  },
-  heroWrapper: {
-    flex: 1,
-    maxHeight: 300,
-    marginTop: Spacing["2xl"],
-  },
-  heroCard: {
-    flex: 1,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.xl,
-    paddingVertical: Spacing["3xl"],
-  },
-  iconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xl,
-  },
-  iconBubbleSm: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconBubbleLg: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  heroAppName: {
-    fontSize: 20,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-    color: Colors.light.primary,
-    letterSpacing: 3,
   },
   textContainer: {
     alignItems: "center",

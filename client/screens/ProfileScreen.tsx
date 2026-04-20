@@ -228,9 +228,8 @@ const THEME_OPTIONS: Array<{
   icon: keyof typeof Feather.glyphMap;
   label: string;
 }> = [
-  { value: "system", icon: "smartphone", label: "System" },
-  { value: "light",  icon: "sun",        label: "Light"  },
-  { value: "dark",   icon: "moon",       label: "Dark"   },
+  { value: "light", icon: "sun",  label: "Light" },
+  { value: "dark",  icon: "moon", label: "Dark"  },
 ];
 
 function ThemeToggleCard() {
@@ -288,11 +287,6 @@ function ThemeToggleCard() {
           );
         })}
       </View>
-      {mode === "system" && (
-        <ThemedText style={[styles.themeSystemDesc, { color: theme.textSecondary }]}>
-          Follows your device setting
-        </ThemedText>
-      )}
     </Animated.View>
   );
 }

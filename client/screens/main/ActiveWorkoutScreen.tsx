@@ -2928,15 +2928,16 @@ const styles = StyleSheet.create({
   logButton: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 14,
     width: "100%",
   },
   logButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Montserrat_700Bold",
   },
   logHint: {
     fontSize: 12,
