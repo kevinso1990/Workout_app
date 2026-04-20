@@ -47,7 +47,7 @@ export default function WelcomeScreen() {
       >
         <Animated.View entering={FadeInUp.delay(100).duration(600)}>
           <Image
-            source={require("../../assets/images/icon.png")}
+            source={require("../../../assets/images/icon.png")}
             style={{ width: 160, height: 160, borderRadius: 32, alignSelf: "center", marginBottom: 32 }}
             resizeMode="contain"
           />
