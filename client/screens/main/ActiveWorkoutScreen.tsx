@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   TextInput,
@@ -1293,7 +1294,7 @@ function SetInput({
               }
               style={styles.logButton}
             >
-              <ThemedText style={styles.logButtonText}>Log this set</ThemedText>
+              <Text style={styles.logButtonText} numberOfLines={1}>Log set</Text>
             </LinearGradient>
           </Pressable>
           {!canLog ? (
@@ -2936,12 +2937,11 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   logButton: {
+    marginHorizontal: 32,
+    paddingVertical: 18,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    width: "100%",
   },
   logButtonText: {
     color: "#FFFFFF",
