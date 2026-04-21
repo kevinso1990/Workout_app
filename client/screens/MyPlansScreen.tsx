@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useLayoutEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -147,12 +147,23 @@ function PlanCard({
   );
 }
 
-function EmptyState({ onCreatePress }: { onCreatePress: () => void }) {
+function EmptyState({
+  onCreatePress,
+  onImportPress,
+}: {
+  onCreatePress: () => void;
+  onImportPress: () => void;
+}) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+  const importScale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+  }));
+
+  const importAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: importScale.value }],
   }));
 
   return (
@@ -185,6 +196,24 @@ function EmptyState({ onCreatePress }: { onCreatePress: () => void }) {
         <ThemedText style={styles.createButtonText}>
           Create Your First Plan
         </ThemedText>
+      </AnimatedPressable>
+      <AnimatedPressable
+        onPress={onImportPress}
+        onPressIn={() => {
+          importScale.value = withSpring(0.96, { damping: 15, stiffness: 150 });
+        }}
+        onPressOut={() => {
+          importScale.value = withSpring(1, { damping: 15, stiffness: 150 });
+        }}
+        style={[
+          importAnimatedStyle,
+          styles.importButton,
+          { borderColor: Colors.light.primary },
+        ]}
+        testID="button-import-plan"
+      >
+        <Feather name="upload" size={18} color={Colors.light.primary} />
+        <ThemedText style={styles.importButtonText}>Import from Photo</ThemedText>
       </AnimatedPressable>
     </View>
   );
@@ -228,6 +257,25 @@ export default function MyPlansScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("CreatePlan");
   };
+
+  const handleImportPlan = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate("ImportWorkout");
+  }, [navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={handleImportPlan}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerImportButton}
+        >
+          <Feather name="upload" size={20} color={Colors.light.primary} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, handleImportPlan]);
 
   const handleStartWorkout = (plan: WorkoutPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -290,7 +338,7 @@ export default function MyPlansScreen() {
         data={plans}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<EmptyState onCreatePress={handleCreatePlan} />}
+        ListEmptyComponent={<EmptyState onCreatePress={handleCreatePlan} onImportPress={handleImportPlan} />}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -425,5 +473,24 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
+  },
+  importButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing["2xl"],
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  importButtonText: {
+    color: Colors.light.primary,
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  headerImportButton: {
+    paddingHorizontal: Spacing.sm,
   },
 });

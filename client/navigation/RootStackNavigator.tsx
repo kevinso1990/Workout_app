@@ -7,6 +7,7 @@ import OnboardingStackNavigator from "@/navigation/OnboardingStackNavigator";
 import CreatePlanScreen from "@/screens/CreatePlanScreen";
 import EditPlanScreen from "@/screens/EditPlanScreen";
 import PlanDetailScreen from "@/screens/PlanDetailScreen";
+import ImportWorkoutScreen from "@/screens/ImportWorkoutScreen";
 import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
 import ActiveWorkoutScreen from "@/screens/main/ActiveWorkoutScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   CreatePlan: undefined;
   EditPlan: { planId: string };
   PlanDetail: { planId: string };
+  ImportWorkout: undefined;
   StartWorkout: { planId?: string };
   ActiveWorkout: { planId: string; planName: string; dayIndex: number };
 };
@@ -104,6 +106,14 @@ export default function RootStackNavigator() {
         component={StartWorkoutScreen}
         options={{
           headerTitle: "Start Workout",
+        }}
+      />
+      <Stack.Screen
+        name="ImportWorkout"
+        component={ImportWorkoutScreen}
+        options={{
+          headerTitle: "Import Workout Plan",
+          presentation: "modal",
         }}
       />
       <Stack.Screen
