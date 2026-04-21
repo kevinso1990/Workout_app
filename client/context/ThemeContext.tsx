@@ -2,12 +2,17 @@ import React, {
   createContext,
   useContext,
   useState,
+  useEffect,
+  useCallback,
   useMemo,
   ReactNode,
 } from "react";
 import { useColorScheme } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type ThemeMode = "light" | "dark" | "system";
+
+const THEME_STORAGE_KEY = "theme";
 
 interface ThemeContextValue {
   mode: ThemeMode;
@@ -19,8 +24,21 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>("system");
+  const [mode, setModeState] = useState<ThemeMode>("light");
   const systemScheme = useColorScheme();
+
+  // Load persisted theme on mount.
+  // 'dark' is the only value we honour — everything else (null, 'system', 'light') maps to light.
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY).then((saved) => {
+      setModeState(saved === "dark" ? "dark" : "light");
+    });
+  }, []);
+
+  const setMode = useCallback((newMode: ThemeMode) => {
+    setModeState(newMode);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, newMode);
+  }, []);
 
   const resolvedScheme = useMemo(
     (): "light" | "dark" =>
@@ -35,7 +53,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       isDark: resolvedScheme === "dark",
       resolvedScheme,
     }),
-    [mode, resolvedScheme]
+    [mode, setMode, resolvedScheme]
   );
 
   return (

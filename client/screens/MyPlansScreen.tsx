@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useLayoutEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -25,6 +25,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WorkoutPlan, getWorkoutPlans, duplicateWorkoutPlan } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -229,6 +230,19 @@ export default function MyPlansScreen() {
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [bannerHeight, setBannerHeight] = useState(70);
+
+  useEffect(() => {
+    AsyncStorage.getItem("importBannerDismissed").then((v) => {
+      if (v === "true") setBannerDismissed(true);
+    });
+  }, []);
+
+  const dismissBanner = useCallback(async () => {
+    await AsyncStorage.setItem("importBannerDismissed", "true");
+    setBannerDismissed(true);
+  }, []);
 
   const loadPlans = useCallback(async () => {
     try {
@@ -262,20 +276,6 @@ export default function MyPlansScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("ImportWorkout");
   }, [navigation]);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Pressable
-          onPress={handleImportPlan}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerImportButton}
-        >
-          <Feather name="upload" size={20} color={Colors.light.primary} />
-        </Pressable>
-      ),
-    });
-  }, [navigation, handleImportPlan]);
 
   const handleStartWorkout = (plan: WorkoutPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -329,7 +329,7 @@ export default function MyPlansScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: headerHeight + Spacing.xl + (bannerDismissed ? 0 : bannerHeight + Spacing.md),
             paddingBottom: tabBarHeight + Spacing.xl + 80,
           },
           plans.length === 0 && styles.emptyListContent,
@@ -348,6 +348,44 @@ export default function MyPlansScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
+
+      {!bannerDismissed && (
+        <Animated.View
+          entering={FadeInDown.duration(300)}
+          style={[
+            styles.importTopBanner,
+            {
+              top: headerHeight + Spacing.sm,
+              backgroundColor: Colors.light.primary + "15",
+              borderColor: Colors.light.primary + "40",
+            },
+          ]}
+          onLayout={(e) => setBannerHeight(e.nativeEvent.layout.height)}
+        >
+          <ThemedText style={styles.importBannerEmoji}>📷</ThemedText>
+          <View style={styles.importBannerContent}>
+            <ThemedText style={styles.importBannerTitle}>
+              Already have a workout plan?
+            </ThemedText>
+            <ThemedText style={[styles.importBannerSubtitle, { color: theme.textSecondary }]}>
+              Import it in seconds with AI
+            </ThemedText>
+          </View>
+          <Pressable
+            onPress={handleImportPlan}
+            style={[styles.importBannerButton, { backgroundColor: Colors.light.primary }]}
+          >
+            <ThemedText style={styles.importBannerButtonText}>Import</ThemedText>
+          </Pressable>
+          <Pressable
+            onPress={dismissBanner}
+            style={styles.importBannerDismiss}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="x" size={14} color={theme.textSecondary} />
+          </Pressable>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -490,7 +528,48 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
   },
-  headerImportButton: {
-    paddingHorizontal: Spacing.sm,
+  importTopBanner: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    gap: 10,
+  },
+  importBannerEmoji: {
+    fontSize: 20,
+  },
+  importBannerContent: {
+    flex: 1,
+  },
+  importBannerTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  importBannerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  importBannerButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginRight: 20,
+  },
+  importBannerButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  importBannerDismiss: {
+    position: "absolute",
+    top: 6,
+    right: 6,
   },
 });
