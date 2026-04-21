@@ -1285,6 +1285,7 @@ function SetInput({
             }}
             disabled={!canLog}
             testID={`button-log-set-${setIndex}`}
+            style={styles.logButtonWrapper}
           >
             <LinearGradient
               colors={
@@ -2936,12 +2937,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.sm,
   },
-  logButton: {
+  logButtonWrapper: {
     alignSelf: "center",
+    minWidth: 180,
+    marginTop: 16,
+  },
+  logButton: {
     paddingVertical: 18,
     paddingHorizontal: 40,
     borderRadius: 14,
-    minWidth: 180,
+    alignItems: "center",
+    justifyContent: "center",
   },
   logButtonText: {
     color: "#FFFFFF",
