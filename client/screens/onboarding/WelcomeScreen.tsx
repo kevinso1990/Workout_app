@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
         <Animated.View entering={FadeInUp.delay(100).duration(600)}>
           <Image
             source={require("../../../assets/images/icon.png")}
-            style={{ width: 160, height: 160, borderRadius: 32, alignSelf: "center", marginBottom: 32 }}
+            style={{ width: 160, height: 160, borderRadius: 32, alignSelf: "center", marginBottom: 16 }}
             resizeMode="contain"
           />
         </Animated.View>
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: Spacing["2xl"],
-    justifyContent: "space-between",
+    justifyContent: "center",
   },
   textContainer: {
     alignItems: "center",

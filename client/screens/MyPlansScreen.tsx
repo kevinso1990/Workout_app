@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useLayoutEffect } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -219,6 +219,30 @@ function EmptyState({
   );
 }
 
+function ImportBannerCard({ onPress }: { onPress: () => void }) {
+  const { theme } = useTheme();
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={() => { scale.value = withSpring(0.98, { damping: 15, stiffness: 200 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 200 }); }}
+      style={[animatedStyle, styles.importBanner, { borderColor: theme.textSecondary + "60" }]}
+    >
+      <ThemedText style={styles.importBannerEmoji}>📷</ThemedText>
+      <View style={styles.importBannerText}>
+        <ThemedText style={styles.importBannerTitle}>Import a plan from a photo</ThemedText>
+        <ThemedText style={[styles.importBannerSubtitle, { color: theme.textSecondary }]}>
+          Scan any workout plan with AI
+        </ThemedText>
+      </View>
+      <Feather name="chevron-right" size={18} color={theme.textSecondary} />
+    </AnimatedPressable>
+  );
+}
+
 export default function MyPlansScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
@@ -262,20 +286,6 @@ export default function MyPlansScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("ImportWorkout");
   }, [navigation]);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Pressable
-          onPress={handleImportPlan}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerImportButton}
-        >
-          <Feather name="upload" size={20} color={Colors.light.primary} />
-        </Pressable>
-      ),
-    });
-  }, [navigation, handleImportPlan]);
 
   const handleStartWorkout = (plan: WorkoutPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -339,6 +349,7 @@ export default function MyPlansScreen() {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<EmptyState onCreatePress={handleCreatePlan} onImportPress={handleImportPlan} />}
+        ListFooterComponent={plans.length > 0 ? <ImportBannerCard onPress={handleImportPlan} /> : null}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -490,7 +501,31 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
   },
-  headerImportButton: {
-    paddingHorizontal: Spacing.sm,
+  importBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    marginHorizontal: 16,
+    gap: 12,
+  },
+  importBannerEmoji: {
+    fontSize: 20,
+  },
+  importBannerText: {
+    flex: 1,
+  },
+  importBannerTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  importBannerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });
