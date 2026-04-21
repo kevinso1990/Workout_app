@@ -47,6 +47,7 @@ import {
   getWorkoutHistory,
   WorkoutSession,
   calculateProgressionWeight,
+  WeightRecommendation,
   getUserPreferences,
   FitnessLevel,
   FitnessGoal,
@@ -879,36 +880,30 @@ function SetInput({
   setIndex,
   setData,
   lastWeekData,
+  progressionSuggestion,
   onUpdate,
   onComplete,
   isActive,
-  exerciseName,
   targetReps,
 }: {
   setIndex: number;
   setData: SetData;
   lastWeekData: { weight: string; reps: string; rating: SetRating } | null;
+  progressionSuggestion: WeightRecommendation | null;
   onUpdate: (data: Partial<SetData>) => void;
   onComplete: () => void;
   isActive: boolean;
-  exerciseName: string;
   targetReps?: string;
 }) {
   const { theme } = useTheme();
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
 
-  const progressionSuggestion = useMemo(() => {
-    if (!lastWeekData || !lastWeekData.weight || !lastWeekData.rating) return null;
-    const lastWeight = parseFloat(lastWeekData.weight) || 0;
-    return calculateProgressionWeight(lastWeight, lastWeekData.rating, exerciseName);
-  }, [lastWeekData, exerciseName]);
-
   useEffect(() => {
     if (isActive && lastWeekData && setData.weight === "" && setData.reps === "") {
       if (progressionSuggestion) {
         onUpdate({
-          weight: progressionSuggestion.suggestedWeight.toString(),
+          weight: progressionSuggestion.recommendedWeight.toString(),
           reps: lastWeekData.reps,
         });
       } else {
@@ -964,7 +959,7 @@ function SetInput({
   if (setData.completed) {
     const completedWeight = parseFloat(setData.weight) || 0;
     const targetWeight =
-      progressionSuggestion?.suggestedWeight ||
+      progressionSuggestion?.recommendedWeight ||
       (lastWeekData ? parseFloat(lastWeekData.weight) : 0);
     const performanceStatus =
       completedWeight > targetWeight
@@ -1102,47 +1097,52 @@ function SetInput({
         >
           <View style={styles.targetHeader}>
             <View style={styles.targetIconContainer}>
-              <Feather
-                name="target"
-                size={16}
-                color={Colors.light.primary}
-              />
+              <Feather name="target" size={16} color={Colors.light.primary} />
             </View>
-            <ThemedText
-              style={[
-                styles.targetTitle,
-                { color: Colors.light.primary },
-              ]}
-            >
+            <ThemedText style={[styles.targetTitle, { color: Colors.light.primary }]}>
               Today&apos;s Target
             </ThemedText>
           </View>
           <View style={styles.targetContent}>
             <ThemedText style={styles.targetWeight}>
-              {progressionSuggestion.suggestedWeight}kg
+              {progressionSuggestion.recommendedWeight}kg
             </ThemedText>
-            <ThemedText
-              style={[styles.targetReps, { color: theme.textSecondary }]}
-            >
+            <ThemedText style={[styles.targetReps, { color: theme.textSecondary }]}>
               x {lastWeekData?.reps || "8-10"}
             </ThemedText>
           </View>
           <View style={styles.targetReason}>
             <Feather
               name={
-                lastWeekData?.rating === "green"
+                progressionSuggestion.confidence === "increase"
                   ? "trending-up"
-                  : lastWeekData?.rating === "red"
+                  : progressionSuggestion.confidence === "decrease"
                   ? "trending-down"
                   : "minus"
               }
               size={12}
-              color={theme.textSecondary}
+              color={
+                progressionSuggestion.confidence === "increase"
+                  ? Colors.light.success
+                  : progressionSuggestion.confidence === "decrease"
+                  ? Colors.light.error
+                  : "#F59E0B"
+              }
             />
             <ThemedText
-              style={[styles.targetReasonText, { color: theme.textSecondary }]}
+              style={[
+                styles.targetReasonText,
+                {
+                  color:
+                    progressionSuggestion.confidence === "increase"
+                      ? Colors.light.success
+                      : progressionSuggestion.confidence === "decrease"
+                      ? Colors.light.error
+                      : "#F59E0B",
+                },
+              ]}
             >
-              {progressionSuggestion.message}
+              {progressionSuggestion.reason}
             </ThemedText>
           </View>
         </View>
@@ -1756,6 +1756,16 @@ export default function ActiveWorkoutScreen() {
     (ep) => ep.exerciseId === exerciseProgress.exerciseId,
   );
 
+  // Compute recommendation once using ALL last-session sets for this exercise.
+  // The worst-performing set acts as the bottleneck (see storage.ts).
+  const exerciseProgressionSuggestion = lastWeekExercise?.sets?.length
+    ? calculateProgressionWeight(
+        lastWeekExercise.sets,
+        currentExercise.reps,
+        currentExercise.name,
+      )
+    : null;
+
   const totalSets = progress.reduce(
     (acc, ex) => acc + ex.sets.length,
     0
@@ -2051,10 +2061,10 @@ export default function ActiveWorkoutScreen() {
                   setIndex={index}
                   setData={setData}
                   lastWeekData={lastWeekExercise?.sets[index] || null}
+                  progressionSuggestion={exerciseProgressionSuggestion}
                   onUpdate={handleUpdateSet}
                   onComplete={handleSetComplete}
                   isActive={index === currentSetIndex}
-                  exerciseName={currentExercise.name}
                   targetReps={currentExercise.reps}
                 />
               ))}

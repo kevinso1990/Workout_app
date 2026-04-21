@@ -75,52 +75,81 @@ export const COMPOUND_LIFTS = [
   "Machine Leg Press",
 ];
 
+export interface WeightRecommendation {
+  recommendedWeight: number;
+  reason: string;
+  confidence: "increase" | "hold" | "decrease";
+}
+
+const LARGE_COMPOUND_KEYWORDS = ["squat", "deadlift", "bench", "press", "row", "pull"];
+
+function roundToStep(value: number, step: number): number {
+  return Math.round(value / step) * step;
+}
+
 /**
- * Suggests the next session's weight based on how the last set felt and
- * whether the exercise is a compound or isolation movement.
- *
- * Compound lifts (big multi-joint barbell/machine moves):
- *   green  → +5 kg   (easy — load up)
- *   yellow → +2.5 kg (moderate — small step)
- *   red    → same    (hard — consolidate before progressing)
- *
- * Isolation / cable / dumbbell exercises:
- *   green  → +2.5 kg
- *   yellow → +1.25 kg
- *   red    → same weight
+ * Calculates the recommended weight for the next session of an exercise.
+ * Analyses ALL logged sets — the worst-performing set (lowest Epley e1RM) acts
+ * as the bottleneck so a single bad set prevents a premature weight increase.
  */
 export function calculateProgressionWeight(
-  lastWeight: number,
-  lastRating: "green" | "yellow" | "red" | null,
+  lastSets: Array<{ weight: string; reps: string; rating?: SetType | "green" | "yellow" | "red" | null }>,
+  targetReps: string,
   exerciseName: string
-): { suggestedWeight: number; message: string } {
-  if (!lastRating || lastWeight === 0) {
-    return { suggestedWeight: lastWeight, message: "Same as last time" };
-  }
+): WeightRecommendation | null {
+  const validSets = lastSets
+    .map((s) => ({ weight: parseFloat(s.weight) || 0, reps: parseInt(s.reps) || 0 }))
+    .filter((s) => s.weight > 0 && s.reps > 0);
 
-  const isCompound = COMPOUND_LIFTS.includes(exerciseName);
+  if (validSets.length === 0) return null;
 
-  if (isCompound) {
-    switch (lastRating) {
-      case "green":
-        return { suggestedWeight: lastWeight + 5,   message: "+5kg — logged Easy last session" };
-      case "yellow":
-        return { suggestedWeight: lastWeight + 2.5, message: "+2.5kg — logged Good last session" };
-      case "red":
-        return { suggestedWeight: lastWeight,        message: "Same weight — logged Hard last session" };
-    }
+  // Parse target reps — take the lower bound of ranges like "8-10"
+  const targetRepsNum = parseInt(targetReps.split("-")[0]) || 8;
+
+  // Step 1: Epley e1RM per set — used to rank performance
+  const setsWithE1RM = validSets.map((s) => ({ ...s, e1RM: s.weight * (1 + s.reps / 30) }));
+
+  // Step 2: Worst set = lowest e1RM (the bottleneck set)
+  const worstSet = setsWithE1RM.reduce((min, s) => (s.e1RM < min.e1RM ? s : min));
+
+  // Average weight across all valid sets
+  const averageWeight = validSets.reduce((sum, s) => sum + s.weight, 0) / validSets.length;
+
+  const isCompound = LARGE_COMPOUND_KEYWORDS.some((kw) =>
+    exerciseName.toLowerCase().includes(kw)
+  );
+  const increment = isCompound ? 2.5 : 1.25;
+
+  // Minimum sensible weight: barbell exercises start at 20 kg (empty bar)
+  const minWeight = exerciseName.toLowerCase().includes("barbell") ? 20 : 0;
+
+  let recommendedWeight: number;
+  let reason: string;
+  let confidence: WeightRecommendation["confidence"];
+
+  const worstReps = worstSet.reps;
+
+  if (worstReps >= targetRepsNum + 2) {
+    recommendedWeight = roundToStep(averageWeight + increment, 1.25);
+    reason = `All sets hit ${worstReps}+ reps — add ${increment} kg`;
+    confidence = "increase";
+  } else if (worstReps >= targetRepsNum) {
+    recommendedWeight = roundToStep(averageWeight, 1.25);
+    reason = `Worst set hit ${worstReps} reps — keep weight stable`;
+    confidence = "hold";
+  } else if (worstReps >= targetRepsNum - 2) {
+    recommendedWeight = roundToStep(averageWeight - increment * 0.5, 1.25);
+    reason = `Worst set dropped to ${worstReps} reps — slight deload`;
+    confidence = "decrease";
   } else {
-    switch (lastRating) {
-      case "green":
-        return { suggestedWeight: lastWeight + 2.5,  message: "+2.5kg — logged Easy last session" };
-      case "yellow":
-        return { suggestedWeight: lastWeight + 1.25, message: "+1.25kg — logged Good last session" };
-      case "red":
-        return { suggestedWeight: lastWeight,         message: "Same weight — logged Hard last session" };
-    }
+    recommendedWeight = roundToStep(averageWeight * 0.95, 1.25);
+    reason = `Worst set hit only ${worstReps} reps — reduce weight`;
+    confidence = "decrease";
   }
 
-  return { suggestedWeight: lastWeight, message: "Same as last time" };
+  recommendedWeight = Math.max(recommendedWeight, minWeight);
+
+  return { recommendedWeight, reason, confidence };
 }
 
 export interface ExerciseProgress {
