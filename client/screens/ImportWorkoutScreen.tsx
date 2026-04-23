@@ -161,7 +161,7 @@ export default function ImportWorkoutScreen() {
     loadingTimer.current = setTimeout(() => setLoadingText("Almost done..."), 2000);
 
     try {
-      const plan = await analyzeImages(images.map((img) => img.base64));
+      const plan = await analyzeImages(images[0].base64);
       if (loadingTimer.current) clearTimeout(loadingTimer.current);
       setPreviewPlan(plan);
       setPlanName(plan.planName);

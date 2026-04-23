@@ -35,7 +35,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { saveWorkoutPlan } from "@/lib/storage";
 import type { WorkoutPlan as StorageWorkoutPlan } from "@/lib/storage";
 
-const N8N_WEBHOOK_URL = "https://[YOUR_N8N_URL]/webhook/import-workout";
+const BACKEND_URL = "https://workout-builder.replit.app/api/import-workout";
 const IMPORTED_PLANS_KEY = "importedPlans";
 
 export interface ImportedExercise {
@@ -96,14 +96,20 @@ export function useWorkoutImport() {
     }
   }
 
-  async function analyzeImages(base64Images: string[]): Promise<ImportedWorkoutPlan> {
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images: base64Images }),
+  async function analyzeImages(base64: string): Promise<ImportedWorkoutPlan> {
+    const response = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64, mediaType: 'image/jpeg' }),
     });
-    if (!response.ok) throw new Error("Webhook request failed");
-    return response.json() as Promise<ImportedWorkoutPlan>;
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Import failed');
+    }
+
+    const plan = await response.json();
+    return plan as ImportedWorkoutPlan;
   }
 
   async function saveImportedPlan(plan: ImportedWorkoutPlan): Promise<string> {
