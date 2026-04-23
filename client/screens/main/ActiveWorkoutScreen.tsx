@@ -13,6 +13,7 @@ import {
   Share,
   AppState,
   AppStateStatus,
+  ActivityIndicator,
 } from "react-native";
 import * as Notifications from "expo-notifications";
 import { SchedulableTriggerInputTypes } from "expo-notifications";
@@ -58,6 +59,7 @@ import {
   getMuscleGroupMeta,
 } from "@/lib/exerciseImages";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
+import { getExerciseGif } from "../../services/exerciseMedia";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -1382,6 +1384,9 @@ export default function ActiveWorkoutScreen() {
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
   const [restTimerEnabled, setRestTimerEnabled] = useState(true);
+  const [exerciseGif, setExerciseGif] = useState<string | null>(null);
+  const [gifLoading, setGifLoading] = useState(false);
+  const [gifModalVisible, setGifModalVisible] = useState(false);
   const buttonScale = useSharedValue(1);
 
   // Rest duration varies by goal: strength needs longer recovery than endurance/fat-loss
@@ -1481,6 +1486,21 @@ export default function ActiveWorkoutScreen() {
     setImageError(false);
     setImageLoading(true);
   }, [currentExerciseIndex, currentExerciseName]);
+
+  useEffect(() => {
+    const name = currentExerciseName;
+    if (!name) { setExerciseGif(null); setGifLoading(false); return; }
+    let cancelled = false;
+    setGifLoading(true);
+    setExerciseGif(null);
+    getExerciseGif(name).then(url => {
+      if (!cancelled) {
+        setExerciseGif(url);
+        setGifLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [currentExerciseName]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -2056,6 +2076,24 @@ export default function ActiveWorkoutScreen() {
               </View>
             </View>
 
+            {gifLoading && (
+              <View style={styles.gifSkeleton}>
+                <ActivityIndicator size="small" color={Colors.light.primary} />
+              </View>
+            )}
+            {!gifLoading && exerciseGif && (
+              <Pressable onPress={() => setGifModalVisible(true)} style={styles.gifContainer}>
+                <Image
+                  source={{ uri: exerciseGif }}
+                  style={styles.gifImage}
+                  resizeMode="contain"
+                />
+                <View style={styles.gifExpandHint}>
+                  <Feather name="maximize-2" size={14} color="#fff" />
+                </View>
+              </Pressable>
+            )}
+
             <View style={styles.setsContainer}>
               {exerciseProgress.sets.map((setData, index) => (
                 <SetInput
@@ -2170,6 +2208,24 @@ export default function ActiveWorkoutScreen() {
           )}
         </View>
       </View>
+      <Modal
+        visible={gifModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGifModalVisible(false)}
+      >
+        <Pressable style={styles.gifModalOverlay} onPress={() => setGifModalVisible(false)}>
+          <View style={styles.gifModalContent}>
+            <Image
+              source={{ uri: exerciseGif! }}
+              style={styles.gifModalImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.gifModalName}>{currentExercise.name}</Text>
+            <Text style={styles.gifModalHint}>Tap to close</Text>
+          </View>
+        </Pressable>
+      </Modal>
     </ThemedView>
   );
 }
@@ -3229,5 +3285,62 @@ const styles = StyleSheet.create({
   performanceBadgeText: {
     fontSize: 11,
     fontWeight: "600",
+  },
+  gifContainer: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 16,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gifImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gifSkeleton: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#e8e8e8',
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gifExpandHint: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 6,
+    padding: 4,
+  },
+  gifModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.88)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gifModalContent: {
+    width: '90%',
+    alignItems: 'center',
+  },
+  gifModalImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 16,
+  },
+  gifModalName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 16,
+  },
+  gifModalHint: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 8,
   },
 });
