@@ -2077,12 +2077,12 @@ export default function ActiveWorkoutScreen() {
             </View>
 
             {gifLoading && (
-              <View style={styles.gifSkeleton}>
+              <View style={[styles.gifSkeleton, { backgroundColor: theme.backgroundSecondary }]}>
                 <ActivityIndicator size="small" color={Colors.light.primary} />
               </View>
             )}
             {!gifLoading && exerciseGif && (
-              <Pressable onPress={() => setGifModalVisible(true)} style={styles.gifContainer}>
+              <Pressable onPress={() => setGifModalVisible(true)} style={[styles.gifContainer, { backgroundColor: theme.backgroundSecondary }]}>
                 <Image
                   source={{ uri: exerciseGif }}
                   style={styles.gifImage}
@@ -2209,18 +2209,20 @@ export default function ActiveWorkoutScreen() {
         </View>
       </View>
       <Modal
-        visible={gifModalVisible}
+        visible={gifModalVisible && !!exerciseGif}
         transparent
         animationType="fade"
         onRequestClose={() => setGifModalVisible(false)}
       >
         <Pressable style={styles.gifModalOverlay} onPress={() => setGifModalVisible(false)}>
           <View style={styles.gifModalContent}>
-            <Image
-              source={{ uri: exerciseGif! }}
-              style={styles.gifModalImage}
-              resizeMode="contain"
-            />
+            {exerciseGif ? (
+              <Image
+                source={{ uri: exerciseGif }}
+                style={styles.gifModalImage}
+                resizeMode="contain"
+              />
+            ) : null}
             <Text style={styles.gifModalName}>{currentExercise.name}</Text>
             <Text style={styles.gifModalHint}>Tap to close</Text>
           </View>
@@ -3292,7 +3294,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
-    backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -3304,7 +3305,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 180,
     borderRadius: 12,
-    backgroundColor: '#e8e8e8',
     marginBottom: 16,
     alignItems: 'center',
     justifyContent: 'center',
