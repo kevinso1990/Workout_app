@@ -6,7 +6,7 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["bash", "-c", "npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server_dist"]
+build = ["bash", "-c", "npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server_dist"]
 run = ["bash", "-c", "NODE_ENV=production node server_dist/index.js"]
 
 [[ports]]
@@ -16,6 +16,10 @@ externalPort = 5000
 [[ports]]
 localPort = 5904
 externalPort = 3003
+
+[[ports]]
+localPort = 5999
+externalPort = 4200
 
 [[ports]]
 localPort = 7777
@@ -53,24 +57,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start App"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "Start application"
-
-[[workflows.workflow]]
-name = "Start App"
-author = "agent"
-mode = "parallel"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start Backend"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start Frontend"
 
 [[workflows.workflow]]
 name = "Start application"
