@@ -38,6 +38,7 @@ export default defineConfig({
       "expo-splash-screen",
       "expo-status-bar",
       "expo-font",
+      "@expo/vector-icons",
       "@react-navigation/native",
       "@react-navigation/native-stack",
       "@react-navigation/bottom-tabs",

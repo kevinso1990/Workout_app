@@ -1,28 +1,46 @@
-import React from "react";
-import { NavigationContainer, DarkTheme, DefaultTheme } from "@react-navigation/native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import RootStackNavigator from "@/navigation/RootStackNavigator";
-import { ThemeProvider, useThemeContext } from "@/context/ThemeContext";
-
-// Inner component so NavigationContainer can read the resolved theme from context.
-function AppNavigator() {
-  const { isDark } = useThemeContext();
-  return (
-    <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
-      <RootStackNavigator />
-    </NavigationContainer>
-  );
-}
+import React, { useEffect } from "react";
+import { Route, Switch } from "wouter";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
+import Plans from "./pages/Plans";
+import PlanBuilder from "./pages/PlanBuilder";
+import CreatePlan from "./pages/CreatePlan";
+import ActiveWorkout from "./pages/ActiveWorkout";
+import PostWorkout from "./pages/PostWorkout";
+import SessionDetail from "./pages/SessionDetail";
+import Profile from "./pages/Profile";
+import Progress from "./pages/Progress";
+import Onboarding from "./components/Onboarding";
+import { getStoredTheme, applyTheme } from "./lib/theme";
 
 export default function App() {
+  useEffect(() => {
+    applyTheme(getStoredTheme());
+  }, []);
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AppNavigator />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <>
+      <Onboarding />
+      <Switch>
+        <Route path="/workout/:sessionId/finish" component={PostWorkout} />
+        <Route path="/workout/:sessionId" component={ActiveWorkout} />
+        <Route path="/session/:id" component={SessionDetail} />
+        <Route>
+          <Layout>
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/plans" component={Plans} />
+              <Route path="/plans/create" component={CreatePlan} />
+              <Route path="/plans/new" component={PlanBuilder} />
+              <Route path="/plans/:id/edit" component={PlanBuilder} />
+              <Route path="/progress" component={Progress} />
+              {/* /history is now the "Sessions" sub-tab inside Progress */}
+              <Route path="/history" component={() => <Progress initialTab="sessions" />} />
+              <Route path="/profile" component={Profile} />
+            </Switch>
+          </Layout>
+        </Route>
+      </Switch>
+    </>
   );
 }
