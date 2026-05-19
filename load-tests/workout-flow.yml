@@ -1,0 +1,175 @@
+# workout-flow.yml — Concurrent write-heavy workout session flow
+#
+# Simulates real users logging a full workout:
+#   1. POST /api/sessions              — create session
+#   2. POST /api/sets  × 9             — log 3 sets per exercise × 3 exercises
+#   3. PUT  /api/sessions/:id          — finish session (triggers fatigue calc)
+#
+# This is the hardest write path: each VU does ~11 SQLite writes.
+# Concurrency at 10 VUs means up to 110 writes in-flight simultaneously,
+# which stresses SQLite WAL mode and exercises the busy_timeout = 5000 ms pragma.
+#
+# Pass/fail thresholds: p95 < 500 ms, error rate < 2 %
+#
+# Run: npm run load:workout
+
+config:
+  target: "http://localhost:5000"
+  processor: "./helpers.js"
+  phases:
+    - name: "Warmup"
+      duration: 20
+      arrivalRate: 2
+    - name: "Concurrent write load"
+      duration: 60
+      arrivalRate: 8
+    - name: "Ramp-down"
+      duration: 15
+      arrivalRate: 2
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  ensure:
+    p95: 500
+    maxErrorRate: 2
+
+scenarios:
+  - name: "Full workout session"
+    beforeScenario: "getSharedState"
+    flow:
+      # ── 1. Create session ───────────────────────────────────────────────
+      - post:
+          url: "/api/sessions"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            plan_id: "{{ planId }}"
+          capture:
+            - json: "$.id"
+              as: "sessionId"
+          expect:
+            - statusCode: 200
+            - hasProperty: "id"
+
+      # ── 2a. Exercise 1 — 3 sets ─────────────────────────────────────────
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 1
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 2
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 3
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      # ── 2b. Exercise 2 — 3 sets ─────────────────────────────────────────
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 1
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 2
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 3
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      # ── 2c. Exercise 3 — 3 sets ─────────────────────────────────────────
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 1
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 2
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      - function: "randomSetData"
+      - post:
+          url: "/api/sets"
+          json:
+            session_id: "{{ sessionId }}"
+            exercise_id: "{{ exerciseId }}"
+            set_number: 3
+            weight: "{{ weight }}"
+            reps: "{{ reps }}"
+          expect:
+            - statusCode: 200
+
+      # ── 3. Finish session (triggers fatigue calculation) ────────────────
+      - function: "setFinishTime"
+      - put:
+          url: "/api/sessions/{{ sessionId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            finished_at: "{{ finishedAt }}"
+            rpe: 7
+          expect:
+            - statusCode: 200

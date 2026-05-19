@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "TrackYourLift",
+    "slug": "fitplan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "fitplan",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ks15.trackyourlift",
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Used to photograph your workout plan for import",
+        "NSPhotoLibraryUsageDescription": "Used to select a photo of your workout plan"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F5F7",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.fitplan.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F5F7",
+          "dark": {
+            "backgroundColor": "#121212"
+          }
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Used to select a photo of your workout plan",
+          "cameraPermission": "Used to photograph your workout plan for import"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "iosDisplayInForeground": false
+        }
+      ],
+      "expo-video"
+    ],
+    "experiments": {
+      "reactCompiler": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f2fe52cd-fa6a-4cb1-89b5-da49ecaf31cf"
+      }
+    },
+    "owner": "ks15"
+  }
+}

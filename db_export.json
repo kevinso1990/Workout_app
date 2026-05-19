@@ -1,0 +1,1393 @@
+{
+  "exportedAt": "2026-05-03T06:25:39.089Z",
+  "source": "/home/runner/workspace/workout.db",
+  "tables": {
+    "body_weight": {
+      "rowCount": 1,
+      "rows": [
+        {
+          "id": 1,
+          "weight_kg": 80.5,
+          "logged_date": "2026-03-03",
+          "notes": null,
+          "user_id": null
+        }
+      ]
+    },
+    "exercise_feedback": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "exercise_media_cache": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "exercise_votes": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "exercises": {
+      "rowCount": 129,
+      "rows": [
+        {
+          "id": 1,
+          "name": "Barbell Bench Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg"
+        },
+        {
+          "id": 2,
+          "name": "Incline Barbell Bench Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg"
+        },
+        {
+          "id": 3,
+          "name": "Decline Barbell Bench Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg"
+        },
+        {
+          "id": 4,
+          "name": "Dumbbell Bench Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 5,
+          "name": "Incline Dumbbell Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Press/0.jpg"
+        },
+        {
+          "id": 6,
+          "name": "Dumbbell Flyes",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Flyes/0.jpg"
+        },
+        {
+          "id": 7,
+          "name": "Cable Flyes",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crossover/0.jpg"
+        },
+        {
+          "id": 8,
+          "name": "Machine Chest Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 9,
+          "name": "Pec Deck",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 10,
+          "name": "Push-Ups",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Decline_Push-Up/0.jpg"
+        },
+        {
+          "id": 11,
+          "name": "Chest Dips",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_-_Chest_Version/0.jpg"
+        },
+        {
+          "id": 12,
+          "name": "Landmine Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 13,
+          "name": "Barbell Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg"
+        },
+        {
+          "id": 14,
+          "name": "Dumbbell Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Two-Dumbbell_Row/0.jpg"
+        },
+        {
+          "id": 15,
+          "name": "Pendlay Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg"
+        },
+        {
+          "id": 16,
+          "name": "T-Bar Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_T-Bar_Row/0.jpg"
+        },
+        {
+          "id": 17,
+          "name": "Seated Cable Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Elevated_Cable_Rows/0.jpg"
+        },
+        {
+          "id": 18,
+          "name": "Lat Pulldown",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Close-Grip_Front_Lat_Pulldown/0.jpg"
+        },
+        {
+          "id": 19,
+          "name": "Wide Grip Lat Pulldown",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Full_Range-Of-Motion_Lat_Pulldown/0.jpg"
+        },
+        {
+          "id": 20,
+          "name": "Pull-Ups",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Band_Assisted_Pull-Up/0.jpg"
+        },
+        {
+          "id": 21,
+          "name": "Chin-Ups",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Band_Assisted_Pull-Up/0.jpg"
+        },
+        {
+          "id": 22,
+          "name": "Cable Pullover",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 23,
+          "name": "Straight Arm Pulldown",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 24,
+          "name": "Machine Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Elevated_Cable_Rows/0.jpg"
+        },
+        {
+          "id": 25,
+          "name": "Meadows Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg"
+        },
+        {
+          "id": 26,
+          "name": "Chest Supported Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Incline_Row/0.jpg"
+        },
+        {
+          "id": 27,
+          "name": "Overhead Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 28,
+          "name": "Dumbbell Shoulder Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 29,
+          "name": "Arnold Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Arnold_Dumbbell_Press/0.jpg"
+        },
+        {
+          "id": 30,
+          "name": "Lateral Raise",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg"
+        },
+        {
+          "id": 31,
+          "name": "Cable Lateral Raise",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg"
+        },
+        {
+          "id": 32,
+          "name": "Machine Lateral Raise",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg"
+        },
+        {
+          "id": 33,
+          "name": "Front Raise",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Dumbbell_Raise/0.jpg"
+        },
+        {
+          "id": 34,
+          "name": "Rear Delt Fly",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/0.jpg"
+        },
+        {
+          "id": 35,
+          "name": "Face Pull",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Face_Pull/0.jpg"
+        },
+        {
+          "id": 36,
+          "name": "Upright Row",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Rear_Delt_Row/0.jpg"
+        },
+        {
+          "id": 37,
+          "name": "Behind The Neck Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 38,
+          "name": "Machine Shoulder Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 39,
+          "name": "Barbell Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg"
+        },
+        {
+          "id": 40,
+          "name": "Front Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg"
+        },
+        {
+          "id": 41,
+          "name": "Goblet Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Goblet_Squat/0.jpg"
+        },
+        {
+          "id": 42,
+          "name": "Hack Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hack_Squat/0.jpg"
+        },
+        {
+          "id": 43,
+          "name": "Leg Press",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg"
+        },
+        {
+          "id": 44,
+          "name": "Leg Extension",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg"
+        },
+        {
+          "id": 45,
+          "name": "Leg Curl",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg"
+        },
+        {
+          "id": 46,
+          "name": "Seated Leg Curl",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg"
+        },
+        {
+          "id": 47,
+          "name": "Romanian Deadlift",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 48,
+          "name": "Stiff Leg Deadlift",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 49,
+          "name": "Sumo Deadlift",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 50,
+          "name": "Bulgarian Split Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Side_Split_Squat/0.jpg"
+        },
+        {
+          "id": 51,
+          "name": "Walking Lunges",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg"
+        },
+        {
+          "id": 52,
+          "name": "Reverse Lunges",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg"
+        },
+        {
+          "id": 53,
+          "name": "Hip Thrust",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg"
+        },
+        {
+          "id": 54,
+          "name": "Glute Bridge",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Glute_Bridge/0.jpg"
+        },
+        {
+          "id": 55,
+          "name": "Step Ups",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Step_Ups/0.jpg"
+        },
+        {
+          "id": 56,
+          "name": "Sissy Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg"
+        },
+        {
+          "id": 57,
+          "name": "Leg Press Calf Raise",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Calf_Press_On_The_Leg_Press_Machine/0.jpg"
+        },
+        {
+          "id": 58,
+          "name": "Standing Calf Raise",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Donkey_Calf_Raises/0.jpg"
+        },
+        {
+          "id": 59,
+          "name": "Seated Calf Raise",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "machine",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Seated_Calf_Raise/0.jpg"
+        },
+        {
+          "id": 60,
+          "name": "Deadlift",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 61,
+          "name": "Trap Bar Deadlift",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 62,
+          "name": "Rack Pull",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 63,
+          "name": "Good Morning",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 64,
+          "name": "Hyperextension",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hyperextensions_With_No_Hyperextension_Bench/0.jpg"
+        },
+        {
+          "id": 65,
+          "name": "Barbell Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg"
+        },
+        {
+          "id": 66,
+          "name": "Dumbbell Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bicep_Curl/0.jpg"
+        },
+        {
+          "id": 67,
+          "name": "Hammer Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg"
+        },
+        {
+          "id": 68,
+          "name": "Preacher Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Machine_Preacher_Curls/0.jpg"
+        },
+        {
+          "id": 69,
+          "name": "Incline Dumbbell Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Curl/0.jpg"
+        },
+        {
+          "id": 70,
+          "name": "Cable Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/High_Cable_Curls/0.jpg"
+        },
+        {
+          "id": 71,
+          "name": "Concentration Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Concentration_Curls/0.jpg"
+        },
+        {
+          "id": 72,
+          "name": "EZ-Bar Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ-Bar_Curl/0.jpg"
+        },
+        {
+          "id": 73,
+          "name": "Spider Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Cable_Curl/0.jpg"
+        },
+        {
+          "id": 74,
+          "name": "Bayesian Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/High_Cable_Curls/0.jpg"
+        },
+        {
+          "id": 75,
+          "name": "Reverse Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg"
+        },
+        {
+          "id": 76,
+          "name": "Tricep Pushdown",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Incline_Pushdown/0.jpg"
+        },
+        {
+          "id": 77,
+          "name": "Overhead Tricep Extension",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One-Arm_Triceps_Extension/0.jpg"
+        },
+        {
+          "id": 78,
+          "name": "Skull Crushers",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ-Bar_Skullcrusher/0.jpg"
+        },
+        {
+          "id": 79,
+          "name": "Close Grip Bench Press",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Close-Grip_Barbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 80,
+          "name": "Tricep Dips",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_-_Triceps_Version/0.jpg"
+        },
+        {
+          "id": 81,
+          "name": "Tricep Kickback",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One-Arm_Triceps_Extension/0.jpg"
+        },
+        {
+          "id": 82,
+          "name": "Cable Overhead Extension",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One-Arm_Triceps_Extension/0.jpg"
+        },
+        {
+          "id": 83,
+          "name": "Diamond Push-Ups",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Close-Grip_Push-Up_off_of_a_Dumbbell/0.jpg"
+        },
+        {
+          "id": 84,
+          "name": "JM Press",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Close-Grip_Barbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 85,
+          "name": "Plank",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dead_Bug/0.jpg"
+        },
+        {
+          "id": 86,
+          "name": "Side Plank",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dead_Bug/0.jpg"
+        },
+        {
+          "id": 87,
+          "name": "Crunches",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/0.jpg"
+        },
+        {
+          "id": 88,
+          "name": "Russian Twist",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Russian_Twists/0.jpg"
+        },
+        {
+          "id": 89,
+          "name": "Hanging Leg Raise",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hanging_Leg_Raise/0.jpg"
+        },
+        {
+          "id": 90,
+          "name": "Cable Crunch",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crunch/0.jpg"
+        },
+        {
+          "id": 91,
+          "name": "Ab Wheel Rollout",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Ab_Roller/0.jpg"
+        },
+        {
+          "id": 92,
+          "name": "Mountain Climbers",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Mountain_Climbers/0.jpg"
+        },
+        {
+          "id": 93,
+          "name": "Dead Bug",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dead_Bug/0.jpg"
+        },
+        {
+          "id": 94,
+          "name": "Sit-Ups",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/3_4_Sit-Up/0.jpg"
+        },
+        {
+          "id": 95,
+          "name": "Pallof Press",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crunch/0.jpg"
+        },
+        {
+          "id": 96,
+          "name": "Woodchoppers",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "cable",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crunch/0.jpg"
+        },
+        {
+          "id": 97,
+          "name": "Decline Sit-Ups",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/3_4_Sit-Up/0.jpg"
+        },
+        {
+          "id": 98,
+          "name": "Dragon Flag",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hanging_Leg_Raise/0.jpg"
+        },
+        {
+          "id": 99,
+          "name": "Barbell Shrug",
+          "muscle_group": "Traps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg"
+        },
+        {
+          "id": 100,
+          "name": "Dumbbell Shrug",
+          "muscle_group": "Traps",
+          "is_custom": 0,
+          "equipment": "dumbbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shrug/0.jpg"
+        },
+        {
+          "id": 101,
+          "name": "Farmer's Walk",
+          "muscle_group": "Traps",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg"
+        },
+        {
+          "id": 102,
+          "name": "Wrist Curl",
+          "muscle_group": "Forearms",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg"
+        },
+        {
+          "id": 103,
+          "name": "Reverse Wrist Curl",
+          "muscle_group": "Forearms",
+          "is_custom": 0,
+          "equipment": "barbell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg"
+        },
+        {
+          "id": 104,
+          "name": "Plate Pinch",
+          "muscle_group": "Forearms",
+          "is_custom": 0,
+          "equipment": "bodyweight",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg"
+        },
+        {
+          "id": 105,
+          "name": "KB Goblet Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Goblet_Squat/0.jpg"
+        },
+        {
+          "id": 106,
+          "name": "KB Swing",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 107,
+          "name": "KB Romanian Deadlift",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 108,
+          "name": "KB Lunges",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg"
+        },
+        {
+          "id": 109,
+          "name": "KB Bulgarian Split Squat",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Side_Split_Squat/0.jpg"
+        },
+        {
+          "id": 110,
+          "name": "KB Calf Raise",
+          "muscle_group": "Legs",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Donkey_Calf_Raises/0.jpg"
+        },
+        {
+          "id": 111,
+          "name": "KB Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 112,
+          "name": "KB Push Press",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg"
+        },
+        {
+          "id": 113,
+          "name": "KB Lateral Raise",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg"
+        },
+        {
+          "id": 114,
+          "name": "KB Halo",
+          "muscle_group": "Shoulders",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg"
+        },
+        {
+          "id": 115,
+          "name": "KB Floor Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 116,
+          "name": "KB Squeeze Press",
+          "muscle_group": "Chest",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg"
+        },
+        {
+          "id": 117,
+          "name": "KB Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Two-Dumbbell_Row/0.jpg"
+        },
+        {
+          "id": 118,
+          "name": "KB Renegade Row",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Two-Dumbbell_Row/0.jpg"
+        },
+        {
+          "id": 119,
+          "name": "KB High Pull",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Rear_Delt_Row/0.jpg"
+        },
+        {
+          "id": 120,
+          "name": "KB Clean",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 121,
+          "name": "KB Snatch",
+          "muscle_group": "Back",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg"
+        },
+        {
+          "id": 122,
+          "name": "KB Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bicep_Curl/0.jpg"
+        },
+        {
+          "id": 123,
+          "name": "KB Hammer Curl",
+          "muscle_group": "Biceps",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg"
+        },
+        {
+          "id": 124,
+          "name": "KB Overhead Tricep Extension",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One-Arm_Triceps_Extension/0.jpg"
+        },
+        {
+          "id": 125,
+          "name": "KB Skull Crusher",
+          "muscle_group": "Triceps",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ-Bar_Skullcrusher/0.jpg"
+        },
+        {
+          "id": 126,
+          "name": "KB Turkish Get-Up",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dead_Bug/0.jpg"
+        },
+        {
+          "id": 127,
+          "name": "KB Windmill",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg"
+        },
+        {
+          "id": 128,
+          "name": "KB Russian Twist",
+          "muscle_group": "Core",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Russian_Twists/0.jpg"
+        },
+        {
+          "id": 129,
+          "name": "KB Farmer's Walk",
+          "muscle_group": "Traps",
+          "is_custom": 0,
+          "equipment": "kettlebell",
+          "gif_url": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg"
+        }
+      ]
+    },
+    "muscle_fatigue": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "notification_log": {
+      "rowCount": 1,
+      "rows": [
+        {
+          "id": 1,
+          "notification_type": "inactivity",
+          "sent_date": "2026-04-12"
+        }
+      ]
+    },
+    "plan_exercises": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "plans": {
+      "rowCount": 2,
+      "rows": [
+        {
+          "id": 10,
+          "name": "Test Plan",
+          "created_at": "2026-04-25 11:45:04",
+          "user_id": 3
+        },
+        {
+          "id": 11,
+          "name": "E2E Test Plan",
+          "created_at": "2026-04-25 11:46:22",
+          "user_id": 3
+        }
+      ]
+    },
+    "push_subscriptions": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "sessions": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "sets": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "split_refresh_snooze": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "subscription_receipts": {
+      "rowCount": 0,
+      "rows": []
+    },
+    "users": {
+      "rowCount": 19,
+      "rows": [
+        {
+          "id": 1,
+          "username": "deploytester",
+          "email": "deploy@test.com",
+          "password_hash": "$2b$10$wS5xQ.uiquKq7QEcG6JoYOCnnZkGepTBjPF1WGAVltYwMGGWf1XIi",
+          "created_at": "2026-03-06 19:19:48",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": null,
+          "avatar_url": null,
+          "provider": null,
+          "provider_id": null
+        },
+        {
+          "id": 2,
+          "username": "user2",
+          "email": "user2@test.com",
+          "password_hash": "$2b$10$1cTmtqa8TUMlNUCIAq/AdOmKotdP1VE3g.AYPPufNmSqFoIREO86a",
+          "created_at": "2026-03-06 19:20:02",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": null,
+          "avatar_url": null,
+          "provider": null,
+          "provider_id": null
+        },
+        {
+          "id": 3,
+          "username": null,
+          "email": "dev@local.test",
+          "password_hash": null,
+          "created_at": "2026-04-25 11:40:30",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Dev User",
+          "avatar_url": null,
+          "provider": "dev",
+          "provider_id": "local-dev-user"
+        },
+        {
+          "id": 4,
+          "username": null,
+          "email": "guest-test-device-12345@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-25 11:49:29",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "test-device-12345"
+        },
+        {
+          "id": 5,
+          "username": null,
+          "email": "guest-another-device-67890@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-25 11:49:29",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "another-device-67890"
+        },
+        {
+          "id": 6,
+          "username": null,
+          "email": "guest-c68725189090959057ca768b91c5b223@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-25 11:52:14",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "c68725189090959057ca768b91c5b223"
+        },
+        {
+          "id": 7,
+          "username": null,
+          "email": "guest-436426f73f8ef6fe269098c8de597e5a@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-26 05:04:10",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "436426f73f8ef6fe269098c8de597e5a"
+        },
+        {
+          "id": 8,
+          "username": null,
+          "email": "guest-cf24c0e2257cd1d376a436ba504a59d5@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-26 07:04:53",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "cf24c0e2257cd1d376a436ba504a59d5"
+        },
+        {
+          "id": 9,
+          "username": null,
+          "email": "guest-7484d85acaf03df46aac8645ac213364@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-26 10:46:34",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "7484d85acaf03df46aac8645ac213364"
+        },
+        {
+          "id": 10,
+          "username": null,
+          "email": "guest-7c846850a9f6fcfd1864dfeaaa9b3ae5@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-26 11:18:58",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "7c846850a9f6fcfd1864dfeaaa9b3ae5"
+        },
+        {
+          "id": 11,
+          "username": null,
+          "email": "guest-f702fbfc8369e3faa11c2eb13dd9ec22@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-28 10:03:31",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "f702fbfc8369e3faa11c2eb13dd9ec22"
+        },
+        {
+          "id": 12,
+          "username": null,
+          "email": "guest-497779a0fe6259fd6f8c508616af4aa2@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-28 17:29:19",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "497779a0fe6259fd6f8c508616af4aa2"
+        },
+        {
+          "id": 13,
+          "username": null,
+          "email": "guest-a9a163e910c4a8d19c2a7db77a1481ea@guest.local",
+          "password_hash": null,
+          "created_at": "2026-04-28 18:04:35",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "a9a163e910c4a8d19c2a7db77a1481ea"
+        },
+        {
+          "id": 14,
+          "username": null,
+          "email": "guest-1a9da41d33c0778e03fa75beacb4673a@guest.local",
+          "password_hash": null,
+          "created_at": "2026-05-01 17:36:15",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "1a9da41d33c0778e03fa75beacb4673a"
+        },
+        {
+          "id": 15,
+          "username": null,
+          "email": "guest-f7852836bdddbc6743211bda5b32d7a6@guest.local",
+          "password_hash": null,
+          "created_at": "2026-05-02 06:44:22",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "f7852836bdddbc6743211bda5b32d7a6"
+        },
+        {
+          "id": 16,
+          "username": null,
+          "email": "guest-7c10f963fbe4d7b640b6a529e4fac67c@guest.local",
+          "password_hash": null,
+          "created_at": "2026-05-02 12:17:50",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "7c10f963fbe4d7b640b6a529e4fac67c"
+        },
+        {
+          "id": 17,
+          "username": null,
+          "email": "guest-a496f1c108dbd5866ea5cf203bf2f819@guest.local",
+          "password_hash": null,
+          "created_at": "2026-05-02 12:38:40",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "a496f1c108dbd5866ea5cf203bf2f819"
+        },
+        {
+          "id": 18,
+          "username": null,
+          "email": "guest-87a957d3ff21cae830e06e39d30f59b5@guest.local",
+          "password_hash": null,
+          "created_at": "2026-05-02 13:08:38",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "87a957d3ff21cae830e06e39d30f59b5"
+        },
+        {
+          "id": 19,
+          "username": null,
+          "email": "guest-3c003ced4fccf58950ac347803d70103@guest.local",
+          "password_hash": null,
+          "created_at": "2026-05-03 06:22:13",
+          "subscription_tier": "free",
+          "subscription_provider": null,
+          "subscription_expires_at": null,
+          "name": "Guest",
+          "avatar_url": null,
+          "provider": "guest",
+          "provider_id": "3c003ced4fccf58950ac347803d70103"
+        }
+      ]
+    }
+  }
+}

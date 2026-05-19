@@ -1,0 +1,130 @@
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import { UserPreferences } from "@/lib/storage";
+import type {
+  FitnessLevel,
+  FitnessGoal,
+  Equipment,
+  MuscleGroup,
+} from "@/lib/onboardingUtils";
+export type { FitnessLevel, FitnessGoal, Equipment, MuscleGroup } from "@/lib/onboardingUtils";
+
+interface OnboardingState {
+  workoutDaysPerWeek: number;
+  cardioDays: string[];
+  splitPreference: "choose" | "recommended" | null;
+  exercisePreference: "choose" | "default" | null;
+  fitnessLevel: FitnessLevel | null;
+  fitnessGoals: FitnessGoal[];
+  equipment: Equipment | null;
+  focusMuscles: MuscleGroup[];
+}
+
+interface OnboardingContextType {
+  state: OnboardingState;
+  setWorkoutDays: (days: number) => void;
+  setCardioDays: (sports: string[]) => void;
+  setSplitPreference: (preference: "choose" | "recommended") => void;
+  setExercisePreference: (preference: "choose" | "default") => void;
+  setFitnessLevel: (level: FitnessLevel) => void;
+  setFitnessGoals: (goals: FitnessGoal[]) => void;
+  setEquipment: (equipment: Equipment) => void;
+  setFocusMuscles: (muscles: MuscleGroup[]) => void;
+  getPreferences: () => UserPreferences;
+  reset: () => void;
+}
+
+const OnboardingContext = createContext<OnboardingContextType | undefined>(
+  undefined
+);
+
+const initialState: OnboardingState = {
+  workoutDaysPerWeek: 3,
+  cardioDays: [],
+  splitPreference: null,
+  exercisePreference: null,
+  fitnessLevel: null,
+  fitnessGoals: [],
+  equipment: null,
+  focusMuscles: [],
+};
+
+export function OnboardingProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<OnboardingState>(initialState);
+
+  const setWorkoutDays = (days: number) => {
+    setState((prev) => ({ ...prev, workoutDaysPerWeek: days }));
+  };
+
+  const setCardioDays = (sports: string[]) => {
+    setState((prev) => ({ ...prev, cardioDays: sports }));
+  };
+
+  const setSplitPreference = (preference: "choose" | "recommended") => {
+    setState((prev) => ({ ...prev, splitPreference: preference }));
+  };
+
+  const setExercisePreference = (preference: "choose" | "default") => {
+    setState((prev) => ({ ...prev, exercisePreference: preference }));
+  };
+
+  const setFitnessLevel = (level: FitnessLevel) => {
+    setState((prev) => ({ ...prev, fitnessLevel: level }));
+  };
+
+  const setFitnessGoals = (goals: FitnessGoal[]) => {
+    setState((prev) => ({ ...prev, fitnessGoals: goals }));
+  };
+
+  const setEquipment = (equipment: Equipment) => {
+    setState((prev) => ({ ...prev, equipment: equipment }));
+  };
+
+  const setFocusMuscles = (muscles: MuscleGroup[]) => {
+    setState((prev) => ({ ...prev, focusMuscles: muscles }));
+  };
+
+  const getPreferences = (): UserPreferences => {
+    return {
+      workoutDaysPerWeek: state.workoutDaysPerWeek,
+      splitPreference: state.splitPreference ?? "choose",
+      exercisePreference: state.exercisePreference ?? "default",
+      cardioDays: state.cardioDays,
+      fitnessLevel: state.fitnessLevel,
+      fitnessGoals: state.fitnessGoals,
+      equipment: state.equipment,
+      focusMuscles: state.focusMuscles,
+    };
+  };
+
+  const reset = () => {
+    setState(initialState);
+  };
+
+  return (
+    <OnboardingContext.Provider
+      value={{
+        state,
+        setWorkoutDays,
+        setCardioDays,
+        setSplitPreference,
+        setExercisePreference,
+        setFitnessLevel,
+        setFitnessGoals,
+        setEquipment,
+        setFocusMuscles,
+        getPreferences,
+        reset,
+      }}
+    >
+      {children}
+    </OnboardingContext.Provider>
+  );
+}
+
+export function useOnboarding() {
+  const context = useContext(OnboardingContext);
+  if (!context) {
+    throw new Error("useOnboarding must be used within an OnboardingProvider");
+  }
+  return context;
+}

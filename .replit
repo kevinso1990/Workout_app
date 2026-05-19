@@ -1,0 +1,112 @@
+entrypoint = "README.md"
+modules = ["nodejs-22", "python-3.11"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["zip"]
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["bash", "-c", "npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server_dist"]
+run = ["node", "server_dist/index.js"]
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 5904
+externalPort = 3003
+
+[[ports]]
+localPort = 5999
+externalPort = 4200
+
+[[ports]]
+localPort = 7777
+externalPort = 3002
+
+[[ports]]
+localPort = 8081
+externalPort = 80
+
+[[ports]]
+localPort = 8082
+externalPort = 3000
+
+[[ports]]
+localPort = 9001
+externalPort = 6000
+
+[[ports]]
+localPort = 9007
+externalPort = 8000
+
+[[ports]]
+localPort = 9010
+externalPort = 6800
+
+[[ports]]
+localPort = 9999
+externalPort = 5173
+
+[[ports]]
+localPort = 24678
+externalPort = 3001
+
+[env]
+PORT = "5000"
+
+[agent]
+stack = "EXPO"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Backend"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Frontend"
+
+[[workflows.workflow]]
+name = "Start Backend"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=development npx tsx server/index.ts"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Start Frontend"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "EXPO_OFFLINE=1 npm run expo:dev"
+waitForPort = 8081
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BHw5e76SwY8YxrOW4lftJkY36a-BlrK0lFk2Svj0ISuzlCHXvh2WLjHwas9j81ZJUJBXoBZoXWmZvZfkSNq8Pfs"
+VAPID_PRIVATE_KEY = "dVqTBjz-0Opai04PQ2ScH0G3ux8wGyH3IRKv-RYJc8k"
+JWT_SECRET = "a322e3808c129a77ea0390a601581a6ab1f1e9598f304b23e5c2ba81f2da96d44e19a30ee7260ea731cd148ff5582610"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000

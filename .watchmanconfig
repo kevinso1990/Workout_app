@@ -1,0 +1,14 @@
+{
+  "ignore_dirs": [
+    ".cache",
+    ".expo",
+    ".git",
+    ".local",
+    ".upm",
+    "node_modules/.cache",
+    "dist",
+    "server_dist",
+    "load-tests",
+    "attached_assets"
+  ]
+}
