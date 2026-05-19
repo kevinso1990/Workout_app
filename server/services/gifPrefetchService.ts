@@ -17,6 +17,7 @@
  */
 
 import db from "../db";
+import { getExerciseDbApiKey } from "../lib/exerciseDbConfig";
 import { searchMuscleWiki } from "./muscleWikiService";
 
 const GITHUB_CDN =
@@ -297,7 +298,7 @@ export async function prefetchSingleExercise(id: number, name: string): Promise<
       if (githubUrl) {
         db.prepare("UPDATE exercises SET gif_url = ? WHERE id = ?").run(githubUrl, id);
       } else {
-        const apiKey = process.env.RAPIDAPI_KEY;
+        const apiKey = getExerciseDbApiKey();
         if (apiKey) {
           const match = await searchExerciseDB(name, apiKey);
           if (match) {
@@ -342,7 +343,7 @@ export async function runGifPrefetch(): Promise<void> {
 
   console.log(`[GIF prefetch] Caching fallback image URLs for ${exercises.length} exercises…`);
 
-  const apiKey = process.env.RAPIDAPI_KEY;
+  const apiKey = getExerciseDbApiKey();
   const update = db.prepare("UPDATE exercises SET gif_url = ? WHERE id = ?");
   let cached = 0;
 

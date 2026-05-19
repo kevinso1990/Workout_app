@@ -5,6 +5,9 @@
 
 import * as FileSystem from "expo-file-system/legacy";
 
+import { getExerciseDbApiKey } from "@/lib/rapidApiConfig";
+import { parseJsonFromText, readResponseBodyAsText } from "@/lib/fetchBody";
+
 const RAPIDAPI_HOST = "exercisedb.p.rapidapi.com";
 const BASE_URL = `https://${RAPIDAPI_HOST}`;
 
@@ -138,7 +141,7 @@ async function resolveGifUrl(
 async function lookupExerciseDetail(
   exerciseName: string,
 ): Promise<ExerciseDbDetail | null> {
-  const apiKey = process.env.EXPO_PUBLIC_RAPIDAPI_KEY?.trim();
+  const apiKey = getExerciseDbApiKey();
   if (!apiKey) return null;
 
   try {
@@ -196,6 +199,8 @@ export async function fetchExerciseInstructions(
   const detail = await fetchExerciseDetail(exerciseName);
   return detail?.instructions ?? [];
 }
+
+export { getExerciseDbApiKey, isExerciseDbConfigured } from "@/lib/rapidApiConfig";
 
 /** Clears in-memory ExerciseDB cache. */
 export function clearExerciseGifCache(): void {

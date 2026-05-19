@@ -1,0 +1,20 @@
+# Render Blueprint — API-only deploy (Expo app uses EAS + EXPO_PUBLIC_API_URL).
+# Dashboard alternative: Root Directory = server, Build = npm install && npm run build, Start = npm start
+services:
+  - type: web
+    name: trackyourlift-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false

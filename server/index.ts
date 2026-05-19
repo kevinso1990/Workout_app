@@ -1,6 +1,5 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
-import { createServer as createViteServer } from "vite";
 import * as fs from "fs";
 import * as path from "path";
 import db, { initDb } from "./db";
@@ -156,6 +155,7 @@ if (isProd) {
     process.on("SIGINT",  () => shutdown("SIGINT",  mainServer));
   } else {
     const { createServer: createHttpServer } = await import("http");
+    const { createServer: createViteServer } = await import("vite");
     const httpServer = createHttpServer(app);
 
     const vite = await createViteServer({
@@ -169,9 +169,7 @@ if (isProd) {
     app.use(vite.middlewares);
 
     httpServer.listen(port, "0.0.0.0", () => {
-      log(`Server running on port ${port}`);
+      log(`Server running on port ${port} (dev + Vite)`);
     });
-
-    // Metro bundler owns its own port (e.g. 8090 via npm start). API stays on PORT.
   }
 })();

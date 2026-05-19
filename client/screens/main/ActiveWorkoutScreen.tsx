@@ -74,7 +74,12 @@ import {
 } from "@/lib/exerciseImages";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
-import { fetchExerciseDetail, fetchExerciseGif, sanitizeExerciseInstructions } from "@/services/exerciseApi";
+import {
+  fetchExerciseDetail,
+  fetchExerciseGif,
+  isExerciseDbConfigured,
+  sanitizeExerciseInstructions,
+} from "@/services/exerciseApi";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { WorkoutBannerAd } from "@/components/ads/WorkoutBannerAd";
 import { getExerciseMedia } from "@/services/exerciseMedia";
@@ -937,7 +942,7 @@ export default function ActiveWorkoutScreen() {
         } else if (staticFallback) {
           setPopupGifUrl(staticFallback);
           setPopupGifError(
-            process.env.EXPO_PUBLIC_RAPIDAPI_KEY?.trim()
+            isExerciseDbConfigured()
               ? "Animation unavailable — showing static preview."
               : "Add EXPO_PUBLIC_RAPIDAPI_KEY to load exercise animations.",
           );

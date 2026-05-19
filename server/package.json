@@ -1,0 +1,43 @@
+{
+  "name": "trackyourlift-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "node dist/index.js",
+    "dev": "cross-env NODE_ENV=development tsx index.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
+    "@google/generative-ai": "^0.24.1",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
+    "drizzle-orm": "^0.39.3",
+    "express": "^5.0.1",
+    "google-auth-library": "^10.6.2",
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.0.1",
+    "multer": "^2.1.1",
+    "web-push": "^3.6.7",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.2",
+    "zod-validation-error": "^3.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
+    "@types/node": "24.10.0",
+    "cross-env": "^10.1.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.2",
+    "vite": "^7.3.1"
+  }
+}
