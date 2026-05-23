@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, Pressable, Text } from "react-native";
+import React, { useMemo } from "react";
+import { View, StyleSheet, Pressable, Text, Image } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { HEVY } from "@/constants/hevyLayout";
 import { Colors } from "@/constants/theme";
 import { getExerciseImageUrl } from "@/lib/exerciseImages";
-import { fetchExerciseGif } from "@/services/exerciseApi";
 import type { Exercise, WorkoutDay } from "@/lib/storage";
 
 const TITLE_COLOR = "#1C1C1E";
@@ -22,39 +20,14 @@ type PlanDetailViewProps = {
 function ExerciseThumb({
   name,
   staticUrl,
-  preferAnimated,
   onPress,
 }: {
   name: string;
   staticUrl: string | null;
-  preferAnimated: boolean;
   onPress?: () => void;
 }) {
-  const [gifUrl, setGifUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!preferAnimated) {
-      setGifUrl(null);
-      return;
-    }
-    let cancelled = false;
-    void fetchExerciseGif(name).then((url) => {
-      if (!cancelled) setGifUrl(url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [name, preferAnimated]);
-
-  const displayUri = gifUrl ?? staticUrl;
-
-  const inner = displayUri ? (
-    <ExerciseGifImage
-      uri={displayUri}
-      style={styles.thumbImage}
-      contentFit="cover"
-      recyclingKey={`${name}-${displayUri}`}
-    />
+  const inner = staticUrl ? (
+    <Image source={{ uri: staticUrl }} style={styles.thumbImage} resizeMode="cover" />
   ) : (
     <View style={styles.thumbFallback}>
       <Text style={styles.thumbFallbackText}>{name.charAt(0).toUpperCase()}</Text>
@@ -92,8 +65,7 @@ function PlanExerciseRow({
       <ExerciseThumb
         name={exercise.name}
         staticUrl={staticUrl}
-        preferAnimated={hasGifCatalog}
-        onPress={onGifPress}
+        onPress={hasGifCatalog ? onGifPress : undefined}
       />
       <View style={styles.exerciseBody}>
         <Text style={styles.exerciseTitle} numberOfLines={2}>

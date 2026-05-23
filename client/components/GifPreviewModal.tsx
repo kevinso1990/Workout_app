@@ -23,6 +23,7 @@ import {
   clearExerciseMediaCache,
 } from "@/services/exerciseMedia";
 import { fetchExerciseDetail, sanitizeExerciseInstructions } from "@/services/exerciseApi";
+import { ExerciseDbHeroGif } from "@/components/workout/ExerciseDbHeroGif";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 
 const CUSTOM_POLL_INTERVAL_MS = 3000;
@@ -245,6 +246,20 @@ export default function GifPreviewModal({
                 contentFit="contain"
                 nativeControls={false}
               />
+            ) : isCustom && !gifUrl && !videoMp4 ? (
+              <CustomExercisePlaceholder />
+            ) : exerciseName ? (
+              <ExerciseDbHeroGif
+                exerciseName={exerciseName}
+                height={280}
+                style={styles.gifHero}
+                onDetailLoaded={(detail) => {
+                  const steps = sanitizeExerciseInstructions(detail.instructions);
+                  if (steps.length > 0) {
+                    setCorrectSteps(steps);
+                  }
+                }}
+              />
             ) : gifUrl ? (
               <ExerciseGifImage
                 uri={gifUrl}
@@ -252,10 +267,8 @@ export default function GifPreviewModal({
                 contentFit="contain"
                 recyclingKey={`${exerciseName ?? "gif"}-preview`}
               />
-            ) : isCustom ? (
-              <CustomExercisePlaceholder />
             ) : loading ? (
-              <ActivityIndicator size="large" color={Colors.light.primary} />
+              <CustomExercisePlaceholder />
             ) : (
               <View style={styles.gifNoPreview}>
                 <Feather name="film" size={40} color={theme.textSecondary} />
@@ -373,6 +386,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     backgroundColor: "#F5F5F5",
     overflow: "hidden",
+  },
+  gifHero: {
+    width: "100%",
+    borderRadius: BorderRadius.lg,
   },
   gifImage: {
     width: "100%",

@@ -4,14 +4,13 @@
  * Shows: title · animated GIF (ExerciseDB) · muscle badge · numbered instructions.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Modal,
   View,
   ScrollView,
   Pressable,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
 import Animated, { FadeIn, SlideInDown } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
@@ -21,17 +20,18 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { getExerciseMedia as getStaticExerciseMedia } from "@/lib/exerciseMedia/provider";
-import { getExerciseMedia as fetchServerExerciseMedia } from "@/services/exerciseMedia";
-import { getMuscleGroupMeta, getExerciseImageUrl } from "@/lib/exerciseImages";
-import { fetchExerciseDetail, sanitizeExerciseInstructions } from "@/services/exerciseApi";
-import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
+import { getMuscleGroupMeta } from "@/lib/exerciseImages";
+import { sanitizeExerciseInstructions } from "@/services/exerciseApi";
+import {
+  EXERCISE_HERO_GIF_HEIGHT,
+  ExerciseDbHeroGif,
+} from "@/components/workout/ExerciseDbHeroGif";
 
 interface Props {
   visible: boolean;
   exerciseName: string;
   muscleGroup: string;
   onClose: () => void;
-  gifUrl?: string | null;
 }
 
 export default function ExerciseDetailModal({
@@ -39,71 +39,25 @@ export default function ExerciseDetailModal({
   exerciseName,
   muscleGroup,
   onClose,
-  gifUrl: gifUrlProp,
 }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const [mediaError, setMediaError] = useState(false);
-  const [mediaLoaded, setMediaLoaded] = useState(false);
-  const [heroUrl, setHeroUrl] = useState<string | null>(null);
   const [instructions, setInstructions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
 
   const staticMedia = getStaticExerciseMedia(exerciseName);
   const meta = getMuscleGroupMeta(muscleGroup);
-  const staticFallback = getExerciseImageUrl(exerciseName) ?? staticMedia.imageUrl;
 
-  useEffect(() => {
-    if (!visible || !exerciseName) return;
-
-    setMediaError(false);
-    setMediaLoaded(false);
-    setHeroUrl(gifUrlProp ?? staticFallback);
-    setInstructions(staticMedia.cues);
-    setLoading(true);
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const [detail, server] = await Promise.all([
-          fetchExerciseDetail(exerciseName),
-          fetchServerExerciseMedia(exerciseName).catch(() => null),
-        ]);
-        if (cancelled) return;
-
-        const animated =
-          detail?.gifUrl ??
-          (server?.gifUrl && !/\.jpe?g($|\?)/i.test(server.gifUrl) ? server.gifUrl : null);
-
-        const steps = sanitizeExerciseInstructions(
-          detail?.instructions?.length
-            ? detail.instructions
-            : server?.correctSteps?.length
-              ? server.correctSteps
-              : staticMedia.cues,
-        );
-
-        setInstructions(steps);
-        setHeroUrl(animated ?? gifUrlProp ?? staticFallback);
-      } catch {
-        if (!cancelled) {
-          setHeroUrl(gifUrlProp ?? staticFallback);
-          setInstructions(staticMedia.cues);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [visible, exerciseName, gifUrlProp, staticFallback]);
+  const handleDetailLoaded = useCallback(
+    (detail: { gifUrl: string | null; instructions: string[] }) => {
+      const steps = sanitizeExerciseInstructions(
+        detail.instructions.length ? detail.instructions : staticMedia.cues,
+      );
+      setInstructions(steps);
+    },
+    [staticMedia.cues],
+  );
 
   if (!visible) return null;
-
-  const showHero = !!heroUrl && !mediaError;
 
   return (
     <Modal
@@ -166,50 +120,13 @@ export default function ExerciseDetailModal({
             </Pressable>
           </View>
 
-          <View style={styles.mediaContainer}>
-            {loading && !mediaLoaded ? (
-              <View style={styles.imageWrapper}>
-                <ActivityIndicator size="large" color={Colors.light.primary} />
-              </View>
-            ) : showHero ? (
-              <View style={styles.imageWrapper}>
-                {!mediaLoaded ? (
-                  <View style={StyleSheet.absoluteFill}>
-                    <View style={styles.imageSkeleton}>
-                      <Feather
-                        name={meta.icon as keyof typeof Feather.glyphMap}
-                        size={40}
-                        color={meta.color + "60"}
-                      />
-                    </View>
-                  </View>
-                ) : null}
-                <ExerciseGifImage
-                  uri={heroUrl!}
-                  style={[styles.exerciseImage, !mediaLoaded && { opacity: 0 }]}
-                  contentFit="contain"
-                  recyclingKey={`${exerciseName}-detail`}
-                  onLoad={() => setMediaLoaded(true)}
-                  onError={() => {
-                    if (heroUrl !== staticFallback && staticFallback) {
-                      setHeroUrl(staticFallback);
-                      setMediaError(false);
-                      setMediaLoaded(false);
-                    } else {
-                      setMediaError(true);
-                    }
-                  }}
-                />
-              </View>
-            ) : (
-              <View style={[styles.fallbackCard, { backgroundColor: Colors.light.primary }]}>
-                <Feather name={meta.icon as keyof typeof Feather.glyphMap} size={52} color={meta.color} />
-                <ThemedText style={[styles.fallbackLabel, { color: meta.color }]}>
-                  {meta.label}
-                </ThemedText>
-              </View>
-            )}
-          </View>
+          <ExerciseDbHeroGif
+            exerciseName={exerciseName}
+            muscleGroup={muscleGroup}
+            height={Math.min(EXERCISE_HERO_GIF_HEIGHT, 280)}
+            style={styles.mediaContainer}
+            onDetailLoaded={handleDetailLoaded}
+          />
 
           <View style={styles.cuesSection}>
             <View style={styles.cuesHeader}>
@@ -321,38 +238,6 @@ const styles = StyleSheet.create({
   },
   mediaContainer: {
     marginBottom: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    overflow: "hidden",
-  },
-  imageWrapper: {
-    height: 220,
-    borderRadius: BorderRadius.lg,
-    overflow: "hidden",
-    backgroundColor: "#1A1A2E",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  imageSkeleton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-  },
-  exerciseImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fallbackCard: {
-    height: 180,
-    borderRadius: BorderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-  },
-  fallbackLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
   },
   cuesSection: {
     gap: Spacing.sm,

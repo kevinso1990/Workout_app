@@ -74,15 +74,9 @@ import {
 } from "@/lib/exerciseImages";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
-import {
-  fetchExerciseDetail,
-  fetchExerciseGif,
-  isExerciseDbConfigured,
-  sanitizeExerciseInstructions,
-} from "@/services/exerciseApi";
-import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
+import { sanitizeExerciseInstructions } from "@/services/exerciseApi";
+import { ExerciseDbHeroGif } from "@/components/workout/ExerciseDbHeroGif";
 import { WorkoutBannerAd } from "@/components/ads/WorkoutBannerAd";
-import { getExerciseMedia } from "@/services/exerciseMedia";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import { toast } from "@/lib/toast";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
@@ -106,7 +100,6 @@ import {
 } from "@/lib/paddingTopUnderHeader";
 
 const ACTIVE_WORKOUT_AUTOSAVE_MS = 4000;
-import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -707,18 +700,13 @@ export default function ActiveWorkoutScreen() {
   const scheduledNotifIdRef = useRef<string | null>(null);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [thumbGifUrl, setThumbGifUrl] = useState<string | null>(null);
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
   const [restTimerEnabled, setRestTimerEnabled] = useState(true);
   const [preferencesSnapshot, setPreferencesSnapshot] =
     useState<UserPreferences | null>(null);
   const [gifModalVisible, setGifModalVisible] = useState(false);
-  const [popupGifUrl, setPopupGifUrl] = useState<string | null>(null);
   const [popupInstructions, setPopupInstructions] = useState<string[]>([]);
-  const [popupGifLoading, setPopupGifLoading] = useState(false);
-  const [popupGifError, setPopupGifError] = useState<string | null>(null);
-  const popupGifRequestRef = useRef(0);
   const buttonScale = useSharedValue(1);
 
   // Rest duration varies by goal: strength needs longer recovery than endurance/fat-loss
@@ -890,95 +878,8 @@ export default function ActiveWorkoutScreen() {
     "";
   useEffect(() => {
     setImageError(false);
-    setThumbGifUrl(null);
-    setPopupGifUrl(null);
     setPopupInstructions([]);
-    setPopupGifError(null);
-    setPopupGifLoading(false);
   }, [currentExerciseIndex, currentExerciseName]);
-
-  useEffect(() => {
-    if (!gifModalVisible || !currentExerciseName) return;
-
-    const requestId = ++popupGifRequestRef.current;
-    setPopupGifLoading(true);
-    setPopupGifError(null);
-    setPopupGifUrl(null);
-    setPopupInstructions([]);
-
-    const staticFallback = getExerciseImageUrl(currentExerciseName);
-
-    void (async () => {
-      try {
-        const [detail, serverMedia] = await Promise.all([
-          fetchExerciseDetail(currentExerciseName),
-          getExerciseMedia(currentExerciseName).catch(() => ({
-            gifUrl: null,
-            videoMp4: null,
-            correctSteps: [] as string[],
-          })),
-        ]);
-        if (popupGifRequestRef.current !== requestId) return;
-
-        const animatedUrl =
-          detail?.gifUrl ??
-          (serverMedia.gifUrl && !/\.jpe?g($|\?)/i.test(serverMedia.gifUrl)
-            ? serverMedia.gifUrl
-            : null);
-
-        const steps = sanitizeExerciseInstructions(
-          detail?.instructions?.length
-            ? detail.instructions
-            : serverMedia.correctSteps?.length
-              ? serverMedia.correctSteps
-              : [],
-        );
-
-        setPopupInstructions(steps);
-
-        if (animatedUrl) {
-          setPopupGifUrl(animatedUrl);
-          setPopupGifError(null);
-        } else if (staticFallback) {
-          setPopupGifUrl(staticFallback);
-          setPopupGifError(
-            isExerciseDbConfigured()
-              ? "Animation unavailable — showing static preview."
-              : "Add EXPO_PUBLIC_RAPIDAPI_KEY to load exercise animations.",
-          );
-        } else {
-          setPopupGifError("Demonstration unavailable for this exercise.");
-        }
-      } catch {
-        if (popupGifRequestRef.current !== requestId) return;
-        if (staticFallback) {
-          setPopupGifUrl(staticFallback);
-          setPopupGifError("Could not load animation — showing static preview.");
-        } else {
-          setPopupGifError("Could not load exercise demonstration.");
-        }
-      } finally {
-        if (popupGifRequestRef.current === requestId) {
-          setPopupGifLoading(false);
-        }
-      }
-    })();
-  }, [gifModalVisible, currentExerciseName]);
-
-  useEffect(() => {
-    const name = currentExerciseName;
-    if (!name) {
-      setThumbGifUrl(null);
-      return;
-    }
-    let cancelled = false;
-    void fetchExerciseGif(name).then((url) => {
-      if (!cancelled) setThumbGifUrl(url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [currentExerciseName]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -1514,7 +1415,6 @@ export default function ActiveWorkoutScreen() {
         exerciseName={currentExercise.name}
         muscleGroup={currentExercise.muscleGroup}
         onClose={() => setShowExerciseDetail(false)}
-        gifUrl={getExerciseImageUrl(currentExercise.name)}
       />
       <WorkoutSummary
         visible={showSummary}
@@ -1690,6 +1590,12 @@ export default function ActiveWorkoutScreen() {
             entering={SlideInRight.duration(300)}
             style={styles.exerciseContent}
           >
+            <ExerciseDbHeroGif
+              exerciseName={currentExercise.name}
+              muscleGroup={currentExercise.muscleGroup}
+              style={styles.exerciseHeroGif}
+            />
+
             <View style={styles.exerciseHeader} pointerEvents="box-none">
               <View style={styles.exerciseHeaderRow} pointerEvents="box-none">
                 <View style={styles.exerciseHeaderText} pointerEvents="box-none">
@@ -1728,7 +1634,6 @@ export default function ActiveWorkoutScreen() {
 
                 {(() => {
                   const staticUrl = getExerciseImageUrl(currentExercise.name);
-                  const thumbUri = thumbGifUrl ?? staticUrl;
                   const meta = getMuscleGroupMeta(currentExercise.muscleGroup);
                   return (
                     <View style={styles.exerciseThumbnailTouchLayer} collapsable={false}>
@@ -1746,12 +1651,11 @@ export default function ActiveWorkoutScreen() {
                         accessibilityLabel={`${currentExercise.name} demonstration öffnen`}
                         testID="button-exercise-thumbnail"
                       >
-                        {thumbUri && !imageError ? (
-                          <ExerciseGifImage
-                            uri={thumbUri}
+                        {staticUrl && !imageError ? (
+                          <Image
+                            source={{ uri: staticUrl }}
                             style={styles.exerciseThumbnailImage}
-                            contentFit="cover"
-                            recyclingKey={`${currentExercise.name}-thumb`}
+                            resizeMode="cover"
                             onError={() => setImageError(true)}
                           />
                         ) : (
@@ -1929,27 +1833,18 @@ export default function ActiveWorkoutScreen() {
               <Feather name="x" size={26} color="#FFFFFF" />
             </Pressable>
             <View style={styles.gifModalMediaFrame}>
-              {popupGifLoading ? (
-                <View style={styles.gifModalSkeleton}>
-                  <ActivityIndicator size="large" color="#FFFFFF" />
-                </View>
-              ) : popupGifUrl ? (
-                <ExerciseGifImage
-                  uri={popupGifUrl}
-                  style={styles.gifModalImage}
-                  contentFit="contain"
-                  recyclingKey={`${currentExercise.name}-modal`}
-                />
-              ) : (
-                <View style={styles.gifModalSkeleton}>
-                  <Feather name="image" size={40} color="rgba(255,255,255,0.4)" />
-                </View>
-              )}
+              <ExerciseDbHeroGif
+                exerciseName={currentExercise.name}
+                muscleGroup={currentExercise.muscleGroup}
+                height={320}
+                dark
+                style={styles.gifModalHero}
+                onDetailLoaded={(detail) => {
+                  setPopupInstructions(sanitizeExerciseInstructions(detail.instructions));
+                }}
+              />
             </View>
             <Text style={styles.gifModalName}>{currentExercise.name}</Text>
-            {popupGifError ? (
-              <Text style={styles.gifModalError}>{popupGifError}</Text>
-            ) : null}
             {popupInstructions.length > 0 ? (
               <ScrollView
                 style={styles.gifModalInstructionsScroll}
@@ -1962,11 +1857,11 @@ export default function ActiveWorkoutScreen() {
                   </View>
                 ))}
               </ScrollView>
-            ) : !popupGifLoading && !popupGifError ? (
+            ) : (
               <Text style={styles.gifModalHint}>
                 No coaching steps available for this exercise.
               </Text>
-            ) : null}
+            )}
           </View>
         </View>
       </Modal>
@@ -2078,8 +1973,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.lg,
   },
+  exerciseHeroGif: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
   exerciseHeader: {
-    paddingTop: Spacing.lg,
+    paddingTop: 0,
     marginBottom: Spacing.xl,
   },
   exerciseHeaderRow: {
@@ -3108,20 +3007,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 320,
     borderRadius: BorderRadius.lg,
-    backgroundColor: "#121212",
     overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
   },
-  gifModalSkeleton: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#252525",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gifModalImage: {
+  gifModalHero: {
     width: "100%",
-    height: 320,
+    borderRadius: BorderRadius.lg,
   },
   gifModalName: {
     fontSize: 18,
