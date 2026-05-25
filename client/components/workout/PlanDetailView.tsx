@@ -1,7 +1,6 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Text } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { Feather } from "@expo/vector-icons";
 
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { HEVY } from "@/constants/hevyLayout";
@@ -34,21 +33,16 @@ function PlanExerciseRow({
         exerciseName={exercise.name}
         style={styles.thumbWrap}
         onPress={() => onExercisePress?.(exercise)}
+        testID={`button-exercise-thumb-${exercise.id}`}
       />
-      <Pressable
-        style={styles.exerciseBody}
-        onPress={() => onExercisePress?.(exercise)}
-      >
-        <View style={styles.titleRow}>
-          <Text style={styles.exerciseTitle} numberOfLines={2}>
-            {exercise.name}
-          </Text>
-          <Feather name="info" size={13} color={META_COLOR} />
-        </View>
+      <View style={styles.exerciseBody}>
+        <Text style={styles.exerciseTitle} numberOfLines={2}>
+          {exercise.name}
+        </Text>
         <Text style={styles.exerciseMeta} numberOfLines={1}>
           {exercise.muscleGroup}
         </Text>
-      </Pressable>
+      </View>
       <View style={styles.exerciseSetsCol}>
         <Text style={styles.setsLine}>
           {exercise.sets} × {exercise.reps}
@@ -153,13 +147,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     marginRight: 8,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 4,
-  },
   exerciseTitle: {
-    flex: 1,
     fontSize: 14,
     fontWeight: "500",
     color: TITLE_COLOR,

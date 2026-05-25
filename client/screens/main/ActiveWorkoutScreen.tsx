@@ -73,7 +73,6 @@ import {
 } from "@/lib/exerciseImages";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
-import { ExerciseDbHeroGif } from "@/components/workout/ExerciseDbHeroGif";
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { WorkoutBannerAd } from "@/components/ads/WorkoutBannerAd";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
@@ -1603,32 +1602,17 @@ export default function ActiveWorkoutScreen() {
             entering={SlideInRight.duration(300)}
             style={styles.exerciseContent}
           >
-            <ExerciseDbHeroGif
-              exerciseName={currentExercise.name}
-              muscleGroup={currentExercise.muscleGroup}
-              style={styles.exerciseHeroGif}
-            />
-
             <View style={styles.exerciseHeader} pointerEvents="box-none">
               <View style={styles.exerciseHeaderRow} pointerEvents="box-none">
                 <View style={styles.exerciseHeaderText} pointerEvents="box-none">
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setShowExerciseDetail(true);
-                    }}
-                    style={styles.exerciseNameRow}
+                  <ThemedText
+                    style={styles.exerciseName}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
                   >
-                    <ThemedText
-                      style={styles.exerciseName}
-                      numberOfLines={2}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.6}
-                    >
-                      {currentExercise.name}
-                    </ThemedText>
-                    <Feather name="info" size={14} color={Colors.light.primary + "80"} />
-                  </Pressable>
+                    {currentExercise.name}
+                  </ThemedText>
                   <View style={styles.exerciseMeta}>
                     <ThemedText
                       style={[styles.metaMuscleLabel, { color: theme.textSecondary }]}
@@ -1909,12 +1893,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.lg,
   },
-  exerciseHeroGif: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
   exerciseHeader: {
-    paddingTop: 0,
+    paddingTop: Spacing.lg,
     marginBottom: Spacing.xl,
   },
   exerciseHeaderRow: {
@@ -2857,13 +2837,6 @@ const styles = StyleSheet.create({
   quickAdjustText: {
     fontSize: 13,
     fontWeight: "600",
-  },
-  exerciseNameRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.xs,
   },
   targetCard: {
     borderRadius: BorderRadius.md,

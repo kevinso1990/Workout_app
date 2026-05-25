@@ -304,16 +304,9 @@ function ExerciseCard({
             testID={`thumb-server-${exercise.id}`}
           />
         </View>
-        <View style={styles.nameRow}>
-          <ThemedText style={styles.exerciseName} numberOfLines={2}>
-            {exercise.name}
-          </ThemedText>
-          {onDetailPress ? (
-            <Pressable onPress={onDetailPress} hitSlop={8} testID={`button-info-${exercise.id}`}>
-              <Feather name="info" size={14} color={Colors.light.primary} />
-            </Pressable>
-          ) : null}
-        </View>
+        <ThemedText style={styles.exerciseName} numberOfLines={2}>
+          {exercise.name}
+        </ThemedText>
         <View
           style={[
             styles.muscleTag,
@@ -1262,21 +1255,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   exerciseName: {
-    flex: 1,
     fontSize: 15,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
     textAlign: "center",
     marginBottom: Spacing.sm,
     minHeight: 40,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "center",
-    gap: 4,
-    width: "100%",
-    paddingHorizontal: 2,
   },
   muscleTag: {
     paddingHorizontal: Spacing.sm,
