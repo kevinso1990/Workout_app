@@ -69,13 +69,12 @@ import {
   UserPreferences,
 } from "@/lib/storage";
 import {
-  getExerciseImageUrl,
   getMuscleGroupMeta,
 } from "@/lib/exerciseImages";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
-import { sanitizeExerciseInstructions } from "@/services/exerciseApi";
 import { ExerciseDbHeroGif } from "@/components/workout/ExerciseDbHeroGif";
+import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { WorkoutBannerAd } from "@/components/ads/WorkoutBannerAd";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import { toast } from "@/lib/toast";
@@ -274,34 +273,51 @@ function PlateCalculatorModal({
 function RestTimerModal({
   visible,
   timeLeft,
+  totalSeconds = DEFAULT_REST_TIME,
   onSkip,
 }: {
   visible: boolean;
   timeLeft: number;
+  totalSeconds?: number;
   onSkip: () => void;
 }) {
   const { theme } = useTheme();
-  const progress = timeLeft / DEFAULT_REST_TIME;
+  const insets = useSafeAreaInsets();
+  const progress =
+    totalSeconds > 0 ? Math.min(Math.max(timeLeft / totalSeconds, 0), 1) : 0;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.restModalOverlay}>
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+      <View
+        style={[
+          styles.restModalOverlay,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
+        ]}
+      >
         <Animated.View
           entering={ZoomIn.duration(300)}
           style={[styles.restModalContent, { backgroundColor: theme.backgroundDefault }]}
         >
           <ThemedText style={styles.restTitle}>Rest Time</ThemedText>
           <View style={styles.timerCircle}>
-            <View
-              style={[
-                styles.timerCircleProgress,
-                {
-                  backgroundColor: Colors.light.primary,
-                  transform: [{ scaleX: progress }],
-                },
-              ]}
-            />
-            <ThemedText style={styles.timerText}>{formatTime(timeLeft)}</ThemedText>
+            <View style={styles.timerCircleProgressTrack} pointerEvents="none">
+              <View
+                style={[
+                  styles.timerCircleProgress,
+                  { width: `${progress * 100}%` },
+                ]}
+              />
+            </View>
+            <View style={styles.timerTextWrap}>
+              <ThemedText
+                style={styles.timerText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {formatTime(timeLeft)}
+              </ThemedText>
+            </View>
           </View>
           <ThemedText style={[styles.restHint, { color: theme.textSecondary }]}>
             Take a breather, you earned it
@@ -699,14 +715,11 @@ export default function ActiveWorkoutScreen() {
   const timerEndTimeRef = useRef<number | null>(null);
   const scheduledNotifIdRef = useRef<string | null>(null);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
   const [restTimerEnabled, setRestTimerEnabled] = useState(true);
   const [preferencesSnapshot, setPreferencesSnapshot] =
     useState<UserPreferences | null>(null);
-  const [gifModalVisible, setGifModalVisible] = useState(false);
-  const [popupInstructions, setPopupInstructions] = useState<string[]>([]);
   const buttonScale = useSharedValue(1);
 
   // Rest duration varies by goal: strength needs longer recovery than endurance/fat-loss
@@ -877,8 +890,7 @@ export default function ActiveWorkoutScreen() {
     plan?.days[route.params.dayIndex]?.exercises[currentExerciseIndex]?.name ??
     "";
   useEffect(() => {
-    setImageError(false);
-    setPopupInstructions([]);
+    setShowExerciseDetail(false);
   }, [currentExerciseIndex, currentExerciseName]);
 
   useEffect(() => {
@@ -1403,6 +1415,7 @@ export default function ActiveWorkoutScreen() {
       <RestTimerModal
         visible={showRestTimer}
         timeLeft={restTimeLeft}
+        totalSeconds={restDuration}
         onSkip={handleSkipRest}
       />
       <PRCelebration
@@ -1632,39 +1645,18 @@ export default function ActiveWorkoutScreen() {
                   </View>
                 </View>
 
-                {(() => {
-                  const staticUrl = getExerciseImageUrl(currentExercise.name);
-                  const meta = getMuscleGroupMeta(currentExercise.muscleGroup);
-                  return (
-                    <View style={styles.exerciseThumbnailTouchLayer} collapsable={false}>
-                      <Pressable
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setGifModalVisible(true);
-                        }}
-                        style={[
-                          styles.exerciseThumbnail,
-                          { backgroundColor: meta.color + "12" },
-                        ]}
-                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${currentExercise.name} demonstration öffnen`}
-                        testID="button-exercise-thumbnail"
-                      >
-                        {staticUrl && !imageError ? (
-                          <Image
-                            source={{ uri: staticUrl }}
-                            style={styles.exerciseThumbnailImage}
-                            resizeMode="cover"
-                            onError={() => setImageError(true)}
-                          />
-                        ) : (
-                          <Feather name={meta.icon as any} size={18} color={meta.color} />
-                        )}
-                      </Pressable>
-                    </View>
-                  );
-                })()}
+                <ExerciseDbThumb
+                  exerciseName={currentExercise.name}
+                  style={[
+                    styles.exerciseThumbnail,
+                    { backgroundColor: getMuscleGroupMeta(currentExercise.muscleGroup).color + "12" },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowExerciseDetail(true);
+                  }}
+                  testID="button-exercise-thumbnail"
+                />
               </View>
             </View>
 
@@ -1809,62 +1801,6 @@ export default function ActiveWorkoutScreen() {
         </View>
         <WorkoutBannerAd />
       </View>
-      <Modal
-        visible={gifModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setGifModalVisible(false)}
-      >
-        <View style={styles.gifModalOverlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setGifModalVisible(false)}
-            accessibilityLabel="Schließen"
-          />
-          <View style={styles.gifModalCard} pointerEvents="box-none">
-            <Pressable
-              onPress={() => setGifModalVisible(false)}
-              style={styles.gifModalCloseButton}
-              hitSlop={12}
-              testID="button-gif-popup-close"
-              accessibilityRole="button"
-              accessibilityLabel="Schließen"
-            >
-              <Feather name="x" size={26} color="#FFFFFF" />
-            </Pressable>
-            <View style={styles.gifModalMediaFrame}>
-              <ExerciseDbHeroGif
-                exerciseName={currentExercise.name}
-                muscleGroup={currentExercise.muscleGroup}
-                height={320}
-                dark
-                style={styles.gifModalHero}
-                onDetailLoaded={(detail) => {
-                  setPopupInstructions(sanitizeExerciseInstructions(detail.instructions));
-                }}
-              />
-            </View>
-            <Text style={styles.gifModalName}>{currentExercise.name}</Text>
-            {popupInstructions.length > 0 ? (
-              <ScrollView
-                style={styles.gifModalInstructionsScroll}
-                showsVerticalScrollIndicator={false}
-              >
-                {popupInstructions.map((step, index) => (
-                  <View key={`${index}-${step.slice(0, 24)}`} style={styles.gifModalInstructionRow}>
-                    <Text style={styles.gifModalInstructionIndex}>{index + 1}</Text>
-                    <Text style={styles.gifModalInstructionText}>{step}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            ) : (
-              <Text style={styles.gifModalHint}>
-                No coaching steps available for this exercise.
-              </Text>
-            )}
-          </View>
-        </View>
-      </Modal>
     </ThemedView>
   );
 }
@@ -2315,12 +2251,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.7)",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.lg,
   },
   restModalContent: {
-    width: SCREEN_WIDTH - 64,
+    width: "100%",
+    maxWidth: 360,
     borderRadius: BorderRadius.xl,
-    padding: Spacing["2xl"],
+    paddingVertical: Spacing["2xl"],
+    paddingHorizontal: Spacing.xl,
     alignItems: "center",
+    overflow: "visible",
   },
   restTitle: {
     fontSize: 20,
@@ -2329,13 +2269,19 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   timerCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: BorderRadius.sm,
+    width: 188,
+    height: 188,
+    minHeight: 188,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.light.primary + "15",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.lg,
+    overflow: "visible",
+  },
+  timerCircleProgressTrack: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: BorderRadius.lg,
     overflow: "hidden",
   },
   timerCircleProgress: {
@@ -2343,13 +2289,24 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: "100%",
+    backgroundColor: Colors.light.primary,
     opacity: 0.2,
   },
+  timerTextWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 140,
+    minHeight: 56,
+    paddingHorizontal: Spacing.sm,
+    zIndex: 2,
+  },
   timerText: {
-    fontSize: 48,
+    fontSize: 44,
+    lineHeight: 52,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
+    textAlign: "center",
+    ...(Platform.OS === "android" ? { includeFontPadding: false as const } : {}),
   },
   restHint: {
     fontSize: 14,
@@ -2978,83 +2935,5 @@ const styles = StyleSheet.create({
   performanceBadgeText: {
     fontSize: 11,
     fontWeight: "600",
-  },
-  gifModalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.88)",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.lg,
-  },
-  gifModalCard: {
-    width: "100%",
-    maxWidth: 400,
-    alignItems: "center",
-  },
-  gifModalCloseButton: {
-    position: "absolute",
-    top: -8,
-    right: -4,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gifModalMediaFrame: {
-    width: "100%",
-    height: 320,
-    borderRadius: BorderRadius.lg,
-    overflow: "hidden",
-  },
-  gifModalHero: {
-    width: "100%",
-    borderRadius: BorderRadius.lg,
-  },
-  gifModalName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginTop: Spacing.md,
-    textAlign: "center",
-  },
-  gifModalHint: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.55)",
-    marginTop: Spacing.sm,
-    textAlign: "center",
-  },
-  gifModalInstructionsScroll: {
-    maxHeight: 140,
-    width: "100%",
-    marginTop: Spacing.sm,
-  },
-  gifModalInstructionRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 8,
-  },
-  gifModalInstructionIndex: {
-    width: 22,
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#34C759",
-    textAlign: "center",
-  },
-  gifModalInstructionText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "rgba(255,255,255,0.88)",
-  },
-  gifModalError: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.7)",
-    marginTop: Spacing.sm,
-    textAlign: "center",
-    paddingHorizontal: Spacing.md,
   },
 });

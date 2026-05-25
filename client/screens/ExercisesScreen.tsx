@@ -29,8 +29,8 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getWorkoutHistory, WorkoutSession } from "@/lib/storage";
-import { getGifAvailableNames, prewarmExerciseMedia } from "@/services/exerciseMedia";
-import GifPreviewModal from "@/components/GifPreviewModal";
+import { prewarmExerciseMedia } from "@/services/exerciseMedia";
+import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { getApiUrl } from "@/lib/query-client";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 
@@ -238,16 +238,13 @@ function ExerciseCard({
   index,
   onLongPress,
   onPress,
-  onGifPress,
-  showServerGifThumb,
+  onDetailPress,
 }: {
   exercise: ExerciseItem;
   index: number;
   onLongPress?: () => void;
   onPress?: () => void;
-  onGifPress?: () => void;
-  /** Load thumbnails from `/api/exercises/gif/...?resolution=360` (full DB catalog). */
-  showServerGifThumb?: boolean;
+  onDetailPress?: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -300,42 +297,23 @@ function ExerciseCard({
         testID={`card-exercise-${exercise.id}`}
       >
         <View style={styles.imageContainer}>
-          {showServerGifThumb && !exercise.isCustom ? (
-            <ServerExerciseThumb
-              exerciseName={exercise.name}
-              style={styles.cardExerciseImage}
-              iconColor={getMuscleGroupColor(exercise.muscleGroup)}
-              testID={`thumb-server-${exercise.id}`}
-            />
-          ) : getExerciseImageUrl(exercise.name) ? (
-            <Image
-              source={{ uri: getExerciseImageUrl(exercise.name)! }}
-              style={styles.cardExerciseImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View
-              style={[
-                styles.exerciseIcon,
-                { backgroundColor: getMuscleGroupColor(exercise.muscleGroup) + "20" },
-              ]}
-            >
-              <Feather
-                name={exercise.isCustom ? "star" : "activity"}
-                size={24}
-                color={getMuscleGroupColor(exercise.muscleGroup)}
-              />
-            </View>
-          )}
-          {onGifPress ? (
-            <Pressable style={styles.gifHintButton} onPress={onGifPress} testID={`button-gif-${exercise.id}`}>
-              <Feather name="play-circle" size={18} color={Colors.light.primary} />
+          <ServerExerciseThumb
+            exerciseName={exercise.name}
+            style={styles.cardExerciseImage}
+            onPress={onDetailPress}
+            testID={`thumb-server-${exercise.id}`}
+          />
+        </View>
+        <View style={styles.nameRow}>
+          <ThemedText style={styles.exerciseName} numberOfLines={2}>
+            {exercise.name}
+          </ThemedText>
+          {onDetailPress ? (
+            <Pressable onPress={onDetailPress} hitSlop={8} testID={`button-info-${exercise.id}`}>
+              <Feather name="info" size={14} color={Colors.light.primary} />
             </Pressable>
           ) : null}
         </View>
-        <ThemedText style={styles.exerciseName} numberOfLines={2}>
-          {exercise.name}
-        </ThemedText>
         <View
           style={[
             styles.muscleTag,
@@ -941,16 +919,13 @@ export default function ExercisesScreen() {
   const [showAPIModal, setShowAPIModal] = useState(false);
   const [customExercises, setCustomExercises] = useState<ExerciseItem[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<ExerciseItem | null>(null);
-  const [gifExerciseName, setGifExerciseName] = useState<string | null>(null);
-  const [gifExerciseIsCustom, setGifExerciseIsCustom] = useState(false);
-  const [gifAvailableNames, setGifAvailableNames] = useState<Set<string>>(new Set());
+  const [detailExercise, setDetailExercise] = useState<ExerciseItem | null>(null);
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>([]);
   const [catalogExercises, setCatalogExercises] = useState<ExerciseItem[]>([]);
 
   useEffect(() => {
     loadCustomExercises();
     loadWorkoutHistory();
-    getGifAvailableNames().then(setGifAvailableNames).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1047,8 +1022,6 @@ export default function ExercisesScreen() {
     });
   }, [searchQuery, selectedFilter, allExercises]);
 
-  const useCatalogServerThumbs = catalogExercises.length > 0;
-
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const onViewableItemsChanged = useCallback(
@@ -1074,30 +1047,19 @@ export default function ExercisesScreen() {
     <ExerciseCard
       exercise={item}
       index={index}
-      showServerGifThumb={useCatalogServerThumbs}
       onLongPress={item.isCustom ? () => deleteCustomExercise(item.id) : undefined}
       onPress={() => setSelectedExercise(item)}
-      onGifPress={
-        item.isCustom || gifAvailableNames.has(item.name.toLowerCase())
-          ? () => {
-              setGifExerciseName(item.name);
-              setGifExerciseIsCustom(!!item.isCustom);
-            }
-          : undefined
-      }
+      onDetailPress={() => setDetailExercise(item)}
     />
   );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <GifPreviewModal
-        visible={gifExerciseName !== null}
-        exerciseName={gifExerciseName}
-        isCustom={gifExerciseIsCustom}
-        onClose={() => {
-          setGifExerciseName(null);
-          setGifExerciseIsCustom(false);
-        }}
+      <ExerciseDetailModal
+        visible={detailExercise !== null}
+        exerciseName={detailExercise?.name ?? ""}
+        muscleGroup={detailExercise?.muscleGroup ?? "Exercise"}
+        onClose={() => setDetailExercise(null)}
       />
       <CreateExerciseModal
         visible={showCreateModal}
@@ -1300,12 +1262,21 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   exerciseName: {
+    flex: 1,
     fontSize: 15,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
     textAlign: "center",
     marginBottom: Spacing.sm,
     minHeight: 40,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: 4,
+    width: "100%",
+    paddingHorizontal: 2,
   },
   muscleTag: {
     paddingHorizontal: Spacing.sm,

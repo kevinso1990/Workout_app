@@ -2,13 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   StyleSheet,
+  Text,
   View,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
 
-import { getExerciseImageUrl, getMuscleGroupMeta } from "@/lib/exerciseImages";
+import {
+  EXERCISEDB_KEY_HINT,
+  isExerciseDbConfigured,
+} from "@/lib/rapidApiConfig";
 import { fetchExerciseDetail } from "@/services/exerciseApi";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { ExerciseGifSkeleton } from "@/components/workout/ExerciseGifSkeleton";
@@ -23,7 +26,6 @@ type ExerciseDbHeroGifProps = {
   muscleGroup?: string;
   height?: number;
   style?: StyleProp<ViewStyle>;
-  fallbackUri?: string | null;
   dark?: boolean;
   onDetailLoaded?: (detail: {
     gifUrl: string | null;
@@ -37,10 +39,8 @@ type ExerciseDbHeroGifProps = {
  */
 export function ExerciseDbHeroGif({
   exerciseName,
-  muscleGroup,
   height = EXERCISE_HERO_GIF_HEIGHT,
   style,
-  fallbackUri,
   dark = false,
   onDetailLoaded,
 }: ExerciseDbHeroGifProps) {
@@ -50,9 +50,6 @@ export function ExerciseDbHeroGif({
   const requestRef = useRef(0);
   const onDetailLoadedRef = useRef(onDetailLoaded);
   onDetailLoadedRef.current = onDetailLoaded;
-
-  const staticFallback = fallbackUri ?? getExerciseImageUrl(exerciseName);
-  const meta = muscleGroup ? getMuscleGroupMeta(muscleGroup) : null;
 
   useEffect(() => {
     const requestId = ++requestRef.current;
@@ -65,15 +62,14 @@ export function ExerciseDbHeroGif({
       if (requestRef.current !== requestId) return;
 
       const animated = detail?.gifUrl ?? null;
-      const display = animated ?? staticFallback ?? null;
-      setResolvedUrl(display);
+      setResolvedUrl(animated);
       setFetchDone(true);
       onDetailLoadedRef.current?.({
         gifUrl: animated,
         instructions: detail?.instructions ?? [],
       });
 
-      if (!display) {
+      if (!animated) {
         setImageReady(true);
       }
     })();
@@ -81,11 +77,12 @@ export function ExerciseDbHeroGif({
     return () => {
       requestRef.current += 1;
     };
-  }, [exerciseName, staticFallback]);
+  }, [exerciseName]);
 
   const showSkeleton = !fetchDone || (resolvedUrl !== null && !imageReady);
   const skeletonBase = dark ? "#1C1C1E" : "#E8E8ED";
   const skeletonPulse = dark ? "#2C2C2E" : "#F4F4F8";
+  const showKeyHint = fetchDone && !resolvedUrl && !isExerciseDbConfigured();
 
   return (
     <View
@@ -111,22 +108,19 @@ export function ExerciseDbHeroGif({
           contentFit="contain"
           recyclingKey={`${exerciseName}-hero-${resolvedUrl}`}
           onLoad={() => setImageReady(true)}
-          onError={() => {
-            if (resolvedUrl !== staticFallback && staticFallback) {
-              setResolvedUrl(staticFallback);
-              setImageReady(false);
-            } else {
-              setImageReady(true);
-            }
-          }}
+          onError={() => setImageReady(true)}
         />
+      ) : showKeyHint ? (
+        <View style={styles.hintWrap}>
+          <Text style={[styles.hintText, dark && styles.hintTextDark]}>
+            {EXERCISEDB_KEY_HINT}
+          </Text>
+        </View>
       ) : fetchDone ? (
-        <View style={styles.fallback}>
-          <Feather
-            name={(meta?.icon as keyof typeof Feather.glyphMap) ?? "activity"}
-            size={40}
-            color={meta?.color ?? "#8E8E93"}
-          />
+        <View style={styles.hintWrap}>
+          <Text style={[styles.hintText, dark && styles.hintTextDark]}>
+            Animation unavailable for this exercise.
+          </Text>
         </View>
       ) : null}
     </View>
@@ -150,9 +144,19 @@ const styles = StyleSheet.create({
   imageHidden: {
     opacity: 0,
   },
-  fallback: {
+  hintWrap: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  hintText: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+    color: "#8E8E93",
+  },
+  hintTextDark: {
+    color: "rgba(255,255,255,0.65)",
   },
 });

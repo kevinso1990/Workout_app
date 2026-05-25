@@ -1,10 +1,10 @@
-import React, { useMemo } from "react";
-import { View, StyleSheet, Pressable, Text, Image } from "react-native";
+import React from "react";
+import { View, StyleSheet, Pressable, Text } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { Feather } from "@expo/vector-icons";
 
+import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { HEVY } from "@/constants/hevyLayout";
-import { Colors } from "@/constants/theme";
-import { getExerciseImageUrl } from "@/lib/exerciseImages";
 import type { Exercise, WorkoutDay } from "@/lib/storage";
 
 const TITLE_COLOR = "#1C1C1E";
@@ -13,68 +13,42 @@ const HAIRLINE = "#E5E5EA";
 
 type PlanDetailViewProps = {
   days: WorkoutDay[];
-  gifAvailableNames: Set<string>;
-  onGifPress?: (exerciseName: string) => void;
+  onExercisePress?: (exercise: Exercise) => void;
 };
-
-function ExerciseThumb({
-  name,
-  staticUrl,
-  onPress,
-}: {
-  name: string;
-  staticUrl: string | null;
-  onPress?: () => void;
-}) {
-  const inner = staticUrl ? (
-    <Image source={{ uri: staticUrl }} style={styles.thumbImage} resizeMode="cover" />
-  ) : (
-    <View style={styles.thumbFallback}>
-      <Text style={styles.thumbFallbackText}>{name.charAt(0).toUpperCase()}</Text>
-    </View>
-  );
-
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} style={styles.thumbWrap} hitSlop={4}>
-        {inner}
-      </Pressable>
-    );
-  }
-  return <View style={styles.thumbWrap}>{inner}</View>;
-}
 
 function PlanExerciseRow({
   exercise,
   index,
-  onGifPress,
-  hasGifCatalog,
+  onExercisePress,
 }: {
   exercise: Exercise;
   index: number;
-  onGifPress?: () => void;
-  hasGifCatalog: boolean;
+  onExercisePress?: (exercise: Exercise) => void;
 }) {
-  const staticUrl = useMemo(() => getExerciseImageUrl(exercise.name), [exercise.name]);
-
   return (
     <Animated.View
       entering={FadeInDown.delay(40 + index * 30).duration(220)}
       style={styles.exerciseRow}
     >
-      <ExerciseThumb
-        name={exercise.name}
-        staticUrl={staticUrl}
-        onPress={hasGifCatalog ? onGifPress : undefined}
+      <ExerciseDbThumb
+        exerciseName={exercise.name}
+        style={styles.thumbWrap}
+        onPress={() => onExercisePress?.(exercise)}
       />
-      <View style={styles.exerciseBody}>
-        <Text style={styles.exerciseTitle} numberOfLines={2}>
-          {exercise.name}
-        </Text>
+      <Pressable
+        style={styles.exerciseBody}
+        onPress={() => onExercisePress?.(exercise)}
+      >
+        <View style={styles.titleRow}>
+          <Text style={styles.exerciseTitle} numberOfLines={2}>
+            {exercise.name}
+          </Text>
+          <Feather name="info" size={13} color={META_COLOR} />
+        </View>
         <Text style={styles.exerciseMeta} numberOfLines={1}>
           {exercise.muscleGroup}
         </Text>
-      </View>
+      </Pressable>
       <View style={styles.exerciseSetsCol}>
         <Text style={styles.setsLine}>
           {exercise.sets} × {exercise.reps}
@@ -90,13 +64,11 @@ function PlanExerciseRow({
 function DayBlock({
   day,
   dayIndex,
-  gifAvailableNames,
-  onGifPress,
+  onExercisePress,
 }: {
   day: WorkoutDay;
   dayIndex: number;
-  gifAvailableNames: Set<string>;
-  onGifPress: (name: string) => void;
+  onExercisePress?: (exercise: Exercise) => void;
 }) {
   return (
     <View style={styles.dayBlock}>
@@ -106,28 +78,20 @@ function DayBlock({
           {day.dayName}
         </Text>
       </View>
-      {day.exercises.map((exercise, index) => {
-        const hasGif = gifAvailableNames.has(exercise.name.toLowerCase());
-        return (
-          <PlanExerciseRow
-            key={exercise.id}
-            exercise={exercise}
-            index={index}
-            hasGifCatalog={hasGif}
-            onGifPress={hasGif ? () => onGifPress(exercise.name) : undefined}
-          />
-        );
-      })}
+      {day.exercises.map((exercise, index) => (
+        <PlanExerciseRow
+          key={exercise.id}
+          exercise={exercise}
+          index={index}
+          onExercisePress={onExercisePress}
+        />
+      ))}
     </View>
   );
 }
 
 /** Hevy-style flat plan routine list — read-only, no delete/replace controls. */
-export function PlanDetailView({
-  days,
-  gifAvailableNames,
-  onGifPress,
-}: PlanDetailViewProps) {
+export function PlanDetailView({ days, onExercisePress }: PlanDetailViewProps) {
   return (
     <View style={styles.root}>
       {days.map((day, dayIndex) => (
@@ -135,8 +99,7 @@ export function PlanDetailView({
           key={`${day.dayName}-${dayIndex}`}
           day={day}
           dayIndex={dayIndex}
-          gifAvailableNames={gifAvailableNames}
-          onGifPress={(name) => onGifPress?.(name)}
+          onExercisePress={onExercisePress}
         />
       ))}
     </View>
@@ -182,32 +145,21 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    overflow: "hidden",
     marginRight: 10,
     backgroundColor: HEVY.canvas,
-  },
-  thumbImage: {
-    width: 36,
-    height: 36,
-  },
-  thumbFallback: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.light.primary + "12",
-  },
-  thumbFallbackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.light.primary,
   },
   exerciseBody: {
     flex: 1,
     minWidth: 0,
     marginRight: 8,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 4,
+  },
   exerciseTitle: {
+    flex: 1,
     fontSize: 14,
     fontWeight: "500",
     color: TITLE_COLOR,

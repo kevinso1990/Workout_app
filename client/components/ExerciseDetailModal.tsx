@@ -4,7 +4,7 @@
  * Shows: title · animated GIF (ExerciseDB) · muscle badge · numbered instructions.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Modal,
   View,
@@ -56,6 +56,10 @@ export default function ExerciseDetailModal({
     },
     [staticMedia.cues],
   );
+
+  useEffect(() => {
+    if (visible) setInstructions([]);
+  }, [visible, exerciseName]);
 
   if (!visible) return null;
 

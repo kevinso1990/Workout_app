@@ -1,36 +1,29 @@
 import React from "react";
-import { Image, View, StyleProp, ViewStyle, ImageStyle } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { getExerciseImageUrl } from "@/lib/exerciseImages";
+import { StyleProp, ViewStyle } from "react-native";
+
+import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 
 type Props = {
   exerciseName: string;
   style: StyleProp<ViewStyle>;
-  iconColor: string;
+  iconColor?: string;
   testID?: string;
+  onPress?: () => void;
 };
 
-/** Static list thumbnail — no animated GIF (saves API calls & battery). */
-export function ServerExerciseThumb({ exerciseName, style, iconColor, testID }: Props) {
-  const staticUri = getExerciseImageUrl(exerciseName);
-
-  if (staticUri) {
-    return (
-      <Image
-        source={{ uri: staticUri }}
-        style={style as StyleProp<ImageStyle>}
-        resizeMode="cover"
-        testID={testID}
-      />
-    );
-  }
-
+/** Animated ExerciseDB thumbnail for exercise lists. */
+export function ServerExerciseThumb({
+  exerciseName,
+  style,
+  testID,
+  onPress,
+}: Props) {
   return (
-    <View
-      style={[style, { alignItems: "center", justifyContent: "center" }]}
+    <ExerciseDbThumb
+      exerciseName={exerciseName}
+      style={style}
       testID={testID}
-    >
-      <Feather name="activity" size={22} color={iconColor} />
-    </View>
+      onPress={onPress}
+    />
   );
 }

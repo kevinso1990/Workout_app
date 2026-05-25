@@ -7,8 +7,8 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { getGifAvailableNames, prewarmExerciseMedia } from "@/services/exerciseMedia";
-import GifPreviewModal from "@/components/GifPreviewModal";
+import { prewarmExerciseMedia } from "@/services/exerciseMedia";
+import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -30,6 +30,7 @@ import {
   WorkoutPlan,
   getWorkoutPlans,
   deleteWorkoutPlan,
+  type Exercise,
 } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -48,8 +49,7 @@ export default function PlanDetailScreen() {
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [gifExerciseName, setGifExerciseName] = useState<string | null>(null);
-  const [gifAvailableNames, setGifAvailableNames] = useState<Set<string>>(new Set());
+  const [detailExercise, setDetailExercise] = useState<Exercise | null>(null);
   const buttonScale = useSharedValue(1);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -73,10 +73,6 @@ export default function PlanDetailScreen() {
       loadPlan();
     }, [loadPlan])
   );
-
-  useEffect(() => {
-    getGifAvailableNames().then(setGifAvailableNames).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!plan) return;
@@ -147,12 +143,11 @@ export default function PlanDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <GifPreviewModal
-        visible={gifExerciseName !== null}
-        exerciseName={gifExerciseName}
-        onClose={() => setGifExerciseName(null)}
-        closeButtonTestID="button-gif-close-plan"
-        formTipsToggleTestID="button-form-tips-toggle-plan"
+      <ExerciseDetailModal
+        visible={detailExercise !== null}
+        exerciseName={detailExercise?.name ?? ""}
+        muscleGroup={detailExercise?.muscleGroup ?? "Exercise"}
+        onClose={() => setDetailExercise(null)}
       />
 
       <View style={[styles.screenHeader, hevyHeaderInsets(insets.top), hevyHairline]}>
@@ -183,8 +178,7 @@ export default function PlanDetailScreen() {
 
         <PlanDetailView
           days={plan.days}
-          gifAvailableNames={gifAvailableNames}
-          onGifPress={(name) => setGifExerciseName(name)}
+          onExercisePress={(exercise) => setDetailExercise(exercise)}
         />
 
         <Animated.View
