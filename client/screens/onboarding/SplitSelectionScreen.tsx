@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   StyleSheet,
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -16,7 +18,6 @@ import Animated, {
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { OnboardingHeading } from "@/components/onboarding/OnboardingHeading";
@@ -32,14 +33,20 @@ import {
   setUserPreferences,
   saveWorkoutPlan,
 } from "@/lib/storage";
+import { scheduleDataSync } from "@/lib/dataSync";
+import { generateWorkoutPlan } from "@/lib/planGeneration";
 import {
   getRecommendedSplit,
-  buildOnboardingPlan,
   SPLIT_OPTIONS,
   type SplitOption,
 } from "@/lib/onboardingUtils";
+import { resetToRootMain } from "@/lib/navigationHelpers";
+import { hapticLight, hapticSuccess } from "@/lib/safeHaptics";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const isWeb = Platform.OS === "web";
+const CardShell = isWeb ? View : Animated.View;
+const PreviewShell = isWeb ? View : Animated.View;
 
 
 function SplitCard({
@@ -57,6 +64,7 @@ function SplitCard({
   onPress: () => void;
   index: number;
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const scale = useSharedValue(1);
 
@@ -75,7 +83,11 @@ function SplitCard({
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(100 + index * 80).duration(400)}>
+    <CardShell
+      {...(isWeb
+        ? {}
+        : { entering: FadeInDown.delay(100 + index * 80).duration(400) })}
+    >
       <AnimatedPressable
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -120,11 +132,13 @@ function SplitCard({
           />
         </View>
         <View style={styles.splitInfo}>
-          <ThemedText style={styles.splitName}>{split.name}</ThemedText>
+          <ThemedText style={styles.splitName}>
+            {t(`onboarding.splitOptions.${split.id}.name`, { defaultValue: split.name })}
+          </ThemedText>
           <ThemedText
             style={[styles.splitDescription, { color: theme.textSecondary }]}
           >
-            {split.description}
+            {t(`onboarding.splitOptions.${split.id}.description`, { defaultValue: split.description })}
           </ThemedText>
           <View style={styles.daysPreview}>
             {split.days.map((day, i) => (
@@ -173,11 +187,12 @@ function SplitCard({
           ) : null}
         </View>
       </AnimatedPressable>
-    </Animated.View>
+    </CardShell>
   );
 }
 
 export default function SplitSelectionScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation =
@@ -200,7 +215,7 @@ export default function SplitSelectionScreen() {
   }));
 
   const handleSplitSelect = (splitId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     setSelectedSplit(splitId);
   };
 
@@ -211,24 +226,28 @@ export default function SplitSelectionScreen() {
     try {
       await setUserPreferences(getPreferences());
 
-      const plan = buildOnboardingPlan(
-        selectedSplit,
-        state.workoutDaysPerWeek,
-        state.equipment,
-        state.fitnessLevel,
-      );
+      const { plan } = await generateWorkoutPlan({
+        frequency: state.workoutDaysPerWeek,
+        experience: state.fitnessLevel ?? "beginner",
+        goal: state.fitnessGoals[0] ?? "build_muscle",
+        equipment: state.equipment,
+        focusMuscles: state.focusMuscles,
+        splitId: selectedSplit,
+      });
 
       await saveWorkoutPlan(plan);
       await setOnboardingComplete(true);
+      scheduleDataSync();
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Main" as never }],
-        })
-      );
+      hapticSuccess();
+      if (!resetToRootMain()) {
+        navigation.getParent()?.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          }),
+        );
+      }
     } catch (error) {
       console.error("Error saving:", error);
     } finally {
@@ -256,8 +275,10 @@ export default function SplitSelectionScreen() {
         <BrandLogo height={36} style={{ marginBottom: Spacing.lg }} />
         <Animated.View entering={FadeInDown.duration(400)}>
           <OnboardingHeading
-            title="Choose Your Split"
-            subtitle={`Select a workout split for your ${state.workoutDaysPerWeek}-day schedule`}
+            title={t("onboarding.splitTitle")}
+            subtitle={t("onboarding.splitSubtitle", {
+              days: state.workoutDaysPerWeek,
+            })}
           />
         </Animated.View>
 
@@ -276,11 +297,11 @@ export default function SplitSelectionScreen() {
         </View>
 
         {selectedSplit ? (
-          <Animated.View
-            entering={FadeInDown.duration(300)}
+          <PreviewShell
+            {...(isWeb ? {} : { entering: FadeInDown.duration(300) })}
             style={styles.previewSection}
           >
-            <ThemedText style={styles.previewTitle}>Your Schedule</ThemedText>
+            <ThemedText style={styles.previewTitle}>{t("onboarding.splitSchedule")}</ThemedText>
             <View
               style={[
                 styles.previewCard,
@@ -328,7 +349,7 @@ export default function SplitSelectionScreen() {
                 ));
               })()}
             </View>
-          </Animated.View>
+          </PreviewShell>
         ) : null}
       </ScrollView>
 
@@ -348,7 +369,7 @@ export default function SplitSelectionScreen() {
           testID="button-back"
         >
           <ThemedText style={[styles.backButtonText, { color: theme.text }]}>
-            Back
+            {t("onboarding.back")}
           </ThemedText>
         </Pressable>
 
@@ -378,7 +399,7 @@ export default function SplitSelectionScreen() {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <ThemedText style={styles.buttonText}>Create Plan</ThemedText>
+              <ThemedText style={styles.buttonText}>{t("onboarding.splitCreatePlan")}</ThemedText>
             )}
           </View>
         </AnimatedPressable>

@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Pressable, Text, Animated } from "react-native";
+import { View, StyleSheet, Pressable, Text, Animated, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { MicroSetSlider } from "@/components/workout/MicroSetSlider";
 import { HEVY } from "@/constants/hevyLayout";
-import { Colors } from "@/constants/theme";
 import type { SetData } from "@/lib/storage";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
@@ -20,6 +20,7 @@ const CELL_TEXT = "#121212";
 const LOG_CHECK_BORDER = "#D1D1D6";
 const LOG_CHECK_GREEN = "#34C759";
 const FIELD_ALERT_BG = "rgba(255, 149, 0, 0.28)";
+const ACTIVE_ROW_BG = "rgba(79, 142, 247, 0.06)";
 
 type SetRating = "green" | "yellow" | "red" | null;
 
@@ -133,6 +134,7 @@ export type HevySetRowProps = {
   isBodyweight: boolean;
   suppressBottomBorder?: boolean;
   targetReps?: string;
+  onActivate?: () => void;
   onUpdate: (data: Partial<SetData>) => void;
   onComplete: (payload: {
     rating: SetRating;
@@ -223,9 +225,12 @@ function HevySetMicroSliders({
   const targetRepParsed = parseInt(String(targetReps ?? "").replace(/\D/g, ""), 10);
   const targetRepBase =
     Number.isFinite(targetRepParsed) && targetRepParsed > 0 ? targetRepParsed : 10;
+  // 95% of training lives in 1–15 reps, so keep the track short for a finer
+  // hitbox. Floor at 15 (always reachable) and hard-cap at 25 so the thumb
+  // can't shoot into unrealistic ranges.
   const repsMax = Math.min(
-    100,
-    Math.max(12, Math.ceil(Math.max(repVal, lastRep, targetRepBase) * 1.45)),
+    25,
+    Math.max(15, Math.ceil(Math.max(repVal, lastRep, targetRepBase) * 1.25)),
   );
 
   return (
@@ -268,11 +273,43 @@ export function HevySetRow({
   isBodyweight,
   suppressBottomBorder,
   targetReps,
+  onActivate,
   onUpdate,
   onComplete,
 }: HevySetRowProps) {
   const weightAlertRef = useRef<(() => void) | null>(null);
   const repsAlertRef = useRef<(() => void) | null>(null);
+  const { t } = useTranslation();
+
+  // Tap-to-type: precise numeric entry as an alternative to the slider
+  // (sliders alone make exact values like 42.5 kg awkward). iOS only —
+  // Android keeps the slider. Editing is only offered on the active row.
+  const promptEdit = useCallback(
+    (field: "weight" | "reps") => {
+      if (Platform.OS !== "ios" || setData.completed) return;
+      const isWeight = field === "weight";
+      const commit = (text?: string) => {
+        if (text == null) return;
+        onUpdate(
+          isWeight
+            ? { weight: clampAndFormatWeight(text) }
+            : { reps: clampAndFormatReps(text) },
+        );
+      };
+      Alert.prompt(
+        t(isWeight ? "activeWorkout.editWeightTitle" : "activeWorkout.editRepsTitle"),
+        undefined,
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          { text: t("common.ok"), onPress: commit },
+        ],
+        "plain-text",
+        isWeight ? setData.weight : setData.reps,
+        isWeight ? "decimal-pad" : "number-pad",
+      );
+    },
+    [onUpdate, setData.completed, setData.weight, setData.reps, t],
+  );
 
   const previousLabel = formatPrevious(lastWeekData, isBodyweight);
   const repsNum = parseInt(String(setData.reps).replace(/\D/g, ""), 10) || 0;
@@ -283,7 +320,7 @@ export function HevySetRow({
   const canLogSet = !validation.repsInvalid && !validation.weightInvalid;
 
   const handleCheck = () => {
-    if (!isActive || setData.completed) return;
+    if (setData.completed) return;
 
     if (!canLogSet) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -305,9 +342,13 @@ export function HevySetRow({
   const rowMuted = !isActive && !setData.completed;
 
   return (
-    <View
+    <Pressable
+      onPress={() => {
+        if (!setData.completed) onActivate?.();
+      }}
       style={[
         styles.row,
+        isActive && !setData.completed && styles.rowActive,
         rowMuted && styles.rowMuted,
         setData.completed && styles.rowCompleted,
         suppressBottomBorder && styles.rowNoBottomBorder,
@@ -332,39 +373,53 @@ export function HevySetRow({
       {!isBodyweight ? (
         <View style={styles.colWeight}>
           <FieldAlertCell alertRef={weightAlertRef}>
-            <Text
-              style={[
-                styles.cellValue,
-                rowMuted && styles.textMuted,
-                validation.weightInvalid && isActive && styles.cellValueAlert,
-              ]}
-              numberOfLines={1}
+            <Pressable
+              onPress={() => promptEdit("weight")}
+              disabled={!isActive || setData.completed}
+              hitSlop={6}
+              style={styles.cellPress}
             >
-              {weightDisplay}
-            </Text>
+              <Text
+                style={[
+                  styles.cellValue,
+                  rowMuted && styles.textMuted,
+                  validation.weightInvalid && isActive && styles.cellValueAlert,
+                ]}
+                numberOfLines={1}
+              >
+                {weightDisplay}
+              </Text>
+            </Pressable>
           </FieldAlertCell>
         </View>
       ) : null}
 
       <View style={[styles.colReps, isBodyweight && styles.colRepsWide]}>
         <FieldAlertCell alertRef={repsAlertRef}>
-          <Text
-            style={[
-              styles.cellValue,
-              rowMuted && styles.textMuted,
-              validation.repsInvalid && isActive && styles.cellValueAlert,
-            ]}
-            numberOfLines={1}
+          <Pressable
+            onPress={() => promptEdit("reps")}
+            disabled={!isActive || setData.completed}
+            hitSlop={6}
+            style={styles.cellPress}
           >
-            {repsDisplay}
-          </Text>
+            <Text
+              style={[
+                styles.cellValue,
+                rowMuted && styles.textMuted,
+                validation.repsInvalid && isActive && styles.cellValueAlert,
+              ]}
+              numberOfLines={1}
+            >
+              {repsDisplay}
+            </Text>
+          </Pressable>
         </FieldAlertCell>
       </View>
 
       <View style={styles.colCheck}>
         <Pressable
           onPress={handleCheck}
-          disabled={!isActive || setData.completed}
+          disabled={setData.completed}
           hitSlop={10}
           style={[
             styles.checkBox,
@@ -377,14 +432,9 @@ export function HevySetRow({
           testID={`button-complete-set-${setIndex}`}
           accessibilityRole="checkbox"
           accessibilityLabel="Satz protokollieren"
-          accessibilityHint={
-            canLogSet
-              ? undefined
-              : "Gib Gewicht und Wiederholungen ein, bevor du den Satz abschließt"
-          }
           accessibilityState={{
             checked: setData.completed,
-            disabled: !isActive || setData.completed,
+            disabled: setData.completed,
           }}
         >
           <Feather
@@ -401,7 +451,7 @@ export function HevySetRow({
           />
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -410,7 +460,7 @@ export type HevySetRowWithPrefillProps = HevySetRowProps & {
   progressionReps?: number | null;
 };
 
-/** Active set: micro-sliders under row; commits after gesture ends (no extra taps). */
+/** Active set: sliders under row; local draft during drag, commit after gesture ends. */
 export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
   const {
     isActive,
@@ -541,6 +591,9 @@ const styles = StyleSheet.create({
     borderBottomColor: ROW_SEPARATOR,
     minHeight: 36,
   },
+  rowActive: {
+    backgroundColor: ACTIVE_ROW_BG,
+  },
   rowNoBottomBorder: {
     borderBottomWidth: 0,
   },
@@ -552,7 +605,7 @@ const styles = StyleSheet.create({
     borderBottomColor: ROW_SEPARATOR,
   },
   rowMuted: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
   rowCompleted: {
     opacity: 0.88,
@@ -602,6 +655,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "400",
     color: HEVY.textSecondary,
+  },
+  cellPress: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cellValue: {
     fontSize: 14,

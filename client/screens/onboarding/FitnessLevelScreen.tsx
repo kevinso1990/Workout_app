@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -41,6 +42,7 @@ const LEVELS: { id: FitnessLevel; title: string; description: string; icon: keyo
 ];
 
 export default function FitnessLevelScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
@@ -68,8 +70,8 @@ export default function FitnessLevelScreen() {
       <ProgressBar showBrand step={4} total={4} style={{ marginBottom: Spacing.xl }} />
       <Animated.View entering={FadeInDown.duration(400)}>
         <OnboardingHeading
-          title="What's your experience level?"
-          subtitle="We'll customize your workouts accordingly"
+          title={t("onboarding.experienceQuestion")}
+          subtitle={t("onboarding.experienceSubtitle")}
         />
       </Animated.View>
 
@@ -103,9 +105,11 @@ export default function FitnessLevelScreen() {
                   />
                 </View>
                 <View style={styles.optionContent}>
-                  <ThemedText style={styles.optionTitle}>{level.title}</ThemedText>
+                  <ThemedText style={styles.optionTitle}>
+                    {t(`onboarding.levelOptions.${level.id}.title`)}
+                  </ThemedText>
                   <ThemedText style={[styles.optionDescription, { color: theme.textSecondary }]}>
-                    {level.description}
+                    {t(`onboarding.levelOptions.${level.id}.description`)}
                   </ThemedText>
                 </View>
                 {isSelected ? (
@@ -124,7 +128,7 @@ export default function FitnessLevelScreen() {
             testID="button-back"
             style={[styles.backButton, { borderColor: "#E8E8E8" }]}
           >
-            <ThemedText style={styles.backText}>Back</ThemedText>
+            <ThemedText style={styles.backText}>{t("onboarding.back")}</ThemedText>
           </Pressable>
           <Pressable
             onPress={handleContinue}
@@ -133,7 +137,7 @@ export default function FitnessLevelScreen() {
             style={[styles.continueWrapper, { opacity: state.fitnessLevel ? 1 : 0.5 }]}
           >
             <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.continueText}>Continue</ThemedText>
+              <ThemedText style={styles.continueText}>{t("onboarding.next")}</ThemedText>
               <Feather name="arrow-right" size={20} color="#FFFFFF" />
             </View>
           </Pressable>

@@ -10,6 +10,7 @@ import Animated, {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -84,6 +85,7 @@ function DayPill({
 }
 
 export default function FrequencyScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation =
@@ -122,8 +124,8 @@ export default function FrequencyScreen() {
 
           <Animated.View entering={FadeInUp.delay(200).duration(500)}>
             <OnboardingHeading
-              title={"How many days per week\ndo you want to train?"}
-              subtitle="Strength and weight training days"
+              title={t("onboarding.frequencyQuestion")}
+              subtitle={t("onboarding.frequencySubtitle")}
             />
           </Animated.View>
 
@@ -150,12 +152,12 @@ export default function FrequencyScreen() {
               style={[styles.recommendation, { color: theme.textSecondary }]}
             >
               {state.workoutDaysPerWeek <= 2
-                ? "Great for beginners or busy schedules"
+                ? t("onboarding.frequencyRec.low")
                 : state.workoutDaysPerWeek <= 4
-                  ? "Perfect balance for most fitness goals"
+                  ? t("onboarding.frequencyRec.balanced")
                   : state.workoutDaysPerWeek <= 5
-                    ? "Ideal for building muscle and strength"
-                    : "Advanced training for serious athletes"}
+                    ? t("onboarding.frequencyRec.high")
+                    : t("onboarding.frequencyRec.advanced")}
             </ThemedText>
           </Animated.View>
         </View>
@@ -166,7 +168,7 @@ export default function FrequencyScreen() {
             style={[styles.backButton, { borderColor: theme.border }]}
             testID="button-back"
           >
-            <ThemedText style={[styles.backButtonText, { color: theme.text }]}>Back</ThemedText>
+            <ThemedText style={[styles.backButtonText, { color: theme.text }]}>{t("onboarding.back")}</ThemedText>
           </Pressable>
           <AnimatedPressable
             onPress={handleNext}
@@ -186,7 +188,7 @@ export default function FrequencyScreen() {
             testID="button-next"
           >
             <View style={[styles.button, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.buttonText}>Next</ThemedText>
+              <ThemedText style={styles.buttonText}>{t("onboarding.next")}</ThemedText>
             </View>
           </AnimatedPressable>
         </Animated.View>

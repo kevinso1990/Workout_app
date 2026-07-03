@@ -2,9 +2,26 @@
   "nav": {
     "home": "Home",
     "plans": "Plans",
+    "calendar": "Calendar",
     "progress": "Progress",
     "history": "History",
     "profile": "Profile"
+  },
+  "planDetail": {
+    "dayLabel": "Day",
+    "exerciseCount_one": "{{count}} exercise",
+    "exerciseCount_other": "{{count}} exercises"
+  },
+  "planGeneration": {
+    "fallbackBanner": "We used a standard template — AI generation failed (no connection or server error). You can regenerate from Plan Settings."
+  },
+  "planAdaptation": {
+    "title": "Coach: adapt your plan",
+    "subtitle": "Your recent workouts suggest it's time to progress volume or deload.",
+    "cta": "Review",
+    "previewTitle": "Suggested plan changes",
+    "apply": "Apply changes",
+    "error": "Could not generate adaptation. Try again later."
   },
   "dashboard": {
     "nextWorkout": "Next Workout",
@@ -35,6 +52,12 @@
   },
   "plans": {
     "title": "Plans",
+    "planSummary": "{{workouts}} workouts/week · {{days}} days",
+    "importBanner": {
+      "title": "Import a plan",
+      "subtitle": "PDF or photo → AI review",
+      "cta": "Import"
+    },
     "new": "New",
     "noPlans": "No plans yet. Create one to get started.",
     "noPlansFilter": "No plans match this filter.",
@@ -44,10 +67,30 @@
     "edit": "Edit",
     "deletePlan": "Delete Plan",
     "deleteConfirm": "Are you sure? This can't be undone.",
+    "deleteConfirmNamed": "Remove “{{name}}”? This cannot be undone.",
     "delete": "Delete",
     "seeAllPlans": "See {{count}} more plans",
     "showLess": "Show fewer plans",
     "coachBriefTitle": "Coach",
+    "splitRefresh": {
+      "title": "Time to rethink your split?",
+      "subtitleMismatch": "Your training pattern suggests a different split might work better ({{pattern}}). Want the AI to review?",
+      "subtitleWeeks": "You've been on {{plan}} for {{weeks}} weeks — want the AI to review your split?",
+      "review": "Review",
+      "previewTitle": "Suggested split changes",
+      "apply": "Apply changes",
+      "error": "Could not generate split review. Try again later."
+    },
+    "menu": {
+      "edit": "Edit plan",
+      "rename": "Rename plan",
+      "duplicate": "Duplicate plan",
+      "delete": "Delete plan",
+      "renameTitle": "Rename plan",
+      "renamePlaceholder": "Plan name",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
     "emptyState": {
       "title": "No workout plans yet",
       "subtitle": "Let's digitize your current program and start training smarter.",
@@ -110,7 +153,16 @@
     "linkSuperset": "Link as Superset",
     "unlink": "Unlink"
   },
+  "exercisesScreen": {
+    "searchPlaceholder": "Search 800+ exercises...",
+    "searchModalPlaceholder": "Search exercises...",
+    "customExercisePlaceholder": "e.g., Single Arm Cable Row"
+  },
   "importWorkout": {
+    "pasteLabel": "Or paste your plan text here",
+    "pastePlaceholder": "Paste workout plan text (e.g. from PDF, Notes, or spreadsheet)…",
+    "analyzePaste": "Analyze with AI",
+    "pasteTooShort": "Please paste at least 20 characters of plan text.",
     "review": {
       "title": "Review & correct plan",
       "subtitle": "{{count}} exercises detected — adjust anything before saving.",
@@ -132,6 +184,19 @@
       "manualIntro": "Add exercises from the library, then save to My Plans."
     }
   },
+  "aiCoach": {
+    "askButton": "🤖 Ask AI Coach",
+    "title": "Ask AI Coach",
+    "subtitle": "What would you like to change about this plan?",
+    "placeholder": "e.g. Add core exercises for lower back, or adapt for hybrid running",
+    "submit": "Ask AI Coach",
+    "thinking": "AI Coach is thinking…",
+    "previewTitle": "AI Coach suggestion",
+    "apply": "Apply changes",
+    "back": "Edit request",
+    "errorGeneric": "Could not modify plan. Please try again.",
+    "errorEmpty": "Please describe what you want to change."
+  },
   "startWorkout": {
     "lastPerformedLabel": "Last performed",
     "neverPerformed": "Never completed",
@@ -147,6 +212,8 @@
     "previous": "Previous",
     "kg": "kg",
     "reps": "Reps",
+    "editWeightTitle": "Weight (kg)",
+    "editRepsTitle": "Reps",
     "logSet": "Log Set {{number}}",
     "addExtraSet": "+ Extra Set",
     "extraSetHint": "Feeling strong? Add another set — your body will adapt.",
@@ -159,6 +226,20 @@
       "restored": "Your active workout was restored."
     },
     "finishWorkout": "Finish Workout",
+    "pauseLabel": "Pause",
+    "exerciseOf": "Exercise {{current}} of {{total}}",
+    "setsRepsSummary": "{{sets}} sets × {{reps}} reps",
+    "finishEarly": "Finish Early",
+    "incompleteTitle": "Incomplete Workout",
+    "incompleteMessage": "You've completed {{completed}} of {{total}} sets. Finish anyway?",
+    "keepGoing": "Keep Going",
+    "finish": "Finish",
+    "saveErrorTitle": "Save Error",
+    "saveErrorMessage": "Your workout couldn't be saved to storage. Your results are still shown below.",
+    "restNotificationTitle": "Rest complete",
+    "restNotificationBody": "Next set ready",
+    "timerOn": "Rest timer enabled",
+    "timerOff": "Rest timer disabled",
     "leaveWorkout": "Leave Workout?",
     "leaveMessage": "Your progress is saved and you can resume later.",
     "leave": "Leave",
@@ -251,7 +332,45 @@
     "muscleBalanceSub": "Target: evidence-based weekly sets per muscle group",
     "weeklySummaryTitle": "This Week",
     "vsLastWeek": "vs last week",
-    "topMuscle": "Top muscle"
+    "topMuscle": "Top muscle",
+    "strengthAnalytics": "Strength analytics",
+    "totalWorkouts": "Total Workouts",
+    "dayStreak": "Day Streak",
+    "thisWeek": "This Week",
+    "hybrid": {
+      "title": "Hybrid report",
+      "period": {
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      },
+      "strengthLabel": "Strength",
+      "strengthSessions": "Strength",
+      "cardioSessions": "Cardio",
+      "countStrength": "{{count}}× strength",
+      "countCardio": "{{count}}× cardio",
+      "totalDuration": "Total time",
+      "totalDistance": "Distance",
+      "distanceKm": "{{km}} km",
+      "durationMinutes": "{{count}} min",
+      "durationHours": "{{count}} h",
+      "durationHoursMinutes": "{{hours}} h {{minutes}} min",
+      "distributionTitle": "Activity mix",
+      "rpeTrendTitle": "Effort trend (RPE)",
+      "avgRpe": "Avg {{rpe}}/10",
+      "rpeHighHint": "High average effort — prioritize recovery and sleep.",
+      "rpeBalancedHint": "Effort looks balanced — good mix of stress and recovery.",
+      "highlightsTitle": "Highlights",
+      "highlightLongestCardio": "Longest cardio: {{minutes}} min {{sport}}",
+      "highlightLongestCardioSub": "Endurance peak this period",
+      "highlightMaxVolume": "Top strength volume: {{volume}} kg · {{day}}",
+      "highlightMaxVolumeSub": "Heaviest lifting session",
+      "highlightMaxDistance": "Longest distance: {{km}} km {{sport}}",
+      "highlightMaxDistanceSub": "Distance PR this period",
+      "highlightPeakRpe": "Peak effort: RPE {{rpe}} · {{sport}}",
+      "highlightPeakRpeSub": "Watch for overreaching",
+      "emptyPeriod": "No workouts logged in this period yet."
+    }
   },
   "history": {
     "title": "History",
@@ -299,14 +418,86 @@
     "badge_twentyFiveWorkouts": "25 workouts",
     "badge_fiftyWorkouts": "50 workouts",
     "badge_hundredWorkouts": "100 workouts",
-    "badge_twoFiftyWorkouts": "250 workouts"
+    "badge_twoFiftyWorkouts": "250 workouts",
+    "greeting": "TrackYourLift Athlete",
+    "statsSummary": "{{plans}} plans created · {{workouts}} workouts completed",
+    "preferences": "Preferences",
+    "restTimer": "Rest Timer",
+    "restTimerOn": "Auto-starts after each set",
+    "restTimerOff": "Train by feel — no countdown",
+    "fitnessLevel": "Fitness Level",
+    "equipment": "Equipment",
+    "equipmentFullGym": "Full Gym",
+    "equipmentDumbbells": "Dumbbells",
+    "equipmentKettlebell": "Kettlebell",
+    "equipmentBodyweight": "Bodyweight",
+    "about": "About",
+    "appVersion": "App Version",
+    "resetPreferences": "Reset Preferences",
+    "resetPreferencesMessage": "This will restart the onboarding flow. Your workout plans will be kept.",
+    "cancel": "Cancel",
+    "reset": "Reset",
+    "bodyStatsTitle": "Body Stats",
+    "bodyStatsLastUpdated": "Last updated: {{date}}",
+    "bodyStatsAdd": "Add",
+    "bodyStatsUpdate": "Update",
+    "bodyStatsChest": "Chest cm",
+    "bodyStatsWaist": "Waist cm",
+    "bodyStatsBodyFat": "Body Fat",
+    "bodyStatsEmpty": "Track your body measurements to see progress over time",
+    "addMeasurement": "Add Measurement",
+    "weightKg": "Weight (kg)",
+    "bodyFatPercent": "Body Fat %",
+    "chestCm": "Chest (cm)",
+    "waistCm": "Waist (cm)",
+    "saveMeasurement": "Save Measurement",
+    "cloudBackupTitle": "Cloud Backup",
+    "cloudBackupHint": "Your data is backed up automatically. Save this backup code to restore after a device reset or on another device:",
+    "cloudBackupNow": "Back up now",
+    "cloudRestore": "Restore",
+    "cloudRestoreTitle": "Restore from backup code",
+    "cloudRestoreHint": "Enter the backup code from your previous device. This will overwrite local data on this device.",
+    "cloudBackupCodePlaceholder": "Backup code",
+    "cloudLoad": "Load",
+    "cloudBackedUpTitle": "Backed up",
+    "cloudBackedUpMessage": "Your workout data has been saved to the cloud.",
+    "cloudErrorTitle": "Error",
+    "cloudErrorMessage": "Backup failed. Check your internet connection.",
+    "cloudRestoredTitle": "Restored",
+    "cloudRestoredMessage": "Loaded {{historyCount}} workouts and {{planCount}} plans. The app will reload.",
+    "cloudNotFoundTitle": "No backup found",
+    "cloudNotFoundMessage": "No data was found for this backup code."
   },
   "onboarding": {
     "welcome": "Let's build your perfect workout plan",
     "welcomeSub": "Answer 4 quick questions and we'll set everything up for you",
+    "welcomeTitle": "Build Your\nPerfect Workout",
+    "welcomeTagline": "Personalised plans, smart progression, and everything you need to keep showing up.",
     "frequencyQuestion": "How many days per week can you train?",
+    "frequencySubtitle": "Strength and weight training days",
+    "frequencyRec": {
+      "low": "Great for beginners or busy schedules",
+      "balanced": "Perfect balance for most fitness goals",
+      "high": "Ideal for building muscle and strength",
+      "advanced": "Advanced training for serious athletes"
+    },
     "daysUnit": "days",
     "experienceQuestion": "What is your training experience?",
+    "experienceSubtitle": "We'll customize your workouts accordingly",
+    "levelOptions": {
+      "beginner": {
+        "title": "Beginner",
+        "description": "New to working out or getting back after a break"
+      },
+      "intermediate": {
+        "title": "Intermediate",
+        "description": "Consistent training for 6+ months"
+      },
+      "advanced": {
+        "title": "Advanced",
+        "description": "2+ years of structured training"
+      }
+    },
     "beginner": "Beginner",
     "beginnerSub": "Under 1 year",
     "intermediate": "Intermediate",
@@ -314,11 +505,49 @@
     "advanced": "Advanced",
     "advancedSub": "3+ years",
     "goalQuestion": "What is your main goal?",
+    "goalsTitle": "What are your goals?",
+    "goalsSubtitle": "Select all that apply",
+    "goalOptions": {
+      "build_muscle": {
+        "title": "Build Muscle",
+        "description": "Gain size and definition"
+      },
+      "lose_fat": {
+        "title": "Lose Fat",
+        "description": "Get leaner and more toned"
+      },
+      "get_stronger": {
+        "title": "Get Stronger",
+        "description": "Increase lifts and power"
+      }
+    },
     "buildMuscle": "Build Muscle",
     "gainStrength": "Gain Strength",
     "loseFat": "Lose Fat",
     "generalFitness": "General Fitness",
     "recommendedPlan": "Your Recommended Plan",
+    "splitTitle": "Choose Your Split",
+    "splitSubtitle": "Select a workout split for your {{days}}-day schedule",
+    "splitSchedule": "Your Schedule",
+    "splitCreatePlan": "Create Plan",
+    "splitOptions": {
+      "push-pull-legs": {
+        "name": "Push / Pull / Legs",
+        "description": "Classic 3-day split focusing on movement patterns"
+      },
+      "upper-lower": {
+        "name": "Upper / Lower",
+        "description": "Efficient 2-day split for balanced development"
+      },
+      "full-body": {
+        "name": "Full Body",
+        "description": "Hit every muscle group each session"
+      },
+      "bro-split": {
+        "name": "Body Part Split",
+        "description": "Dedicate each day to specific muscle groups"
+      }
+    },
     "creatingPlans": "Creating plans...",
     "useRecommended": "Use Recommended Split",
     "buildOwn": "Build My Own",
@@ -331,6 +560,25 @@
     "notifTitle": "Stay on track with reminders",
     "notifDesc": "Get workout reminders, weekly summaries, and inactivity nudges to keep your gains consistent.",
     "equipmentQuestion": "What equipment do you have?",
+    "equipmentSubtitle": "Tell us about your training environment",
+    "equipmentOptions": {
+      "full_gym": {
+        "title": "Full Gym Access",
+        "description": "Barbells, dumbbells, cables, machines"
+      },
+      "dumbbells_only": {
+        "title": "Dumbbells Only",
+        "description": "Home setup with adjustable dumbbells"
+      },
+      "kettlebell": {
+        "title": "Kettlebells Only",
+        "description": "Kettlebell-exclusive training"
+      },
+      "bodyweight": {
+        "title": "Bodyweight Only",
+        "description": "No equipment needed"
+      }
+    },
     "gym": "Gym / Studio",
     "kettlebells": "Kettlebells",
     "dumbbells": "Dumbbells",
@@ -383,11 +631,87 @@
   "recovery": {
     "title": "Recovery Status",
     "warning": "Some muscles are still fatigued",
-    "warningDetail": "{{muscles}} may need more recovery time."
+    "warningDetail": "{{muscles}} may need more recovery time.",
+    "ready": "Ready",
+    "recovering": "Recovering",
+    "fatigued": "Fatigued",
+    "placeholder": "Complete a few workouts to see recovery data",
+    "offline": "Recovery data unavailable offline — connect to sync",
+    "syncNudge": "Sync to update recovery data"
+  },
+  "addWorkout": {
+    "title": "Add workout",
+    "fabLabel": "Add workout",
+    "startStrength": "Start strength training",
+    "startStrengthDesc": "Pick a plan and log sets & reps",
+    "logCardio": "Log sport / cardio",
+    "logCardioDesc": "Running, football, tennis and more",
+    "createPlan": "Create a new plan"
+  },
+  "calendar": {
+    "title": "Training calendar",
+    "subtitle": "Strength & cardio at a glance",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "legendStrength": "Strength",
+    "legendCardio": "Cardio / sport",
+    "monthStrength": "{{count}} strength",
+    "monthCardio": "{{count}} cardio",
+    "noSessions": "Nothing logged on this day yet.",
+    "logCardioForDay": "Log cardio for this day",
+    "cardioMeta": "{{minutes}} min · RPE {{rpe}}",
+    "strengthMeta": "{{day}} · {{count}} exercises",
+    "sports": {
+      "running": "Running",
+      "football": "Football",
+      "tennis": "Tennis",
+      "cycling": "Cycling",
+      "swimming": "Swimming",
+      "boxing": "Boxing",
+      "custom": "Custom"
+    }
+  },
+  "logCardio": {
+    "title": "Log cardio / sport",
+    "subtitle": "Track duration, distance and effort — no sets required.",
+    "sport": "Sport",
+    "customName": "Sport name",
+    "customNamePlaceholder": "e.g. HIIT, hiking, padel",
+    "duration": "Duration (minutes)",
+    "distance": "Distance (optional, km)",
+    "distancePlaceholder": "e.g. 5.2",
+    "rpe": "Effort (RPE)",
+    "notes": "Notes",
+    "notesPlaceholder": "How did it feel?",
+    "save": "Save session",
+    "saving": "Saving…",
+    "errorTitle": "Could not save",
+    "invalidDuration": "Enter a valid duration in minutes.",
+    "invalidDistance": "Enter a valid distance in km.",
+    "customNameRequired": "Enter a name for your custom sport.",
+    "saveFailed": "Something went wrong. Please try again."
+  },
+  "subscription": {
+    "title": "TrackYourLift Pro",
+    "subtitle": "Unlimited AI plan imports and advanced coaching — {{price}}",
+    "subscribe": "Subscribe to Pro",
+    "restore": "Restore Purchases",
+    "proActiveTitle": "You're Pro",
+    "proActiveBody": "Your subscription is active. Enjoy unlimited Pro features.",
+    "proActiveLabel": "Pro active — thank you for supporting TrackYourLift!",
+    "restoreSuccessTitle": "Purchases restored",
+    "restoreSuccessBody": "Your Pro subscription has been restored on this device.",
+    "restoreEmpty": "No active subscription was found for this Apple/Google account.",
+    "errorTitle": "Subscription",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "proFeature": "{{feature}} is a Pro feature.",
+    "comingSoon": "{{feature}} — Pro coming soon."
   },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "dismiss": "Dismiss",
+    "ok": "OK",
     "kg": "kg",
     "lbs": "lbs",
     "min": "min"

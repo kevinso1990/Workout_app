@@ -4,14 +4,14 @@
     "slug": "fitplan",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/android-icon-monochrome.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "fitplan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ks15.trackyourlift",
-      "icon": "./assets/images/android-icon-monochrome.png",
+      "icon": "./assets/images/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Used to photograph your workout plan for import",
@@ -48,7 +48,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/onboarding-welcome.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#F5F5F7",
@@ -79,7 +79,10 @@
             "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "expo-dev-client",
+      "./plugins/withPrivacyManifest.js",
+      "expo-localization"
     ],
     "experiments": {
       "reactCompiler": false

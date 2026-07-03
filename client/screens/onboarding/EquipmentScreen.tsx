@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -54,6 +55,7 @@ const EQUIPMENT_OPTIONS: {
 ];
 
 export default function EquipmentScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
@@ -82,8 +84,8 @@ export default function EquipmentScreen() {
 
       <Animated.View entering={FadeInDown.duration(400)}>
         <OnboardingHeading
-          title="What equipment do you have?"
-          subtitle="Tell us about your training environment"
+          title={t("onboarding.equipmentQuestion")}
+          subtitle={t("onboarding.equipmentSubtitle")}
         />
       </Animated.View>
 
@@ -129,11 +131,13 @@ export default function EquipmentScreen() {
                   )}
                 </View>
                 <View style={styles.optionContent}>
-                  <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
+                  <ThemedText style={styles.optionTitle}>
+                    {t(`onboarding.equipmentOptions.${option.id}.title`)}
+                  </ThemedText>
                   <ThemedText
                     style={[styles.optionDescription, { color: theme.textSecondary }]}
                   >
-                    {option.description}
+                    {t(`onboarding.equipmentOptions.${option.id}.description`)}
                   </ThemedText>
                 </View>
                 {isSelected ? (
@@ -152,7 +156,7 @@ export default function EquipmentScreen() {
             testID="button-back"
             style={[styles.backButton, { borderColor: "#E8E8E8" }]}
           >
-            <ThemedText style={styles.backText}>Back</ThemedText>
+            <ThemedText style={styles.backText}>{t("onboarding.back")}</ThemedText>
           </Pressable>
           <Pressable
             onPress={handleContinue}
@@ -161,7 +165,7 @@ export default function EquipmentScreen() {
             style={[styles.continueWrapper, { opacity: state.equipment ? 1 : 0.5 }]}
           >
             <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.continueText}>Continue</ThemedText>
+              <ThemedText style={styles.continueText}>{t("onboarding.next")}</ThemedText>
               <Feather name="arrow-right" size={20} color="#FFFFFF" />
             </View>
           </Pressable>
