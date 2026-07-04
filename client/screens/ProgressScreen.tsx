@@ -35,7 +35,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
-import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS } from "@/lib/storage";
+import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
+import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
+import { NativeRecoveryPanel } from "@/components/progress/NativeRecoveryPanel";
+import type { ProgressPeriod } from "@/lib/hybridProgressReport";
+import { useTranslation } from "react-i18next";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -121,6 +125,7 @@ function VolumeChart({
   data: { week: string; volume: number }[];
   index: number;
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const maxVolume = Math.max(...data.map((d) => d.volume), 1);
 
@@ -130,11 +135,11 @@ function VolumeChart({
       style={[styles.chartContainer, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.chartHeader}>
-        <ThemedText style={styles.chartTitle}>Weekly Volume</ThemedText>
+        <ThemedText style={styles.chartTitle}>{t("progress.weeklyVolume")}</ThemedText>
         <View style={styles.chartLegend}>
           <View style={[styles.legendDot, { backgroundColor: Colors.light.primary }]} />
           <ThemedText style={[styles.legendText, { color: theme.textSecondary }]}>
-            Total kg lifted
+            {t("progress.totalKgLifted")}
           </ThemedText>
         </View>
       </View>
@@ -180,6 +185,7 @@ function MuscleBalance({
   data: { name: string; sets: number; color: string }[];
   index: number;
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const totalSets = data.reduce((acc, m) => acc + m.sets, 0);
   const maxSets = Math.max(...data.map((d) => d.sets), 1);
@@ -190,9 +196,9 @@ function MuscleBalance({
       style={[styles.muscleContainer, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.muscleHeader}>
-        <ThemedText style={styles.chartTitle}>Muscle Balance</ThemedText>
+        <ThemedText style={styles.chartTitle}>{t("progress.muscleBalanceTitle")}</ThemedText>
         <ThemedText style={[styles.musclePeriod, { color: theme.textSecondary }]}>
-          Last 30 days
+          {t("progress.last30Days")}
         </ThemedText>
       </View>
 
@@ -249,6 +255,7 @@ function OneRMChart({
   data: { exercise: string; history: { date: string; estimated1RM: number }[]; color: string }[];
   index: number;
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const [selectedLift, setSelectedLift] = useState(0);
   const selectedData = data[selectedLift];
@@ -267,11 +274,11 @@ function OneRMChart({
         style={[styles.oneRMContainer, { backgroundColor: theme.backgroundDefault }]}
       >
         <View style={styles.chartHeader}>
-          <ThemedText style={styles.chartTitle}>Estimated 1RM</ThemedText>
+          <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
         </View>
         <View style={styles.muscleEmpty}>
           <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
-            Log compound lifts to track your strength
+            {t("progress.logCompoundLifts")}
           </ThemedText>
         </View>
       </Animated.View>
@@ -284,7 +291,7 @@ function OneRMChart({
       style={[styles.oneRMContainer, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.chartHeader}>
-        <ThemedText style={styles.chartTitle}>Estimated 1RM</ThemedText>
+        <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
         {selectedData?.history.length > 0 ? (
           <View style={[styles.oneRMBadge, { backgroundColor: selectedData.color + "15" }]}>
             <ThemedText style={[styles.oneRMBadgeText, { color: selectedData.color }]}>
@@ -373,7 +380,7 @@ function OneRMChart({
       ) : (
         <View style={styles.muscleEmpty}>
           <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
-            No data for {selectedData?.exercise}
+            {t("progress.noDataFor", { exercise: selectedData?.exercise })}
           </ThemedText>
         </View>
       )}
@@ -399,6 +406,7 @@ function MuscleHeatmap({
   data: { name: string; sets: number; intensity: number }[];
   index: number;
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const maxSets = Math.max(...data.map(d => d.sets), 1);
 
@@ -416,9 +424,9 @@ function MuscleHeatmap({
       style={[styles.heatmapContainer, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.chartHeader}>
-        <ThemedText style={styles.chartTitle}>Training Heatmap</ThemedText>
+        <ThemedText style={styles.chartTitle}>{t("progress.trainingHeatmap")}</ThemedText>
         <ThemedText style={[styles.musclePeriod, { color: theme.textSecondary }]}>
-          This week
+          {t("progress.thisWeek")}
         </ThemedText>
       </View>
 
@@ -511,7 +519,9 @@ function WorkoutHistoryItem({
   index: number;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
+  const cardio = isCardioSession(session);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -547,9 +557,13 @@ function WorkoutHistoryItem({
   };
 
   const volume = calculateVolume();
-  const duration = session.duration
-    ? `${Math.floor(session.duration / 60)}min`
-    : null;
+  const duration = cardio
+    ? session.cardio?.durationMinutes
+      ? `${session.cardio.durationMinutes} min`
+      : null
+    : session.duration
+      ? `${Math.floor(session.duration / 60)} min`
+      : null;
 
   return (
     <Animated.View entering={FadeInDown.delay(200 + index * 80).duration(400)}>
@@ -569,15 +583,32 @@ function WorkoutHistoryItem({
         <View
           style={[
             styles.historyIcon,
-            { backgroundColor: Colors.light.success + "20" },
+            {
+              backgroundColor: cardio
+                ? "#FEF3C7"
+                : Colors.light.success + "20",
+            },
           ]}
         >
-          <Feather name="check-circle" size={20} color={Colors.light.success} />
+          <Feather
+            name={cardio ? "zap" : "check-circle"}
+            size={20}
+            color={cardio ? "#D97706" : Colors.light.success}
+          />
         </View>
         <View style={styles.historyInfo}>
-          <ThemedText style={styles.historyTitle}>{session.dayName}</ThemedText>
+          <ThemedText style={styles.historyTitle}>
+            {cardio ? sessionDisplayTitle(session) : session.dayName}
+          </ThemedText>
           <View style={styles.historyMeta}>
-            {volume > 0 ? (
+            {cardio ? (
+              <ThemedText style={[styles.historyMetaText, { color: theme.textSecondary }]}>
+                {t("calendar.cardioMeta", {
+                  minutes: session.cardio?.durationMinutes ?? 0,
+                  rpe: session.cardio?.rpe ?? "—",
+                })}
+              </ThemedText>
+            ) : volume > 0 ? (
               <View style={styles.historyMetaItem}>
                 <Feather name="trending-up" size={12} color={theme.textSecondary} />
                 <ThemedText style={[styles.historyMetaText, { color: theme.textSecondary }]}>
@@ -946,6 +977,7 @@ function ExerciseProgressSection({
 }
 
 function EmptyState() {
+  const { t } = useTranslation();
   const { theme } = useTheme();
 
   return (
@@ -955,9 +987,9 @@ function EmptyState() {
         style={styles.emptyIllustration}
         resizeMode="contain"
       />
-      <ThemedText style={styles.emptyTitle}>No Workouts Yet</ThemedText>
+      <ThemedText style={styles.emptyTitle}>{t("progress.noWorkoutsYet")}</ThemedText>
       <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
-        Complete your first workout to start tracking your progress and see your gains
+        {t("progress.noWorkoutsDesc")}
       </ThemedText>
     </View>
   );
@@ -968,7 +1000,9 @@ export default function ProgressScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [history, setHistory] = useState<WorkoutSession[]>([]);
+  const [hybridPeriod, setHybridPeriod] = useState<ProgressPeriod>("month");
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -1310,20 +1344,36 @@ export default function ProgressScreen() {
       }
     >
       {history.length === 0 ? (
-        <EmptyState />
+        <>
+          <EmptyState />
+          <NativeRecoveryPanel index={1} />
+        </>
       ) : (
         <>
+          <HybridProgressPanel
+            history={history}
+            period={hybridPeriod}
+            onPeriodChange={setHybridPeriod}
+          />
+
+          <Animated.View
+            entering={FadeInDown.delay(200).duration(400)}
+            style={styles.sectionHeader}
+          >
+            <ThemedText style={styles.sectionTitle}>{t("progress.strengthAnalytics")}</ThemedText>
+          </Animated.View>
+
           <View style={styles.statsRow}>
             <StatCard
               icon="activity"
-              label="Total Workouts"
+              label={t("progress.totalWorkouts")}
               value={history.length.toString()}
               color={Colors.light.primary}
               index={0}
             />
             <StatCard
               icon="zap"
-              label="Day Streak"
+              label={t("progress.dayStreak")}
               value={calculateStreak().toString()}
               color="#FFB800"
               index={1}
@@ -1333,14 +1383,14 @@ export default function ProgressScreen() {
           <View style={styles.statsRow}>
             <StatCard
               icon="calendar"
-              label="This Week"
+              label={t("progress.thisWeek")}
               value={getThisWeekCount().toString()}
               color={Colors.light.success}
               index={2}
             />
             <StatCard
               icon="trending-up"
-              label="Total Volume"
+              label={t("progress.totalVolume")}
               value={`${(getTotalVolume / 1000).toFixed(0)}k`}
               subtitle="kg"
               color="#9B59B6"
@@ -1356,13 +1406,15 @@ export default function ProgressScreen() {
 
           <MuscleBalance data={getMuscleBalanceData} index={7} />
 
-          <ExerciseProgressSection data={getExerciseProgressData} index={8} />
+          <NativeRecoveryPanel index={8} />
+
+          <ExerciseProgressSection data={getExerciseProgressData} index={9} />
 
           <Animated.View
             entering={FadeInDown.delay(500).duration(400)}
             style={styles.sectionHeader}
           >
-            <ThemedText style={styles.sectionTitle}>Recent Activity</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t("history.title")}</ThemedText>
           </Animated.View>
 
           <View style={styles.historyList}>

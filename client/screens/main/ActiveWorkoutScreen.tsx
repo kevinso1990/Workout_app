@@ -39,7 +39,6 @@ import Animated, {
   FadeInDown,
   FadeInUp,
   ZoomIn,
-  SlideInRight,
 } from "react-native-reanimated";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -48,6 +47,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
@@ -74,7 +74,6 @@ import {
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
-import { WorkoutBannerAd } from "@/components/ads/WorkoutBannerAd";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import { toast } from "@/lib/toast";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
@@ -91,7 +90,7 @@ import {
   clearActiveWorkoutDraft,
   type ActiveWorkoutDraft,
 } from "@/lib/activeWorkoutPersistence";
-import { enqueueAndTrySyncWorkoutSession } from "@/lib/workoutSessionSyncQueue";
+import { scheduleSessionSync } from "@/lib/dataSync";
 import {
   notchSafeTopPadding,
   HEADER_SAFE_MARGIN_TOP,
@@ -269,6 +268,39 @@ function PlateCalculatorModal({
   );
 }
 
+/**
+ * Web-only CSS for the active workout screen.
+ * RN Web maps `nativeID` -> DOM `id`, so we target ids here.
+ */
+function WorkoutWebStyles() {
+  if (Platform.OS !== "web") return null;
+  return (
+    <style>{`
+      #fitplan-chip-bar {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+        overscroll-behavior-x: contain;
+      }
+      #fitplan-chip-bar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+      #fitplan-chip-bar > * { flex-shrink: 0; }
+      #fitplan-rest-timer-num {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        line-height: 1 !important;
+      }
+    `}</style>
+  );
+}
+
 function RestTimerModal({
   visible,
   timeLeft,
@@ -309,6 +341,7 @@ function RestTimerModal({
             </View>
             <View style={styles.timerTextWrap}>
               <ThemedText
+                nativeID="fitplan-rest-timer-num"
                 style={styles.timerText}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -451,13 +484,14 @@ function WorkoutSummary({
   workoutName: string;
   onClose: () => void;
 }) {
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const handleShare = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const today = new Date().toLocaleDateString("en-US", {
+    const today = new Date().toLocaleDateString(i18n.language, {
       weekday: "long",
       month: "short",
       day: "numeric",
@@ -528,7 +562,7 @@ function WorkoutSummary({
             <ThemedText
               style={[styles.shareCardSubtitle, { color: theme.textSecondary }]}
             >
-              Workout Complete
+              {t("postWorkout.workoutComplete")}
             </ThemedText>
 
             <View style={styles.shareCardStats}>
@@ -539,7 +573,7 @@ function WorkoutSummary({
                 <ThemedText
                   style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
                 >
-                  Duration
+                  {t("postWorkout.duration")}
                 </ThemedText>
               </View>
               <View
@@ -555,7 +589,7 @@ function WorkoutSummary({
                 <ThemedText
                   style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
                 >
-                  Sets
+                  {t("postWorkout.sets")}
                 </ThemedText>
               </View>
               <View
@@ -571,7 +605,7 @@ function WorkoutSummary({
                 <ThemedText
                   style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
                 >
-                  kg Volume
+                  {t("postWorkout.kgVolume")}
                 </ThemedText>
               </View>
             </View>
@@ -606,7 +640,7 @@ function WorkoutSummary({
                 { color: Colors.light.primary },
               ]}
             >
-              Share Workout
+              {t("postWorkout.shareWorkout")}
             </ThemedText>
           </Pressable>
         </Animated.View>
@@ -620,7 +654,7 @@ function WorkoutSummary({
         >
           <Pressable onPress={onClose}>
             <View style={[styles.summaryButton, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.summaryButtonText}>Done</ThemedText>
+              <ThemedText style={styles.summaryButtonText}>{t("postWorkout.done")}</ThemedText>
             </View>
           </Pressable>
         </Animated.View>
@@ -697,6 +731,8 @@ export default function ActiveWorkoutScreen() {
   const [allHistory, setAllHistory] = useState<WorkoutSession[]>([]);
   const [workoutStartedAt, setWorkoutStartedAt] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
+  const workoutPausedMsRef = useRef(0);
+  const workoutPauseStartedAtRef = useRef<number | null>(null);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(DEFAULT_REST_TIME);
@@ -711,9 +747,12 @@ export default function ActiveWorkoutScreen() {
   const sessionSuggestionsRef = useRef<Record<string, number>>({});
   const navFiredRef = useRef(false);
   const isSavingRef = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsetsRef = useRef<Record<number, number>>({});
   const timerEndTimeRef = useRef<number | null>(null);
   const scheduledNotifIdRef = useRef<string | null>(null);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
+  const [detailExerciseIndex, setDetailExerciseIndex] = useState(0);
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
   const [restTimerEnabled, setRestTimerEnabled] = useState(true);
@@ -748,8 +787,8 @@ export default function ActiveWorkoutScreen() {
     try {
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Rest complete",
-          body: "Next set ready",
+          title: t("activeWorkout.restNotificationTitle"),
+          body: t("activeWorkout.restNotificationBody"),
           sound: true,
         },
         trigger: {
@@ -806,11 +845,29 @@ export default function ActiveWorkoutScreen() {
   }, []);
 
   useEffect(() => {
+    if (!restTimerEnabled) {
+      if (workoutPauseStartedAtRef.current === null) {
+        workoutPauseStartedAtRef.current = Date.now();
+      }
+    } else if (workoutPauseStartedAtRef.current !== null) {
+      workoutPausedMsRef.current +=
+        Date.now() - workoutPauseStartedAtRef.current;
+      workoutPauseStartedAtRef.current = null;
+    }
+  }, [restTimerEnabled]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - workoutStartedAt) / 1000));
+      let pausedMs = workoutPausedMsRef.current;
+      if (workoutPauseStartedAtRef.current !== null) {
+        pausedMs += Date.now() - workoutPauseStartedAtRef.current;
+      }
+      setElapsedTime(
+        Math.floor((Date.now() - workoutStartedAt - pausedMs) / 1000),
+      );
     }, 1000);
     return () => clearInterval(interval);
-  }, [workoutStartedAt]);
+  }, [workoutStartedAt, restTimerEnabled]);
 
   const buildActiveWorkoutDraft = useCallback((): ActiveWorkoutDraft | null => {
     if (!plan) return null;
@@ -891,6 +948,50 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     setShowExerciseDetail(false);
   }, [currentExerciseIndex, currentExerciseName]);
+
+  // Web fallback for expo-keep-awake: hold a screen Wake Lock for the whole
+  // active workout so the phone doesn't dim/lock mid-session or during rest.
+  // (Native keep-awake is handled by the platform/Expo build.)
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const nav = typeof navigator !== "undefined" ? (navigator as any) : null;
+    if (!nav?.wakeLock?.request) return;
+
+    let lock: any = null;
+    let released = false;
+
+    const acquire = async () => {
+      try {
+        if (document.visibilityState !== "visible") return;
+        lock = await nav.wakeLock.request("screen");
+        lock.addEventListener?.("release", () => {
+          lock = null;
+        });
+      } catch {
+        // User denied, unsupported, or tab not active — timer still works.
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && !lock && !released) {
+        void acquire();
+      }
+    };
+
+    void acquire();
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      released = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+      try {
+        void lock?.release?.();
+      } catch {
+        // ignore
+      }
+      lock = null;
+    };
+  }, []);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -1049,48 +1150,49 @@ export default function ActiveWorkoutScreen() {
 
   const dayIndex = route.params.dayIndex;
 
-  const exerciseProgressionSuggestion = useMemo((): WeightRecommendation | null => {
-    if (!plan || progress.length === 0) return null;
-    const day = plan.days[dayIndex];
-    const ex = day.exercises[currentExerciseIndex];
-    if (!ex) return null;
-    const ep = progress[currentExerciseIndex];
-    const lastWeekExercise = lastWeekProgress.find(
-      (lep) => lep.exerciseId === ep?.exerciseId,
-    );
-    if (!lastWeekExercise?.sets?.length) return null;
-    const key = ex.name.trim().toLowerCase();
-    const coachState = coachStateByExercise[key] ?? {
-      conservativeCyclesRemaining: 0,
-      overrideStreak: 0,
-    };
-    const result = computeAdaptiveProgression({
-      exerciseName: ex.name,
-      targetRepsLabel: ex.reps,
-      targetRepsNumber: ex.targetReps,
-      plannedSetCount: ex.sets,
-      lastSets: lastWeekExercise.sets,
-      conservativeCyclesRemaining: coachState.conservativeCyclesRemaining,
-    });
-    if (!result) return null;
-    return {
-      recommendedWeight: result.recommendedWeight,
-      recommendedReps: result.recommendedReps,
-      reason: result.reason,
-      confidence: result.confidence,
-      contextKey: result.contextKey,
-      contextParams: result.contextParams,
-      suggestedWeightKg: result.suggestedWeightKg,
-      previousWorkingWeightKg: result.previousWorkingWeightKg,
-    };
-  }, [
-    plan,
-    progress,
-    lastWeekProgress,
-    currentExerciseIndex,
-    coachStateByExercise,
-    dayIndex,
-  ]);
+  const getProgressionForExercise = useCallback(
+    (exerciseIndex: number): WeightRecommendation | null => {
+      if (!plan || progress.length === 0) return null;
+      const day = plan.days[dayIndex];
+      const ex = day.exercises[exerciseIndex];
+      if (!ex) return null;
+      const ep = progress[exerciseIndex];
+      const lastWeekExercise = lastWeekProgress.find(
+        (lep) => lep.exerciseId === ep?.exerciseId,
+      );
+      if (!lastWeekExercise?.sets?.length) return null;
+      const key = ex.name.trim().toLowerCase();
+      const coachState = coachStateByExercise[key] ?? {
+        conservativeCyclesRemaining: 0,
+        overrideStreak: 0,
+      };
+      const result = computeAdaptiveProgression({
+        exerciseName: ex.name,
+        targetRepsLabel: ex.reps,
+        targetRepsNumber: ex.targetReps,
+        plannedSetCount: ex.sets,
+        lastSets: lastWeekExercise.sets,
+        conservativeCyclesRemaining: coachState.conservativeCyclesRemaining,
+      });
+      if (!result) return null;
+      return {
+        recommendedWeight: result.recommendedWeight,
+        recommendedReps: result.recommendedReps,
+        reason: result.reason,
+        confidence: result.confidence,
+        contextKey: result.contextKey,
+        contextParams: result.contextParams,
+        suggestedWeightKg: result.suggestedWeightKg,
+        previousWorkingWeightKg: result.previousWorkingWeightKg,
+      };
+    },
+    [plan, progress, lastWeekProgress, coachStateByExercise, dayIndex],
+  );
+
+  const exerciseProgressionSuggestion = useMemo(
+    () => getProgressionForExercise(currentExerciseIndex),
+    [getProgressionForExercise, currentExerciseIndex],
+  );
 
   const progressionCoachLabel = useMemo(() => {
     if (!exerciseProgressionSuggestion?.contextKey) return null;
@@ -1153,18 +1255,97 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  const handleUpdateSet = (data: Partial<SetData>) => {
+  const handleUpdateSet = (
+    exerciseIndex: number,
+    setIndex: number,
+    data: Partial<SetData>,
+  ) => {
     setProgress((prev) => {
       const updated = [...prev];
-      updated[currentExerciseIndex] = {
-        ...updated[currentExerciseIndex],
-        sets: updated[currentExerciseIndex].sets.map((s, i) =>
-          i === currentSetIndex ? { ...s, ...data } : s,
+      updated[exerciseIndex] = {
+        ...updated[exerciseIndex],
+        sets: updated[exerciseIndex].sets.map((s, i) =>
+          i === setIndex ? { ...s, ...data } : s,
         ),
       };
       return updated;
     });
   };
+
+  const activateSet = (exerciseIndex: number, setIndex: number) => {
+    setCurrentExerciseIndex(exerciseIndex);
+    setCurrentSetIndex(setIndex);
+  };
+
+  const scrollToExercise = useCallback((exerciseIndex: number) => {
+    const y = sectionOffsetsRef.current[exerciseIndex];
+    if (y == null) return;
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, y - Spacing.sm),
+      animated: true,
+    });
+  }, []);
+
+  const jumpToExercise = useCallback(
+    (exerciseIndex: number) => {
+      const ep = progress[exerciseIndex];
+      const firstIncomplete = ep?.sets.findIndex((s) => !s.completed) ?? 0;
+      const setIndex = firstIncomplete >= 0 ? firstIncomplete : 0;
+      activateSet(exerciseIndex, setIndex);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      requestAnimationFrame(() => scrollToExercise(exerciseIndex));
+    },
+    [progress, scrollToExercise],
+  );
+
+  const moveExerciseInWorkout = useCallback(
+    (fromIndex: number, direction: -1 | 1) => {
+      if (!plan) return;
+      const toIndex = fromIndex + direction;
+      const dayIndex = route.params.dayIndex;
+      const exerciseCount = plan.days[dayIndex].exercises.length;
+      if (toIndex < 0 || toIndex >= exerciseCount) return;
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      setPlan((prev) => {
+        if (!prev) return prev;
+        const days = [...prev.days];
+        const dayCopy = {
+          ...days[dayIndex],
+          exercises: [...days[dayIndex].exercises],
+        };
+        [dayCopy.exercises[fromIndex], dayCopy.exercises[toIndex]] = [
+          dayCopy.exercises[toIndex],
+          dayCopy.exercises[fromIndex],
+        ];
+        days[dayIndex] = dayCopy;
+        return { ...prev, days };
+      });
+
+      setProgress((prev) => {
+        const next = [...prev];
+        [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+        return next;
+      });
+
+      setLastWeekProgress((prev) => {
+        const next = [...prev];
+        [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+        return next;
+      });
+
+      setCurrentExerciseIndex((prev) => {
+        if (prev === fromIndex) return toIndex;
+        if (prev === toIndex) return fromIndex;
+        return prev;
+      });
+
+      scheduleActiveWorkoutAutosave();
+      requestAnimationFrame(() => scrollToExercise(toIndex));
+    },
+    [plan, route.params.dayIndex, scheduleActiveWorkoutAutosave, scrollToExercise],
+  );
 
   const persistRestTimerPreference = async (value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1177,34 +1358,48 @@ export default function ActiveWorkoutScreen() {
     setPreferencesSnapshot(updated);
     await setUserPreferences(updated);
     toast.show(
-      value ? "Timer eingeschaltet" : "Timer ausgeschaltet",
+      value ? t("activeWorkout.timerOn") : t("activeWorkout.timerOff"),
       "info",
       1500,
     );
   };
 
-  const handleSetComplete = (payload: {
-    rating: SetRating;
-    reps: number;
-    targetMet: boolean;
-  }) => {
+  const handleSetComplete = (
+    exerciseIndex: number,
+    setIndex: number,
+    payload: {
+      rating: SetRating;
+      reps: number;
+      targetMet: boolean;
+    },
+  ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!plan) return;
     const day = plan.days[route.params.dayIndex];
-    const currentExercise = day.exercises[currentExerciseIndex];
-    const exerciseProgress = progress[currentExerciseIndex];
-    const completedSet = exerciseProgress.sets[currentSetIndex];
+    const exercise = day.exercises[exerciseIndex];
+    const exerciseProgress = progress[exerciseIndex];
+    const completedSet = exerciseProgress.sets[setIndex];
+    const progression = getProgressionForExercise(exerciseIndex);
+    const coachLabel = progression?.contextKey
+      ? t(
+          `activeWorkout.coach.progression.${progression.contextKey}`,
+          progression.contextParams ?? {},
+        )
+      : null;
+
+    setCurrentExerciseIndex(exerciseIndex);
+    setCurrentSetIndex(setIndex);
 
     const weight = parseFloat(completedSet.weight) || 0;
     const reps = parseInt(completedSet.reps) || 0;
     if (weight > 0 && reps > 0) {
-      checkForPR(currentExercise.name, weight, reps);
+      checkForPR(exercise.name, weight, reps);
     }
 
-    const moreSetsInExercise = currentSetIndex < currentExercise.sets - 1;
+    const moreSetsInExercise = setIndex < exercise.sets - 1;
     if (payload.rating === "green") {
-      const key = currentExercise.name.trim().toLowerCase();
-      void clearConservativeModeForExercise(currentExercise.name);
+      const key = exercise.name.trim().toLowerCase();
+      void clearConservativeModeForExercise(exercise.name);
       setCoachStateByExercise((prev) => ({
         ...prev,
         [key]: { conservativeCyclesRemaining: 0, overrideStreak: 0 },
@@ -1214,28 +1409,33 @@ export default function ActiveWorkoutScreen() {
       moreSetsInExercise &&
       payload.rating === "green" &&
       payload.targetMet &&
-      exerciseProgressionSuggestion?.confidence === "increase"
+      progression?.confidence === "increase"
     ) {
       setNextSetCoachMessage(
         t("activeWorkout.coach.nextSetPlusWeight", { kg: WEIGHT_SLIDER_STEP_KG }),
       );
-    } else if (progressionCoachLabel) {
-      setNextSetCoachMessage(progressionCoachLabel);
+    } else if (coachLabel) {
+      setNextSetCoachMessage(coachLabel);
     }
 
-    if (currentSetIndex < currentExercise.sets - 1) {
+    if (setIndex < exercise.sets - 1) {
       if (restTimerEnabled) {
         setShowRestTimer(true);
         setRestTimeLeft(restDuration);
         scheduleRestNotification(restDuration);
       }
-      setCurrentSetIndex(currentSetIndex + 1);
-    } else if (currentExerciseIndex < day.exercises.length - 1) {
+      setCurrentSetIndex(setIndex + 1);
+    } else if (exerciseIndex < day.exercises.length - 1) {
       Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
       );
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setCurrentSetIndex(0);
+      setCurrentExerciseIndex(exerciseIndex + 1);
+      const nextEp = progress[exerciseIndex + 1];
+      const firstIncomplete = nextEp
+        ? nextEp.sets.findIndex((s) => !s.completed)
+        : 0;
+      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
+      requestAnimationFrame(() => scrollToExercise(exerciseIndex + 1));
     }
   };
 
@@ -1243,35 +1443,6 @@ export default function ActiveWorkoutScreen() {
     cancelRestNotification();
     setShowRestTimer(false);
     setRestTimeLeft(restDuration);
-  };
-
-  const handleNextExercise = () => {
-    if (!plan) return;
-    const day = plan.days[route.params.dayIndex];
-
-    if (currentExerciseIndex < day.exercises.length - 1) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const nextIdx = currentExerciseIndex + 1;
-      const nextEp = progress[nextIdx];
-      const firstIncomplete = nextEp
-        ? nextEp.sets.findIndex((s) => !s.completed)
-        : 0;
-      setCurrentExerciseIndex(nextIdx);
-      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
-    }
-  };
-
-  const handlePreviousExercise = () => {
-    if (currentExerciseIndex > 0) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const prevIdx = currentExerciseIndex - 1;
-      const prevEp = progress[prevIdx];
-      const firstIncomplete = prevEp
-        ? prevEp.sets.findIndex((s) => !s.completed)
-        : 0;
-      setCurrentExerciseIndex(prevIdx);
-      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
-    }
   };
 
   const handleFinishWorkout = async () => {
@@ -1287,14 +1458,20 @@ export default function ActiveWorkoutScreen() {
     );
 
     if (completedSets < totalSets) {
-      Alert.alert(
-        "Incomplete Workout",
-        `You've completed ${completedSets} of ${totalSets} sets. Finish anyway?`,
-        [
-          { text: "Keep Going", style: "cancel" },
-          { text: "Finish", onPress: () => saveAndShowSummary() },
-        ]
+      const shouldFinish = await confirmAlert(
+        t("activeWorkout.incompleteTitle"),
+        t("activeWorkout.incompleteMessage", {
+          completed: completedSets,
+          total: totalSets,
+        }),
+        {
+          confirmText: t("activeWorkout.finish"),
+          cancelText: t("activeWorkout.keepGoing"),
+        },
       );
+      if (shouldFinish) {
+        saveAndShowSummary();
+      }
     } else {
       saveAndShowSummary();
     }
@@ -1349,14 +1526,14 @@ export default function ActiveWorkoutScreen() {
     } catch (error) {
       console.error("Failed to save workout locally:", error);
       Alert.alert(
-        "Save Error",
-        "Your workout couldn't be saved to storage. Your results are still shown below.",
-        [{ text: "OK" }],
+        t("activeWorkout.saveErrorTitle"),
+        t("activeWorkout.saveErrorMessage"),
+        [{ text: t("common.ok") }],
       );
     }
 
     void clearActiveWorkoutDraft().catch(() => {});
-    void enqueueAndTrySyncWorkoutSession(session).catch(() => {});
+    void scheduleSessionSync(session).catch(() => {});
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowSummary(true);
@@ -1386,11 +1563,7 @@ export default function ActiveWorkoutScreen() {
   }
 
   const day = plan.days[route.params.dayIndex];
-  const currentExercise = day.exercises[currentExerciseIndex];
-  const exerciseProgress = progress[currentExerciseIndex];
-  const lastWeekExercise = lastWeekProgress.find(
-    (ep) => ep.exerciseId === exerciseProgress.exerciseId,
-  );
+  const detailExercise = day.exercises[detailExerciseIndex] ?? day.exercises[0];
 
   const totalSets = progress.reduce(
     (acc, ex) => acc + ex.sets.length,
@@ -1403,14 +1576,13 @@ export default function ActiveWorkoutScreen() {
   const progressPercent =
     totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
-  const isLastExercise =
-    currentExerciseIndex === day.exercises.length - 1;
-  const exerciseComplete = exerciseProgress.sets.every(
-    (s) => s.completed
+  const workoutComplete = progress.every((ep) =>
+    ep.sets.every((s) => s.completed),
   );
 
   return (
     <ThemedView style={styles.container}>
+      <WorkoutWebStyles />
       <RestTimerModal
         visible={showRestTimer}
         timeLeft={restTimeLeft}
@@ -1424,8 +1596,8 @@ export default function ActiveWorkoutScreen() {
       />
       <ExerciseDetailModal
         visible={showExerciseDetail}
-        exerciseName={currentExercise.name}
-        muscleGroup={currentExercise.muscleGroup}
+        exerciseName={detailExercise.name}
+        muscleGroup={detailExercise.muscleGroup}
         onClose={() => setShowExerciseDetail(false)}
       />
       <WorkoutSummary
@@ -1518,7 +1690,7 @@ export default function ActiveWorkoutScreen() {
                 style={[styles.headerRestCaption, { color: theme.textSecondary }]}
                 numberOfLines={1}
               >
-                Pause
+                {t("activeWorkout.pauseLabel")}
               </ThemedText>
             </View>
           </View>
@@ -1551,155 +1723,264 @@ export default function ActiveWorkoutScreen() {
               {completedSets}/{totalSets}
             </ThemedText>
           </View>
-        </View>
 
-        <View style={styles.exerciseNavigation}>
-          <Pressable
-            onPress={handlePreviousExercise}
-            disabled={currentExerciseIndex === 0}
-            style={[
-              styles.navButton,
-              { opacity: currentExerciseIndex === 0 ? 0.3 : 1 },
-            ]}
-            testID="button-prev-exercise"
+          <ScrollView
+            horizontal
+            nativeID="fitplan-chip-bar"
+            showsHorizontalScrollIndicator={false}
+            style={styles.exerciseChipBar}
+            contentContainerStyle={styles.exerciseChipBarContent}
+            keyboardShouldPersistTaps="handled"
           >
-            <Feather name="chevron-left" size={24} color={theme.text} />
-          </Pressable>
+            {day.exercises.map((exercise, exIdx) => {
+              const ep = progress[exIdx];
+              const completedCount =
+                ep?.sets.filter((s) => s.completed).length ?? 0;
+              const totalCount = ep?.sets.length ?? exercise.sets;
+              const isDone = completedCount >= totalCount && totalCount > 0;
+              const isCurrent = exIdx === currentExerciseIndex;
+              const shortName =
+                exercise.name.length > 14
+                  ? `${exercise.name.slice(0, 13)}…`
+                  : exercise.name;
 
-          <View style={styles.exerciseIndicator}>
-            <ThemedText
-              style={[
-                styles.exerciseCounter,
-                { color: theme.textSecondary },
-              ]}
-            >
-              Exercise {currentExerciseIndex + 1} of{" "}
-              {day.exercises.length}
-            </ThemedText>
-          </View>
-
-          <Pressable
-            onPress={handleNextExercise}
-            disabled={isLastExercise}
-            style={[
-              styles.navButton,
-              { opacity: isLastExercise ? 0.3 : 1 },
-            ]}
-            testID="button-next-exercise"
-          >
-            <Feather name="chevron-right" size={24} color={theme.text} />
-          </Pressable>
+              return (
+                <Pressable
+                  key={exercise.id}
+                  onPress={() => jumpToExercise(exIdx)}
+                  style={[
+                    styles.exerciseChip,
+                    {
+                      borderColor: isCurrent
+                        ? Colors.light.primary
+                        : theme.border,
+                      backgroundColor: isDone
+                        ? Colors.light.primary + "18"
+                        : theme.backgroundRoot,
+                    },
+                    isCurrent && styles.exerciseChipActive,
+                  ]}
+                  testID={`chip-exercise-${exIdx}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${exercise.name}, ${completedCount} von ${totalCount} Sätzen`}
+                  accessibilityState={{ selected: isCurrent }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.exerciseChipLabel,
+                      {
+                        color: isCurrent
+                          ? Colors.light.primary
+                          : theme.text,
+                        fontWeight: isCurrent ? "700" : "600",
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {exIdx + 1}. {shortName}
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.exerciseChipMeta,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    {completedCount}/{totalCount}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
 
         <KeyboardAwareScrollViewCompat
+          ref={scrollRef}
           style={styles.scrollContent}
           contentContainerStyle={styles.scrollContentContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View
-            key={currentExerciseIndex}
-            entering={SlideInRight.duration(300)}
-            style={styles.exerciseContent}
-          >
-            <View style={styles.exerciseHeader} pointerEvents="box-none">
-              <View style={styles.exerciseHeaderRow} pointerEvents="box-none">
-                <View style={styles.exerciseHeaderText} pointerEvents="box-none">
-                  <ThemedText
-                    style={styles.exerciseName}
-                    numberOfLines={2}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.6}
-                  >
-                    {currentExercise.name}
-                  </ThemedText>
-                  <View style={styles.exerciseMeta}>
-                    <ThemedText
-                      style={[styles.metaMuscleLabel, { color: theme.textSecondary }]}
-                      numberOfLines={1}
-                    >
-                      {currentExercise.muscleGroup}
-                    </ThemedText>
-                    <ThemedText
-                      style={[styles.targetSetsLine, { color: theme.text }]}
-                      numberOfLines={1}
-                    >
-                      {currentExercise.sets} sets × {currentExercise.reps} reps
-                    </ThemedText>
-                  </View>
-                </View>
-
-                <ExerciseDbThumb
-                  exerciseName={currentExercise.name}
-                  style={[
-                    styles.exerciseThumbnail,
-                    { backgroundColor: getMuscleGroupMeta(currentExercise.muscleGroup).color + "12" },
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowExerciseDetail(true);
-                  }}
-                  testID="button-exercise-thumbnail"
-                />
-              </View>
-            </View>
-
-
-            {nextSetCoachMessage ? (
-              <View
-                style={[
-                  styles.coachHintBanner,
-                  {
-                    borderColor: Colors.light.primary + "33",
-                    backgroundColor: Colors.light.primary + "10",
-                  },
-                ]}
-              >
-                <Feather name="zap" size={14} color={Colors.light.primary} />
-                <ThemedText style={[styles.coachHintText, { color: theme.text }]}>
-                  {nextSetCoachMessage}
-                </ThemedText>
-              </View>
-            ) : null}
-
+          {nextSetCoachMessage ? (
             <View
               style={[
-                styles.setsContainer,
+                styles.coachHintBanner,
                 {
-                  backgroundColor: HEVY.surface,
-                  overflow: "hidden",
+                  borderColor: Colors.light.primary + "33",
+                  backgroundColor: Colors.light.primary + "10",
+                  marginHorizontal: Spacing.lg,
+                  marginBottom: Spacing.md,
                 },
               ]}
             >
-              <HevySetGridHeader
-                isBodyweight={isBodyweightExercise(currentExercise)}
-              />
-              {exerciseProgress.sets.map((setData, index) => (
-                <HevySetRowWithPrefill
-                  key={index}
-                  setIndex={index}
-                  setData={setData}
-                  lastWeekData={lastWeekExercise?.sets[index] || null}
-                  isBodyweight={isBodyweightExercise(currentExercise)}
-                  isActive={index === currentSetIndex}
-                  targetReps={
-                    currentExercise.targetReps != null &&
-                    Number.isFinite(currentExercise.targetReps)
-                      ? String(currentExercise.targetReps)
-                      : currentExercise.reps
-                  }
-                  progressionWeight={
-                    exerciseProgressionSuggestion?.recommendedWeight ?? null
-                  }
-                  progressionReps={
-                    exerciseProgressionSuggestion?.recommendedReps ?? null
-                  }
-                  onUpdate={handleUpdateSet}
-                  onComplete={handleSetComplete}
-                />
-              ))}
+              <Feather name="zap" size={14} color={Colors.light.primary} />
+              <ThemedText style={[styles.coachHintText, { color: theme.text }]}>
+                {nextSetCoachMessage}
+              </ThemedText>
             </View>
-          </Animated.View>
+          ) : null}
+
+          {day.exercises.map((exercise, exIdx) => {
+            const ep = progress[exIdx];
+            if (!ep) return null;
+            const lastWeekExercise = lastWeekProgress.find(
+              (lep) => lep.exerciseId === ep.exerciseId,
+            );
+            const progression = getProgressionForExercise(exIdx);
+            const isBodyweight = isBodyweightExercise(exercise);
+            const isCurrentExercise = exIdx === currentExerciseIndex;
+
+            return (
+              <View
+                key={exercise.id}
+                style={[
+                  styles.exerciseSection,
+                  isCurrentExercise && styles.exerciseSectionActive,
+                ]}
+                testID={`exercise-section-${exIdx}`}
+                onLayout={(e) => {
+                  sectionOffsetsRef.current[exIdx] = e.nativeEvent.layout.y;
+                }}
+              >
+                <View style={styles.exerciseHeader}>
+                  <View style={styles.exerciseHeaderRow}>
+                    <View style={styles.exerciseHeaderText}>
+                      <ThemedText
+                        style={styles.exerciseName}
+                        numberOfLines={2}
+                      >
+                        {exercise.name}
+                      </ThemedText>
+                      <View style={styles.exerciseMeta}>
+                        <ThemedText
+                          style={[
+                            styles.metaMuscleLabel,
+                            { color: theme.textSecondary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {exercise.muscleGroup}
+                        </ThemedText>
+                        <ThemedText
+                          style={[styles.targetSetsLine, { color: theme.text }]}
+                          numberOfLines={1}
+                        >
+                          {t("activeWorkout.setsRepsSummary", {
+                            sets: exercise.sets,
+                            reps: exercise.reps,
+                          })}
+                        </ThemedText>
+                      </View>
+                    </View>
+
+                    <View style={styles.exerciseReorderCol}>
+                      <Pressable
+                        onPress={() => moveExerciseInWorkout(exIdx, -1)}
+                        disabled={exIdx === 0}
+                        hitSlop={6}
+                        style={({ pressed }) => [
+                          styles.exerciseReorderBtn,
+                          pressed && exIdx > 0 && styles.exerciseReorderBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Übung nach oben"
+                        accessibilityState={{ disabled: exIdx === 0 }}
+                        testID={`button-move-exercise-up-${exIdx}`}
+                      >
+                        <Feather
+                          name="chevron-up"
+                          size={18}
+                          color={
+                            exIdx === 0
+                              ? theme.textSecondary + "44"
+                              : theme.text
+                          }
+                        />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => moveExerciseInWorkout(exIdx, 1)}
+                        disabled={exIdx === day.exercises.length - 1}
+                        hitSlop={6}
+                        style={({ pressed }) => [
+                          styles.exerciseReorderBtn,
+                          pressed &&
+                            exIdx < day.exercises.length - 1 &&
+                            styles.exerciseReorderBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Übung nach unten"
+                        accessibilityState={{
+                          disabled: exIdx === day.exercises.length - 1,
+                        }}
+                        testID={`button-move-exercise-down-${exIdx}`}
+                      >
+                        <Feather
+                          name="chevron-down"
+                          size={18}
+                          color={
+                            exIdx === day.exercises.length - 1
+                              ? theme.textSecondary + "44"
+                              : theme.text
+                          }
+                        />
+                      </Pressable>
+                    </View>
+
+                    <ExerciseDbThumb
+                      exerciseName={exercise.name}
+                      style={[
+                        styles.exerciseThumbnail,
+                        {
+                          backgroundColor:
+                            getMuscleGroupMeta(exercise.muscleGroup).color + "12",
+                        },
+                      ]}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setDetailExerciseIndex(exIdx);
+                        setShowExerciseDetail(true);
+                      }}
+                      testID={`button-exercise-thumbnail-${exIdx}`}
+                    />
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.setsContainer,
+                    { backgroundColor: HEVY.surface, overflow: "hidden" },
+                  ]}
+                >
+                  <HevySetGridHeader isBodyweight={isBodyweight} />
+                  {ep.sets.map((setData, setIdx) => (
+                    <HevySetRowWithPrefill
+                      key={setIdx}
+                      setIndex={setIdx}
+                      setData={setData}
+                      lastWeekData={lastWeekExercise?.sets[setIdx] || null}
+                      isBodyweight={isBodyweight}
+                      isActive={
+                        exIdx === currentExerciseIndex &&
+                        setIdx === currentSetIndex
+                      }
+                      targetReps={
+                        exercise.targetReps != null &&
+                        Number.isFinite(exercise.targetReps)
+                          ? String(exercise.targetReps)
+                          : exercise.reps
+                      }
+                      progressionWeight={progression?.recommendedWeight ?? null}
+                      progressionReps={progression?.recommendedReps ?? null}
+                      onActivate={() => activateSet(exIdx, setIdx)}
+                      onUpdate={(data) => handleUpdateSet(exIdx, setIdx, data)}
+                      onComplete={(payload) =>
+                        handleSetComplete(exIdx, setIdx, payload)
+                      }
+                    />
+                  ))}
+                </View>
+              </View>
+            );
+          })}
         </KeyboardAwareScrollViewCompat>
 
         <View
@@ -1711,34 +1992,7 @@ export default function ActiveWorkoutScreen() {
             },
           ]}
         >
-          {exerciseComplete && !isLastExercise ? (
-            <AnimatedPressable
-              onPress={handleNextExercise}
-              onPressIn={() => {
-                buttonScale.value = withSpring(0.96, {
-                  damping: 15,
-                  stiffness: 150,
-                });
-              }}
-              onPressOut={() => {
-                buttonScale.value = withSpring(1, {
-                  damping: 15,
-                  stiffness: 150,
-                });
-              }}
-              style={animatedButtonStyle}
-              testID="button-next"
-            >
-              <View
-                style={[styles.nextButton, { backgroundColor: Colors.light.primary }]}
-              >
-                <ThemedText style={styles.nextButtonText}>
-                  Next Exercise
-                </ThemedText>
-                <Feather name="arrow-right" size={20} color="#FFFFFF" />
-              </View>
-            </AnimatedPressable>
-          ) : isLastExercise && exerciseComplete ? (
+          {workoutComplete ? (
             <AnimatedPressable
               onPress={handleFinishWorkout}
               onPressIn={() => {
@@ -1764,26 +2018,71 @@ export default function ActiveWorkoutScreen() {
               </View>
             </AnimatedPressable>
           ) : (
-            <Pressable
-              onPress={handleFinishWorkout}
-              style={[styles.skipButton, { borderColor: theme.border }]}
-              testID="button-skip-finish"
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel="Finish Early"
-            >
-              <ThemedText
+            <View style={styles.bottomBarActions}>
+              <Pressable
+                onPress={() => {
+                  if (currentExerciseIndex > 0) {
+                    jumpToExercise(currentExerciseIndex - 1);
+                  }
+                }}
+                disabled={currentExerciseIndex === 0}
                 style={[
-                  styles.skipButtonText,
-                  { color: theme.text },
+                  styles.bottomNavBtn,
+                  {
+                    borderColor: theme.border,
+                    opacity: currentExerciseIndex === 0 ? 0.35 : 1,
+                  },
                 ]}
+                testID="button-prev-exercise"
+                accessibilityRole="button"
+                accessibilityLabel="Vorherige Übung"
               >
-                Finish Early
-              </ThemedText>
-            </Pressable>
+                <Feather name="chevron-left" size={22} color={theme.text} />
+              </Pressable>
+              <Pressable
+                onPress={handleFinishWorkout}
+                style={[
+                  styles.skipButton,
+                  styles.skipButtonFlex,
+                  { borderColor: theme.border },
+                ]}
+                testID="button-skip-finish"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t("activeWorkout.finishEarly")}
+              >
+                <ThemedText
+                  style={[styles.skipButtonText, { color: theme.text }]}
+                >
+                  {t("activeWorkout.finishEarly")}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (currentExerciseIndex < day.exercises.length - 1) {
+                    jumpToExercise(currentExerciseIndex + 1);
+                  }
+                }}
+                disabled={currentExerciseIndex >= day.exercises.length - 1}
+                style={[
+                  styles.bottomNavBtn,
+                  {
+                    borderColor: theme.border,
+                    opacity:
+                      currentExerciseIndex >= day.exercises.length - 1
+                        ? 0.35
+                        : 1,
+                  },
+                ]}
+                testID="button-next-exercise"
+                accessibilityRole="button"
+                accessibilityLabel="Nächste Übung"
+              >
+                <Feather name="chevron-right" size={22} color={theme.text} />
+              </Pressable>
+            </View>
           )}
         </View>
-        <WorkoutBannerAd />
       </View>
     </ThemedView>
   );
@@ -1802,6 +2101,20 @@ const styles = StyleSheet.create({
   scrollContentContainer: {
     flexGrow: 1,
     paddingBottom: Spacing["2xl"],
+    paddingTop: Spacing.sm,
+  },
+  exerciseSection: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: HEVY.separator,
+    backgroundColor: HEVY.surface,
+  },
+  exerciseSectionActive: {
+    borderColor: Colors.light.primary + "55",
+    borderWidth: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -1868,6 +2181,69 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+  exerciseChipBar: {
+    marginTop: Spacing.sm,
+  },
+  exerciseChipBarContent: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  exerciseChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    minWidth: 88,
+    maxWidth: 140,
+  },
+  exerciseChipActive: {
+    borderWidth: 1.5,
+  },
+  exerciseChipLabel: {
+    fontSize: 13,
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  exerciseChipMeta: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: "500",
+  },
+  exerciseReorderCol: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    flexShrink: 0,
+    ...(Platform.OS === "web" ? ({ touchAction: "none" } as object) : {}),
+  },
+  exerciseReorderBtn: {
+    width: 32,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: BorderRadius.sm,
+    ...(Platform.OS === "web"
+      ? ({ touchAction: "none", userSelect: "none" } as object)
+      : {}),
+  },
+  exerciseReorderBtnPressed: {
+    opacity: 0.55,
+  },
+  bottomBarActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  bottomNavBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  skipButtonFlex: {
+    flex: 1,
+  },
   exerciseNavigation: {
     flexDirection: "row",
     alignItems: "center",
@@ -1894,8 +2270,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   exerciseHeader: {
-    paddingTop: Spacing.lg,
-    marginBottom: Spacing.xl,
+    paddingTop: Spacing.md,
+    paddingHorizontal: HEVY.pad,
+    marginBottom: Spacing.sm,
   },
   exerciseHeaderRow: {
     flexDirection: "row",
