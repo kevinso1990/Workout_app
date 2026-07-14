@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, StyleSheet, Image, Pressable, Alert, Modal, TextInput, ScrollView, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -23,6 +23,7 @@ import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   UserPreferences,
   FitnessLevel,
+  Equipment,
   getUserPreferences,
   setUserPreferences,
   mergeRestTimerPreference,
@@ -33,6 +34,17 @@ import {
   getBodyMeasurements,
   addBodyMeasurement,
 } from "@/lib/storage";
+import {
+  getCloudUserId,
+  setCloudUserId,
+  restoreFromCloud,
+} from "@/lib/cloudSync";
+import { runDataSync } from "@/lib/dataSync";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
+import * as WebBrowser from "expo-web-browser";
+import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from "@/lib/legalLinks";
+import { api } from "@/lib/api";
+import { setStoredToken } from "@/lib/nativeAuth";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -44,6 +56,7 @@ function BodyStatsCard({
   onAddNew: () => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -57,10 +70,12 @@ function BodyStatsCard({
     >
       <View style={styles.bodyStatsHeader}>
         <View>
-          <ThemedText style={styles.bodyStatsTitle}>Body Stats</ThemedText>
+          <ThemedText style={styles.bodyStatsTitle}>{t("profile.bodyStatsTitle")}</ThemedText>
           {latestMeasurement ? (
             <ThemedText style={[styles.bodyStatsDate, { color: theme.textSecondary }]}>
-              Last updated: {formatDate(latestMeasurement.date)}
+              {t("profile.bodyStatsLastUpdated", {
+                date: formatDate(latestMeasurement.date),
+              })}
             </ThemedText>
           ) : null}
         </View>
@@ -70,7 +85,7 @@ function BodyStatsCard({
         >
           <Feather name="plus" size={16} color={Colors.light.primary} />
           <ThemedText style={[styles.addMeasurementText, { color: Colors.light.primary }]}>
-            {latestMeasurement ? "Update" : "Add"}
+            {latestMeasurement ? t("profile.bodyStatsUpdate") : t("profile.bodyStatsAdd")}
           </ThemedText>
         </Pressable>
       </View>
@@ -100,7 +115,7 @@ function BodyStatsCard({
               >
                 {latestMeasurement.bodyFat}%
               </ThemedText>
-              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>Body Fat</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>{t("profile.bodyStatsBodyFat")}</ThemedText>
             </View>
           ) : null}
           {latestMeasurement.chest ? (
@@ -113,7 +128,7 @@ function BodyStatsCard({
               >
                 {latestMeasurement.chest}
               </ThemedText>
-              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>Chest cm</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>{t("profile.bodyStatsChest")}</ThemedText>
             </View>
           ) : null}
           {latestMeasurement.waist ? (
@@ -126,7 +141,7 @@ function BodyStatsCard({
               >
                 {latestMeasurement.waist}
               </ThemedText>
-              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>Waist cm</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>{t("profile.bodyStatsWaist")}</ThemedText>
             </View>
           ) : null}
         </View>
@@ -134,7 +149,7 @@ function BodyStatsCard({
         <View style={styles.bodyStatsEmpty}>
           <Feather name="activity" size={24} color={theme.textSecondary} />
           <ThemedText style={[styles.bodyStatsEmptyText, { color: theme.textSecondary }]}>
-            Track your body measurements to see progress over time
+            {t("profile.bodyStatsEmpty")}
           </ThemedText>
         </View>
       )}
@@ -152,6 +167,7 @@ function AddMeasurementModal({
   onSave: (measurement: BodyMeasurement) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [weight, setWeight] = useState("");
   const [bodyFat, setBodyFat] = useState("");
@@ -182,7 +198,7 @@ function AddMeasurementModal({
       <View style={styles.measurementModalOverlay}>
         <View style={[styles.measurementModalContent, { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg }]}>
           <View style={styles.measurementModalHeader}>
-            <ThemedText style={styles.measurementModalTitle}>Add Measurement</ThemedText>
+            <ThemedText style={styles.measurementModalTitle}>{t("profile.addMeasurement")}</ThemedText>
             <Pressable onPress={onClose}>
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
@@ -191,7 +207,7 @@ function AddMeasurementModal({
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.measurementInputRow}>
               <View style={styles.measurementInputGroup}>
-                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Weight (kg)</ThemedText>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.weightKg")}</ThemedText>
                 <TextInput
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={weight}
@@ -202,7 +218,7 @@ function AddMeasurementModal({
                 />
               </View>
               <View style={styles.measurementInputGroup}>
-                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Body Fat %</ThemedText>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.bodyFatPercent")}</ThemedText>
                 <TextInput
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={bodyFat}
@@ -216,7 +232,7 @@ function AddMeasurementModal({
 
             <View style={styles.measurementInputRow}>
               <View style={styles.measurementInputGroup}>
-                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Chest (cm)</ThemedText>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.chestCm")}</ThemedText>
                 <TextInput
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={chest}
@@ -227,7 +243,7 @@ function AddMeasurementModal({
                 />
               </View>
               <View style={styles.measurementInputGroup}>
-                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>Waist (cm)</ThemedText>
+                <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.waistCm")}</ThemedText>
                 <TextInput
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={waist}
@@ -242,7 +258,7 @@ function AddMeasurementModal({
 
           <Pressable onPress={handleSave}>
             <View style={[styles.measurementSaveButton, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.measurementSaveText}>Save Measurement</ThemedText>
+              <ThemedText style={styles.measurementSaveText}>{t("profile.saveMeasurement")}</ThemedText>
             </View>
           </Pressable>
         </View>
@@ -254,15 +270,16 @@ function AddMeasurementModal({
 const THEME_OPTIONS: Array<{
   value: ThemeMode;
   icon: keyof typeof Feather.glyphMap;
-  label: string;
+  labelKey: "profile.light" | "profile.dark";
 }> = [
-  { value: "light", icon: "sun",  label: "Light" },
-  { value: "dark",  icon: "moon", label: "Dark"  },
+  { value: "light", icon: "sun", labelKey: "profile.light" },
+  { value: "dark", icon: "moon", labelKey: "profile.dark" },
 ];
 
 function ThemeToggleCard() {
   const { theme } = useTheme();
   const { mode, setMode } = useThemeContext();
+  const { t } = useTranslation();
 
   return (
     <Animated.View
@@ -275,10 +292,10 @@ function ThemeToggleCard() {
         >
           <Feather name="monitor" size={20} color={Colors.light.primary} />
         </View>
-        <ThemedText style={styles.themeCardTitle}>Appearance</ThemedText>
+        <ThemedText style={styles.themeCardTitle}>{t("profile.appearance")}</ThemedText>
       </View>
       <View style={styles.themeSegments}>
-        {THEME_OPTIONS.map(({ value, icon, label }) => {
+        {THEME_OPTIONS.map(({ value, icon, labelKey }) => {
           const isActive = mode === value;
           return (
             <Pressable
@@ -309,7 +326,7 @@ function ThemeToggleCard() {
                   { color: isActive ? Colors.light.primary : theme.textSecondary },
                 ]}
               >
-                {label}
+                {t(labelKey)}
               </ThemedText>
             </Pressable>
           );
@@ -378,10 +395,10 @@ function LanguageToggleCard() {
   );
 }
 
-const FITNESS_LEVELS: { id: FitnessLevel; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { id: "beginner", label: "Beginner", icon: "target" },
-  { id: "intermediate", label: "Intermediate", icon: "trending-up" },
-  { id: "advanced", label: "Advanced", icon: "award" },
+const FITNESS_LEVELS: { id: FitnessLevel; labelKey: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { id: "beginner", labelKey: "onboarding.beginner", icon: "target" },
+  { id: "intermediate", labelKey: "onboarding.intermediate", icon: "trending-up" },
+  { id: "advanced", labelKey: "onboarding.advanced", icon: "award" },
 ];
 
 function FitnessLevelCard({
@@ -392,6 +409,7 @@ function FitnessLevelCard({
   onSelect: (level: FitnessLevel) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Animated.View
@@ -402,10 +420,10 @@ function FitnessLevelCard({
         <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
           <Feather name="trending-up" size={20} color={Colors.light.primary} />
         </View>
-        <ThemedText style={styles.prefsCardTitle}>Fitness Level</ThemedText>
+        <ThemedText style={styles.prefsCardTitle}>{t("profile.fitnessLevel")}</ThemedText>
       </View>
       <View style={styles.fitnessLevelOptions}>
-        {FITNESS_LEVELS.map(({ id, label, icon }) => {
+        {FITNESS_LEVELS.map(({ id, labelKey, icon }) => {
           const isActive = fitnessLevel === id;
           return (
             <Pressable
@@ -434,12 +452,250 @@ function FitnessLevelCard({
                   { color: isActive ? Colors.light.primary : theme.textSecondary },
                 ]}
               >
-                {label}
+                {t(labelKey)}
               </ThemedText>
             </Pressable>
           );
         })}
       </View>
+    </Animated.View>
+  );
+}
+
+const EQUIPMENT_OPTIONS: {
+  id: Equipment;
+  labelKey: string;
+  icon: keyof typeof Feather.glyphMap;
+}[] = [
+  { id: "full_gym", labelKey: "profile.equipmentFullGym", icon: "zap" },
+  { id: "dumbbells_only", labelKey: "profile.equipmentDumbbells", icon: "disc" },
+  { id: "kettlebell", labelKey: "profile.equipmentKettlebell", icon: "anchor" },
+  { id: "bodyweight", labelKey: "profile.equipmentBodyweight", icon: "user" },
+];
+
+function EquipmentCard({
+  equipment,
+  onSelect,
+}: {
+  equipment: Equipment | null | undefined;
+  onSelect: (equipment: Equipment) => void;
+}) {
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(185).duration(400)}
+      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+    >
+      <View style={styles.prefsCardHeader}>
+        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
+          <Feather name="tool" size={20} color={Colors.light.primary} />
+        </View>
+        <ThemedText style={styles.prefsCardTitle}>{t("profile.equipment")}</ThemedText>
+      </View>
+      <View style={styles.equipmentOptions}>
+        {EQUIPMENT_OPTIONS.map(({ id, labelKey, icon }) => {
+          const isActive = equipment === id;
+          return (
+            <Pressable
+              key={id}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onSelect(id);
+              }}
+              style={[
+                styles.equipmentOption,
+                {
+                  backgroundColor: isActive ? Colors.light.primary + "15" : theme.backgroundSecondary,
+                  borderColor: isActive ? Colors.light.primary : theme.border,
+                },
+              ]}
+              testID={`button-equipment-${id}`}
+            >
+              <Feather
+                name={icon}
+                size={16}
+                color={isActive ? Colors.light.primary : theme.textSecondary}
+              />
+              <ThemedText
+                style={[
+                  styles.fitnessLevelLabel,
+                  { color: isActive ? Colors.light.primary : theme.textSecondary },
+                ]}
+              >
+                {t(labelKey)}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
+function CloudBackupCard() {
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+  const [backupId, setBackupId] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const [showRestore, setShowRestore] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+
+  useEffect(() => {
+    void getCloudUserId().then(setBackupId);
+  }, []);
+
+  const handleBackupNow = async () => {
+    setBusy(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const ok = await runDataSync();
+    setBusy(false);
+    Alert.alert(
+      ok ? t("profile.cloudBackedUpTitle") : t("profile.cloudErrorTitle"),
+      ok ? t("profile.cloudBackedUpMessage") : t("profile.cloudErrorMessage"),
+    );
+  };
+
+  const handleRestore = async () => {
+    const code = codeInput.trim();
+    if (!code) return;
+    setBusy(true);
+    await setCloudUserId(code);
+    const result = await restoreFromCloud(code);
+    setBusy(false);
+    setShowRestore(false);
+    setCodeInput("");
+    if (result.restored) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        t("profile.cloudRestoredTitle"),
+        t("profile.cloudRestoredMessage", {
+          historyCount: result.historyCount,
+          planCount: result.planCount,
+        }),
+      );
+      if (typeof window !== "undefined" && window.location?.reload) {
+        setTimeout(() => window.location.reload(), 800);
+      }
+    } else {
+      Alert.alert(
+        t("profile.cloudNotFoundTitle"),
+        t("profile.cloudNotFoundMessage"),
+      );
+    }
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(195).duration(400)}
+      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+    >
+      <View style={styles.prefsCardHeader}>
+        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
+          <Feather name="cloud" size={20} color={Colors.light.primary} />
+        </View>
+        <ThemedText style={styles.prefsCardTitle}>{t("profile.cloudBackupTitle")}</ThemedText>
+      </View>
+
+      <ThemedText style={[styles.cloudHint, { color: theme.textSecondary }]}>
+        {t("profile.cloudBackupHint")}
+      </ThemedText>
+
+      <View style={[styles.cloudCodeBox, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+        <ThemedText
+          style={[styles.cloudCode, { color: theme.text }]}
+          selectable
+          numberOfLines={1}
+          testID="text-backup-code"
+        >
+          {backupId || "…"}
+        </ThemedText>
+      </View>
+
+      <View style={styles.cloudButtonsRow}>
+        <Pressable
+          onPress={handleBackupNow}
+          disabled={busy}
+          style={[styles.cloudButton, { borderColor: theme.border, opacity: busy ? 0.5 : 1 }]}
+          testID="button-backup-now"
+        >
+          <Feather name="upload-cloud" size={16} color={theme.text} />
+          <ThemedText style={[styles.cloudButtonText, { color: theme.text }]}>
+            {t("profile.cloudBackupNow")}
+          </ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowRestore(true);
+          }}
+          disabled={busy}
+          style={[styles.cloudButton, { borderColor: theme.border, opacity: busy ? 0.5 : 1 }]}
+          testID="button-restore-open"
+        >
+          <Feather name="download-cloud" size={16} color={theme.text} />
+          <ThemedText style={[styles.cloudButtonText, { color: theme.text }]}>
+            {t("profile.cloudRestore")}
+          </ThemedText>
+        </Pressable>
+      </View>
+
+      <Modal visible={showRestore} animationType="fade" transparent>
+        <View style={styles.cloudModalOverlay}>
+          <View style={[styles.cloudRestoreModal, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText style={styles.measurementModalTitle}>
+              {t("profile.cloudRestoreTitle")}
+            </ThemedText>
+            <ThemedText style={[styles.cloudHint, { color: theme.textSecondary }]}>
+              {t("profile.cloudRestoreHint")}
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.cloudInput,
+                { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.border },
+              ]}
+              placeholder={t("profile.cloudBackupCodePlaceholder")}
+              placeholderTextColor={theme.textSecondary}
+              value={codeInput}
+              onChangeText={setCodeInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              testID="input-backup-code"
+            />
+            <View style={styles.cloudButtonsRow}>
+              <Pressable
+                onPress={() => {
+                  setShowRestore(false);
+                  setCodeInput("");
+                }}
+                style={[styles.cloudButton, { borderColor: theme.border }]}
+              >
+                <ThemedText style={[styles.cloudButtonText, { color: theme.textSecondary }]}>
+                  {t("profile.cancel")}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={handleRestore}
+                disabled={busy || !codeInput.trim()}
+                style={[
+                  styles.cloudButton,
+                  {
+                    backgroundColor: Colors.light.primary,
+                    borderColor: Colors.light.primary,
+                    opacity: busy || !codeInput.trim() ? 0.5 : 1,
+                  },
+                ]}
+                testID="button-restore-confirm"
+              >
+                <ThemedText style={[styles.cloudButtonText, { color: "#FFFFFF" }]}>
+                  {t("profile.cloudLoad")}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 }
@@ -531,6 +787,7 @@ export default function ProfileScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [stats, setStats] = useState({ plans: 0, workouts: 0 });
@@ -538,6 +795,7 @@ export default function ProfileScreen() {
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
   const [restTimerEnabled, setRestTimerEnabled] = useState(true);
   const [fitnessLevel, setFitnessLevelState] = useState<FitnessLevel | null | undefined>(null);
+  const [equipment, setEquipmentState] = useState<Equipment | null | undefined>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -552,6 +810,7 @@ export default function ProfileScreen() {
       setMeasurements(bodyMeasurements);
       setRestTimerEnabled(prefs?.restTimerEnabled !== false); // default true
       setFitnessLevelState(prefs?.fitnessLevel ?? null);
+      setEquipmentState(prefs?.equipment ?? null);
     } catch (error) {
       console.error("Error loading profile data:", error);
     }
@@ -566,12 +825,12 @@ export default function ProfileScreen() {
   const handleResetOnboarding = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      "Reset Preferences",
-      "This will restart the onboarding flow. Your workout plans will be kept.",
+      t("profile.resetPreferences"),
+      t("profile.resetPreferencesMessage"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("profile.cancel"), style: "cancel" },
         {
-          text: "Reset",
+          text: t("profile.reset"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -592,6 +851,48 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const handleDeleteAccount = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      t("profile.deleteAccountConfirmTitle"),
+      t("profile.deleteAccountConfirmMessage"),
+      [
+        { text: t("profile.cancel"), style: "cancel" },
+        {
+          text: t("profile.deleteAccountConfirm"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.deleteAccount();
+              await setStoredToken(null);
+              await clearAllData();
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: "Onboarding" as never }],
+                })
+              );
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              Alert.alert(
+                t("profile.deleteAccountErrorTitle"),
+                t("profile.deleteAccountErrorMessage")
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const openLegal = (url: string) => {
+    Haptics.selectionAsync();
+    void WebBrowser.openBrowserAsync(url);
   };
 
 
@@ -622,6 +923,19 @@ export default function ProfileScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
+  const handleSelectEquipment = async (value: Equipment) => {
+    setEquipmentState(value);
+    const current = preferences ?? {
+      workoutDaysPerWeek: 3,
+      splitPreference: "recommended" as const,
+      exercisePreference: "default" as const,
+    };
+    const updated = { ...current, equipment: value };
+    setPreferences(updated);
+    await setUserPreferences(updated);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
   return (
     <KeyboardAwareScrollViewCompat
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
@@ -643,9 +957,12 @@ export default function ProfileScreen() {
           style={styles.avatar}
           resizeMode="cover"
         />
-        <ThemedText style={styles.greeting}>Fitness Enthusiast</ThemedText>
+        <ThemedText style={styles.greeting}>{t("profile.greeting")}</ThemedText>
         <ThemedText style={[styles.statsText, { color: theme.textSecondary }]}>
-          {stats.plans} plans created · {stats.workouts} workouts completed
+          {t("profile.statsSummary", {
+            plans: stats.plans,
+            workouts: stats.workouts,
+          })}
         </ThemedText>
       </Animated.View>
 
@@ -656,7 +973,7 @@ export default function ProfileScreen() {
         <ThemedText
           style={[styles.sectionTitle, { color: theme.textSecondary }]}
         >
-          Preferences
+          {t("profile.preferences")}
         </ThemedText>
       </Animated.View>
 
@@ -668,11 +985,11 @@ export default function ProfileScreen() {
           <Feather name="clock" size={20} color={Colors.light.primary} />
         </View>
         <View style={styles.reminderInfo}>
-          <ThemedText style={styles.reminderTitle}>Rest Timer</ThemedText>
+          <ThemedText style={styles.reminderTitle}>{t("profile.restTimer")}</ThemedText>
           <ThemedText style={[styles.reminderSubtitle, { color: theme.textSecondary }]}>
             {restTimerEnabled
-              ? "Auto-starts after each set"
-              : "Train by feel — no countdown"}
+              ? t("profile.restTimerOn")
+              : t("profile.restTimerOff")}
           </ThemedText>
         </View>
         <Switch
@@ -693,6 +1010,12 @@ export default function ProfileScreen() {
         onSelect={handleSelectFitnessLevel}
       />
 
+      <EquipmentCard equipment={equipment} onSelect={handleSelectEquipment} />
+
+      <CloudBackupCard />
+
+      <SubscriptionCard />
+
       <Animated.View
         entering={FadeInDown.delay(200).duration(400)}
         style={styles.section}
@@ -700,7 +1023,7 @@ export default function ProfileScreen() {
         <ThemedText
           style={[styles.sectionTitle, { color: theme.textSecondary }]}
         >
-          About
+          {t("profile.about")}
         </ThemedText>
       </Animated.View>
 
@@ -713,16 +1036,59 @@ export default function ProfileScreen() {
           <View style={[styles.settingsIcon, { backgroundColor: theme.backgroundSecondary }]}>
             <Feather name="info" size={20} color={theme.textSecondary} />
           </View>
-          <ThemedText style={[styles.settingsLabel, { color: theme.text }]}>App Version</ThemedText>
+          <ThemedText style={[styles.settingsLabel, { color: theme.text }]}>{t("profile.appVersion")}</ThemedText>
           <ThemedText style={[styles.settingsValue, { color: theme.textSecondary }]}>1.0.0</ThemedText>
         </Animated.View>
 
         <SettingsItem
           icon="refresh-cw"
-          label="Reset Preferences"
+          label={t("profile.resetPreferences")}
           onPress={handleResetOnboarding}
           isDestructive
           index={4}
+        />
+      </View>
+
+      <Animated.View
+        entering={FadeInDown.delay(360).duration(400)}
+        style={styles.section}
+      >
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          {t("profile.legal")}
+        </ThemedText>
+      </Animated.View>
+
+      <View style={styles.settingsList}>
+        <SettingsItem
+          icon="shield"
+          label={t("profile.privacyPolicy")}
+          onPress={() => openLegal(PRIVACY_POLICY_URL)}
+          index={5}
+        />
+        <SettingsItem
+          icon="file-text"
+          label={t("profile.termsOfUse")}
+          onPress={() => openLegal(TERMS_OF_USE_URL)}
+          index={6}
+        />
+      </View>
+
+      <Animated.View
+        entering={FadeInDown.delay(380).duration(400)}
+        style={styles.section}
+      >
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          {t("profile.account")}
+        </ThemedText>
+      </Animated.View>
+
+      <View style={styles.settingsList}>
+        <SettingsItem
+          icon="trash-2"
+          label={t("profile.deleteAccount")}
+          onPress={handleDeleteAccount}
+          isDestructive
+          index={7}
         />
       </View>
 
@@ -887,6 +1253,80 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     gap: Spacing.xs,
+  },
+  cloudHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: Spacing.md,
+  },
+  cloudCodeBox: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  cloudCode: {
+    fontSize: 13,
+    fontFamily: "Montserrat_600SemiBold",
+    letterSpacing: 0.5,
+  },
+  cloudButtonsRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  cloudButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  cloudButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+  },
+  cloudModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.lg,
+  },
+  cloudRestoreModal: {
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  cloudInput: {
+    height: Spacing.inputHeight,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.lg,
+    fontSize: 15,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  equipmentOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  equipmentOption: {
+    width: "47%",
+    flexGrow: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.sm,
   },
   fitnessLevelLabel: {
     fontSize: 11,

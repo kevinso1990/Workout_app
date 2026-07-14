@@ -156,6 +156,9 @@ export const api = {
   updatePlan: (id: number, data: any) => request<any>(`/api/plans/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deletePlan: (id: number) => request<any>(`/api/plans/${id}`, { method: "DELETE" }),
 
+  /** Permanently deletes the authenticated account + all its server-side data. */
+  deleteAccount: () => request<any>("/api/auth/account", { method: "DELETE" }),
+
   startSession: (plan_id: number) => request<any>("/api/sessions", { method: "POST", body: JSON.stringify({ plan_id }) }),
   finishSession: (id: number, data: { finished_at: string; rpe?: number; notes?: string }) =>
     request<any>(`/api/sessions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
