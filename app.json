@@ -15,14 +15,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Used to photograph your workout plan for import",
-        "NSPhotoLibraryUsageDescription": "Used to select a photo of your workout plan",
-        "NSAppTransportSecurity": {
-          "NSExceptionDomains": {
-            "187.77.89.8": {
-              "NSTemporaryExceptionAllowsInsecureHTTPLoads": true
-            }
-          }
-        }
+        "NSPhotoLibraryUsageDescription": "Used to select a photo of your workout plan"
       }
     },
     "android": {
