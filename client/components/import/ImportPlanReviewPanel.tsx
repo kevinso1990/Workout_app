@@ -24,6 +24,7 @@ import {
   rankCatalogMatches,
 } from "@/lib/importCatalog";
 import { parseRepsInput, repsInputValue } from "@/lib/importReps";
+import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 
 type InlinePick = { dayIdx: number; exIdx: number } | null;
 
@@ -409,7 +410,7 @@ export function ImportPlanReviewPanel({
                                 {item.name}
                               </ThemedText>
                               <ThemedText style={styles.inlineRowSub}>
-                                {item.muscle_group}
+                                {translateMuscleGroup(t, item.muscle_group)}
                               </ThemedText>
                             </Pressable>
                           )}

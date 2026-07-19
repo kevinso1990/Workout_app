@@ -25,10 +25,17 @@ export async function getBonusImportCredits(): Promise<number> {
   return bonusCredits;
 }
 
-/** Called after a successful rewarded video (stub until AdMob SDK is integrated). */
-export async function grantBonusImportCredit(): Promise<number> {
-  await ensureLoaded();
-  bonusCredits += 1;
-  await AsyncStorage.setItem(STORAGE_KEY, String(bonusCredits));
-  return bonusCredits;
+/** Pro subscribers bypass import limits. */
+export function hasUnlimitedImports(isPro: boolean): boolean {
+  return isPro;
 }
+
+export async function canPerformGeminiImport(
+  isPro: boolean,
+  usedCount: number,
+): Promise<boolean> {
+  if (hasUnlimitedImports(isPro)) return true;
+  const bonus = await getBonusImportCredits();
+  return usedCount < FREE_GEMINI_IMPORTS + bonus;
+}
+

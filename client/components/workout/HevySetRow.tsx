@@ -11,6 +11,7 @@ import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
   clampAndFormatReps,
   clampAndFormatWeight,
+  clampAndFormatWeightExact,
   roundToStepWeight,
   WEIGHT_SLIDER_STEP_KG,
 } from "@/lib/activeWorkoutSetFormat";
@@ -292,7 +293,7 @@ export function HevySetRow({
         if (text == null) return;
         onUpdate(
           isWeight
-            ? { weight: clampAndFormatWeight(text) }
+            ? { weight: clampAndFormatWeightExact(text) }
             : { reps: clampAndFormatReps(text) },
         );
       };

@@ -24,4 +24,15 @@ config.resolver = {
   blockList: exclusions,
 };
 
+// Accept Metro requests forwarded from Cloudflare/ngrok tunnels (Host != localhost).
+config.server = {
+  ...config.server,
+  enhanceMiddleware: (middleware) => (req, res, next) => {
+    if (req.headers.host && !req.headers.host.includes("localhost")) {
+      req.headers.host = `localhost:${config.server?.port ?? 8081}`;
+    }
+    return middleware(req, res, next);
+  },
+};
+
 module.exports = config;

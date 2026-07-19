@@ -31,12 +31,20 @@ const VALID_EQUIPMENT  = [
 
 const VALID_MUSCLE_GROUPS = ["chest", "back", "shoulders", "arms", "legs", "core"] as const;
 
+const VALID_SPLIT_PREFERENCES = [
+  "push-pull-legs",
+  "upper-lower",
+  "full-body",
+  "bro-split",
+] as const;
+
 const autoGenerateSchema = z.object({
   frequency:    z.number({ invalid_type_error: "frequency must be a number" }).int().min(1).max(7),
   experience:   z.enum(VALID_EXPERIENCE, { message: "experience must be beginner | intermediate | advanced" }),
   goal:         z.enum(VALID_GOALS,      { message: "goal must be build_muscle | lose_fat | get_stronger" }),
   equipment:    z.enum(VALID_EQUIPMENT).optional().default("barbell"),
   focusMuscles: z.array(z.enum(VALID_MUSCLE_GROUPS)).optional().default([]),
+  splitPreference: z.enum(VALID_SPLIT_PREFERENCES).optional(),
 });
 
 /**
@@ -647,15 +655,55 @@ function getExerciseCount(experience: string, planShape: string): number {
  *           Intermediate/Advanced → Push / Pull / Legs (higher volume per
  *             session, appropriate for experienced lifters).
  */
+type PlanShape = "fullBody" | "upperLowerFull" | "upperLower" | "ppl" | "broSplit";
+
 function getPlanShape(
   frequency: number,
-  experience: string
-): "fullBody" | "upperLowerFull" | "upperLower" | "ppl" {
+  experience: string,
+): PlanShape {
   if (frequency <= 2) return "fullBody";
   if (frequency === 3) return experience === "beginner" ? "fullBody" : "upperLowerFull";
   if (frequency === 4) return "upperLower";
   // 5+ days
   return experience === "beginner" ? "upperLower" : "ppl";
+}
+
+function resolvePlanShape(
+  splitPreference: string | undefined,
+  frequency: number,
+  experience: string,
+): PlanShape {
+  switch (splitPreference) {
+    case "push-pull-legs":
+      return "ppl";
+    case "upper-lower":
+      return frequency <= 3 ? "upperLowerFull" : "upperLower";
+    case "full-body":
+      return "fullBody";
+    case "bro-split":
+      return "broSplit";
+    default:
+      return getPlanShape(frequency, experience);
+  }
+}
+
+/** Removes server plan rows with no exercises and no linked sessions (failed auto-generate). */
+export function cleanupOrphanAutoGeneratePlans(userId: number | undefined): number {
+  if (userId == null) return 0;
+  const result = db.prepare(
+    `DELETE FROM plans
+     WHERE user_id = ?
+       AND (local_plan_id IS NULL OR local_plan_id = '')
+       AND id NOT IN (SELECT DISTINCT plan_id FROM sessions WHERE plan_id IS NOT NULL)
+       AND id NOT IN (SELECT DISTINCT plan_id FROM plan_exercises)`,
+  ).run(userId);
+  return result.changes;
+}
+
+function deletePlansByIds(planIds: number[]): void {
+  if (planIds.length === 0) return;
+  const placeholders = planIds.map(() => "?").join(",");
+  db.prepare(`DELETE FROM plans WHERE id IN (${placeholders})`).run(...planIds);
 }
 
 // ── Auto-generate plans ──────────────────────────────────────────────────────
@@ -664,7 +712,7 @@ type PlanSessionSpec = { name: string; exerciseNames: string[] };
 
 type AutoGenRuntime = {
   parsed: z.infer<typeof autoGenerateSchema>;
-  planShape: ReturnType<typeof getPlanShape>;
+  planShape: PlanShape;
   exerciseCount: number;
   weeklyMuscleFreq: number;
   allowedEquip: string[];
@@ -685,8 +733,9 @@ function makeAutoGenRuntime(
     const msg = parsed.error.errors.map((e) => e.message).join("; ");
     throw new AppError(400, msg);
   }
-  const { frequency, experience, goal, equipment, focusMuscles } = parsed.data;
-  const planShape = getPlanShape(frequency, experience);
+  const { frequency, experience, goal, equipment, focusMuscles, splitPreference } =
+    parsed.data;
+  const planShape = resolvePlanShape(splitPreference, frequency, experience);
   const exerciseCount = getExerciseCount(experience, planShape);
   const weeklyMuscleFreq =
     planShape === "fullBody" ? Math.min(frequency, 3) : 2;
@@ -775,9 +824,51 @@ function enforceSplitDayVariation(
   return result;
 }
 
+function getBroSplitSessions(rt: AutoGenRuntime): PlanSessionSpec[] {
+  const { tpl, prefix, parsed } = rt;
+  const broDays: PlanSessionSpec[] = [
+    {
+      name: `${prefix}Chest`,
+      exerciseNames: tpl.push.slice(0, 5),
+    },
+    {
+      name: `${prefix}Back`,
+      exerciseNames: tpl.pull.slice(0, 6),
+    },
+    {
+      name: `${prefix}Shoulders`,
+      exerciseNames: [
+        tpl.push[3],
+        tpl.push[4],
+        tpl.pull[3],
+        ...tpl.push.slice(5, 7),
+      ].filter(Boolean),
+    },
+    {
+      name: `${prefix}Arms`,
+      exerciseNames: [
+        ...tpl.pull.slice(4, 7),
+        ...tpl.push.slice(5, 7),
+      ].filter(Boolean),
+    },
+    {
+      name: `${prefix}Legs`,
+      exerciseNames: [...tpl.legs],
+    },
+  ];
+  const sessions: PlanSessionSpec[] = [];
+  for (let i = 0; i < parsed.frequency; i++) {
+    sessions.push(broDays[i % broDays.length]);
+  }
+  return sessions;
+}
+
 function getDefaultPlanSessions(rt: AutoGenRuntime): PlanSessionSpec[] {
   const { parsed, planShape, tpl, prefix } = rt;
   const { frequency } = parsed;
+  if (planShape === "broSplit") {
+    return getBroSplitSessions(rt);
+  }
   if (planShape === "fullBody") {
     if (frequency >= 3 && tpl.fullBodyC) {
       return [
@@ -847,20 +938,30 @@ function persistAutoGeneratedPlans(rt: AutoGenRuntime, sessions: PlanSessionSpec
   );
 
   const createdPlans: number[] = [];
-  db.transaction(() => {
-    for (const session of normalizedSessions) {
-      const pid = insertPlan.run(session.name, userId ?? null).lastInsertRowid as number;
-      const ordered = prioritizeFocusedExercises(session.exerciseNames, focusMuscles);
-      for (const ex of buildExercises(ordered)) {
-        insertPE.run(pid, ex.id, ex.sortOrder, ex.sets, ex.reps, 0);
+  try {
+    db.transaction(() => {
+      for (const session of normalizedSessions) {
+        const pid = insertPlan.run(session.name, userId ?? null).lastInsertRowid as number;
+        const ordered = prioritizeFocusedExercises(session.exerciseNames, focusMuscles);
+        const built = buildExercises(ordered);
+        if (built.length === 0) {
+          throw new AppError(500, `No exercises resolved for session ${session.name}`);
+        }
+        for (const ex of built) {
+          insertPE.run(pid, ex.id, ex.sortOrder, ex.sets, ex.reps, 0);
+        }
+        createdPlans.push(pid);
       }
-      createdPlans.push(pid);
-    }
-  })();
-  return createdPlans;
+    })();
+    return createdPlans;
+  } catch (err) {
+    deletePlansByIds(createdPlans);
+    throw err;
+  }
 }
 
 export function autoGeneratePlans(body: AutoGeneratePlansBody, userId?: number, deviceId?: string): { planIds: number[] } {
+  cleanupOrphanAutoGeneratePlans(userId);
   const rt = makeAutoGenRuntime(body, userId, deviceId);
   return { planIds: persistAutoGeneratedPlans(rt, getDefaultPlanSessions(rt)) };
 }
@@ -971,36 +1072,45 @@ function persistStructuredGeminiPlan(
 
   const createdPlans: number[] = [];
 
-  db.transaction(() => {
-    for (const day of plan.days) {
-      const pid = insertPlan.run(day.dayName, userId ?? null).lastInsertRowid as number;
-      let totalSets = 0;
-      let sortOrder = 0;
-      const seen = new Set<number>();
+  try {
+    db.transaction(() => {
+      for (const day of plan.days) {
+        const pid = insertPlan.run(day.dayName, userId ?? null).lastInsertRowid as number;
+        let totalSets = 0;
+        let sortOrder = 0;
+        const seen = new Set<number>();
+        let inserted = 0;
 
-      for (const ex of day.exercises) {
-        const resolved = resolveExercise(ex.name, allowedEquip, dislikedIds);
-        if (!resolved || seen.has(resolved.id)) continue;
+        for (const ex of day.exercises) {
+          const resolved = resolveExercise(ex.name, allowedEquip, dislikedIds);
+          if (!resolved || seen.has(resolved.id)) continue;
 
-        if (totalSets + ex.sets > maxSessionSets) continue;
+          if (totalSets + ex.sets > maxSessionSets) continue;
 
-        seen.add(resolved.id);
-        totalSets += ex.sets;
-        insertPE.run(
-          pid,
-          resolved.id,
-          sortOrder++,
-          ex.sets,
-          ex.reps,
-          rt.parsed.equipment === "bodyweight" ? 0 : ex.weight,
-        );
+          seen.add(resolved.id);
+          totalSets += ex.sets;
+          insertPE.run(
+            pid,
+            resolved.id,
+            sortOrder++,
+            ex.sets,
+            ex.reps,
+            rt.parsed.equipment === "bodyweight" ? 0 : ex.weight,
+          );
+          inserted += 1;
+        }
+
+        if (inserted === 0) {
+          throw new AppError(500, `Gemini day ${day.dayName} produced no catalog exercises`);
+        }
+        createdPlans.push(pid);
       }
-
-      createdPlans.push(pid);
-    }
-  })();
-
-  return createdPlans;
+    })();
+    return createdPlans;
+  } catch (err) {
+    deletePlansByIds(createdPlans);
+    throw err;
+  }
 }
 
 /**
@@ -1016,6 +1126,7 @@ export async function tryAutoGeneratePlansWithGemini(
   // Deterministic template path in Vitest; avoids flaky overlap assertions when a real API key is present.
   if (process.env.VITEST === "true") return null;
   if (!process.env.GEMINI_API_KEY?.trim()) return null;
+  cleanupOrphanAutoGeneratePlans(userId);
   let rt: AutoGenRuntime;
   try {
     rt = makeAutoGenRuntime(body, userId, deviceId);
@@ -1034,6 +1145,7 @@ export async function tryAutoGeneratePlansWithGemini(
     goal: rt.parsed.goal,
     equipment: rt.parsed.equipment,
     focusMuscles: rt.parsed.focusMuscles,
+    splitPreference: rt.parsed.splitPreference,
     sessionLines: defaultSessions.map((s, idx) => `${idx + 1}. ${s.name}`).join("\n"),
     whitelistLines,
     sessionCount: defaultSessions.length,

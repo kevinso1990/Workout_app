@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import { asyncHandler, AppError } from "../middleware/errorHandler";
 import * as planService from "../services/planService";
-import type { CreatePlanBody, UpdatePlanBody, AutoGeneratePlansBody } from "../models";
+import { modifyPlanWithAi } from "../services/planModifyService";
+import type { CreatePlanBody, UpdatePlanBody, AutoGeneratePlansBody, ModifyPlanBody } from "../models";
 
 function parseId(raw: string | string[]): number {
   const str = Array.isArray(raw) ? raw[0] : raw;
@@ -36,10 +37,26 @@ export const autoGenerate = asyncHandler(async (req: Request, res: Response) => 
   const rawDeviceId = req.headers["x-device-id"];
   const deviceId = Array.isArray(rawDeviceId) ? rawDeviceId[0] : rawDeviceId;
   const body = req.body as AutoGeneratePlansBody;
-  const geminiPlans = await planService.tryAutoGeneratePlansWithGemini(body, req.user!.sub, deviceId);
-  if (geminiPlans) {
-    res.json(geminiPlans);
-    return;
+  const userId = req.user!.sub;
+  planService.cleanupOrphanAutoGeneratePlans(userId);
+  try {
+    const geminiPlans = await planService.tryAutoGeneratePlansWithGemini(body, userId, deviceId);
+    if (geminiPlans) {
+      res.json(geminiPlans);
+      return;
+    }
+    res.json(planService.autoGeneratePlans(body, userId, deviceId));
+  } catch (err) {
+    planService.cleanupOrphanAutoGeneratePlans(userId);
+    throw err;
   }
-  res.json(planService.autoGeneratePlans(body, req.user!.sub, deviceId));
+});
+
+export const modify = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as ModifyPlanBody;
+  if (!body?.plan?.days?.length || !body.instruction?.trim()) {
+    throw new AppError(400, "plan and instruction required");
+  }
+  const result = await modifyPlanWithAi(body.plan, body.instruction);
+  res.json(result);
 });

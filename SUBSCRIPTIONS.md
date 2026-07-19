@@ -6,7 +6,67 @@ connect real products in App Store Connect and Google Play Console.
 
 ---
 
-## Architecture overview
+## Architecture overview (RevenueCat — native, recommended)
+
+```
+App (react-native-purchases / RevenueCat SDK)
+    │  purchasePackage / restorePurchases
+    ▼
+RevenueCat (receipt validation + entitlements)
+    │  server-to-server webhook
+    ▼
+POST /api/subscriptions/webhooks/revenuecat
+    │  Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>
+    ▼
+users.subscription_tier = 'pro' | 'free'
+```
+
+Legacy direct StoreKit / Play Billing validation endpoints remain for non-RevenueCat builds:
+
+```
+App (StoreKit / Play Billing)
+    │  purchase receipt / token
+    ▼
+POST /api/subscriptions/validate/apple
+POST /api/subscriptions/validate/google
+```
+
+---
+
+## RevenueCat setup (native)
+
+### Client env (Expo)
+
+| Variable | Description |
+|---|---|
+| `EXPO_PUBLIC_SUBSCRIPTIONS_ENABLED` | `"true"` to show purchase UI |
+| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | RevenueCat iOS public API key |
+| `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` | RevenueCat Android public API key |
+| `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID` | Entitlement id in RC dashboard (default `pro`) |
+
+### Server env
+
+| Variable | Description |
+|---|---|
+| `SUBSCRIPTIONS_ENABLED` | `"true"` to process webhooks |
+| `REVENUECAT_WEBHOOK_SECRET` | Shared secret configured in RevenueCat → Webhooks |
+
+### Expo / native platform notes
+
+- `app.json` includes the `react-native-purchases` config plugin.
+- **iOS:** no extra Info.plist keys required for subscriptions. StoreKit is linked by RevenueCat.
+- **Android:** `com.android.vending.BILLING` permission is added by the RevenueCat / billing library.
+- Configure products in App Store Connect + Google Play Console, then map them to a RevenueCat **Offering**.
+
+### Webhook URL
+
+`POST https://<your-api>/api/subscriptions/webhooks/revenuecat`
+
+Handled events: `INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION`, `EXPIRATION`, `BILLING_ISSUE` (grace only).
+
+---
+
+## Architecture overview (legacy direct validation)
 
 ```
 App (StoreKit / Play Billing)

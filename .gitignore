@@ -50,3 +50,9 @@ claude-user/
 
 # Playwright test artifacts
 test-results/
+
+# Build/export artifacts (EAS downloads, tarballs, compiled app bundles)
+*.tar
+*.tar.gz
+*.tgz
+/TrackYourLift.app

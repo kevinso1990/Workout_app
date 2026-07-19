@@ -14,17 +14,13 @@ function trimOrUndefined(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function readProcessEnv(name: string): string | undefined {
-  if (typeof process === "undefined" || !process.env) return undefined;
-  return trimOrUndefined(process.env[name]);
-}
-
 export function getExerciseDbApiKey(): string | undefined {
+  if (typeof process === "undefined" || !process.env) return undefined;
   return (
-    readProcessEnv("EXPO_PUBLIC_RAPIDAPI_KEY") ||
-    readProcessEnv("VITE_RAPIDAPI_KEY") ||
-    readProcessEnv("VITE_EXPO_PUBLIC_RAPIDAPI_KEY") ||
-    readProcessEnv("RAPIDAPI_KEY")
+    trimOrUndefined(process.env.EXPO_PUBLIC_RAPIDAPI_KEY) ||
+    trimOrUndefined(process.env.VITE_RAPIDAPI_KEY) ||
+    trimOrUndefined(process.env.VITE_EXPO_PUBLIC_RAPIDAPI_KEY) ||
+    trimOrUndefined(process.env.RAPIDAPI_KEY)
   );
 }
 

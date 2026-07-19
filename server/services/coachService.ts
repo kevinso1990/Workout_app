@@ -3,6 +3,18 @@ import type { Part } from "@google/generative-ai";
 import db from "../db";
 import { geminiGenerateContent } from "./geminiGenerate";
 import { matchExerciseToCatalog } from "./importExerciseMatchService";
+import {
+  modifyPlanWithAi,
+  type ClientPlanPayload,
+  type ModifyPlanResult,
+} from "./planModifyService";
+
+export interface PerformanceSignalPayload {
+  type: string;
+  exercise_name?: string;
+  sessions_analyzed: number;
+  summary: string;
+}
 
 export {
   analyzeVolumePerformance,
@@ -156,4 +168,49 @@ Rules:
   const raw = (await callCoachText(prompt)).trim();
   const oneLine = raw.replace(/\s+/g, " ").slice(0, 280);
   return oneLine || (input.locale === "de" ? "Bereit für dein Training — bleib konsistent." : "Ready to train — stay consistent.");
+}
+
+/**
+ * Closed-loop adaptation: rewrites a plan using logged performance summary.
+ */
+export async function adaptPlanFromPerformance(input: {
+  plan: ClientPlanPayload;
+  performanceSummary: string;
+  performanceSignals?: PerformanceSignalPayload[];
+  locale?: "de" | "en";
+}): Promise<ModifyPlanResult> {
+  const lang = input.locale === "de" ? "German" : "English";
+  const signalBlock =
+    input.performanceSignals && input.performanceSignals.length > 0
+      ? `Detected performance signals: ${input.performanceSignals
+          .map((s) => {
+            const label = s.exercise_name
+              ? `${s.type} on ${s.exercise_name}`
+              : s.type;
+            return `[${label} — ${s.summary}]`;
+          })
+          .join(", ")}. Adapt the plan to address these specific signals. Every proposed change must reference a detected signal. Do not make changes to exercises with no signal.`
+      : "";
+
+  const instruction = `Adapt this training plan based on the athlete's REAL logged performance (not theory).
+
+${signalBlock}
+
+Performance log:
+${input.performanceSummary.slice(0, 7500)}
+
+Adaptation rules:
+- Only modify exercises that have a detected performance signal above
+- Every entry in the changes array must cite which signal it addresses
+- Progress loads/reps on UNDERLOAD signals where green feedback is consistent
+- Hold or reduce volume on OVERREACH or PLATEAU signals
+- Address MISSED_SESSIONS by simplifying schedule adherence, not random exercise swaps
+- Swap only when a signal explicitly supports it; never substitute exercises without signal data
+- Preserve the same split and number of training days
+- Preserve exercise order where possible
+- Write the summary field in ${lang} (1-2 sentences for the athlete)
+
+Return valid JSON matching the required schema only.`;
+
+  return modifyPlanWithAi(input.plan, instruction);
 }

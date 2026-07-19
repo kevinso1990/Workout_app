@@ -1,81 +1,89 @@
-/**
- * ProBadge — lightweight "coming soon" placeholder for Pro-gated features.
- *
- * Rules:
- * - Shown only when SUBSCRIPTIONS_ENABLED is false (i.e. always in current builds).
- * - Never blocks access to the feature — the feature content is still rendered.
- * - Communicates to the user that this area will be part of Pro later.
- *
- * Usage:
- *   <ProBadge feature="Advanced muscle-balance analytics" />
- *   {/* the actual feature content still follows *\/}
- */
-
 import React from "react";
-import { SUBSCRIPTIONS_ENABLED } from "../lib/subscriptionConfig";
+import { View, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { Feather } from "@expo/vector-icons";
+
+import { ThemedText } from "@/components/ThemedText";
+import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
+import { useSubscription } from "@/context/SubscriptionContext";
+import { SUBSCRIPTIONS_ENABLED } from "@/lib/subscriptionConfig";
 
 interface ProBadgeProps {
-  /** Short feature description shown in the banner text. */
-  feature?: string;
-  /**
-   * When true the badge renders as a compact inline pill rather than a
-   * full-width card-style banner.
-   */
+  feature: string;
   compact?: boolean;
 }
 
+/**
+ * Shown on Pro-gated features when subscriptions are disabled (coming soon),
+ * or as a lock hint when subscriptions are enabled but the user is not Pro.
+ */
 export function ProBadge({ feature, compact = false }: ProBadgeProps) {
-  // If subscriptions are enabled and we're doing real Pro-gating, hide this
-  // placeholder — real paywall UI would replace it in a future release.
-  if (SUBSCRIPTIONS_ENABLED) return null;
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+  const { isEnabled, isPro } = useSubscription();
 
-  const label = feature ? `${feature} will be part of Pro` : "This feature will be part of Pro";
-
-  if (compact) {
+  if (isEnabled && isPro) return null;
+  if (isEnabled && !isPro) {
     return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          fontSize: 10,
-          fontWeight: 600,
-          letterSpacing: "0.04em",
-          textTransform: "uppercase",
-          padding: "2px 8px",
-          borderRadius: 8,
-          background: "rgba(79,142,247,0.12)",
-          color: "var(--color-accent, #4f8ef7)",
-          lineHeight: 1.6,
-        }}
+      <View
+        style={[
+          styles.badge,
+          compact ? styles.badgeCompact : null,
+          {
+            backgroundColor: Colors.light.primary + "12",
+            borderColor: Colors.light.primary + "35",
+          },
+        ]}
       >
-        ✦ Pro · coming soon
-      </span>
+        <Feather name="lock" size={compact ? 12 : 14} color={Colors.light.primary} />
+        <ThemedText style={[styles.text, { color: theme.textSecondary }]}>
+          {t("subscription.proFeature", { feature })}
+        </ThemedText>
+      </View>
     );
   }
 
+  if (SUBSCRIPTIONS_ENABLED) return null;
+
   return (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        padding: "10px 14px",
-        background: "rgba(79,142,247,0.07)",
-        border: "1px solid rgba(79,142,247,0.18)",
-        marginBottom: 8,
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 8,
-      }}
+    <View
+      style={[
+        styles.badge,
+        compact ? styles.badgeCompact : null,
+        {
+          backgroundColor: theme.backgroundSecondary,
+          borderColor: theme.border,
+        },
+      ]}
     >
-      <span style={{ fontSize: 14, lineHeight: 1 }}>✦</span>
-      <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-secondary, #888)", lineHeight: 1.5 }}>
-        <strong style={{ color: "var(--color-accent, #4f8ef7)", fontWeight: 600 }}>
-          {label} in a future update.
-        </strong>{" "}
-        For now, it&rsquo;s available to everyone while we test.
-      </p>
-    </div>
+      <Feather name="clock" size={compact ? 12 : 14} color={theme.textSecondary} />
+      <ThemedText style={[styles.text, { color: theme.textSecondary }]}>
+        {t("subscription.comingSoon", { feature })}
+      </ThemedText>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginVertical: Spacing.sm,
+  },
+  badgeCompact: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  text: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+});
 
 export default ProBadge;

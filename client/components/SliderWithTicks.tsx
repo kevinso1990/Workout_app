@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from "react";
 import { View, StyleSheet, LayoutChangeEvent } from "react-native";
-import Slider from "@react-native-community/slider";
+
+import { PlatformRangeSlider } from "@/components/PlatformRangeSlider";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing } from "@/constants/theme";
@@ -93,7 +94,7 @@ export function SliderWithTicks({
   return (
     <View style={styles.root}>
       <View onLayout={onTrackLayout}>
-        <Slider
+        <PlatformRangeSlider
           style={styles.slider}
           minimumValue={min}
           maximumValue={max}

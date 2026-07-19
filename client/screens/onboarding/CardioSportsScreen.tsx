@@ -16,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -31,42 +32,42 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const SPORTS_OPTIONS = [
   {
     id: "running",
-    name: "Running",
+    nameKey: "onboarding.cardioSports.sportRunning",
     icon: "wind",
   },
   {
     id: "basketball",
-    name: "Basketball",
+    nameKey: "onboarding.cardioSports.sportBasketball",
     icon: "target",
   },
   {
     id: "boxing",
-    name: "Boxing",
+    nameKey: "onboarding.cardioSports.sportBoxing",
     icon: "zap",
   },
   {
     id: "swimming",
-    name: "Swimming",
+    nameKey: "onboarding.cardioSports.sportSwimming",
     icon: "droplet",
   },
   {
     id: "cycling",
-    name: "Cycling",
+    nameKey: "onboarding.cardioSports.sportCycling",
     icon: "navigation",
   },
   {
     id: "soccer",
-    name: "Soccer",
+    nameKey: "onboarding.cardioSports.sportSoccer",
     icon: "circle",
   },
   {
     id: "hiit",
-    name: "HIIT",
+    nameKey: "onboarding.cardioSports.sportHIIT",
     icon: "activity",
   },
   {
     id: "yoga",
-    name: "Yoga",
+    nameKey: "onboarding.cardioSports.sportYoga",
     icon: "sun",
   },
 ];
@@ -83,6 +84,7 @@ function SportChip({
   index: number;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -122,7 +124,7 @@ function SportChip({
             { color: selected ? "#FFFFFF" : theme.text },
           ]}
         >
-          {sport.name}
+          {t(sport.nameKey)}
         </ThemedText>
       </AnimatedPressable>
     </Animated.View>
@@ -132,6 +134,7 @@ function SportChip({
 export default function CardioSportsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const { state, setCardioDays } = useOnboarding();
@@ -194,8 +197,8 @@ export default function CardioSportsScreen() {
 
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
           <OnboardingHeading
-            title={"How many days cardio\nor other sports?"}
-            subtitle="Beyond your gym days, add activities you love"
+            title={t("onboarding.cardioSports.title")}
+            subtitle={t("onboarding.cardioSports.subtitle")}
           />
         </Animated.View>
 
@@ -237,12 +240,12 @@ export default function CardioSportsScreen() {
               </View>
               <View style={styles.choiceText}>
                 <ThemedText style={styles.choiceName}>
-                  Yes, add some variety
+                  {t("onboarding.cardioSports.yesTitle")}
                 </ThemedText>
                 <ThemedText
                   style={[styles.choiceDesc, { color: theme.textSecondary }]}
                 >
-                  Include cardio or sports in my week
+                  {t("onboarding.cardioSports.yesDesc")}
                 </ThemedText>
               </View>
             </Pressable>
@@ -285,12 +288,12 @@ export default function CardioSportsScreen() {
               </View>
               <View style={styles.choiceText}>
                 <ThemedText style={styles.choiceName}>
-                  No, just weights
+                  {t("onboarding.cardioSports.noTitle")}
                 </ThemedText>
                 <ThemedText
                   style={[styles.choiceDesc, { color: theme.textSecondary }]}
                 >
-                  Focus on strength training only
+                  {t("onboarding.cardioSports.noDesc")}
                 </ThemedText>
               </View>
             </Pressable>
@@ -303,12 +306,12 @@ export default function CardioSportsScreen() {
             style={styles.sportsSection}
           >
             <ThemedText style={styles.sectionTitle}>
-              Select your activities
+              {t("onboarding.cardioSports.selectActivities")}
             </ThemedText>
             <ThemedText
               style={[styles.sectionSubtitle, { color: theme.textSecondary }]}
             >
-              Choose one or more
+              {t("onboarding.cardioSports.chooseOneOrMore")}
             </ThemedText>
             <View style={styles.sportsGrid}>
               {SPORTS_OPTIONS.map((sport, index) => (
@@ -340,7 +343,7 @@ export default function CardioSportsScreen() {
           testID="button-back"
         >
           <ThemedText style={[styles.backButtonText, { color: theme.text }]}>
-            Back
+            {t("onboarding.back")}
           </ThemedText>
         </Pressable>
 
@@ -367,7 +370,7 @@ export default function CardioSportsScreen() {
           testID="button-next"
         >
           <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
-            <ThemedText style={styles.buttonText}>Next</ThemedText>
+            <ThemedText style={styles.buttonText}>{t("onboarding.next")}</ThemedText>
           </View>
         </AnimatedPressable>
       </View>

@@ -10,9 +10,11 @@ router.use(optionalAuth);
 
 // Auto-generate is the most expensive path; cap at 5 calls/minute per IP
 const generateLimiter = rateLimit(5, 60_000);
+const modifyLimiter = rateLimit(10, 60_000);
 
-// NOTE: /auto-generate must come before /:id to avoid being matched as an ID
+// NOTE: /auto-generate and /modify must come before /:id to avoid being matched as an ID
 router.post("/auto-generate", generateLimiter, planController.autoGenerate);
+router.post("/modify", modifyLimiter, planController.modify);
 
 router.get("/", planController.list);
 router.post("/", planController.create);

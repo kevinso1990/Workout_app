@@ -28,6 +28,27 @@ export class ImportRequestError extends Error {
 }
 
 export function formatImportFailure(e: unknown, fallback = "Unknown import failure"): string {
+  const raw =
+    e instanceof ImportRequestError
+      ? e.nativeMessage || e.message
+      : e instanceof Error
+        ? e.message
+        : fallback;
+
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes("prepayment credits") ||
+    lower.includes("ki-kontingent") ||
+    (lower.includes("credit") && lower.includes("depleted")) ||
+    lower.includes("all gemini models failed")
+  ) {
+    return (
+      "Import Error: KI-Kontingent auf dem Server erschöpft. " +
+      "PDF-Import braucht ein gültiges Gemini- oder Claude-API-Guthaben. " +
+      "Bitte später erneut versuchen oder Plan manuell anlegen."
+    );
+  }
+
   if (e instanceof ImportRequestError) return e.message;
   if (e instanceof Error) return `Import Error: [Network] | Message: ${e.message}`;
   return `Import Error: [Network] | Message: ${fallback}`;

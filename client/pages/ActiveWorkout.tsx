@@ -66,7 +66,7 @@ function clearBackup() {
 }
 
 export default function ActiveWorkout() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const params = useParams<{ sessionId: string }>();
   const [, navigate] = useLocation();
   const sessionId = parseInt(params.sessionId!);
@@ -149,7 +149,7 @@ export default function ActiveWorkout() {
           const lastReps = lastSets.length > 0 ? lastSets[0].reps : pe.default_reps;
           // Extract date from the first set's logged_at so we can display "Last: Mon 3 Jun"
           const lastSessionDate = lastSets[0]?.logged_at
-            ? new Date(lastSets[0].logged_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+            ? new Date(lastSets[0].logged_at).toLocaleDateString(i18n.language, { weekday: "short", month: "short", day: "numeric" })
             : undefined;
           return {
             exercise_id: pe.exercise_id,

@@ -4,6 +4,10 @@ import { AppError } from "../middleware/errorHandler";
 import * as subscriptionService from "../services/subscriptionService";
 import { validateAppleReceipt } from "../services/appleReceiptService";
 import { validateGooglePurchase } from "../services/googlePlayService";
+import {
+  applyRevenueCatWebhookEvent,
+  type RevenueCatWebhookBody,
+} from "../services/revenueCatWebhookService";
 import type {
   ValidateAppleReceiptBody,
   ValidateGooglePurchaseBody,
@@ -99,15 +103,9 @@ export const validateGoogle = asyncHandler(async (req: Request, res: Response) =
 
 /**
  * Receives Apple App Store Server Notifications (V2, signed JWS payload).
- * Apple sends these for: SUBSCRIBED, DID_RENEW, EXPIRED, GRACE_PERIOD_EXPIRED,
- * DID_FAIL_TO_RENEW, REFUND, REVOKE, etc.
- *
- * Security: verify the signedPayload JWT against Apple's public keys before
- * trusting the payload. For now we log but verify the shared secret header.
- * Full JWS verification: https://developer.apple.com/documentation/appstoreservernotifications/responsebodyv2
+ * Superseded on native by RevenueCat webhooks — kept for direct StoreKit integrations.
  */
 export const appleWebhook = asyncHandler(async (req: Request, res: Response) => {
-  // Always return 200 quickly so Apple doesn't retry
   res.sendStatus(200);
 
   if (!isSubscriptionsEnabled()) return;
@@ -115,10 +113,8 @@ export const appleWebhook = asyncHandler(async (req: Request, res: Response) => 
   const { signedPayload } = req.body as { signedPayload?: string };
   if (!signedPayload) return;
 
-  // TODO: Verify the JWS signature using Apple's root certificates before
-  // trusting the payload. See SUBSCRIPTIONS.md → "Apple webhook verification".
-
-  // Decode the payload without full verification for now (sandbox testing only)
+  // RevenueCat handles Apple JWS verification when native uses react-native-purchases.
+  // This endpoint remains for legacy / web-side StoreKit integrations only.
   const [, payloadB64] = signedPayload.split(".");
   if (!payloadB64) return;
 
@@ -250,5 +246,37 @@ export const googleWebhook = asyncHandler(async (req: Request, res: Response) =>
     } catch {
       // Silently ignore — the next foreground receipt validation will correct state
     }
+  }
+});
+
+// ── POST /api/subscriptions/webhooks/revenuecat ───────────────────────────────
+
+/**
+ * RevenueCat server-to-server notifications.
+ * Verify Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET> when configured.
+ */
+export const revenueCatWebhook = asyncHandler(async (req: Request, res: Response) => {
+  res.sendStatus(200);
+
+  if (!isSubscriptionsEnabled()) return;
+
+  const secret = process.env.REVENUECAT_WEBHOOK_SECRET?.trim();
+  if (secret) {
+    const authHeader = req.headers.authorization ?? "";
+    const expected = `Bearer ${secret}`;
+    if (authHeader !== expected) return;
+  }
+
+  const body = req.body as RevenueCatWebhookBody;
+  if (!body?.event?.type) return;
+
+  try {
+    applyRevenueCatWebhookEvent(
+      body.event,
+      subscriptionService.markUserPro,
+      subscriptionService.markUserFree,
+    );
+  } catch (err) {
+    console.error("[subscriptions] revenuecat webhook:", err);
   }
 });

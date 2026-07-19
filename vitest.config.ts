@@ -1,6 +1,13 @@
+import path from "path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "client"),
+      "@shared": path.resolve(__dirname, "shared"),
+    },
+  },
   test: {
     environment: "node",
     include: ["server/__tests__/**/*.test.ts", "client/__tests__/**/*.test.ts"],

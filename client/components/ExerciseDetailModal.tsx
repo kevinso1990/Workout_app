@@ -15,12 +15,14 @@ import {
 import Animated, { FadeIn, SlideInDown } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { getExerciseMedia as getStaticExerciseMedia } from "@/lib/exerciseMedia/provider";
 import { getMuscleGroupMeta } from "@/lib/exerciseImages";
+import { translateMuscleGroup, translateExerciseCategory } from "@/lib/exerciseTaxonomy";
 import { sanitizeExerciseInstructions } from "@/services/exerciseApi";
 import {
   EXERCISE_HERO_GIF_HEIGHT,
@@ -30,6 +32,8 @@ import {
 interface Props {
   visible: boolean;
   exerciseName: string;
+  /** Localized name to show as the title; falls back to `exerciseName` (canonical, used for media lookup). */
+  displayName?: string;
   muscleGroup: string;
   onClose: () => void;
 }
@@ -37,10 +41,12 @@ interface Props {
 export default function ExerciseDetailModal({
   visible,
   exerciseName,
+  displayName,
   muscleGroup,
   onClose,
 }: Props) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [instructions, setInstructions] = useState<string[]>([]);
 
@@ -96,19 +102,19 @@ export default function ExerciseDetailModal({
           <View style={styles.headerRow}>
             <View style={styles.titleBlock}>
               <ThemedText style={styles.exerciseName} numberOfLines={2}>
-                {exerciseName}
+                {displayName ?? exerciseName}
               </ThemedText>
               <View style={styles.badges}>
                 <View style={[styles.badge, { backgroundColor: meta.color + "20" }]}>
                   <Feather name={meta.icon as keyof typeof Feather.glyphMap} size={11} color={meta.color} />
                   <ThemedText style={[styles.badgeText, { color: meta.color }]}>
-                    {meta.label}
+                    {translateMuscleGroup(t, muscleGroup)}
                   </ThemedText>
                 </View>
                 {staticMedia.category !== "Exercise" ? (
                   <View style={[styles.badge, { backgroundColor: Colors.light.primary + "15" }]}>
                     <ThemedText style={[styles.badgeText, { color: Colors.light.primary }]}>
-                      {staticMedia.category}
+                      {translateExerciseCategory(t, staticMedia.category)}
                     </ThemedText>
                   </View>
                 ) : null}
@@ -136,7 +142,7 @@ export default function ExerciseDetailModal({
             <View style={styles.cuesHeader}>
               <Feather name="check-circle" size={15} color={Colors.light.primary} />
               <ThemedText style={[styles.cuesTitle, { color: Colors.light.primary }]}>
-                How to perform
+                {t("exercises.howToPerform")}
               </ThemedText>
             </View>
 
@@ -155,7 +161,7 @@ export default function ExerciseDetailModal({
               ))
             ) : (
               <ThemedText style={[styles.cueText, { color: theme.textSecondary }]}>
-                Coaching instructions are not available for this exercise yet.
+                {t("exercises.noInstructions")}
               </ThemedText>
             )}
           </View>

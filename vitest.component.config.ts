@@ -16,6 +16,8 @@ export default defineConfig({
     alias: {
       "react-native": RNW_CJS,
       "@/": path.resolve(__dirname, "client") + "/",
+      "@shared": path.resolve(__dirname, "shared"),
+      "@/assets/brand/logo_main.png": path.join(MOCKS, "assetStub.ts"),
       // Expo native packages
       "expo-linear-gradient": path.join(MOCKS, "expo-linear-gradient.tsx"),
       "expo-haptics": path.join(MOCKS, "expo-haptics.ts"),
@@ -36,6 +38,8 @@ export default defineConfig({
     alias: {
       "react-native": RNW_CJS,
       "@/": path.resolve(__dirname, "client") + "/",
+      "@shared": path.resolve(__dirname, "shared"),
+      "@/assets/brand/logo_main.png": path.join(MOCKS, "assetStub.ts"),
       "expo-linear-gradient": path.join(MOCKS, "expo-linear-gradient.tsx"),
       "expo-haptics": path.join(MOCKS, "expo-haptics.ts"),
       "@expo/vector-icons": path.join(MOCKS, "@expo/vector-icons.tsx"),

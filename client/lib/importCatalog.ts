@@ -3,6 +3,7 @@ import type { ImportedExercise } from "@/hooks/useWorkoutImport";
 export type CatalogRow = {
   id: number;
   name: string;
+  name_de?: string | null;
   muscle_group: string;
   equipment: string;
 };

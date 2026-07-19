@@ -1,154 +1,192 @@
 /**
- * In-app purchase flow scaffolding for iOS (StoreKit) and Android (Google Play Billing).
+ * RevenueCat-backed in-app purchase flow for iOS and Android.
  *
- * This module provides a unified interface that the app uses to trigger purchases.
- * The actual StoreKit / Play Billing SDK calls are marked with TODO comments.
- *
- * ── How to wire up real purchases ───────────────────────────────────────────
- *
- * 1. Install a React Native IAP library. Recommended options:
- *      - react-native-iap (most widely used)
- *          npm install react-native-iap
- *      - expo-iap (Expo-native, currently in beta)
- *          npx expo install expo-iap
- *
- * 2. Follow the library's setup guide for iOS (add StoreKit capability in Xcode)
- *    and Android (add Google Play Billing dependency in build.gradle).
- *
- * 3. Replace the TODO stubs below with the library's API calls.
- *
- * 4. Set EXPO_PUBLIC_SUBSCRIPTIONS_ENABLED=true and EXPO_PUBLIC_APPLE_PRODUCT_ID
- *    / EXPO_PUBLIC_GOOGLE_PRODUCT_ID in your .env.local (or Expo secrets).
- *
- * 5. Build and run on a real device with a sandbox/test account.
- *    See SUBSCRIPTIONS.md → "Sandbox testing walkthrough" for step-by-step.
+ * Configure keys via EXPO_PUBLIC_REVENUECAT_IOS_API_KEY /
+ * EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY. Entitlement id defaults to "pro".
  */
 
 import { Platform } from "react-native";
-import { SUBSCRIPTIONS_ENABLED, APPLE_PRODUCT_ID, GOOGLE_PRODUCT_ID, GOOGLE_PACKAGE_NAME } from "./subscriptionConfig";
-import { api } from "./api";
+import Purchases, {
+  type CustomerInfo,
+  type PurchasesPackage,
+  PURCHASES_ERROR_CODE,
+} from "react-native-purchases";
+
+import {
+  REVENUECAT_ENTITLEMENT_ID,
+  SUBSCRIPTIONS_ENABLED,
+} from "./subscriptionConfig";
+import { decodeJwtSub, ensureAuthToken, getStoredToken } from "./nativeAuth";
+
+export type PurchaseErrorCode =
+  | "cancelled"
+  | "payment_failed"
+  | "network"
+  | "already_subscribed"
+  | "not_configured"
+  | "unknown";
 
 export interface PurchaseResult {
   success: boolean;
   error?: string;
+  errorCode?: PurchaseErrorCode;
+  customerInfo?: CustomerInfo;
 }
 
-/**
- * Initiates a subscription purchase for the Pro tier.
- *
- * On iOS: triggers the StoreKit payment sheet for APPLE_PRODUCT_ID.
- * On Android: triggers the Google Play Billing flow for GOOGLE_PRODUCT_ID.
- * On web: not supported (subscriptions are app-store only for digital content).
- *
- * Returns `{ success: true }` once the backend has validated the purchase
- * and marked the user as Pro.
- */
-export async function purchasePro(): Promise<PurchaseResult> {
+function hasActiveEntitlement(info: CustomerInfo): boolean {
+  return info.entitlements.active[REVENUECAT_ENTITLEMENT_ID]?.isActive === true;
+}
+
+export function mapPurchaseError(err: unknown): PurchaseResult {
+  if (err && typeof err === "object" && "code" in err) {
+    const code = (err as { code?: string; message?: string }).code;
+    const message =
+      (err as { message?: string }).message ?? "Purchase failed";
+
+    switch (code) {
+      case PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR:
+        return {
+          success: false,
+          error: "Purchase cancelled.",
+          errorCode: "cancelled",
+        };
+      case PURCHASES_ERROR_CODE.NETWORK_ERROR:
+        return {
+          success: false,
+          error: "Network error — check your connection and try again.",
+          errorCode: "network",
+        };
+      case PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR:
+        return {
+          success: false,
+          error: "You already have an active subscription.",
+          errorCode: "already_subscribed",
+        };
+      case PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR:
+      case PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR:
+      case PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR:
+      case PURCHASES_ERROR_CODE.PURCHASE_INVALID_ERROR:
+        return {
+          success: false,
+          error: message,
+          errorCode: "payment_failed",
+        };
+      default:
+        return { success: false, error: message, errorCode: "unknown" };
+    }
+  }
+
+  const message = err instanceof Error ? err.message : String(err);
+  return { success: false, error: message, errorCode: "unknown" };
+}
+
+/** Links the RevenueCat customer to the authenticated server user id. */
+export async function syncRevenueCatUserId(): Promise<void> {
+  if (!SUBSCRIPTIONS_ENABLED) return;
+  if (Platform.OS !== "ios" && Platform.OS !== "android") return;
+  await ensureAuthToken();
+  const token = await getStoredToken();
+  const userId = token ? decodeJwtSub(token) : null;
+  if (userId != null) {
+    await Purchases.logIn(String(userId));
+  }
+}
+
+function pickPackage(packages: PurchasesPackage[]): PurchasesPackage | null {
+  if (packages.length === 0) return null;
+  const monthly = packages.find((p) => p.packageType === "MONTHLY");
+  return monthly ?? packages[0];
+}
+
+export async function purchaseProPackage(
+  packages: PurchasesPackage[],
+): Promise<PurchaseResult> {
   if (!SUBSCRIPTIONS_ENABLED) {
-    return { success: false, error: "Subscriptions are not enabled in this build." };
+    return {
+      success: false,
+      error: "Subscriptions are not enabled in this build.",
+      errorCode: "not_configured",
+    };
   }
-  if (Platform.OS === "ios") {
-    return purchaseProIos();
-  } else if (Platform.OS === "android") {
-    return purchaseProAndroid();
-  } else {
-    return { success: false, error: "In-app purchases are only available on iOS and Android." };
-  }
-}
-
-// ── iOS / StoreKit ────────────────────────────────────────────────────────────
-
-async function purchaseProIos(): Promise<PurchaseResult> {
-  if (!APPLE_PRODUCT_ID) {
-    return { success: false, error: "Apple product ID is not configured (EXPO_PUBLIC_APPLE_PRODUCT_ID)." };
+  if (Platform.OS !== "ios" && Platform.OS !== "android") {
+    return {
+      success: false,
+      error: "In-app purchases are only available on iOS and Android.",
+      errorCode: "not_configured",
+    };
   }
 
-  try {
-    // TODO: Replace the block below with your chosen IAP library.
-    //
-    // Example using react-native-iap:
-    //
-    //   import * as IAP from 'react-native-iap';
-    //
-    //   await IAP.initConnection();
-    //   const purchase = await IAP.requestSubscription({ sku: APPLE_PRODUCT_ID });
-    //
-    //   // purchase.transactionReceipt is the base64 StoreKit receipt
-    //   const receiptData = purchase.transactionReceipt;
-    //   await api.validateAppleReceipt({ receiptData });
-    //   await IAP.finishTransaction({ purchase, isConsumable: false });
-    //   await IAP.endConnection();
-    //   return { success: true };
-
-    throw new Error("StoreKit purchase flow not yet implemented. See client/lib/purchases.ts.");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { success: false, error: message };
+  const existing = await Purchases.getCustomerInfo();
+  if (hasActiveEntitlement(existing)) {
+    return {
+      success: true,
+      customerInfo: existing,
+      errorCode: "already_subscribed",
+    };
   }
-}
 
-// ── Android / Google Play Billing ─────────────────────────────────────────────
-
-async function purchaseProAndroid(): Promise<PurchaseResult> {
-  if (!GOOGLE_PRODUCT_ID) {
-    return { success: false, error: "Google product ID is not configured (EXPO_PUBLIC_GOOGLE_PRODUCT_ID)." };
+  let pkg = pickPackage(packages);
+  if (!pkg) {
+    const offerings = await Purchases.getOfferings();
+    pkg = pickPackage(offerings.current?.availablePackages ?? []);
   }
-  if (!GOOGLE_PACKAGE_NAME) {
-    return { success: false, error: "Google package name is not configured (EXPO_PUBLIC_GOOGLE_PACKAGE_NAME)." };
+  if (!pkg) {
+    return {
+      success: false,
+      error: "No subscription package is available right now.",
+      errorCode: "not_configured",
+    };
   }
 
   try {
-    // TODO: Replace the block below with your chosen IAP library.
-    //
-    // Example using react-native-iap:
-    //
-    //   import * as IAP from 'react-native-iap';
-    //
-    //   await IAP.initConnection();
-    //   const purchase = await IAP.requestSubscription({ sku: GOOGLE_PRODUCT_ID });
-    //
-    //   // purchase.purchaseToken is the token to send to the backend
-    //   await api.validateGooglePurchase({
-    //     packageName: GOOGLE_PACKAGE_NAME,
-    //     subscriptionId: GOOGLE_PRODUCT_ID,
-    //     purchaseToken: purchase.purchaseToken,
-    //   });
-    //   await IAP.finishTransaction({ purchase, isConsumable: false });
-    //   await IAP.endConnection();
-    //   return { success: true };
-
-    throw new Error("Google Play Billing flow not yet implemented. See client/lib/purchases.ts.");
+    const { customerInfo } = await Purchases.purchasePackage(pkg);
+    if (!hasActiveEntitlement(customerInfo)) {
+      return {
+        success: false,
+        error: "Purchase completed but Pro entitlement is not active yet.",
+        errorCode: "unknown",
+        customerInfo,
+      };
+    }
+    return { success: true, customerInfo };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { success: false, error: message };
+    return mapPurchaseError(err);
   }
 }
 
-/**
- * Restores any existing subscription (e.g. after reinstall or new device).
- * On iOS: re-fetches the current App Store receipt and re-validates.
- * On Android: queries existing purchases from the Play Billing SDK.
- */
 export async function restorePurchases(): Promise<PurchaseResult> {
   if (!SUBSCRIPTIONS_ENABLED) {
-    return { success: false, error: "Subscriptions are not enabled in this build." };
+    return {
+      success: false,
+      error: "Subscriptions are not enabled in this build.",
+      errorCode: "not_configured",
+    };
   }
-  try {
-    // TODO: Implement restore flow with your chosen IAP library.
-    //
-    // iOS example (react-native-iap):
-    //   await IAP.initConnection();
-    //   const purchases = await IAP.getAvailablePurchases();
-    //   const sub = purchases.find(p => p.productId === APPLE_PRODUCT_ID);
-    //   if (sub?.transactionReceipt) {
-    //     await api.validateAppleReceipt({ receiptData: sub.transactionReceipt });
-    //     return { success: true };
-    //   }
-    //   return { success: false, error: 'No active subscription found.' };
+  if (Platform.OS !== "ios" && Platform.OS !== "android") {
+    return {
+      success: false,
+      error: "Restore is only available on iOS and Android.",
+      errorCode: "not_configured",
+    };
+  }
 
-    throw new Error("Restore purchases not yet implemented. See client/lib/purchases.ts.");
+  try {
+    const customerInfo = await Purchases.restorePurchases();
+    if (!hasActiveEntitlement(customerInfo)) {
+      return {
+        success: false,
+        error: "No active subscription found for this account.",
+        errorCode: "unknown",
+        customerInfo,
+      };
+    }
+    return { success: true, customerInfo };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { success: false, error: message };
+    return mapPurchaseError(err);
   }
+}
+
+/** @deprecated Use SubscriptionContext.purchasePro instead. */
+export async function purchasePro(): Promise<PurchaseResult> {
+  return purchaseProPackage([]);
 }

@@ -1,23 +1,23 @@
 import React, { Component, ComponentType, PropsWithChildren } from "react";
+
 import { ErrorFallback, ErrorFallbackProps } from "@/components/ErrorFallback";
+import { reportCapturedError } from "@/lib/globalErrorReporter";
 
 export type ErrorBoundaryProps = PropsWithChildren<{
   FallbackComponent?: ComponentType<ErrorFallbackProps>;
   onError?: (error: Error, stackTrace: string) => void;
 }>;
 
-type ErrorBoundaryState = { error: Error | null };
-
-/**
- * This is a special case for for using the class components. Error boundaries must be class components because React only provides error boundary functionality through lifecycle methods (componentDidCatch and getDerivedStateFromError) which are not available in functional components.
- * https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
- */
+type ErrorBoundaryState = {
+  error: Error | null;
+  componentStack: string | null;
+};
 
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  state: ErrorBoundaryState = { error: null };
+  state: ErrorBoundaryState = { error: null, componentStack: null };
 
   static defaultProps: {
     FallbackComponent: ComponentType<ErrorFallbackProps>;
@@ -25,18 +25,24 @@ export class ErrorBoundary extends Component<
     FallbackComponent: ErrorFallback,
   };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { error };
   }
 
   componentDidCatch(error: Error, info: { componentStack: string }): void {
+    const componentStack = info.componentStack ?? "";
+    this.setState({ componentStack });
+    reportCapturedError(error, {
+      componentStack,
+      source: "react-error-boundary",
+    });
     if (typeof this.props.onError === "function") {
-      this.props.onError(error, info.componentStack);
+      this.props.onError(error, componentStack);
     }
   }
 
   resetError = (): void => {
-    this.setState({ error: null });
+    this.setState({ error: null, componentStack: null });
   };
 
   render() {
@@ -45,6 +51,8 @@ export class ErrorBoundary extends Component<
     return this.state.error && FallbackComponent ? (
       <FallbackComponent
         error={this.state.error}
+        componentStack={this.state.componentStack ?? undefined}
+        source="react-error-boundary"
         resetError={this.resetError}
       />
     ) : (

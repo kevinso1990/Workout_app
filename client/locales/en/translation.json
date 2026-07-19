@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "plans": "Plans",
+    "exercises": "Exercises",
     "calendar": "Calendar",
     "progress": "Progress",
     "history": "History",
@@ -10,7 +11,9 @@
   "planDetail": {
     "dayLabel": "Day",
     "exerciseCount_one": "{{count}} exercise",
-    "exerciseCount_other": "{{count}} exercises"
+    "exerciseCount_other": "{{count}} exercises",
+    "daysPerWeekCount_one": "{{count}} day per week",
+    "daysPerWeekCount_other": "{{count}} days per week"
   },
   "planGeneration": {
     "fallbackBanner": "We used a standard template — AI generation failed (no connection or server error). You can regenerate from Plan Settings."
@@ -52,7 +55,11 @@
   },
   "plans": {
     "title": "Plans",
-    "planSummary": "{{workouts}} workouts/week · {{days}} days",
+    "planSummary": "{{workoutsLabel}} · {{daysLabel}}",
+    "workoutsPerWeek_one": "{{count}} workout/week",
+    "workoutsPerWeek_other": "{{count}} workouts/week",
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
     "importBanner": {
       "title": "Import a plan",
       "subtitle": "PDF or photo → AI review",
@@ -69,6 +76,8 @@
     "deleteConfirm": "Are you sure? This can't be undone.",
     "deleteConfirmNamed": "Remove “{{name}}”? This cannot be undone.",
     "delete": "Delete",
+    "planNotFound": "Plan not found",
+    "planOptions": "Plan options",
     "seeAllPlans": "See {{count}} more plans",
     "showLess": "Show fewer plans",
     "coachBriefTitle": "Coach",
@@ -126,6 +135,15 @@
     "labelGoal": "Goal",
     "labelEquipment": "Equipment",
     "recommendedSplit": "Recommended Split",
+    "splitPreview": {
+      "fullBody": "Full Body workout",
+      "upperLower": "Upper/Lower split",
+      "pushPullLegs": "Push/Pull/Legs split",
+      "upperLowerX2": "Upper/Lower/Upper/Lower split",
+      "pushPullLegsUpperLower": "Push/Pull/Legs/Upper/Lower split",
+      "pushPullLegsX2": "Push/Pull/Legs x2 split",
+      "fullWeek": "Full weekly program"
+    },
     "generateNow": "Generate My Plan",
     "whyThisPlan": "Why this plan?",
     "whyThisPlanDesc": "Training {{days}} days/week as a {{experience}} with a {{goal}} goal, the {{split}} is the most effective structure — it balances frequency and recovery so you make progress without burning out."
@@ -156,13 +174,110 @@
   "exercisesScreen": {
     "searchPlaceholder": "Search 800+ exercises...",
     "searchModalPlaceholder": "Search exercises...",
-    "customExercisePlaceholder": "e.g., Single Arm Cable Row"
+    "customExercisePlaceholder": "e.g., Single Arm Cable Row",
+    "createAction": "Create",
+    "browseAction": "Browse 800+",
+    "createModal": {
+      "title": "Create Custom Exercise",
+      "nameLabel": "Exercise Name",
+      "muscleGroupLabel": "Muscle Group",
+      "equipmentLabel": "Equipment",
+      "createButton": "Create Exercise",
+      "customBadge": "Custom"
+    },
+    "progressModal": {
+      "close": "Close",
+      "sessions": "Sessions",
+      "totalSets": "Total Sets",
+      "totalReps": "Total Reps",
+      "totalVolume": "Total Volume",
+      "personalRecord": "Personal Record",
+      "volume": "Volume: {{volume}}kg",
+      "volumeTrend": "Volume Trend",
+      "recentSessions": "Recent Sessions",
+      "sets_one": "{{count}} set",
+      "sets_other": "{{count}} sets",
+      "noDataTitle": "No workout data yet",
+      "noDataSubtitle": "Complete a workout with this exercise to see your progress"
+    }
+  },
+  "exercises": {
+    "swapBadge": "Swap",
+    "exerciseCount_one": "{{count}} exercise",
+    "exerciseCount_other": "{{count}} exercises",
+    "customCount": " ({{count}} custom)",
+    "howToPerform": "How to perform",
+    "noInstructions": "Coaching instructions are not available for this exercise yet.",
+    "repsCount_one": "{{count}} rep",
+    "repsCount_other": "{{count}} reps",
+    "muscleGroups": {
+      "all": "All",
+      "chest": "Chest",
+      "back": "Back",
+      "shoulders": "Shoulders",
+      "legs": "Legs",
+      "arms": "Arms",
+      "core": "Core",
+      "fullBody": "Full Body",
+      "biceps": "Biceps",
+      "triceps": "Triceps",
+      "forearms": "Forearms",
+      "traps": "Traps",
+      "rearDelts": "Rear Delts",
+      "quads": "Quads",
+      "hamstrings": "Hamstrings",
+      "calves": "Calves",
+      "glutes": "Glutes"
+    },
+    "equipment": {
+      "barbell": "Barbell",
+      "dumbbell": "Dumbbell",
+      "cable": "Cable",
+      "machine": "Machine",
+      "bodyweight": "Bodyweight",
+      "kettlebell": "Kettlebell",
+      "bands": "Bands",
+      "other": "Other"
+    },
+    "category": {
+      "compound": "Compound",
+      "isolation": "Isolation",
+      "genericExercise": "Exercise"
+    }
   },
   "importWorkout": {
     "pasteLabel": "Or paste your plan text here",
     "pastePlaceholder": "Paste workout plan text (e.g. from PDF, Notes, or spreadsheet)…",
     "analyzePaste": "Analyze with AI",
     "pasteTooShort": "Please paste at least 20 characters of plan text.",
+    "defaultPlanName": "My Plan",
+    "defaultDayName": "Day 1",
+    "defaultImportedPlanName": "Imported Plan",
+    "unreadableMessage": "Sorry, I couldn't clearly read the exercises. Try a sharper photo, more light, or getting closer to the text.",
+    "importFailedTitle": "Import failed",
+    "loadingReading": "Reading your workout plan...",
+    "loadingAlmostDone": "Almost done...",
+    "couldNotAccessPhotos": "Could not access photos.",
+    "unsupportedFileType": "That file type isn't supported yet — try a PDF, Excel, or CSV.",
+    "couldNotOpenFile": "Could not open that file.",
+    "couldNotReadPlan": "Could not read the plan. Try a clearer photo or better lighting.",
+    "addAtLeastOneExercise": "Add at least one exercise before saving.",
+    "saveFailedTryAgain": "Save failed. Please try again.",
+    "landingTitle": "Import Workout Plan",
+    "landingSubtitle": "Take a photo or upload a screenshot of any workout plan",
+    "takePhoto": "Take Photo",
+    "chooseFromLibrary": "Choose from Library",
+    "pickFile": "Pick PDF / Excel / CSV",
+    "openSettings": "Open Settings",
+    "startWorkoutButton": "Start Workout",
+    "viewPlanButton": "View Plan",
+    "selectedPhotosCount": "Selected Photos ({{count}}/5)",
+    "cameraButton": "Camera",
+    "libraryButton": "Library",
+    "aiScanTitle": "AI Scan",
+    "analyzingDocument": "Analyzing document…",
+    "importSuccessTitle": "Import Successful",
+    "importSuccessDefault": "Your workout plan has been saved.",
     "review": {
       "title": "Review & correct plan",
       "subtitle": "{{count}} exercises detected — adjust anything before saving.",
@@ -202,11 +317,21 @@
     "neverPerformed": "Never completed",
     "lastPerformedToday": "Today",
     "lastPerformedYesterday": "Yesterday",
-    "lastPerformedDaysAgo": "{{count}} days ago"
+    "lastPerformedDaysAgo": "{{count}} days ago",
+    "chooseDay": "Choose a workout to start"
   },
   "activeWorkout": {
     "setsLogged": "{{count}} sets logged",
     "restTimer": "Rest Timer",
+    "restTimerHint": "Turns the automatic countdown after each completed set on or off.",
+    "exerciseChipLabel": "{{name}}, {{completed}} of {{total}} sets",
+    "moveExerciseUp": "Move exercise up",
+    "moveExerciseDown": "Move exercise down",
+    "previousExercise": "Previous exercise",
+    "nextExercise": "Next exercise",
+    "restTitle": "Rest Time",
+    "restHint": "Take a breather, you earned it",
+    "skipRest": "Skip Rest",
     "skip": "Skip",
     "set": "Set",
     "previous": "Previous",
@@ -226,6 +351,24 @@
       "restored": "Your active workout was restored."
     },
     "finishWorkout": "Finish Workout",
+    "genericWorkoutName": "Workout",
+    "swapExercise": "Swap exercise",
+    "swapExerciseTitle": "Swap Exercise",
+    "addExercise": "Add Exercise",
+    "addExerciseTitle": "Add Exercise",
+    "removeSet": "Remove set",
+    "exerciseSwapped": "Swapped to {{name}}",
+    "exerciseAdded": "Added {{name}}",
+    "picker": {
+      "searchPlaceholder": "Search exercises...",
+      "noResults": "No exercises found"
+    },
+    "shareText": {
+      "complete": "💪 Workout Complete — {{name}}",
+      "prs": "🏆 PRs: {{list}}",
+      "stats": "⏱ {{time}} · {{sets}} sets · {{volume}} kg volume",
+      "tagline": "Tracked with TrackYourLift"
+    },
     "pauseLabel": "Pause",
     "exerciseOf": "Exercise {{current}} of {{total}}",
     "setsRepsSummary": "{{sets}} sets × {{reps}} reps",
@@ -249,6 +392,14 @@
     "estimated1RM": "Est. 1RM",
     "tryProgressWeight": "You hit all reps last session — try +{{step}}{{unit}} today",
     "firstWorkoutTip": "First workout? Adjust weight with the +/− buttons, set your reps, then tap the ✓ to log each set. Use the notes field to write down how it felt.",
+    "plateCalc": {
+      "title": "Plate Calculator",
+      "barWeight": "Bar weight",
+      "total": "Total: {{weight}}kg",
+      "justTheBar": "Just the bar",
+      "perSide": "{{plates}} kg per side",
+      "gotIt": "Got it"
+    },
     "modeSimple": "Simple",
     "modeAdvanced": "Advanced",
     "switchToAdvanced": "Switch to Advanced mode (RiR, Drop Sets, Plate Calculator)",
@@ -320,8 +471,15 @@
     "weeklyVolume": "Weekly Volume",
     "totalKgLifted": "Total kg lifted",
     "muscleBalanceTitle": "Muscle Balance",
+    "muscleCoverageEmpty": "Complete workouts to see muscle coverage",
+    "setsCount_one": "{{count}} set",
+    "setsCount_other": "{{count}} sets",
     "last30Days": "Last 30 days",
     "trainingHeatmap": "Training Heatmap",
+    "trainToSeeHeatmap": "Train to see your heatmap",
+    "thisWeekShort": "This",
+    "lastWeekShort": "Last",
+    "exerciseProgress": "Exercise Progress",
     "noDataFor": "No data for {{exercise}}",
     "logCompoundLifts": "Log compound lifts to track your strength",
     "noWorkoutsYet": "No Workouts Yet",
@@ -431,7 +589,11 @@
     "badge_hundredWorkouts": "100 workouts",
     "badge_twoFiftyWorkouts": "250 workouts",
     "greeting": "TrackYourLift Athlete",
-    "statsSummary": "{{plans}} plans created · {{workouts}} workouts completed",
+    "statsSummary": "{{plansLabel}} · {{workoutsLabel}}",
+    "plansCreated_one": "{{count}} plan created",
+    "plansCreated_other": "{{count}} plans created",
+    "workoutsCompleted_one": "{{count}} workout completed",
+    "workoutsCompleted_other": "{{count}} workouts completed",
     "preferences": "Preferences",
     "restTimer": "Rest Timer",
     "restTimerOn": "Auto-starts after each set",
@@ -569,6 +731,19 @@
         "description": "Dedicate each day to specific muscle groups"
       }
     },
+    "recommended": "Recommended",
+    "dayNames": {
+      "push": "Push",
+      "pull": "Pull",
+      "legs": "Legs",
+      "upper": "Upper",
+      "lower": "Lower",
+      "fullBody": "Full Body",
+      "chest": "Chest",
+      "back": "Back",
+      "shoulders": "Shoulders",
+      "arms": "Arms"
+    },
     "creatingPlans": "Creating plans...",
     "useRecommended": "Use Recommended Split",
     "buildOwn": "Build My Own",
@@ -616,7 +791,43 @@
     "beginnerTip": "Start with lighter weights and focus on learning correct form. You can always increase the weight next session.",
     "exercisesPerSession": "~{{count}} exercises",
     "approxSessionTime": "~{{min}} min/session",
-    "notifOptional": "Workout reminders & weekly summaries"
+    "notifOptional": "Workout reminders & weekly summaries",
+    "exercisePreference": {
+      "title": "How would you like\nto pick exercises?",
+      "subtitle": "Don't worry, you can swap exercises anytime",
+      "defaultsTitle": "Use Defaults",
+      "defaultsDesc": "Start with proven exercises for each muscle group",
+      "chooseTitle": "I'll Choose",
+      "chooseDesc": "Browse our exercise library and pick your favorites",
+      "chooseSplitButton": "Choose Split",
+      "createPlanButton": "Create My Plan"
+    },
+    "cardioSports": {
+      "sportRunning": "Running",
+      "sportBasketball": "Basketball",
+      "sportBoxing": "Boxing",
+      "sportSwimming": "Swimming",
+      "sportCycling": "Cycling",
+      "sportSoccer": "Soccer",
+      "sportHIIT": "HIIT",
+      "sportYoga": "Yoga",
+      "title": "How many days cardio\nor other sports?",
+      "subtitle": "Beyond your gym days, add activities you love",
+      "yesTitle": "Yes, add some variety",
+      "yesDesc": "Include cardio or sports in my week",
+      "noTitle": "No, just weights",
+      "noDesc": "Focus on strength training only",
+      "selectActivities": "Select your activities",
+      "chooseOneOrMore": "Choose one or more"
+    },
+    "splitPreference": {
+      "title": "How would you like to\nset up your split?",
+      "subtitle": "You can always change this later",
+      "recommendTitle": "Recommend for Me",
+      "recommendDesc": "We'll create an optimal split based on your schedule",
+      "chooseTitle": "I'll Choose",
+      "chooseDesc": "Select your own workout split and customize it"
+    }
   },
   "splits": {
     "fullBody": "Full Body",
@@ -647,7 +858,27 @@
     "title": "Muscle Balance (7 days)"
   },
   "exerciseChart": {
-    "weightProgression": "Weight Progression"
+    "weightProgression": "Weight Progression",
+    "sessions": "Sessions",
+    "bestWeight": "Best Weight",
+    "est1RM": "Est. 1RM",
+    "maxWeight": "Max Weight",
+    "estimated1RM": "Estimated 1RM",
+    "firstSession": "First Session",
+    "pb": "PB",
+    "weight": "Weight",
+    "reps": "Reps",
+    "logAgainPrompt": "Log again to see progress charts",
+    "bestSession": "Best Session",
+    "personalBest": "Personal Best",
+    "est1RMValue": "Est. 1RM: {{value}}kg",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_other": "{{count}} sessions",
+    "daysAgoShort_one": "{{count}}d ago",
+    "daysAgoShort_other": "{{count}}d ago",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "best": "best"
   },
   "recovery": {
     "title": "Recovery Status",
@@ -731,6 +962,8 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "back": "Back",
+    "loading": "Loading...",
     "dismiss": "Dismiss",
     "ok": "OK",
     "kg": "kg",

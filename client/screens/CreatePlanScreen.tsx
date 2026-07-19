@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -18,14 +19,20 @@ import Animated, {
   withSpring,
   FadeInDown,
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
-import { saveWorkoutPlan, generateDefaultPlan } from "@/lib/storage";
+import {
+  saveWorkoutPlan,
+  getUserPreferences,
+} from "@/lib/storage";
+import { scheduleDataSync } from "@/lib/dataSync";
+import { generateWorkoutPlan } from "@/lib/planGeneration";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { hapticError, hapticLight, hapticSuccess } from "@/lib/safeHaptics";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -84,6 +91,7 @@ export default function CreatePlanScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [planName, setPlanName] = useState("");
@@ -96,25 +104,38 @@ export default function CreatePlanScreen() {
   }));
 
   const handleDaySelect = (day: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     setDaysPerWeek(day);
   };
 
   const handleCreate = async () => {
     if (!planName.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      hapticError();
       return;
     }
 
     setIsLoading(true);
     try {
-      const plan = generateDefaultPlan(daysPerWeek, planName.trim());
+      const prefs = await getUserPreferences();
+      const { plan } = await generateWorkoutPlan({
+        frequency: daysPerWeek,
+        experience: prefs?.fitnessLevel ?? "beginner",
+        goal: prefs?.fitnessGoals?.[0] ?? "build_muscle",
+        equipment: prefs?.equipment ?? null,
+        focusMuscles: prefs?.focusMuscles,
+        planName: planName.trim(),
+      });
       await saveWorkoutPlan(plan);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
+      scheduleDataSync();
+      hapticSuccess();
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate("Main");
+      }
     } catch (error) {
       console.error("Error creating plan:", error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      hapticError();
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +159,7 @@ export default function CreatePlanScreen() {
         entering={FadeInDown.delay(100).duration(400)}
         style={styles.section}
       >
-        <ThemedText style={styles.label}>Plan Name</ThemedText>
+        <ThemedText style={styles.label}>{t("planBuilder.newPlan")}</ThemedText>
         <TextInput
           style={[
             styles.input,
@@ -148,11 +169,11 @@ export default function CreatePlanScreen() {
               borderColor: theme.border,
             },
           ]}
-          placeholder="e.g., Summer Shred, Strength Builder"
+          placeholder={t("planBuilder.planNamePlaceholder")}
           placeholderTextColor={theme.textSecondary}
           value={planName}
           onChangeText={setPlanName}
-          autoFocus
+          autoFocus={Platform.OS !== "web"}
           testID="input-plan-name"
         />
       </Animated.View>
@@ -161,11 +182,13 @@ export default function CreatePlanScreen() {
         entering={FadeInDown.delay(200).duration(400)}
         style={styles.section}
       >
-        <ThemedText style={styles.label}>Days Per Week</ThemedText>
+        <ThemedText style={styles.label}>
+          {t("createPlan.labelFrequency")}
+        </ThemedText>
         <ThemedText
           style={[styles.hint, { color: theme.textSecondary }]}
         >
-          How many days will you workout?
+          {t("createPlan.frequencyHint")}
         </ThemedText>
         <View style={styles.pillsContainer}>
           {DAYS.map((day) => (
@@ -183,7 +206,7 @@ export default function CreatePlanScreen() {
         entering={FadeInDown.delay(300).duration(400)}
         style={styles.previewSection}
       >
-        <ThemedText style={styles.label}>Your Split</ThemedText>
+        <ThemedText style={styles.label}>{t("createPlan.recommendedSplit")}</ThemedText>
         <View
           style={[
             styles.previewCard,
@@ -200,18 +223,18 @@ export default function CreatePlanScreen() {
             style={[styles.previewText, { color: theme.textSecondary }]}
           >
             {daysPerWeek === 1
-              ? "Full Body workout"
+              ? t("createPlan.splitPreview.fullBody")
               : daysPerWeek === 2
-                ? "Upper/Lower split"
+                ? t("createPlan.splitPreview.upperLower")
                 : daysPerWeek === 3
-                  ? "Push/Pull/Legs split"
+                  ? t("createPlan.splitPreview.pushPullLegs")
                   : daysPerWeek === 4
-                    ? "Upper/Lower/Upper/Lower split"
+                    ? t("createPlan.splitPreview.upperLowerX2")
                     : daysPerWeek === 5
-                      ? "Push/Pull/Legs/Upper/Lower split"
+                      ? t("createPlan.splitPreview.pushPullLegsUpperLower")
                       : daysPerWeek === 6
-                        ? "Push/Pull/Legs x2 split"
-                        : "Full weekly program"}
+                        ? t("createPlan.splitPreview.pushPullLegsX2")
+                        : t("createPlan.splitPreview.fullWeek")}
           </ThemedText>
         </View>
       </Animated.View>
@@ -245,7 +268,9 @@ export default function CreatePlanScreen() {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <ThemedText style={styles.buttonText}>Create Plan</ThemedText>
+              <ThemedText style={styles.buttonText}>
+                {t("plans.createPlan")}
+              </ThemedText>
             )}
           </View>
         </AnimatedPressable>

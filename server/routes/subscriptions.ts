@@ -17,6 +17,9 @@ router.post("/validate/google", requireAuth, subscriptionController.validateGoog
 // (no auth — Apple calls this server-to-server; we validate via JWS signature)
 router.post("/webhooks/apple",  subscriptionController.appleWebhook);
 
+// POST /api/subscriptions/webhooks/revenuecat — RevenueCat lifecycle events
+router.post("/webhooks/revenuecat", subscriptionController.revenueCatWebhook);
+
 // POST /api/subscriptions/webhooks/google — Google Play Real-time Developer Notifications
 // (no auth — Google calls via Pub/Sub; validate via GOOGLE_PUBSUB_TOKEN query param)
 router.post("/webhooks/google", subscriptionController.googleWebhook);

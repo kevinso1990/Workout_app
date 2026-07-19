@@ -8,6 +8,8 @@ import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 export type GeminiGenerateOptions = {
   /** When true, enables `google_search` grounding via the REST API. */
   grounding?: boolean;
+  /** When set, forces JSON output matching this schema (Gemini structured outputs). */
+  responseSchema?: Record<string, unknown>;
 };
 
 function modelChain(): string[] {
@@ -26,10 +28,11 @@ function extractTextFromRestResponse(data: unknown): string | null {
   return parts.map((p) => p.text ?? "").join("").trim() || null;
 }
 
-/** REST generateContent — supports `google_search` tool on Gemini 2.x models. */
-async function generateWithGroundingRest(
+/** REST generateContent — supports grounding and/or structured JSON schema. */
+async function generateWithRest(
   modelName: string,
   parts: Part[],
+  options?: GeminiGenerateOptions,
 ): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY not configured");
@@ -37,13 +40,24 @@ async function generateWithGroundingRest(
   const url =
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(key)}`;
 
+  const generationConfig: Record<string, unknown> = {};
+  if (options?.responseSchema) {
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.responseSchema = options.responseSchema;
+  }
+
+  const body: Record<string, unknown> = {
+    contents: [{ role: "user", parts }],
+    ...(Object.keys(generationConfig).length ? { generationConfig } : {}),
+  };
+  if (options?.grounding) {
+    body.tools = [{ google_search: {} }];
+  }
+
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts }],
-      tools: [{ google_search: {} }],
-    }),
+    body: JSON.stringify(body),
   });
 
   const data = (await res.json()) as { error?: { message?: string } };
@@ -55,6 +69,14 @@ async function generateWithGroundingRest(
   const text = extractTextFromRestResponse(data);
   if (!text) throw new Error("Empty Gemini response");
   return text;
+}
+
+/** @deprecated Use generateWithRest */
+async function generateWithGroundingRest(
+  modelName: string,
+  parts: Part[],
+): Promise<string> {
+  return generateWithRest(modelName, parts, { grounding: true });
 }
 
 /** SDK path without grounding (multimodal PDF/image parts). */
@@ -77,12 +99,14 @@ export async function geminiGenerateContent(
   options?: GeminiGenerateOptions,
 ): Promise<string> {
   const useGrounding = options?.grounding === true;
+  const useSchema = !!options?.responseSchema;
   const errors: string[] = [];
 
   for (const modelName of modelChain()) {
     try {
-      if (useGrounding) {
-        return await generateWithGroundingRest(modelName, parts);
+      // Structured JSON or grounding require REST API.
+      if (useSchema || useGrounding) {
+        return await generateWithRest(modelName, parts, options);
       }
       return await generateWithSdk(modelName, parts);
     } catch (err) {

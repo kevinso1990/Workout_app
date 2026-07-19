@@ -35,6 +35,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
+import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
 import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
 import { NativeRecoveryPanel } from "@/components/progress/NativeRecoveryPanel";
@@ -205,7 +206,7 @@ function MuscleBalance({
       {totalSets === 0 ? (
         <View style={styles.muscleEmpty}>
           <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
-            Complete workouts to see muscle coverage
+            {t("progress.muscleCoverageEmpty")}
           </ThemedText>
         </View>
       ) : (
@@ -216,7 +217,7 @@ function MuscleBalance({
               <View key={idx} style={styles.muscleRow}>
                 <View style={styles.muscleNameContainer}>
                   <ThemedText style={[styles.muscleName, { color: theme.text }]}>
-                    {muscle.name}
+                    {translateMuscleGroup(t, muscle.name)}
                   </ThemedText>
                 </View>
                 <View style={styles.muscleBarWrapper}>
@@ -230,7 +231,7 @@ function MuscleBalance({
                     />
                   </View>
                   <ThemedText style={[styles.muscleSets, { color: theme.textSecondary }]}>
-                    {muscle.sets} sets
+                    {t("progress.setsCount", { count: muscle.sets })}
                   </ThemedText>
                 </View>
               </View>
@@ -493,7 +494,7 @@ function MuscleHeatmap({
                 ]} 
               />
               <ThemedText style={[styles.heatmapLegendText, { color: theme.text }]}>
-                {muscle.name}
+                {translateMuscleGroup(t, muscle.name)}
               </ThemedText>
               <ThemedText style={[styles.heatmapLegendValue, { color: theme.textSecondary }]}>
                 {muscle.sets}
@@ -502,7 +503,7 @@ function MuscleHeatmap({
           ))}
           {data.every(d => d.sets === 0) ? (
             <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
-              Train to see your heatmap
+              {t("progress.trainToSeeHeatmap")}
             </ThemedText>
           ) : null}
         </View>
@@ -519,7 +520,7 @@ function WorkoutHistoryItem({
   index: number;
 }) {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const scale = useSharedValue(1);
   const cardio = isCardioSession(session);
 
@@ -534,10 +535,10 @@ function WorkoutHistoryItem({
       (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (diffDays === 0) return t("startWorkout.lastPerformedToday");
+    if (diffDays === 1) return t("startWorkout.lastPerformedYesterday");
+    if (diffDays < 7) return t("startWorkout.lastPerformedDaysAgo", { count: diffDays });
+    return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
   };
 
   const calculateVolume = () => {
@@ -697,15 +698,16 @@ function ExerciseProgressRow({
   onPress: () => void;
 }) {
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
 
   const formatLastUsed = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (diffDays === 0) return t("exerciseChart.today");
+    if (diffDays === 1) return t("exerciseChart.yesterday");
+    if (diffDays < 7) return t("exerciseChart.daysAgoShort", { count: diffDays });
+    return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
   };
 
   return (
@@ -722,7 +724,7 @@ function ExerciseProgressRow({
           {exercise.exerciseName}
         </ThemedText>
         <ThemedText style={[styles.exerciseRowMeta, { color: theme.textSecondary }]}>
-          {exercise.totalSessions} session{exercise.totalSessions !== 1 ? "s" : ""} · {formatLastUsed(exercise.lastUsed)}
+          {t("exerciseChart.sessionCount", { count: exercise.totalSessions })} · {formatLastUsed(exercise.lastUsed)}
         </ThemedText>
       </View>
       <View style={styles.exerciseRowRight}>
@@ -730,7 +732,7 @@ function ExerciseProgressRow({
           {exercise.bestSession.maxWeight}kg
         </ThemedText>
         <ThemedText style={[styles.exerciseRowWeightLabel, { color: theme.textSecondary }]}>
-          best
+          {t("exerciseChart.best")}
         </ThemedText>
       </View>
       <Feather name="chevron-right" size={16} color={theme.textSecondary} style={{ marginLeft: Spacing.xs }} />
@@ -748,11 +750,12 @@ function ExerciseDetailModal({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
 
   if (!exercise) return null;
 
   const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", {
+    new Date(dateString).toLocaleDateString(i18n.language, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -795,7 +798,7 @@ function ExerciseDetailModal({
                 {exercise.totalSessions}
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
-                Sessions
+                {t("exerciseChart.sessions")}
               </ThemedText>
             </View>
             <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
@@ -803,7 +806,7 @@ function ExerciseDetailModal({
                 {exercise.bestSession.maxWeight}kg
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
-                Best Weight
+                {t("exerciseChart.bestWeight")}
               </ThemedText>
             </View>
             <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
@@ -811,7 +814,7 @@ function ExerciseDetailModal({
                 {exercise.bestSession.estimated1RM}kg
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
-                Est. 1RM
+                {t("exerciseChart.est1RM")}
               </ThemedText>
             </View>
           </View>
@@ -821,7 +824,7 @@ function ExerciseDetailModal({
               {/* Max Weight chart */}
               <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
                 <View style={styles.modalChartHeader}>
-                  <ThemedText style={styles.modalChartTitle}>Max Weight</ThemedText>
+                  <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.maxWeight")}</ThemedText>
                   <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
                 </View>
                 <SvgLineChart data={weightData} color={Colors.light.primary} chartId="weight" />
@@ -838,7 +841,7 @@ function ExerciseDetailModal({
               {/* Est. 1RM chart */}
               <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
                 <View style={styles.modalChartHeader}>
-                  <ThemedText style={styles.modalChartTitle}>Estimated 1RM</ThemedText>
+                  <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.estimated1RM")}</ThemedText>
                   <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
                 </View>
                 <SvgLineChart data={ormData} color="#8B5CF6" chartId="orm" />
@@ -856,7 +859,7 @@ function ExerciseDetailModal({
             /* 1 session: show stats card + prompt to log again */
             <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
               <View style={styles.modalChartHeader}>
-                <ThemedText style={styles.modalChartTitle}>First Session</ThemedText>
+                <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.firstSession")}</ThemedText>
                 <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>
                   {formatDate(exercise.sessions[0].date)}
                 </ThemedText>
@@ -868,11 +871,11 @@ function ExerciseDetailModal({
                       {exercise.sessions[0].maxWeight}kg
                     </ThemedText>
                     <View style={styles.pbBadge}>
-                      <ThemedText style={styles.pbBadgeText}>PB</ThemedText>
+                      <ThemedText style={styles.pbBadgeText}>{t("exerciseChart.pb")}</ThemedText>
                     </View>
                   </View>
                   <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
-                    Weight
+                    {t("exerciseChart.weight")}
                   </ThemedText>
                 </View>
                 <View style={[styles.singleSessionDivider, { backgroundColor: theme.border }]} />
@@ -881,7 +884,7 @@ function ExerciseDetailModal({
                     {exercise.sessions[0].maxWeightReps}
                   </ThemedText>
                   <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
-                    Reps
+                    {t("exerciseChart.reps")}
                   </ThemedText>
                 </View>
                 <View style={[styles.singleSessionDivider, { backgroundColor: theme.border }]} />
@@ -890,14 +893,14 @@ function ExerciseDetailModal({
                     {exercise.sessions[0].estimated1RM}kg
                   </ThemedText>
                   <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
-                    Est. 1RM
+                    {t("exerciseChart.est1RM")}
                   </ThemedText>
                 </View>
               </View>
               <View style={styles.logAgainRow}>
                 <Feather name="trending-up" size={13} color={theme.textSecondary} />
                 <ThemedText style={[styles.logAgainText, { color: theme.textSecondary }]}>
-                  Log again to see progress charts
+                  {t("exerciseChart.logAgainPrompt")}
                 </ThemedText>
               </View>
             </View>
@@ -909,7 +912,7 @@ function ExerciseDetailModal({
               <Feather name="award" size={20} color={Colors.light.primary} />
             </View>
             <View style={styles.bestSessionInfo}>
-              <ThemedText style={styles.modalChartTitle}>Best Session</ThemedText>
+              <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.bestSession")}</ThemedText>
               <ThemedText style={[styles.bestSessionDate, { color: theme.textSecondary }]}>
                 {formatDate(exercise.bestSession.date)}
               </ThemedText>
@@ -918,11 +921,11 @@ function ExerciseDetailModal({
                   {exercise.bestSession.maxWeight}kg × {exercise.bestSession.maxWeightReps} reps
                 </ThemedText>
                 <View style={styles.pbBadge}>
-                  <ThemedText style={styles.pbBadgeText}>Personal Best</ThemedText>
+                  <ThemedText style={styles.pbBadgeText}>{t("exerciseChart.personalBest")}</ThemedText>
                 </View>
               </View>
               <ThemedText style={[styles.bestSessionStats, { color: theme.textSecondary }]}>
-                Est. 1RM: {exercise.bestSession.estimated1RM}kg
+                {t("exerciseChart.est1RMValue", { value: exercise.bestSession.estimated1RM })}
               </ThemedText>
             </View>
           </View>
@@ -940,6 +943,7 @@ function ExerciseProgressSection({
   index: number;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [selectedExercise, setSelectedExercise] = useState<ExerciseProgressData | null>(null);
 
   if (data.length === 0) return null;
@@ -950,7 +954,7 @@ function ExerciseProgressSection({
         entering={FadeInDown.delay(index * 100).duration(400)}
         style={styles.sectionHeader}
       >
-        <ThemedText style={styles.sectionTitle}>Exercise Progress</ThemedText>
+        <ThemedText style={styles.sectionTitle}>{t("progress.exerciseProgress")}</ThemedText>
       </Animated.View>
 
       <Animated.View
@@ -1132,9 +1136,9 @@ export default function ProgressScreen() {
 
       const weekLabel =
         i === 0
-          ? "This"
+          ? t("progress.thisWeekShort")
           : i === 1
-          ? "Last"
+          ? t("progress.lastWeekShort")
           : `${i}w`;
 
       weeks.push({ week: weekLabel, volume: weekVolume });

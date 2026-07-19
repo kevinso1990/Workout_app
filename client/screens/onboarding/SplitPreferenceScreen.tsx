@@ -11,6 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -120,6 +121,7 @@ function OptionCard({
 export default function SplitPreferenceScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const { state, setSplitPreference } = useOnboarding();
@@ -162,16 +164,16 @@ export default function SplitPreferenceScreen() {
 
           <Animated.View entering={FadeInUp.delay(200).duration(500)}>
             <OnboardingHeading
-              title={"How would you like to\nset up your split?"}
-              subtitle="You can always change this later"
+              title={t("onboarding.splitPreference.title")}
+              subtitle={t("onboarding.splitPreference.subtitle")}
             />
           </Animated.View>
 
           <View style={styles.optionsContainer}>
             <Animated.View entering={FadeInUp.delay(300).duration(500)}>
               <OptionCard
-                title="Recommend for Me"
-                description="We'll create an optimal split based on your schedule"
+                title={t("onboarding.splitPreference.recommendTitle")}
+                description={t("onboarding.splitPreference.recommendDesc")}
                 icon="zap"
                 selected={state.splitPreference === "recommended"}
                 onPress={() => handleSelect("recommended")}
@@ -181,8 +183,8 @@ export default function SplitPreferenceScreen() {
 
             <Animated.View entering={FadeInUp.delay(400).duration(500)}>
               <OptionCard
-                title="I'll Choose"
-                description="Select your own workout split and customize it"
+                title={t("onboarding.splitPreference.chooseTitle")}
+                description={t("onboarding.splitPreference.chooseDesc")}
                 icon="sliders"
                 selected={state.splitPreference === "choose"}
                 onPress={() => handleSelect("choose")}
@@ -202,7 +204,7 @@ export default function SplitPreferenceScreen() {
             testID="button-back"
           >
             <ThemedText style={[styles.backButtonText, { color: theme.text }]}>
-              Back
+              {t("onboarding.back")}
             </ThemedText>
           </Pressable>
 
@@ -229,7 +231,7 @@ export default function SplitPreferenceScreen() {
             testID="button-next"
           >
             <View style={[styles.nextButton, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.buttonText}>Next</ThemedText>
+              <ThemedText style={styles.buttonText}>{t("onboarding.next")}</ThemedText>
             </View>
           </AnimatedPressable>
         </Animated.View>

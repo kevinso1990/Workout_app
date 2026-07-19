@@ -13,13 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  FadeInDown,
-} from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { PlanDetailView } from "@/components/workout/PlanDetailView";
@@ -34,13 +30,12 @@ import {
 } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 type Props = NativeStackScreenProps<RootStackParamList, "PlanDetail">;
 
 export default function PlanDetailScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<Props["route"]>();
@@ -50,11 +45,6 @@ export default function PlanDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [detailExercise, setDetailExercise] = useState<Exercise | null>(null);
-  const buttonScale = useSharedValue(1);
-
-  const animatedButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
 
   const loadPlan = useCallback(async () => {
     try {
@@ -82,20 +72,24 @@ export default function PlanDetailScreen() {
     prewarmExerciseMedia(exerciseNames);
   }, [plan]);
 
-  const handleOpenWorkout = () => {
+  const handleStartDay = (dayIndex: number) => {
     if (!plan) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    navigation.navigate("StartWorkout", { planId: plan.id });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate("ActiveWorkout", {
+      planId: plan.id,
+      planName: plan.name,
+      dayIndex,
+    });
   };
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Plan",
-      "Are you sure you want to delete this workout plan? This cannot be undone.",
+      t("plans.deletePlan"),
+      t("plans.deleteConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("plans.delete"),
           style: "destructive",
           onPress: async () => {
             setIsDeleting(true);
@@ -136,7 +130,7 @@ export default function PlanDetailScreen() {
           { backgroundColor: theme.backgroundRoot },
         ]}
       >
-        <ThemedText>Plan not found</ThemedText>
+        <ThemedText>{t("plans.planNotFound")}</ThemedText>
       </View>
     );
   }
@@ -156,14 +150,16 @@ export default function PlanDetailScreen() {
           style={styles.backBtn}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t("common.back")}
         >
           <Feather name="chevron-left" size={28} color={HEVY.textPrimary} />
         </Pressable>
         <ThemedText style={styles.planName}>{plan.name}</ThemedText>
         <ThemedText style={styles.planInfo}>
-          {plan.daysPerWeek} days per week ·{" "}
-          {plan.days.reduce((acc, day) => acc + day.exercises.length, 0)} exercises
+          {t("planDetail.daysPerWeekCount", { count: plan.daysPerWeek })} ·{" "}
+          {t("planDetail.exerciseCount", {
+            count: plan.days.reduce((acc, day) => acc + day.exercises.length, 0),
+          })}
         </ThemedText>
       </View>
 
@@ -171,7 +167,7 @@ export default function PlanDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 100 },
+          { paddingBottom: insets.bottom + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -179,6 +175,7 @@ export default function PlanDetailScreen() {
         <PlanDetailView
           days={plan.days}
           onExercisePress={(exercise) => setDetailExercise(exercise)}
+          onStartDay={handleStartDay}
         />
 
         <Animated.View
@@ -202,42 +199,13 @@ export default function PlanDetailScreen() {
                 <ThemedText
                   style={[styles.deleteButtonText, { color: Colors.light.error }]}
                 >
-                  Delete Plan
+                  {t("plans.deletePlan")}
                 </ThemedText>
               </>
             )}
           </Pressable>
         </Animated.View>
       </ScrollView>
-
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: insets.bottom + HEVY.pad },
-        ]}
-      >
-        <AnimatedPressable
-          onPress={handleOpenWorkout}
-          onPressIn={() => {
-            buttonScale.value = withSpring(0.96, {
-              damping: 15,
-              stiffness: 150,
-            });
-          }}
-          onPressOut={() => {
-            buttonScale.value = withSpring(1, {
-              damping: 15,
-              stiffness: 150,
-            });
-          }}
-          style={animatedButtonStyle}
-          testID="button-start-workout"
-        >
-          <View style={[styles.startFab, { backgroundColor: Colors.light.primary }]}>
-            <Feather name="play" size={28} color="#FFFFFF" />
-          </View>
-        </AnimatedPressable>
-      </View>
     </View>
   );
 }
@@ -297,27 +265,5 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 15,
     fontWeight: "500",
-  },
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: HEVY.pad,
-    paddingTop: HEVY.pad,
-    backgroundColor: HEVY.canvas,
-  },
-  startFab: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
   },
 });

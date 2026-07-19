@@ -2,81 +2,31 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Platform, StyleSheet, Pressable, View } from "react-native";
-import { useNavigation, useNavigationState } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
+import { Platform, StyleSheet, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import MyPlansScreen from "@/screens/MyPlansScreen";
+import ExercisesScreen from "@/screens/ExercisesScreen";
+import CalendarScreen from "@/screens/CalendarScreen";
 import ProgressScreen from "@/screens/ProgressScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { HeaderTitle } from "@/components/HeaderTitle";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { Colors } from "@/constants/theme";
 
 export type MainTabParamList = {
   MyPlans: undefined;
+  Exercises: undefined;
+  Calendar: undefined;
   Progress: undefined;
   Profile: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-function useIsMyPlansTabActive(): boolean {
-  return useNavigationState((state) => {
-    const route = state.routes[state.index];
-    return route?.name === "MyPlans";
-  });
-}
-
-function FAB() {
-  const isMyPlans = useIsMyPlansTabActive();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const scale = useSharedValue(1);
-
-  if (!isMyPlans) return null;
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("CreatePlan");
-  };
-
-  return (
-    <View style={styles.fabContainer} pointerEvents="box-none">
-      <AnimatedPressable
-        onPress={handlePress}
-        onPressIn={() => {
-          scale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-        }}
-        style={animatedStyle}
-        testID="button-fab-create"
-      >
-        <View style={[styles.fab, { backgroundColor: Colors.light.primary }]}>
-          <Feather name="plus" size={28} color="#FFFFFF" />
-        </View>
-      </AnimatedPressable>
-    </View>
-  );
-}
-
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
@@ -120,7 +70,7 @@ export default function MainTabNavigator() {
           name="MyPlans"
           component={MyPlansScreen}
           options={{
-            title: "My Plans",
+            title: t("nav.plans"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
             tabBarIcon: ({ color, size }) => (
@@ -129,10 +79,34 @@ export default function MainTabNavigator() {
           }}
         />
         <Tab.Screen
+          name="Exercises"
+          component={ExercisesScreen}
+          options={{
+            title: t("nav.exercises"),
+            headerTitle: () => <HeaderTitle brand />,
+            headerTitleAlign: "center",
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="search" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Calendar"
+          component={CalendarScreen}
+          options={{
+            title: t("nav.calendar"),
+            headerTitle: () => <HeaderTitle brand />,
+            headerTitleAlign: "center",
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="calendar" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
           name="Progress"
           component={ProgressScreen}
           options={{
-            title: "Progress",
+            title: t("nav.progress"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
             tabBarIcon: ({ color, size }) => (
@@ -144,7 +118,7 @@ export default function MainTabNavigator() {
           name="Profile"
           component={ProfileScreen}
           options={{
-            title: "Profile",
+            title: t("nav.profile"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
             tabBarIcon: ({ color, size }) => (
@@ -153,7 +127,6 @@ export default function MainTabNavigator() {
           }}
         />
       </Tab.Navigator>
-      <FAB />
     </View>
   );
 }
@@ -161,22 +134,5 @@ export default function MainTabNavigator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  fabContainer: {
-    position: "absolute",
-    bottom: 100,
-    right: Spacing.xl,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
   },
 });

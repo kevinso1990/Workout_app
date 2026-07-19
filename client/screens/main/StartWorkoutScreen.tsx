@@ -48,6 +48,7 @@ function DayCard({
   index: number;
   dayLastPerformedLabel: string | null;
 }) {
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -79,7 +80,7 @@ function DayCard({
               </ThemedText>
             ) : null}
             <ThemedText style={styles.dayExerciseCount}>
-              {day.exercises.length} exercises
+              {t("planDetail.exerciseCount", { count: day.exercises.length })}
             </ThemedText>
           </View>
           <View style={styles.playBtn}>
@@ -195,7 +196,7 @@ export default function StartWorkoutScreen() {
     return (
       <ThemedView style={styles.emptyContainer}>
         <Feather name="calendar" size={48} color={HEVY.textMuted} />
-        <ThemedText style={styles.emptyText}>No workout plan found</ThemedText>
+        <ThemedText style={styles.emptyText}>{t("plans.planNotFound")}</ThemedText>
       </ThemedView>
     );
   }
@@ -208,7 +209,7 @@ export default function StartWorkoutScreen() {
           style={styles.backBtn}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t("common.back")}
         >
           <Feather name="chevron-left" size={28} color={HEVY.textPrimary} />
         </Pressable>

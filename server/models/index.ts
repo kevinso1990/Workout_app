@@ -147,6 +147,17 @@ export interface PlanWithExercises extends Plan {
   exercises: PlanExercise[];
 }
 
+export type WorkoutType = "strength" | "cardio";
+
+export type CardioSportType =
+  | "running"
+  | "football"
+  | "tennis"
+  | "cycling"
+  | "swimming"
+  | "boxing"
+  | "custom";
+
 export interface Session {
   id: number;
   plan_id: number;
@@ -155,6 +166,10 @@ export interface Session {
   finished_at: string | null;
   rpe: number | null;
   notes: string | null;
+  workout_type?: WorkoutType;
+  sport_type?: CardioSportType | string | null;
+  duration_minutes?: number | null;
+  distance_km?: number | null;
 }
 
 export interface SessionRow extends Session {
@@ -335,6 +350,16 @@ export interface FinishSessionBody {
   notes?: string;
 }
 
+export interface LogCardioBody {
+  sport_type: CardioSportType | string;
+  sport_label?: string;
+  duration_minutes: number;
+  distance_km?: number | string | null;
+  rpe: number;
+  notes?: string | null;
+  completed_at?: string;
+}
+
 export interface LogSetBody {
   session_id: number;
   exercise_id: number;
@@ -358,12 +383,30 @@ export interface LogBodyWeightBody {
   notes?: string;
 }
 
+export interface ModifyPlanBody {
+  plan: {
+    name: string;
+    days: Array<{
+      dayName: string;
+      exercises: Array<{
+        name: string;
+        sets: number;
+        reps: string | number;
+        muscleGroup?: string;
+      }>;
+    }>;
+  };
+  instruction: string;
+}
+
 export interface AutoGeneratePlansBody {
   frequency: number;
   experience: string;
   goal: string;
   equipment?: string;
   focusMuscles?: string[];
+  /** Native onboarding split id: push-pull-legs | upper-lower | full-body | bro-split */
+  splitPreference?: string;
 }
 
 export interface AcceptRecommendationsBody {

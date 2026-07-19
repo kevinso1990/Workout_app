@@ -1,66 +1,85 @@
 /**
  * Central AI instruction sets for plan extraction and auto-generation.
- * Imported by import routes and planService Gemini path.
  */
 
+/** Strict import prompt — NO internet RAG, NO warm-up/cardio/meta sections. */
+export const IMPORT_WORKOUT_EXTRACTION_PROMPT = `You are a strength-training plan extractor. Output ONLY structured JSON for KRAFT/STRENGTH workout days.
+
+STRICT FILTERING — IGNORE COMPLETELY (do not parse, do not output):
+- Introductions, week schedules ("Bei 2x/Woche: Mo + Do Kraft"), training frequency notes
+- Warm-up / Aufwärmen / Activation sections
+- Physio rules, general coaching text, disclaimers, tables of rules
+- Bürotage, office days, recovery-only days
+- Cardio, Mobility, Stretching, Yoga, Pilates, conditioning-only blocks
+- Page headers, footers, page numbers, copyright
+
+ONLY PARSE sections explicitly titled like:
+- "GK A", "GK B", "GK C" (Ganzkörper A/B/C)
+- "Tag 1", "Tag 2", "Tag A", "Day A", "Day B", "Workout A", "Training A"
+- Similar labeled STRENGTH day blocks with a list of resistance exercises (sets × reps)
+
+EXERCISE RULES:
+- Include ONLY real resistance/strength exercises (barbell, dumbbell, kettlebell, machine, bodyweight strength moves).
+- Each exercise MUST have a recognizable exercise name (e.g. "Trap Bar Deadlift", "Kettlebell Swing", "Reverse Lunges").
+- If a line is NOT a clear strength exercise (schedule text, section title, note, rule), OMIT it entirely — never guess.
+- Use exact exercise names as written in the document. Do not invent exercises.
+- sets: positive integer (default 3 only if sets column is missing but exercise row is clearly a working set).
+- reps: integer or null if not visible.
+- weight: number or null.
+
+MULTI-DAY:
+- Preserve day grouping (GK A, GK B, GK C as separate days).
+- Do NOT duplicate identical exercise lists across days unless the source explicitly repeats them.
+- Do NOT merge warm-up or cardio exercises into strength days.
+
+OUTPUT FORMAT — VALID JSON IS MANDATORY:
+- If a source exercise name contains a double-quote character (e.g. an alt-name in quotes like Hip "Getup"), you MUST escape it as \\" inside the JSON string, or rewrite the name without the quote marks. Never emit a raw, unescaped " inside a JSON string value.
+- Output must be a single valid JSON object parseable by a strict JSON parser — no trailing commas, no comments.
+
+If zero strength exercises found in allowed sections, return: {"planName":"Imported Plan","days":[]}`;
+
+/** JSON schema for Gemini structured output (import). */
+export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    planName: { type: "string" },
+    days: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          dayName: { type: "string" },
+          exercises: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                sets: { type: "integer" },
+                reps: { type: "integer", nullable: true },
+                weight: { type: "number", nullable: true },
+                notes: { type: "string", nullable: true },
+              },
+              required: ["name", "sets"],
+            },
+          },
+        },
+        required: ["dayName", "exercises"],
+      },
+    },
+  },
+  required: ["planName", "days"],
+} as const;
+
 /**
- * Internet-RAG instructions: requires Gemini `google_search` grounding (see `gemini.ts`).
- * Used for workout import extraction.
+ * Internet-RAG instructions for plan generation (NOT import).
  */
 export const PLAN_GENERATOR_INTERNET_RAG_PROMPT = `You are an Elite Sports Scientist. Before generating or formatting any workout routine, execute a live web search query to retrieve evidence-based guidelines for bodyweight training and calisthenics sequencing from authoritative sources (e.g., ExRx.net, NSCA, sports medicine registries).
 
 When a multi-day Full Body (Ganzkörper) bodyweight routine is requested:
 1. LIVE RE-VALIDATION: Check professional split templates to ensure optimal recovery.
-2. STRICT FULL BODY VARIATION: Every session must target the entire body, but the exercise selection MUST vary across days. For example, if Day A uses classic Push-Ups and Squats, Day B must search and implement alternative kinesiological patterns like Pike Push-Ups and Lunges, and Day C should utilize Wide-Grip Push-Ups and Bulgarian Split Squats. Never output identical exercise rows across different days.
-3. DATA FIELDS: Ensure weights are strictly 0 or empty for bodyweight exercises. Populate the "notes" field with a highly detailed, step-by-step text guide on how to perform the movement safely (setup, execution, breathing, common errors).`;
-
-export const IMPORT_WORKOUT_EXTRACTION_PROMPT = `${PLAN_GENERATOR_INTERNET_RAG_PROMPT}
-
-You extract structured workout data from photos, PDFs, or spreadsheet text.
-
-Goals:
-1) Read ONLY what is visible. If text is illegible, blurry, or ambiguous, prefer null over guessing.
-2) Merge multiple inputs into ONE plan with preserved day grouping.
-3) For each exercise "name", output the clearest text you read (English or German). Do NOT invent exercises that are not on the page.
-   The server will map names to the app's canonical exercise database (including closest matches for typos).
-
-CRITICAL RULE — Multi-day splits:
-- For multi-day workout plans (splits, 2-day, 3-day, full-body rotations), every single workout day MUST have a distinct, complementary selection of exercises.
-- DO NOT duplicate the exact same routine across Day A, Day B, and Day C (or Day 1 / Day 2 / Day 3). Zero repeated exercise names across different days unless the source document explicitly shows the same exercise on two days.
-- If the user requests a Multi-Day Full Body Split (e.g., Kettlebell Full Body 3-Day), rotate movement patterns variationally:
-  • Day A: Posterior chain & overhead pressing emphasis (e.g., swings, clean & press, RDL patterns)
-  • Day B: Anterior chain & horizontal pulling emphasis (e.g., goblet squat, rows, floor press)
-  • Day C: Unilateral work, core & conditioning emphasis (e.g., lunges, Turkish get-up, snatch or carries)
-- Each day must list different exercise names; vary compounds and accessories across days while covering the full body over the week.
-- Ensure exercise names are specific (e.g., "Barbell Bench Press", "KB Goblet Squat") — never generic blocks like "upper body" or "legs circuit".
-
-Return ONLY valid JSON. No markdown, no code fences, no commentary:
-{
-  "planName": "string",
-  "days": [
-    {
-      "dayName": "string (e.g. 'Day 1', 'Push Day', 'Monday', 'Full Body A')",
-      "exercises": [
-        {
-          "name": "string",
-          "sets": number,
-          "reps": number | null,
-          "weight": number | null,
-          "notes": "string | null — REQUIRED for bodyweight/calisthenics: step-by-step safety instructions (setup, execution, breathing, common errors); null only if not applicable"
-        }
-      ]
-    }
-  ]
-}
-
-Rules:
-- If days are not labeled, use "Day 1", "Day 2", …
-- If plan title is missing, use "Imported Plan".
-- "sets" must be a positive integer when visible; otherwise use 3 as a conservative default ONLY if the row clearly represents a logged set block but the number is unreadable; if the whole exercise row is unreadable, omit that exercise (do not fabricate names).
-- "reps" / "weight" use null when not visible.
-- For bodyweight exercises, set "weight" to 0 or null — never invent external loads.
-- Use "notes" for detailed coaching instructions when the source omits them but the movement is identifiable (especially calisthenics / Ganzkörper).
-- If the entire page is unreadable or contains zero recognizable exercises, return {"planName":"Imported Plan","days":[]} exactly (empty days array).`;
+2. STRICT FULL BODY VARIATION: Every session must target the entire body, but the exercise selection MUST vary across days.
+3. DATA FIELDS: Ensure weights are strictly 0 or empty for bodyweight exercises.`;
 
 /** Production-ready plan JSON emitted directly by Gemini (no server set/rep tables). */
 export const PLAN_GENERATOR_FULL_JSON_PROMPT = `You are an Elite Sports Scientist and Master Calisthenics Coach. Generate a complete, highly optimized multi-day training plan based on the user's request.
@@ -150,12 +169,22 @@ export function buildGeminiAutoGeneratePrompt(params: {
   goal: string;
   equipment: string;
   focusMuscles: string[];
+  splitPreference?: string;
   sessionLines: string;
   whitelistLines: string;
   sessionCount: number;
 }): string {
-  const { frequency, experience, goal, equipment, focusMuscles, sessionLines, whitelistLines, sessionCount } =
-    params;
+  const {
+    frequency,
+    experience,
+    goal,
+    equipment,
+    focusMuscles,
+    splitPreference,
+    sessionLines,
+    whitelistLines,
+    sessionCount,
+  } = params;
 
   const physiologyGoal = goalPhysiologyLabel(goal);
 
@@ -167,6 +196,7 @@ User profile:
 - goal_key: ${goal}
 - goal_physiology: ${physiologyGoal}
 - equipment_key: ${equipment}
+- split_preference: ${splitPreference ?? "auto"}
 - focus_muscles_UI: ${JSON.stringify(focusMuscles)}
 
 You must output exactly ${sessionCount} day objects in this fixed order and with these day titles (use each dayName exactly as listed unless a clearer Ganzkörper label is provided):
@@ -184,3 +214,52 @@ ${whitelistLines}
 
 Return ONLY valid JSON matching the EXPECTED JSON OUTPUT FORMAT above. No markdown fences, no commentary.`;
 }
+
+/** AI Coach — modify an existing plan per user instruction. */
+export const PLAN_MODIFY_PROMPT = `You are an expert strength & hybrid-athlete coach. The user wants to MODIFY their existing workout plan.
+
+RULES:
+1. Preserve the overall plan structure (day names/count) unless the user explicitly asks to add/remove days.
+2. When adding or swapping exercises, pick ONLY from the provided EXERCISE CATALOG whitelist (exact names).
+3. Adjust sets/reps intelligently for the user's request (e.g. low-back core, hybrid running, deload).
+4. Do NOT remove all exercises from a day unless asked.
+5. Return a "summary" (1-2 sentences, German or English matching user language) and "changes" (bullet list of concrete edits).
+6. reps may be an integer or a range string like "8-12".
+
+Return ONLY JSON — no markdown.`;
+
+export const PLAN_MODIFY_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    planName: { type: "string" },
+    days: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          dayName: { type: "string" },
+          exercises: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                sets: { type: "integer" },
+                reps: { type: "string" },
+                notes: { type: "string", nullable: true },
+              },
+              required: ["name", "sets", "reps"],
+            },
+          },
+        },
+        required: ["dayName", "exercises"],
+      },
+    },
+    summary: { type: "string" },
+    changes: {
+      type: "array",
+      items: { type: "string" },
+    },
+  },
+  required: ["planName", "days", "summary", "changes"],
+} as const;

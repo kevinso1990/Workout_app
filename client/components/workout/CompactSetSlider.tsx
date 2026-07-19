@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { InteractionManager, View, StyleSheet } from "react-native";
-import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
+
+import { PlatformRangeSlider } from "@/components/PlatformRangeSlider";
 
 import { ThemedText } from "@/components/ThemedText";
 import { HEVY } from "@/constants/hevyLayout";
@@ -123,7 +124,7 @@ export const CompactSetSlider = React.memo(function CompactSetSlider({
           {unit}
         </ThemedText>
       </View>
-      <Slider
+      <PlatformRangeSlider
         style={[styles.slider, large && styles.sliderLarge]}
         minimumValue={min}
         maximumValue={max}

@@ -19,11 +19,13 @@ import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-naviga
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
+import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
 import {
   WorkoutPlan,
   WorkoutDay,
@@ -31,7 +33,11 @@ import {
   getWorkoutPlans,
   saveWorkoutPlan,
 } from "@/lib/storage";
+import { scheduleDataSync } from "@/lib/dataSync";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+const MIN_SETS = 1;
+const MAX_SETS = 10;
 
 type Props = NativeStackScreenProps<RootStackParamList, "EditPlan">;
 
@@ -145,6 +151,7 @@ function AddExerciseModal({
   onAdd: (ex: LibraryExercise) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
 
@@ -188,7 +195,7 @@ function AddExerciseModal({
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search exercises…"
+            placeholder={t("importWorkout.review.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}
             value={query}
             onChangeText={setQuery}
@@ -225,7 +232,16 @@ function AddExerciseModal({
             >
               <View style={styles.libraryRowInfo}>
                 <ThemedText style={styles.libraryName}>{item.name}</ThemedText>
-                <ThemedText style={[styles.libraryMuscle, { color: theme.textSecondary }]}>{item.muscleGroup}</ThemedText>
+                <View
+                  style={[
+                    styles.libraryMuscleTag,
+                    { backgroundColor: getMuscleGroupColor(item.muscleGroup) + "1A" },
+                  ]}
+                >
+                  <ThemedText style={[styles.libraryMuscle, { color: getMuscleGroupColor(item.muscleGroup) }]}>
+                    {translateMuscleGroup(t, item.muscleGroup)}
+                  </ThemedText>
+                </View>
               </View>
               <Feather name="plus" size={20} color={Colors.light.primary} />
             </Pressable>
@@ -253,6 +269,7 @@ function ReplaceExerciseModal({
   onReplace: (ex: LibraryExercise) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
 
@@ -340,7 +357,7 @@ function ReplaceExerciseModal({
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search exercises…"
+            placeholder={t("importWorkout.review.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}
             value={query}
             onChangeText={setQuery}
@@ -405,14 +422,21 @@ function ReplaceExerciseModal({
             >
               <View style={styles.libraryRowInfo}>
                 <ThemedText style={styles.libraryName}>{item.name}</ThemedText>
-                <ThemedText style={[styles.libraryMuscle, { color: theme.textSecondary }]}>
-                  {item.muscleGroup}
-                </ThemedText>
+                <View
+                  style={[
+                    styles.libraryMuscleTag,
+                    { backgroundColor: getMuscleGroupColor(item.muscleGroup) + "1A" },
+                  ]}
+                >
+                  <ThemedText style={[styles.libraryMuscle, { color: getMuscleGroupColor(item.muscleGroup) }]}>
+                    {translateMuscleGroup(t, item.muscleGroup)}
+                  </ThemedText>
+                </View>
               </View>
               {section.isSuggested ? (
                 <View style={[styles.swapBadge, { backgroundColor: Colors.light.primary + "20" }]}>
                   <Feather name="repeat" size={14} color={Colors.light.primary} />
-                  <ThemedText style={[styles.swapBadgeText, { color: Colors.light.primary }]}>Swap</ThemedText>
+                  <ThemedText style={[styles.swapBadgeText, { color: Colors.light.primary }]}>{t("exercises.swapBadge")}</ThemedText>
                 </View>
               ) : (
                 <Feather name="repeat" size={18} color={theme.textSecondary} />
@@ -436,6 +460,7 @@ function ExerciseRow({
   onMoveDown,
   onDelete,
   onReplace,
+  onSetsChange,
 }: {
   exercise: Exercise;
   index: number;
@@ -446,9 +471,13 @@ function ExerciseRow({
   onMoveDown: () => void;
   onDelete: () => void;
   onReplace: () => void;
+  onSetsChange: (delta: number) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const isActive = activeIndex === index;
+  const canDecrement = exercise.sets > MIN_SETS;
+  const canIncrement = exercise.sets < MAX_SETS;
 
   return (
     <View
@@ -494,13 +523,55 @@ function ExerciseRow({
         </Pressable>
       )}
 
-      {/* Info */}
-      <Pressable style={styles.exerciseInfo} onPress={() => isActive && onSetActive(null)}>
-        <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
-        <ThemedText style={[styles.exerciseMeta, { color: theme.textSecondary }]}>
-          {exercise.muscleGroup} · {exercise.sets} × {exercise.reps}
-        </ThemedText>
-      </Pressable>
+      {/* Info + sets stepper */}
+      <View style={styles.exerciseInfo}>
+        <Pressable onPress={() => isActive && onSetActive(null)}>
+          <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
+          <ThemedText style={[styles.exerciseMeta, { color: theme.textSecondary }]}>
+            {translateMuscleGroup(t, exercise.muscleGroup)} · {t("exercises.repsCount", { count: exercise.reps })}
+          </ThemedText>
+        </Pressable>
+
+        <View style={styles.setsStepper}>
+          <Pressable
+            onPress={() => {
+              if (canDecrement) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onSetsChange(-1);
+              }
+            }}
+            hitSlop={8}
+            disabled={!canDecrement}
+            style={[
+              styles.stepperBtn,
+              { borderColor: theme.border, opacity: canDecrement ? 1 : 0.4 },
+            ]}
+            testID={`button-sets-decrement-${index}`}
+          >
+            <Feather name="minus" size={16} color={theme.text} />
+          </Pressable>
+          <ThemedText style={[styles.setsValue, { color: theme.text }]}>
+            {exercise.sets} {exercise.sets === 1 ? "set" : "sets"}
+          </ThemedText>
+          <Pressable
+            onPress={() => {
+              if (canIncrement) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onSetsChange(1);
+              }
+            }}
+            hitSlop={8}
+            disabled={!canIncrement}
+            style={[
+              styles.stepperBtn,
+              { borderColor: theme.border, opacity: canIncrement ? 1 : 0.4 },
+            ]}
+            testID={`button-sets-increment-${index}`}
+          >
+            <Feather name="plus" size={16} color={theme.text} />
+          </Pressable>
+        </View>
+      </View>
 
       {/* Replace */}
       <Pressable
@@ -540,6 +611,7 @@ function DaySection({
   onExerciseMoveDown,
   onAddExercise,
   onReplaceExercise,
+  onExerciseSetsChange,
 }: {
   day: WorkoutDay;
   dayIndex: number;
@@ -548,6 +620,7 @@ function DaySection({
   onExerciseMoveDown: (exIndex: number) => void;
   onAddExercise: () => void;
   onReplaceExercise: (exIndex: number) => void;
+  onExerciseSetsChange: (exIndex: number, delta: number) => void;
 }) {
   const { theme } = useTheme();
   const [activeExIndex, setActiveExIndex] = useState<number | null>(null);
@@ -598,6 +671,7 @@ function DaySection({
                 setActiveExIndex(null);
                 onReplaceExercise(exIdx);
               }}
+              onSetsChange={(delta) => onExerciseSetsChange(exIdx, delta)}
             />
           ))
         )}
@@ -626,6 +700,7 @@ export default function EditPlanScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<Props["route"]>();
   const { planId } = route.params;
@@ -673,6 +748,7 @@ export default function EditPlanScreen() {
         lastModified: new Date().toISOString(),
       };
       await saveWorkoutPlan(updated);
+      scheduleDataSync();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (err) {
@@ -693,6 +769,20 @@ export default function EditPlanScreen() {
       days.map((d, i) =>
         i !== dayIdx ? d : { ...d, exercises: d.exercises.filter((_, j) => j !== exIdx) }
       )
+    );
+  };
+
+  const changeSets = (dayIdx: number, exIdx: number, delta: number) => {
+    mutateDays((days) =>
+      days.map((d, i) => {
+        if (i !== dayIdx) return d;
+        const exs = d.exercises.map((ex, j) => {
+          if (j !== exIdx) return ex;
+          const next = Math.max(MIN_SETS, Math.min(MAX_SETS, ex.sets + delta));
+          return { ...ex, sets: next };
+        });
+        return { ...d, exercises: exs };
+      })
     );
   };
 
@@ -787,7 +877,7 @@ export default function EditPlanScreen() {
             ]}
             value={planName}
             onChangeText={setPlanName}
-            placeholder="Plan name"
+            placeholder={t("importWorkout.review.planName")}
             placeholderTextColor={theme.textSecondary}
             testID="input-edit-plan-name"
           />
@@ -806,6 +896,7 @@ export default function EditPlanScreen() {
             onReplaceExercise={(exIdx) =>
               setReplaceTarget({ dayIndex: dayIdx, exIndex: exIdx, exercise: plan.days[dayIdx].exercises[exIdx] })
             }
+            onExerciseSetsChange={(exIdx, delta) => changeSets(dayIdx, exIdx, delta)}
           />
         ))}
 
@@ -920,6 +1011,28 @@ const styles = StyleSheet.create({
   exerciseMeta: { fontSize: 13 },
   actionIcon: { padding: Spacing.xs, marginLeft: 2 },
 
+  setsStepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  stepperBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  setsValue: {
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    minWidth: 52,
+    textAlign: "center",
+  },
+
   addExerciseButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -1012,7 +1125,13 @@ const styles = StyleSheet.create({
   },
   libraryRowInfo: { flex: 1 },
   libraryName: { fontSize: 15, fontWeight: "500", marginBottom: 2 },
-  libraryMuscle: { fontSize: 13 },
+  libraryMuscleTag: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  libraryMuscle: { fontSize: 12, fontWeight: "600" },
 
   swapBadge: {
     flexDirection: "row",

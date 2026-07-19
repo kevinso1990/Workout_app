@@ -1,30 +1,47 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppState, type AppStateStatus } from "react-native";
 
 import { getApiUrl } from "@/lib/query-client";
 import type { CompletedSessionSyncPayload } from "@/lib/activeWorkoutPersistence";
+import { ensureAuthToken, getAuthHeaders } from "@/lib/nativeAuth";
 
 const QUEUE_KEY = "@workout_session_sync_queue";
-const TOKEN_KEY = "workoutapp_auth_token";
-const DEVICE_ID_KEY = "device_id";
 const SYNC_TIMEOUT_MS = 20_000;
 
-type QueuedWorkoutSession = {
+export type SyncQueueStatus =
+  | "PENDING"
+  | "IN_FLIGHT"
+  | "COMPLETE"
+  | "FAILED_PARTIAL";
+
+export type QueuedWorkoutSession = {
   id: string;
   session: CompletedSessionSyncPayload;
   enqueuedAt: number;
   attempts: number;
+  status: SyncQueueStatus;
+};
+
+type SyncLocalResponse = {
+  ok?: boolean;
+  localSessionId?: string;
+  ingestComplete?: boolean;
+  serverSessionId?: number;
+  error?: string;
 };
 
 let flushInFlight: Promise<void> | null = null;
-let appStateSubscribed = false;
 
 async function readQueue(): Promise<QueuedWorkoutSession[]> {
   try {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as QueuedWorkoutSession[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => ({
+      ...item,
+      status: item.status ?? "PENDING",
+      attempts: item.attempts ?? 0,
+    }));
   } catch {
     return [];
   }
@@ -34,37 +51,31 @@ async function writeQueue(queue: QueuedWorkoutSession[]): Promise<void> {
   await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 }
 
-async function getDeviceId(): Promise<string> {
-  let id = await AsyncStorage.getItem(DEVICE_ID_KEY);
-  if (!id) {
-    id =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `dev-${Date.now()}`;
-    await AsyncStorage.setItem(DEVICE_ID_KEY, id);
-  }
-  return id;
+export async function getPendingSyncCount(): Promise<number> {
+  const queue = await readQueue();
+  return queue.filter(
+    (q) => q.status === "PENDING" || q.status === "FAILED_PARTIAL",
+  ).length;
 }
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-device-id": await getDeviceId(),
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
+function isFullIngestSuccess(body: SyncLocalResponse): boolean {
+  return body.ok === true && body.ingestComplete === true;
 }
 
 /**
- * POST completed session to backend. Never throws — returns false on failure.
+ * POST completed session to backend. Never throws — returns outcome for queue handling.
  */
 export async function trySyncWorkoutSessionToServer(
   session: CompletedSessionSyncPayload,
-): Promise<boolean> {
+): Promise<{
+  ok: boolean;
+  fullIngest: boolean;
+  status: SyncQueueStatus;
+}> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
   try {
+    await ensureAuthToken();
     const url = new URL("/api/sessions/sync-local", getApiUrl()).toString();
     const res = await fetch(url, {
       method: "POST",
@@ -72,9 +83,26 @@ export async function trySyncWorkoutSessionToServer(
       body: JSON.stringify({ session }),
       signal: controller.signal,
     });
-    return res.ok;
+
+    let body: SyncLocalResponse = {};
+    try {
+      body = (await res.json()) as SyncLocalResponse;
+    } catch {
+      body = {};
+    }
+
+    if (!res.ok) {
+      return { ok: false, fullIngest: false, status: "PENDING" };
+    }
+
+    if (isFullIngestSuccess(body)) {
+      return { ok: true, fullIngest: true, status: "COMPLETE" };
+    }
+
+    // 201 without structured ingest — keep retrying until auth + ingest succeed.
+    return { ok: true, fullIngest: false, status: "FAILED_PARTIAL" };
   } catch {
-    return false;
+    return { ok: false, fullIngest: false, status: "PENDING" };
   } finally {
     clearTimeout(timer);
   }
@@ -91,15 +119,35 @@ export async function enqueueAndTrySyncWorkoutSession(
     session,
     enqueuedAt: Date.now(),
     attempts: existing >= 0 ? queue[existing].attempts : 0,
+    status: "PENDING",
   };
   if (existing >= 0) queue[existing] = entry;
   else queue.push(entry);
   await writeQueue(queue);
 
-  const ok = await trySyncWorkoutSessionToServer(session);
-  if (ok) {
-    await writeQueue(queue.filter((q) => q.id !== session.id));
+  const queueAfterRead = await readQueue();
+  const idx = queueAfterRead.findIndex((q) => q.id === session.id);
+  if (idx >= 0) {
+    queueAfterRead[idx] = { ...queueAfterRead[idx], status: "IN_FLIGHT" };
+    await writeQueue(queueAfterRead);
   }
+
+  const result = await trySyncWorkoutSessionToServer(session);
+  const latest = await readQueue();
+  const i = latest.findIndex((q) => q.id === session.id);
+  if (i < 0) return;
+
+  if (result.fullIngest) {
+    await writeQueue(latest.filter((q) => q.id !== session.id));
+    return;
+  }
+
+  latest[i] = {
+    ...latest[i],
+    status: result.ok ? "FAILED_PARTIAL" : "PENDING",
+    attempts: latest[i].attempts + (result.fullIngest ? 0 : 1),
+  };
+  await writeQueue(latest);
 }
 
 /**
@@ -115,14 +163,27 @@ export async function flushWorkoutSyncQueue(): Promise<void> {
     let queue = await readQueue();
     while (queue.length > 0) {
       const item = queue[0];
-      const ok = await trySyncWorkoutSessionToServer(item.session);
-      if (!ok) {
-        queue[0] = { ...item, attempts: item.attempts + 1 };
-        await writeQueue(queue);
-        break;
-      }
-      queue = queue.slice(1);
+      queue[0] = { ...item, status: "IN_FLIGHT" };
       await writeQueue(queue);
+
+      const result = await trySyncWorkoutSessionToServer(item.session);
+      queue = await readQueue();
+      if (result.fullIngest) {
+        queue = queue.filter((q) => q.id !== item.id);
+        await writeQueue(queue);
+        continue;
+      }
+
+      const head = queue[0];
+      if (head?.id === item.id) {
+        queue[0] = {
+          ...head,
+          status: result.ok ? "FAILED_PARTIAL" : "PENDING",
+          attempts: head.attempts + 1,
+        };
+        await writeQueue(queue);
+      }
+      break;
     }
   })();
 
@@ -135,21 +196,9 @@ export async function flushWorkoutSyncQueue(): Promise<void> {
   }
 }
 
-export function registerWorkoutSyncAppStateListener(): () => void {
-  if (appStateSubscribed) return () => {};
-  appStateSubscribed = true;
-
-  const onChange = (state: AppStateStatus) => {
-    if (state === "active") {
-      void flushWorkoutSyncQueue();
-    }
-  };
-
-  const sub = AppState.addEventListener("change", onChange);
-  void flushWorkoutSyncQueue();
-
-  return () => {
-    sub.remove();
-    appStateSubscribed = false;
-  };
+export async function getQueueEntry(
+  sessionId: string,
+): Promise<QueuedWorkoutSession | null> {
+  const queue = await readQueue();
+  return queue.find((q) => q.id === sessionId) ?? null;
 }

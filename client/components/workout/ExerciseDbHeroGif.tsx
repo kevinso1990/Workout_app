@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   StyleSheet,
@@ -13,6 +13,7 @@ import {
   isExerciseDbConfigured,
 } from "@/lib/rapidApiConfig";
 import { fetchExerciseDetail } from "@/services/exerciseApi";
+import { getExerciseImageFrames } from "@/lib/exerciseImages";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { ExerciseGifSkeleton } from "@/components/workout/ExerciseGifSkeleton";
 
@@ -20,6 +21,9 @@ const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 /** Upper-third hero height for workout / detail screens. */
 export const EXERCISE_HERO_GIF_HEIGHT = Math.round(SCREEN_HEIGHT / 3);
+
+/** ms between start/end frames of the demonstration flip animation. */
+const FLIP_INTERVAL_MS = 720;
 
 type ExerciseDbHeroGifProps = {
   exerciseName: string;
@@ -34,8 +38,65 @@ type ExerciseDbHeroGifProps = {
 };
 
 /**
- * Loads ExerciseDB `gifUrl` and renders it large with a pulsing skeleton
- * until the image has finished loading (prevents layout shift).
+ * Two-frame demonstration animation built from the free-exercise-db start/end
+ * images. Both frames are mounted and cross-toggled via opacity so there's no
+ * reload flicker. Falls back to a single frame if the end image is missing.
+ */
+function FlipFrames({
+  frames,
+  exerciseName,
+  onReady,
+}: {
+  frames: string[];
+  exerciseName: string;
+  onReady: () => void;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [lastFrame, setLastFrame] = useState(frames.length - 1);
+
+  useEffect(() => {
+    setIdx(0);
+    setLastFrame(frames.length - 1);
+  }, [frames]);
+
+  useEffect(() => {
+    if (lastFrame < 1) return;
+    const id = setInterval(() => {
+      setIdx((i) => (i + 1 > lastFrame ? 0 : i + 1));
+    }, FLIP_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [lastFrame]);
+
+  return (
+    <>
+      {frames.map((uri, i) => (
+        <ExerciseGifImage
+          key={uri}
+          uri={uri}
+          style={[styles.image, i !== idx && styles.imageHidden]}
+          contentFit="contain"
+          recyclingKey={`${exerciseName}-frame-${i}`}
+          onLoad={i === 0 ? onReady : undefined}
+          onError={() => {
+            // End frame missing → collapse to a single static frame.
+            if (i >= 1) setLastFrame(0);
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Renders an animated exercise demonstration.
+ *
+ * Image source precedence:
+ *   1. free-exercise-db start/end frames (CORS-free GitHub CDN) — always works
+ *      for mapped exercises and is used as the primary animation.
+ *   2. ExerciseDB (RapidAPI) GIF — used only when no static frames exist.
+ *
+ * Instructions are still fetched from ExerciseDB regardless so the modal can
+ * show coaching cues.
  */
 export function ExerciseDbHeroGif({
   exerciseName,
@@ -44,6 +105,12 @@ export function ExerciseDbHeroGif({
   dark = false,
   onDetailLoaded,
 }: ExerciseDbHeroGifProps) {
+  const frames = useMemo(
+    () => getExerciseImageFrames(exerciseName),
+    [exerciseName],
+  );
+  const hasFrames = frames.length > 0;
+
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [imageReady, setImageReady] = useState(false);
   const [fetchDone, setFetchDone] = useState(false);
@@ -62,14 +129,15 @@ export function ExerciseDbHeroGif({
       if (requestRef.current !== requestId) return;
 
       const animated = detail?.gifUrl ?? null;
-      setResolvedUrl(animated);
+      // Only use the RapidAPI GIF for the image when we have no static frames.
+      setResolvedUrl(hasFrames ? null : animated);
       setFetchDone(true);
       onDetailLoadedRef.current?.({
         gifUrl: animated,
         instructions: detail?.instructions ?? [],
       });
 
-      if (!animated) {
+      if (hasFrames || !animated) {
         setImageReady(true);
       }
     })();
@@ -77,21 +145,24 @@ export function ExerciseDbHeroGif({
     return () => {
       requestRef.current += 1;
     };
-  }, [exerciseName]);
+  }, [exerciseName, hasFrames]);
 
-  const showSkeleton = !fetchDone || (resolvedUrl !== null && !imageReady);
   const skeletonBase = dark ? "#1C1C1E" : "#E8E8ED";
   const skeletonPulse = dark ? "#2C2C2E" : "#F4F4F8";
-  const showKeyHint = fetchDone && !resolvedUrl && !isExerciseDbConfigured();
+
+  // With static frames we never block on the network — show the animation
+  // immediately and just wait for the first image to decode.
+  const showSkeleton = hasFrames
+    ? !imageReady
+    : !fetchDone || (resolvedUrl !== null && !imageReady);
+  const showKeyHint =
+    !hasFrames && fetchDone && !resolvedUrl && !isExerciseDbConfigured();
+  const showUnavailable =
+    !hasFrames && fetchDone && !resolvedUrl && !showKeyHint;
 
   return (
     <View
-      style={[
-        styles.frame,
-        { height },
-        dark && styles.frameDark,
-        style,
-      ]}
+      style={[styles.frame, { height }, dark && styles.frameDark, style]}
     >
       {showSkeleton ? (
         <ExerciseGifSkeleton
@@ -101,7 +172,13 @@ export function ExerciseDbHeroGif({
         />
       ) : null}
 
-      {resolvedUrl ? (
+      {hasFrames ? (
+        <FlipFrames
+          frames={frames}
+          exerciseName={exerciseName}
+          onReady={() => setImageReady(true)}
+        />
+      ) : resolvedUrl ? (
         <ExerciseGifImage
           uri={resolvedUrl}
           style={[styles.image, !imageReady && styles.imageHidden]}
@@ -116,7 +193,7 @@ export function ExerciseDbHeroGif({
             {EXERCISEDB_KEY_HINT}
           </Text>
         </View>
-      ) : fetchDone ? (
+      ) : showUnavailable ? (
         <View style={styles.hintWrap}>
           <Text style={[styles.hintText, dark && styles.hintTextDark]}>
             Animation unavailable for this exercise.
@@ -138,6 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
   },
   image: {
+    ...StyleSheet.absoluteFillObject,
     width: "100%",
     height: "100%",
   },

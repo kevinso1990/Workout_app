@@ -1033,6 +1033,11 @@ const EXERCISE_IMAGE_IDS: Record<string, string> = {
   "KB Farmer's Walk":              "Barbell_Shrug",
 };
 
+/** Returns the free-exercise-db folder id for the exercise, or null if unmapped. */
+export function getExerciseImageId(exerciseName: string): string | null {
+  return EXERCISE_IMAGE_IDS[exerciseName] ?? null;
+}
+
 /** Returns a GitHub CDN image URL for the exercise, or null if unmapped. */
 export function getExerciseImageUrl(exerciseName: string): string | null {
   const id = EXERCISE_IMAGE_IDS[exerciseName];
@@ -1076,6 +1081,7 @@ export const MUSCLE_GROUP_META: Record<
   Core:        { color: "#C0392B", icon: "circle",         label: "Core" },
   Traps:       { color: "#5D6D7E", icon: "arrow-up",       label: "Traps" },
   Forearms:    { color: "#F39C12", icon: "trending-up",    label: "Forearms" },
+  "Full Body": { color: "#647692", icon: "grid",           label: "Full Body" },
 };
 
 /** Returns visual config for a muscle group, with a sensible default. */

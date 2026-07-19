@@ -1,145 +1,99 @@
-import React, { useState } from "react";
-import { reloadAppAsync } from "expo";
+import React from "react";
 import {
+  Platform,
   StyleSheet,
   View,
   Pressable,
   ScrollView,
   Text,
-  Modal,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { ThemedView } from "@/components/ThemedView";
-import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Fonts } from "@/constants/theme";
+
+import { ERROR_FALLBACK_COPY } from "@/constants/errorCopy";
+import {
+  formatCapturedErrorText,
+  reloadWebApp,
+  type CapturedError,
+} from "@/lib/globalErrorReporter";
 
 export type ErrorFallbackProps = {
   error: Error;
   resetError: () => void;
+  componentStack?: string;
+  source?: string;
 };
 
-export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
-  const { theme } = useTheme();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+function buildDetails(
+  error: Error,
+  componentStack?: string,
+  source?: string,
+): string {
+  const captured: CapturedError = {
+    message: error.message || error.name || "Error",
+    stack: error.stack ?? "",
+    componentStack: componentStack ?? "",
+    source: source ?? "react-error-boundary",
+    at: Date.now(),
+  };
+  return formatCapturedErrorText(captured);
+}
 
-  const handleRestart = async () => {
-    try {
-      await reloadAppAsync();
-    } catch (restartError) {
-      console.error("Failed to restart app:", restartError);
+/**
+ * Crash screen — always shows full message + stack (also on production web / Safari).
+ * Avoids theme hooks so it still renders if context providers failed.
+ */
+export function ErrorFallback({
+  error,
+  resetError,
+  componentStack,
+  source,
+}: ErrorFallbackProps) {
+  const details = buildDetails(error, componentStack, source);
+
+  const handleRestart = () => {
+    resetError();
+    if (Platform.OS === "web") {
+      reloadWebApp();
+      return;
+    }
+    void import("expo").then(({ reloadAppAsync }) => reloadAppAsync()).catch(() => {
       resetError();
-    }
+    });
   };
 
-  const formatErrorDetails = (): string => {
-    let details = `Error: ${error.message}\n\n`;
-    if (error.stack) {
-      details += `Stack Trace:\n${error.stack}`;
-    }
-    return details;
-  };
+  const buildTag =
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    (window as Window & { __FITPLAN_BUILD_ID?: string }).__FITPLAN_BUILD_ID
+      ? `\n\nBuild: ${(window as Window & { __FITPLAN_BUILD_ID?: string }).__FITPLAN_BUILD_ID}`
+      : "";
 
   return (
-    <ThemedView style={styles.container}>
-      {__DEV__ ? (
-        <Pressable
-          onPress={() => setIsModalVisible(true)}
-          style={({ pressed }) => [
-            styles.topButton,
-            {
-              backgroundColor: theme.backgroundDefault,
-              opacity: pressed ? 0.8 : 1,
-            },
-          ]}
-        >
-          <Feather name="alert-circle" size={20} color={theme.text} />
-        </Pressable>
-      ) : null}
+    <View style={styles.container}>
+      <Text style={styles.title}>{ERROR_FALLBACK_COPY.title}</Text>
+      <Text style={styles.subtitle}>{ERROR_FALLBACK_COPY.subtitle}</Text>
 
-      <View style={styles.content}>
-        <ThemedText type="h1" style={styles.title}>
-          Something went wrong
-        </ThemedText>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator
+      >
+        <Text style={styles.errorText} selectable>
+          {details}
+          {buildTag}
+        </Text>
+      </ScrollView>
 
-        <ThemedText type="body" style={styles.message}>
-          Please reload the app to continue.
-        </ThemedText>
-
-        <Pressable
-          onPress={handleRestart}
-          style={({ pressed }) => [
-            styles.button,
-            {
-              backgroundColor: theme.link,
-              opacity: pressed ? 0.9 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-            },
-          ]}
-        >
-          <ThemedText
-            type="body"
-            style={[styles.buttonText, { color: theme.buttonText }]}
-          >
-            Try Again
-          </ThemedText>
-        </Pressable>
-      </View>
-
-      {__DEV__ ? (
-        <Modal
-          visible={isModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <ThemedView style={styles.modalContainer}>
-              <View style={styles.modalHeader}>
-                <ThemedText type="h2" style={styles.modalTitle}>
-                  Error Details
-                </ThemedText>
-                <Pressable
-                  onPress={() => setIsModalVisible(false)}
-                  style={({ pressed }) => [
-                    styles.closeButton,
-                    { opacity: pressed ? 0.6 : 1 },
-                  ]}
-                >
-                  <Feather name="x" size={24} color={theme.text} />
-                </Pressable>
-              </View>
-
-              <ScrollView
-                style={styles.modalScrollView}
-                contentContainerStyle={styles.modalScrollContent}
-                showsVerticalScrollIndicator
-              >
-                <View
-                  style={[
-                    styles.errorContainer,
-                    { backgroundColor: theme.backgroundDefault },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.errorText,
-                      {
-                        color: theme.text,
-                        fontFamily: Fonts?.mono || "monospace",
-                      },
-                    ]}
-                    selectable
-                  >
-                    {formatErrorDetails()}
-                  </Text>
-                </View>
-              </ScrollView>
-            </ThemedView>
-          </View>
-        </Modal>
-      ) : null}
-    </ThemedView>
+      <Pressable
+        onPress={handleRestart}
+        style={({ pressed }) => [
+          styles.button,
+          pressed && styles.buttonPressed,
+        ]}
+        accessibilityRole="button"
+      >
+        <Text style={styles.buttonText}>{ERROR_FALLBACK_COPY.reload}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -148,99 +102,54 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: Spacing["2xl"],
-  },
-  content: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.lg,
-    width: "100%",
-    maxWidth: 600,
+    backgroundColor: "#111111",
+    paddingTop: Platform.OS === "web" ? 16 : 48,
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === "web" ? 16 : 32,
   },
   title: {
-    textAlign: "center",
-    lineHeight: 40,
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 6,
   },
-  message: {
-    textAlign: "center",
-    opacity: 0.7,
-    lineHeight: 24,
+  subtitle: {
+    color: "#AAAAAA",
+    fontSize: 13,
+    marginBottom: 12,
+    lineHeight: 18,
   },
-  topButton: {
-    position: "absolute",
-    top: Spacing["2xl"] + Spacing.lg,
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  button: {
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing["2xl"],
-    minWidth: 200,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonText: {
-    fontWeight: "600",
-    textAlign: "center",
-    fontSize: 16,
-  },
-  modalOverlay: {
+  scroll: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: "#1C1C1E",
   },
-  modalContainer: {
-    width: "100%",
-    height: "90%",
-    borderTopLeftRadius: BorderRadius.lg,
-    borderTopRightRadius: BorderRadius.lg,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(128, 128, 128, 0.2)",
-  },
-  modalTitle: {
-    fontWeight: "600",
-  },
-  closeButton: {
-    padding: Spacing.xs,
-  },
-  modalScrollView: {
-    flex: 1,
-  },
-  modalScrollContent: {
-    padding: Spacing.lg,
-  },
-  errorContainer: {
-    width: "100%",
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
-    padding: Spacing.lg,
+  scrollContent: {
+    padding: 12,
   },
   errorText: {
-    fontSize: 12,
-    lineHeight: 18,
-    width: "100%",
+    color: "#F2F2F7",
+    fontSize: 11,
+    lineHeight: 16,
+    fontFamily: Platform.select({
+      ios: "Menlo",
+      android: "monospace",
+      default: "monospace",
+    }),
+  },
+  button: {
+    backgroundColor: "#34C759",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "600",
   },
 });

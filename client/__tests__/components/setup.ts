@@ -51,6 +51,18 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock BrandLogo (static PNG require is not resolved in jsdom)
+// ---------------------------------------------------------------------------
+vi.mock("@/components/brand/BrandLogo", () => ({
+  BrandLogo: ({ testID = "brand-logo", accessibilityLabel = "Track Your Lift" }: any) =>
+    React.createElement("div", {
+      "data-testid": testID,
+      "aria-label": accessibilityLabel,
+      role: "img",
+    }),
+}));
+
+// ---------------------------------------------------------------------------
 // Mock expo-haptics (no-ops)
 // ---------------------------------------------------------------------------
 vi.mock("expo-haptics", () => ({
@@ -206,6 +218,14 @@ vi.mock("@react-navigation/native", () => ({
     goBack: vi.fn(),
   },
   StackActions: { push: vi.fn(), pop: vi.fn(), replace: vi.fn() },
+  createNavigationContainerRef: () => ({
+    isReady: () => true,
+    navigate: vi.fn(),
+    dispatch: vi.fn(),
+    getRootState: () => ({}),
+    getCurrentRoute: () => null,
+    current: null,
+  }),
   ThemeProvider: ({ children }: any) => children,
   DarkTheme: {},
   DefaultTheme: {},

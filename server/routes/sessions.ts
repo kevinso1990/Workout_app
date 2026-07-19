@@ -9,6 +9,7 @@ router.get("/history", requireAuth, sessionController.history);
 
 router.get("/",      optionalAuth, sessionController.list);
 router.post("/",     optionalAuth, sessionController.create);
+router.post("/cardio", requireAuth, sessionController.logCardio);
 router.post("/sync-local", optionalAuth, sessionController.syncLocal);
 router.get("/:id",   sessionController.getOne);
 router.put("/:id",   sessionController.finish);

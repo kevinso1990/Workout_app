@@ -9,7 +9,8 @@
  */
 
 import { ExerciseMedia, ExerciseMediaProvider } from "../types";
-import { getExerciseImageUrl } from "../../exerciseImages";
+import { getExerciseImageUrl, getExerciseImageId } from "../../exerciseImages";
+import freeExerciseDbInstructions from "../data/freeExerciseDbInstructions.json";
 
 // ── Per-exercise cues and category ─────────────────────────────────────────
 
@@ -944,9 +945,13 @@ export class StaticExerciseProvider implements ExerciseMediaProvider {
 
   getMedia(exerciseName: string): ExerciseMedia {
     const info = EXERCISE_INFO[exerciseName];
+    const imageId = getExerciseImageId(exerciseName);
+    const dbInstructions = imageId
+      ? (freeExerciseDbInstructions as Record<string, string[]>)[imageId]
+      : undefined;
     return {
       imageUrl: getExerciseImageUrl(exerciseName),
-      cues: info?.cues ?? GENERIC_CUES,
+      cues: info?.cues ?? dbInstructions ?? GENERIC_CUES,
       category: info?.category ?? "Exercise",
     };
   }

@@ -16,6 +16,14 @@ export const useFocusEffect = (fn: any) => fn();
 export const NavigationContainer = ({ children }: any) => children;
 export const createNavigatorFactory = (n: any) => n;
 export const useNavigationContainerRef = () => ({ current: null, navigate: () => {} });
+export const createNavigationContainerRef = () => ({
+  isReady: () => true,
+  navigate: () => {},
+  dispatch: () => {},
+  getRootState: () => ({}),
+  getCurrentRoute: () => null,
+  current: null,
+});
 export const StackActions = { push: () => {}, pop: () => {}, replace: () => {} };
 export const CommonActions = { navigate: () => {}, reset: () => {}, goBack: () => {} };
 export const ThemeProvider = ({ children }: any) => children;

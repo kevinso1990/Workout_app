@@ -18,6 +18,7 @@ import subscriptionRouter from "./subscriptions";
 import importWorkoutRouter from "./importWorkout";
 import translateExerciseRouter from "./translateExercise";
 import coachRouter from "./coach";
+import workoutSyncRouter from "./workoutSync";
 import { requireAuth, optionalAuth } from "../middleware/auth";
 import { startPushScheduler } from "../services/pushService";
 import { searchMuscleWiki } from "../services/muscleWikiService";
@@ -52,6 +53,11 @@ function canTriggerBackgroundFetch(): boolean {
 export function registerRoutes(app: Express): void {
   // Public — sign-in endpoints
   app.use("/api/auth", authRouter);
+
+  // Public — anonymous device cloud backup (no auth; keyed by client UUID).
+  // Pragmatic safety net so web/PWA users don't lose history if local
+  // storage is cleared. Registered before the requireAuth block.
+  app.use("/api/workouts", workoutSyncRouter);
 
   // Public — GIF URL lookups are read-only reference data with no user context.
   // Registered before the requireAuth exercises mount so these paths are reachable

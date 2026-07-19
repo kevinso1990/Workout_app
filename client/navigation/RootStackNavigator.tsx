@@ -10,6 +10,7 @@ import PlanDetailScreen from "@/screens/PlanDetailScreen";
 import ImportWorkoutScreen from "@/screens/ImportWorkoutScreen";
 import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
 import ActiveWorkoutScreen from "@/screens/main/ActiveWorkoutScreen";
+import LogCardioScreen from "@/screens/LogCardioScreen";
 import DisclaimerScreen from "@/screens/DisclaimerScreen";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -20,6 +21,7 @@ import {
   getDisclaimerAccepted,
   getOnboardingComplete,
 } from "@/lib/storage";
+import { restoreFromCloudIfEmpty } from "@/lib/cloudSync";
 
 export type RootStackParamList = {
   Disclaimer: undefined;
@@ -36,6 +38,7 @@ export type RootStackParamList = {
     dayIndex: number;
     restored?: boolean;
   };
+  LogCardio: { prefilledDate?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -68,6 +71,10 @@ export default function RootStackNavigator({
           }
           return;
         }
+        // Cloud safety net: if local storage is empty but a backup id exists,
+        // pull workouts/plans back before deciding where to route.
+        await restoreFromCloudIfEmpty().catch(() => false);
+
         const onboardingComplete = await getOnboardingComplete();
         if (!cancelled) {
           const route = onboardingComplete ? "Main" : "Onboarding";
@@ -181,6 +188,14 @@ export default function RootStackNavigator({
           headerShown: false,
           presentation: "fullScreenModal",
           gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="LogCardio"
+        component={LogCardioScreen}
+        options={{
+          headerTitle: () => <HeaderTitle brand />,
+          presentation: "modal",
         }}
       />
     </Stack.Navigator>

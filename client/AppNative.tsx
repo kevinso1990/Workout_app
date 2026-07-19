@@ -1,5 +1,6 @@
 import "react-native-gesture-handler";
 import React, { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import {
   Montserrat_400Regular,
@@ -15,26 +16,27 @@ import { NavigationContainer } from "@react-navigation/native";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+import { GlobalErrorBridge } from "@/components/GlobalErrorBridge";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { I18nRoot } from "@/components/I18nRoot";
 import { NativeToastHost } from "@/components/NativeToastHost";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { SubscriptionProvider } from "@/context/SubscriptionContext";
 import {
   ActiveWorkoutRecovery,
   rootNavigationRef,
 } from "@/navigation/ActiveWorkoutRecovery";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
-import { registerWorkoutSyncAppStateListener } from "@/lib/workoutSessionSyncQueue";
+import { initDataSync } from "@/lib/dataSync";
+import { registerWebServiceWorker } from "@/lib/installWebGlobalErrorHandlers";
 
 // Provider ordering rationale (outside-in):
 //   GestureHandlerRootView  -> required at the very top of the tree by
 //                              react-native-gesture-handler.
 //   SafeAreaProvider        -> exposes safe-area insets to everything below.
-//   ThemeProvider           -> MUST be above ErrorBoundary because
-//                              ErrorFallback calls useTheme() and would
-//                              itself throw if ThemeProvider were below it,
-//                              defeating crash recovery.
-//   ErrorBoundary           -> catches crashes anywhere inside the nav tree.
+//   GlobalErrorBridge     -> window.onerror outside React tree.
+//   ThemeProvider         -> app theme (ErrorFallback does not depend on it).
+//   ErrorBoundary         -> catches render errors inside the nav tree.
 //   NavigationContainer     -> root of all React Navigation state.
 //
 // OnboardingProvider is intentionally NOT placed here. It is owned by
@@ -56,7 +58,16 @@ export default function AppNative() {
     Montserrat_700Bold,
   });
 
-  useEffect(() => registerWorkoutSyncAppStateListener(), []);
+  useEffect(() => initDataSync(), []);
+
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const buildId =
+        (window as Window & { __FITPLAN_BUILD_ID?: string }).__FITPLAN_BUILD_ID ??
+        "dev";
+      void registerWebServiceWorker(buildId);
+    }
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -70,29 +81,33 @@ export default function AppNative() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <ErrorBoundary>
-            <I18nRoot>
-              <NavigationContainer
-                ref={rootNavigationRef}
-                onReady={() => setNavReady(true)}
-              >
-                <RootStackNavigator
-                  onBootstrapRoute={setBootstrapRoute}
-                  onBootstrapComplete={() => setBootstrapComplete(true)}
-                />
-                <ActiveWorkoutRecovery
-                  bootstrapReady={navReady && bootstrapComplete}
-                  initialRoute={bootstrapRoute}
-                />
-              </NavigationContainer>
-              <NativeToastHost />
-              <StatusBar style="auto" />
-            </I18nRoot>
-          </ErrorBoundary>
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <GlobalErrorBridge>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <SubscriptionProvider>
+            <ErrorBoundary>
+              <I18nRoot>
+                <NavigationContainer
+                  ref={rootNavigationRef}
+                  onReady={() => setNavReady(true)}
+                >
+                  <RootStackNavigator
+                    onBootstrapRoute={setBootstrapRoute}
+                    onBootstrapComplete={() => setBootstrapComplete(true)}
+                  />
+                  <ActiveWorkoutRecovery
+                    bootstrapReady={navReady && bootstrapComplete}
+                    initialRoute={bootstrapRoute}
+                  />
+                </NavigationContainer>
+                <NativeToastHost />
+                <StatusBar style="auto" />
+              </I18nRoot>
+            </ErrorBoundary>
+            </SubscriptionProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GlobalErrorBridge>
     </GestureHandlerRootView>
   );
 }

@@ -93,7 +93,7 @@ function PlanCard({
           style={styles.menuBtn}
           testID={`button-plan-menu-${plan.id}`}
           accessibilityRole="button"
-          accessibilityLabel="Plan options"
+          accessibilityLabel={t("plans.planOptions")}
         >
           <Feather name="more-horizontal" size={22} color={HEVY.textMuted} />
         </Pressable>
@@ -113,8 +113,8 @@ function PlanCard({
           </ThemedText>
           <ThemedText style={styles.planMeta}>
             {t("plans.planSummary", {
-              workouts: plan.daysPerWeek,
-              days: plan.days.length,
+              workoutsLabel: t("plans.workoutsPerWeek", { count: plan.daysPerWeek }),
+              daysLabel: t("plans.daysCount", { count: plan.days.length }),
             })}
           </ThemedText>
           {exerciseLine ? (
@@ -446,6 +446,24 @@ export default function MyPlansScreen() {
         setCoachBrief(null);
         return;
       }
+
+      // Daily briefing only needs to be generated once per calendar day —
+      // this screen is the home tab, refetching on every focus was hammering the AI API.
+      const today = new Date().toISOString().slice(0, 10);
+      const cacheKey = "coachBriefCache";
+      try {
+        const cachedRaw = await AsyncStorage.getItem(cacheKey);
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw) as { date: string; lang: string; brief: string | null };
+          if (cached.date === today && cached.lang === i18n.language) {
+            setCoachBrief(cached.brief);
+            return;
+          }
+        }
+      } catch {
+        // corrupt cache entry — fall through and refetch
+      }
+
       try {
         const history = await getWorkoutHistory();
         const body = buildDailyBriefingPayload(loadedPlans, history, i18n.language);
@@ -461,7 +479,12 @@ export default function MyPlansScreen() {
         }
         const data = (await res.json()) as { brief?: string };
         const raw = typeof data.brief === "string" ? data.brief.trim() : "";
-        setCoachBrief(isCoachTipRenderable(raw) ? raw : null);
+        const brief = isCoachTipRenderable(raw) ? raw : null;
+        setCoachBrief(brief);
+        await AsyncStorage.setItem(
+          cacheKey,
+          JSON.stringify({ date: today, lang: i18n.language, brief }),
+        );
       } catch {
         setCoachBrief(null);
       }

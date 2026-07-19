@@ -56,11 +56,11 @@ function BodyStatsCard({
   onAddNew: () => void;
 }) {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
   };
 
   return (
@@ -102,7 +102,7 @@ function BodyStatsCard({
               >
                 {latestMeasurement.weight}
               </ThemedText>
-              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>kg</ThemedText>
+              <ThemedText style={[styles.bodyStatLabel, { color: theme.textSecondary }]}>{t("common.kg")}</ThemedText>
             </View>
           ) : null}
           {latestMeasurement.bodyFat ? (
@@ -960,8 +960,8 @@ export default function ProfileScreen() {
         <ThemedText style={styles.greeting}>{t("profile.greeting")}</ThemedText>
         <ThemedText style={[styles.statsText, { color: theme.textSecondary }]}>
           {t("profile.statsSummary", {
-            plans: stats.plans,
-            workouts: stats.workouts,
+            plansLabel: t("profile.plansCreated", { count: stats.plans }),
+            workoutsLabel: t("profile.workoutsCompleted", { count: stats.workouts }),
           })}
         </ThemedText>
       </Animated.View>

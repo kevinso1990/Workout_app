@@ -3,6 +3,7 @@
  * List thumbnails stay static; GIFs load only in popups.
  */
 
+import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 
 import { getExerciseDbApiKey } from "@/lib/rapidApiConfig";
@@ -109,12 +110,32 @@ async function searchExerciseByName(
   }
 }
 
+async function downloadExerciseGifWeb(
+  exerciseId: string,
+  apiKey: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/image?exerciseId=${encodeURIComponent(exerciseId)}&resolution=360`,
+      { headers: rapidHeaders(apiKey) },
+    );
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
+
 async function downloadExerciseGif(
   exerciseId: string,
   apiKey: string,
 ): Promise<string | null> {
-  const dest = `${FileSystem.cacheDirectory ?? ""}edb-gif-${exerciseId}-360.gif`;
-  if (!FileSystem.cacheDirectory) return null;
+  if (Platform.OS === "web" || !FileSystem.cacheDirectory) {
+    return downloadExerciseGifWeb(exerciseId, apiKey);
+  }
+
+  const dest = `${FileSystem.cacheDirectory}edb-gif-${exerciseId}-360.gif`;
 
   try {
     const result = await FileSystem.downloadAsync(

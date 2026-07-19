@@ -22,11 +22,17 @@ import {
 import * as Notifications from "expo-notifications";
 import { SchedulableTriggerInputTypes } from "expo-notifications";
 import { Image as ExpoImage } from "expo-image";
+import { Swipeable } from "react-native-gesture-handler";
 import {
   HevySetGridHeader,
   HevySetRowWithPrefill,
 } from "@/components/workout/HevySetRow";
+import {
+  ExercisePickerModal,
+  type PickerExercise,
+} from "@/components/workout/ExercisePickerModal";
 import { isBodyweightExercise } from "@/lib/exerciseBodyweight";
+import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
 import { HEVY } from "@/constants/hevyLayout";
 import { WEIGHT_SLIDER_STEP_KG } from "@/lib/activeWorkoutSetFormat";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -166,10 +172,10 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function calculatePlates(totalWeight: number): { plates: number[]; perSide: string } {
+function calculatePlates(totalWeight: number): { plates: number[] } {
   const weightPerSide = (totalWeight - BAR_WEIGHT) / 2;
   if (weightPerSide <= 0) {
-    return { plates: [], perSide: "Just the bar" };
+    return { plates: [] };
   }
 
   const platesNeeded: number[] = [];
@@ -182,12 +188,7 @@ function calculatePlates(totalWeight: number): { plates: number[]; perSide: stri
     }
   }
 
-  if (platesNeeded.length === 0) {
-    return { plates: [], perSide: "Just the bar" };
-  }
-
-  const plateStr = platesNeeded.join(" + ");
-  return { plates: platesNeeded, perSide: `${plateStr} kg per side` };
+  return { plates: platesNeeded };
 }
 
 function PlateCalculatorModal({
@@ -200,7 +201,12 @@ function PlateCalculatorModal({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const calculation = calculatePlates(weight);
+  const perSide =
+    calculation.plates.length > 0
+      ? t("activeWorkout.plateCalc.perSide", { plates: calculation.plates.join(" + ") })
+      : t("activeWorkout.plateCalc.justTheBar");
 
   if (!visible) return null;
 
@@ -213,12 +219,12 @@ function PlateCalculatorModal({
         >
           <View style={styles.plateHeader}>
             <Feather name="disc" size={24} color={Colors.light.primary} />
-            <ThemedText style={styles.plateTitle}>Plate Calculator</ThemedText>
+            <ThemedText style={styles.plateTitle}>{t("activeWorkout.plateCalc.title")}</ThemedText>
           </View>
 
           <View style={styles.plateBarSection}>
             <ThemedText style={[styles.plateLabel, { color: theme.textSecondary }]}>
-              Bar weight
+              {t("activeWorkout.plateCalc.barWeight")}
             </ThemedText>
             <ThemedText style={styles.plateValue}>{BAR_WEIGHT}kg</ThemedText>
           </View>
@@ -229,7 +235,7 @@ function PlateCalculatorModal({
 
           <View style={styles.plateResultSection}>
             <ThemedText style={[styles.plateLabel, { color: theme.textSecondary }]}>
-              Total: {weight}kg
+              {t("activeWorkout.plateCalc.total", { weight })}
             </ThemedText>
             <View style={styles.plateResult}>
               {calculation.plates.length > 0 ? (
@@ -251,7 +257,7 @@ function PlateCalculatorModal({
                 </View>
               ) : null}
               <ThemedText style={[styles.plateDescription, { color: theme.text }]}>
-                {calculation.perSide}
+                {perSide}
               </ThemedText>
             </View>
           </View>
@@ -260,7 +266,7 @@ function PlateCalculatorModal({
             onPress={onClose}
             style={[styles.plateCloseButton, { backgroundColor: theme.backgroundSecondary }]}
           >
-            <ThemedText style={{ color: theme.text }}>Got it</ThemedText>
+            <ThemedText style={{ color: theme.text }}>{t("activeWorkout.plateCalc.gotIt")}</ThemedText>
           </Pressable>
         </Animated.View>
       </Pressable>
@@ -313,6 +319,7 @@ function RestTimerModal({
   onSkip: () => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const progress =
     totalSeconds > 0 ? Math.min(Math.max(timeLeft / totalSeconds, 0), 1) : 0;
@@ -329,7 +336,7 @@ function RestTimerModal({
           entering={ZoomIn.duration(300)}
           style={[styles.restModalContent, { backgroundColor: theme.backgroundDefault }]}
         >
-          <ThemedText style={styles.restTitle}>Rest Time</ThemedText>
+          <ThemedText style={styles.restTitle}>{t("activeWorkout.restTitle")}</ThemedText>
           <View style={styles.timerCircle}>
             <View style={styles.timerCircleProgressTrack} pointerEvents="none">
               <View
@@ -352,11 +359,11 @@ function RestTimerModal({
             </View>
           </View>
           <ThemedText style={[styles.restHint, { color: theme.textSecondary }]}>
-            Take a breather, you earned it
+            {t("activeWorkout.restHint")}
           </ThemedText>
           <Pressable onPress={onSkip} style={styles.skipRestButton}>
             <ThemedText style={[styles.skipRestText, { color: Colors.light.primary }]}>
-              Skip Rest
+              {t("activeWorkout.skipRest")}
             </ThemedText>
           </Pressable>
         </Animated.View>
@@ -499,15 +506,21 @@ function WorkoutSummary({
 
     const prLine =
       prs.length > 0
-        ? `\n🏆 PRs: ${prs.map((pr) => `${pr.exerciseName} (${pr.weight}kg × ${pr.reps})`).join(", ")}`
+        ? `\n${t("activeWorkout.shareText.prs", {
+            list: prs.map((pr) => `${pr.exerciseName} (${pr.weight}kg × ${pr.reps})`).join(", "),
+          })}`
         : "";
 
     const text =
-      `💪 Workout Complete — ${workoutName}\n` +
+      `${t("activeWorkout.shareText.complete", { name: workoutName })}\n` +
       `📅 ${today}\n` +
-      `⏱ ${formatTime(duration)} · ${completedSets} sets · ${totalVolume.toLocaleString()} kg volume` +
+      t("activeWorkout.shareText.stats", {
+        time: formatTime(duration),
+        sets: completedSets,
+        volume: totalVolume.toLocaleString(),
+      }) +
       prLine +
-      `\n\nTracked with TrackYourLift`;
+      `\n\n${t("activeWorkout.shareText.tagline")}`;
 
     Share.share({ message: text });
   };
@@ -516,7 +529,7 @@ function WorkoutSummary({
   // not a native Modal. No UIKit presentation context to clean up.
   if (!visible) return null;
 
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = new Date().toLocaleDateString(i18n.language, {
     weekday: "long",
     month: "short",
     day: "numeric",
@@ -1347,6 +1360,162 @@ export default function ActiveWorkoutScreen() {
     [plan, route.params.dayIndex, scheduleActiveWorkoutAutosave, scrollToExercise],
   );
 
+  const handleRemoveSet = useCallback(
+    (exerciseIndex: number, setIndex: number) => {
+      const dayIndex = route.params.dayIndex;
+      if (!plan || plan.days[dayIndex].exercises[exerciseIndex].sets <= 1) return;
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+      setPlan((prev) => {
+        if (!prev) return prev;
+        const days = [...prev.days];
+        const dayCopy = {
+          ...days[dayIndex],
+          exercises: days[dayIndex].exercises.map((ex, i) =>
+            i === exerciseIndex ? { ...ex, sets: ex.sets - 1 } : ex,
+          ),
+        };
+        days[dayIndex] = dayCopy;
+        return { ...prev, days };
+      });
+
+      setProgress((prev) => {
+        const updated = [...prev];
+        updated[exerciseIndex] = {
+          ...updated[exerciseIndex],
+          sets: updated[exerciseIndex].sets.filter((_, i) => i !== setIndex),
+        };
+        return updated;
+      });
+
+      setCurrentSetIndex((prev) =>
+        exerciseIndex === currentExerciseIndex && prev >= setIndex && prev > 0
+          ? prev - 1
+          : prev,
+      );
+
+      scheduleActiveWorkoutAutosave();
+    },
+    [plan, route.params.dayIndex, currentExerciseIndex, scheduleActiveWorkoutAutosave],
+  );
+
+  const buildExerciseFromCatalog = useCallback(
+    (item: PickerExercise, keepSetsFrom?: Exercise): Exercise => ({
+      id: `${item.id}-${Date.now()}`,
+      name: item.name,
+      muscleGroup: item.muscle_group,
+      equipment: item.equipment,
+      sets: keepSetsFrom?.sets ?? 3,
+      reps: keepSetsFrom?.reps ?? "8-12",
+    }),
+    [],
+  );
+
+  const buildEmptyProgressSets = (count: number): SetData[] =>
+    Array.from({ length: count }, () => ({
+      weight: "",
+      reps: "",
+      rating: null,
+      completed: false,
+    }));
+
+  const handleSwapExercise = useCallback(
+    (exerciseIndex: number, item: PickerExercise) => {
+      const dayIndex = route.params.dayIndex;
+      if (!plan) return;
+      const previous = plan.days[dayIndex].exercises[exerciseIndex];
+      const newExercise = buildExerciseFromCatalog(item, previous);
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      setPlan((prev) => {
+        if (!prev) return prev;
+        const days = [...prev.days];
+        const dayCopy = {
+          ...days[dayIndex],
+          exercises: days[dayIndex].exercises.map((ex, i) =>
+            i === exerciseIndex ? newExercise : ex,
+          ),
+        };
+        days[dayIndex] = dayCopy;
+        return { ...prev, days };
+      });
+
+      setProgress((prev) => {
+        const updated = [...prev];
+        updated[exerciseIndex] = {
+          exerciseId: newExercise.id,
+          sets: buildEmptyProgressSets(newExercise.sets),
+        };
+        return updated;
+      });
+
+      toast.show(t("activeWorkout.exerciseSwapped", { name: newExercise.name }));
+      scheduleActiveWorkoutAutosave();
+    },
+    [plan, route.params.dayIndex, buildExerciseFromCatalog, scheduleActiveWorkoutAutosave, t],
+  );
+
+  const handleAddExercise = useCallback(
+    (item: PickerExercise) => {
+      const dayIndex = route.params.dayIndex;
+      if (!plan) return;
+      const newExercise = buildExerciseFromCatalog(item);
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      setPlan((prev) => {
+        if (!prev) return prev;
+        const days = [...prev.days];
+        const dayCopy = {
+          ...days[dayIndex],
+          exercises: [...days[dayIndex].exercises, newExercise],
+        };
+        days[dayIndex] = dayCopy;
+        return { ...prev, days };
+      });
+
+      setProgress((prev) => [
+        ...prev,
+        {
+          exerciseId: newExercise.id,
+          sets: buildEmptyProgressSets(newExercise.sets),
+        },
+      ]);
+
+      toast.show(t("activeWorkout.exerciseAdded", { name: newExercise.name }));
+      scheduleActiveWorkoutAutosave();
+    },
+    [plan, route.params.dayIndex, buildExerciseFromCatalog, scheduleActiveWorkoutAutosave, t],
+  );
+
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [swapTargetIndex, setSwapTargetIndex] = useState<number | null>(null);
+
+  const openSwapPicker = useCallback((exerciseIndex: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSwapTargetIndex(exerciseIndex);
+    setPickerVisible(true);
+  }, []);
+
+  const openAddPicker = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSwapTargetIndex(null);
+    setPickerVisible(true);
+  }, []);
+
+  const handlePickerSelect = useCallback(
+    (item: PickerExercise) => {
+      if (swapTargetIndex !== null) {
+        handleSwapExercise(swapTargetIndex, item);
+      } else {
+        handleAddExercise(item);
+      }
+    },
+    [swapTargetIndex, handleSwapExercise, handleAddExercise],
+  );
+
   const persistRestTimerPreference = async (value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRestTimerEnabled(value);
@@ -1557,7 +1726,7 @@ export default function ActiveWorkoutScreen() {
   if (!plan || progress.length === 0) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ThemedText>Loading...</ThemedText>
+        <ThemedText>{t("common.loading")}</ThemedText>
       </ThemedView>
     );
   }
@@ -1600,6 +1769,24 @@ export default function ActiveWorkoutScreen() {
         muscleGroup={detailExercise.muscleGroup}
         onClose={() => setShowExerciseDetail(false)}
       />
+      <ExercisePickerModal
+        visible={pickerVisible}
+        title={
+          swapTargetIndex !== null
+            ? t("activeWorkout.swapExerciseTitle")
+            : t("activeWorkout.addExerciseTitle")
+        }
+        excludeNames={
+          new Set(
+            (plan?.days[route.params.dayIndex]?.exercises ?? []).map((e) => e.name),
+          )
+        }
+        onClose={() => {
+          setPickerVisible(false);
+          setSwapTargetIndex(null);
+        }}
+        onSelect={handlePickerSelect}
+      />
       <WorkoutSummary
         visible={showSummary}
         duration={elapsedTime}
@@ -1608,7 +1795,7 @@ export default function ActiveWorkoutScreen() {
         totalVolume={calculateTotalVolume()}
         prs={prsThisSession}
         workoutName={
-          plan?.days[route.params.dayIndex]?.dayName || "Workout"
+          plan?.days[route.params.dayIndex]?.dayName || t("activeWorkout.genericWorkoutName")
         }
         onClose={() => {
           if (navFiredRef.current) return;
@@ -1681,8 +1868,8 @@ export default function ActiveWorkoutScreen() {
                   ios_backgroundColor="#E5E5EA"
                   style={styles.headerRestSwitch}
                   testID="switch-rest-timer-header"
-                  accessibilityLabel="Pausen-Timer"
-                  accessibilityHint="Schaltet den automatischen Countdown nach jedem abgeschlossenen Satz ein oder aus."
+                  accessibilityLabel={t("activeWorkout.restTimer")}
+                  accessibilityHint={t("activeWorkout.restTimerHint")}
                   accessibilityState={{ checked: restTimerEnabled }}
                 />
               </View>
@@ -1762,7 +1949,11 @@ export default function ActiveWorkoutScreen() {
                   ]}
                   testID={`chip-exercise-${exIdx}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`${exercise.name}, ${completedCount} von ${totalCount} Sätzen`}
+                  accessibilityLabel={t("activeWorkout.exerciseChipLabel", {
+                    name: exercise.name,
+                    completed: completedCount,
+                    total: totalCount,
+                  })}
                   accessibilityState={{ selected: isCurrent }}
                 >
                   <ThemedText
@@ -1854,11 +2045,11 @@ export default function ActiveWorkoutScreen() {
                         <ThemedText
                           style={[
                             styles.metaMuscleLabel,
-                            { color: theme.textSecondary },
+                            { color: getMuscleGroupColor(exercise.muscleGroup) },
                           ]}
                           numberOfLines={1}
                         >
-                          {exercise.muscleGroup}
+                          {translateMuscleGroup(t, exercise.muscleGroup)}
                         </ThemedText>
                         <ThemedText
                           style={[styles.targetSetsLine, { color: theme.text }]}
@@ -1882,7 +2073,7 @@ export default function ActiveWorkoutScreen() {
                           pressed && exIdx > 0 && styles.exerciseReorderBtnPressed,
                         ]}
                         accessibilityRole="button"
-                        accessibilityLabel="Übung nach oben"
+                        accessibilityLabel={t("activeWorkout.moveExerciseUp")}
                         accessibilityState={{ disabled: exIdx === 0 }}
                         testID={`button-move-exercise-up-${exIdx}`}
                       >
@@ -1907,7 +2098,7 @@ export default function ActiveWorkoutScreen() {
                             styles.exerciseReorderBtnPressed,
                         ]}
                         accessibilityRole="button"
-                        accessibilityLabel="Übung nach unten"
+                        accessibilityLabel={t("activeWorkout.moveExerciseDown")}
                         accessibilityState={{
                           disabled: exIdx === day.exercises.length - 1,
                         }}
@@ -1922,6 +2113,19 @@ export default function ActiveWorkoutScreen() {
                               : theme.text
                           }
                         />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => openSwapPicker(exIdx)}
+                        hitSlop={6}
+                        style={({ pressed }) => [
+                          styles.exerciseReorderBtn,
+                          pressed && styles.exerciseReorderBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("activeWorkout.swapExercise")}
+                        testID={`button-swap-exercise-${exIdx}`}
+                      >
+                        <Feather name="repeat" size={16} color={theme.text} />
                       </Pressable>
                     </View>
 
@@ -1951,36 +2155,79 @@ export default function ActiveWorkoutScreen() {
                   ]}
                 >
                   <HevySetGridHeader isBodyweight={isBodyweight} />
-                  {ep.sets.map((setData, setIdx) => (
-                    <HevySetRowWithPrefill
-                      key={setIdx}
-                      setIndex={setIdx}
-                      setData={setData}
-                      lastWeekData={lastWeekExercise?.sets[setIdx] || null}
-                      isBodyweight={isBodyweight}
-                      isActive={
-                        exIdx === currentExerciseIndex &&
-                        setIdx === currentSetIndex
-                      }
-                      targetReps={
-                        exercise.targetReps != null &&
-                        Number.isFinite(exercise.targetReps)
-                          ? String(exercise.targetReps)
-                          : exercise.reps
-                      }
-                      progressionWeight={progression?.recommendedWeight ?? null}
-                      progressionReps={progression?.recommendedReps ?? null}
-                      onActivate={() => activateSet(exIdx, setIdx)}
-                      onUpdate={(data) => handleUpdateSet(exIdx, setIdx, data)}
-                      onComplete={(payload) =>
-                        handleSetComplete(exIdx, setIdx, payload)
-                      }
-                    />
-                  ))}
+                  {ep.sets.map((setData, setIdx) => {
+                    const isActiveSet =
+                      exIdx === currentExerciseIndex && setIdx === currentSetIndex;
+                    const row = (
+                      <HevySetRowWithPrefill
+                        key={setIdx}
+                        setIndex={setIdx}
+                        setData={setData}
+                        lastWeekData={lastWeekExercise?.sets[setIdx] || null}
+                        isBodyweight={isBodyweight}
+                        isActive={isActiveSet}
+                        targetReps={
+                          exercise.targetReps != null &&
+                          Number.isFinite(exercise.targetReps)
+                            ? String(exercise.targetReps)
+                            : exercise.reps
+                        }
+                        progressionWeight={progression?.recommendedWeight ?? null}
+                        progressionReps={progression?.recommendedReps ?? null}
+                        onActivate={() => activateSet(exIdx, setIdx)}
+                        onUpdate={(data) => handleUpdateSet(exIdx, setIdx, data)}
+                        onComplete={(payload) =>
+                          handleSetComplete(exIdx, setIdx, payload)
+                        }
+                      />
+                    );
+                    if (ep.sets.length <= 1) return row;
+                    return (
+                      <Swipeable
+                        key={setIdx}
+                        // Micro-sliders under the active, uncompleted row also drag
+                        // horizontally — disable the swipe gesture there so the two
+                        // don't fight over the same touch.
+                        enabled={!(isActiveSet && !setData.completed)}
+                        overshootRight={false}
+                        rightThreshold={40}
+                        renderRightActions={() => (
+                          <Pressable
+                            onPress={() => handleRemoveSet(exIdx, setIdx)}
+                            style={styles.swipeDeleteAction}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("activeWorkout.removeSet")}
+                            testID={`button-remove-set-${exIdx}-${setIdx}`}
+                          >
+                            <Feather name="trash-2" size={18} color="#FFFFFF" />
+                          </Pressable>
+                        )}
+                      >
+                        {row}
+                      </Swipeable>
+                    );
+                  })}
                 </View>
               </View>
             );
           })}
+
+          <Pressable
+            onPress={openAddPicker}
+            style={({ pressed }) => [
+              styles.addExerciseBtn,
+              { borderColor: theme.border },
+              pressed && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={t("activeWorkout.addExercise")}
+            testID="button-add-exercise"
+          >
+            <Feather name="plus" size={18} color={theme.text} />
+            <ThemedText style={[styles.addExerciseBtnText, { color: theme.text }]}>
+              {t("activeWorkout.addExercise")}
+            </ThemedText>
+          </Pressable>
         </KeyboardAwareScrollViewCompat>
 
         <View
@@ -2013,7 +2260,7 @@ export default function ActiveWorkoutScreen() {
               <View style={[styles.finishButton, { backgroundColor: Colors.light.primary }]}>
                 <Feather name="check" size={20} color="#FFFFFF" />
                 <ThemedText style={styles.finishButtonText}>
-                  Finish Workout
+                  {t("activeWorkout.finishWorkout")}
                 </ThemedText>
               </View>
             </AnimatedPressable>
@@ -2035,7 +2282,7 @@ export default function ActiveWorkoutScreen() {
                 ]}
                 testID="button-prev-exercise"
                 accessibilityRole="button"
-                accessibilityLabel="Vorherige Übung"
+                accessibilityLabel={t("activeWorkout.previousExercise")}
               >
                 <Feather name="chevron-left" size={22} color={theme.text} />
               </Pressable>
@@ -2076,7 +2323,7 @@ export default function ActiveWorkoutScreen() {
                 ]}
                 testID="button-next-exercise"
                 accessibilityRole="button"
-                accessibilityLabel="Nächste Übung"
+                accessibilityLabel={t("activeWorkout.nextExercise")}
               >
                 <Feather name="chevron-right" size={22} color={theme.text} />
               </Pressable>
@@ -2227,6 +2474,29 @@ const styles = StyleSheet.create({
   },
   exerciseReorderBtnPressed: {
     opacity: 0.55,
+  },
+  swipeDeleteAction: {
+    width: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EF4444",
+  },
+  addExerciseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    marginHorizontal: HEVY.pad,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xl,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+  },
+  addExerciseBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   bottomBarActions: {
     flexDirection: "row",

@@ -122,6 +122,199 @@ export function initDb() {
   migrateSubscriptions();
   migrateIndices();
   migrateMobileWorkoutSync();
+  migrateLocalSyncIds();
+  migrateExerciseCatalogExpansion();
+  migrateHybridAthlete();
+}
+
+/** Links native AsyncStorage plan/session ids to structured SQLite rows. */
+function migrateLocalSyncIds() {
+  try {
+    db.exec("ALTER TABLE plans ADD COLUMN local_plan_id TEXT");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE sessions ADD COLUMN local_session_id TEXT");
+  } catch {}
+  try {
+    db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_user_local_plan ON plans(user_id, local_plan_id) WHERE local_plan_id IS NOT NULL",
+    );
+  } catch {}
+  try {
+    db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_local_session ON sessions(local_session_id) WHERE local_session_id IS NOT NULL",
+    );
+  } catch {}
+}
+
+/** Cardio / hybrid athlete sessions — sport metadata on sessions table. */
+function migrateHybridAthlete() {
+  const cols = db.prepare("PRAGMA table_info(sessions)").all() as { name: string }[];
+  const has = (name: string) => cols.some((c) => c.name === name);
+
+  if (!has("workout_type")) {
+    db.exec(`ALTER TABLE sessions ADD COLUMN workout_type TEXT NOT NULL DEFAULT 'strength'`);
+  }
+  if (!has("sport_type")) {
+    db.exec(`ALTER TABLE sessions ADD COLUMN sport_type TEXT`);
+  }
+  if (!has("duration_minutes")) {
+    db.exec(`ALTER TABLE sessions ADD COLUMN duration_minutes INTEGER`);
+  }
+  if (!has("distance_km")) {
+    db.exec(`ALTER TABLE sessions ADD COLUMN distance_km REAL`);
+  }
+
+  const existing = db
+    .prepare("SELECT id FROM plans WHERE name = ? LIMIT 1")
+    .get("__cardio_system__") as { id: number } | undefined;
+  if (!existing) {
+    db.prepare("INSERT INTO plans (name) VALUES (?)").run("__cardio_system__");
+  }
+}
+
+/**
+ * Idempotent catalog top-up (INSERT OR IGNORE) that runs on EVERY startup.
+ *
+ * The original `seedExercises()` only fires on a brand-new (empty) DB, so
+ * production databases seeded long ago never received newer basics. This
+ * migration guarantees common dumbbell / kettlebell / trap-bar / bodyweight
+ * variations exist so the PDF importer's name-matcher can map real plans.
+ *
+ * Kettlebell movements are added under BOTH the short "KB ..." names (used by
+ * the generator) and the fully spelled "Kettlebell ..." names (what users and
+ * PDFs actually write) so the importer matches either form exactly.
+ */
+function migrateExerciseCatalogExpansion() {
+  const additions: [string, string, string][] = [
+    // ── Dumbbell variations ─────────────────────────────────────────────
+    ["Dumbbell Lunges", "Legs", "dumbbell"],
+    ["Dumbbell Reverse Lunge", "Legs", "dumbbell"],
+    ["Dumbbell Walking Lunge", "Legs", "dumbbell"],
+    ["Dumbbell Romanian Deadlift", "Legs", "dumbbell"],
+    ["Dumbbell Step Up", "Legs", "dumbbell"],
+    ["Dumbbell Bulgarian Split Squat", "Legs", "dumbbell"],
+    ["Dumbbell Squat", "Legs", "dumbbell"],
+    ["Dumbbell Floor Press", "Chest", "dumbbell"],
+    ["Dumbbell Pullover", "Back", "dumbbell"],
+    ["Dumbbell Thruster", "Shoulders", "dumbbell"],
+    ["Dumbbell Push Press", "Shoulders", "dumbbell"],
+    ["Dumbbell Deadlift", "Legs", "dumbbell"],
+    ["Dumbbell Calf Raise", "Legs", "dumbbell"],
+
+    // ── Trap-bar / hex-bar ──────────────────────────────────────────────
+    ["Trap Bar Deadlift", "Back", "barbell"],
+    ["Trap Bar Squat", "Legs", "barbell"],
+    ["Hex Bar Deadlift", "Back", "barbell"],
+
+    // ── Reverse / lunge family ──────────────────────────────────────────
+    ["Reverse Lunge", "Legs", "dumbbell"],
+    ["Barbell Reverse Lunge", "Legs", "barbell"],
+    ["Lunges", "Legs", "dumbbell"],
+    ["Curtsy Lunge", "Legs", "dumbbell"],
+
+    // ── Kettlebell — fully spelled names (PDF/user wording) ─────────────
+    ["Kettlebell Swing", "Legs", "kettlebell"],
+    ["Kettlebell Goblet Squat", "Legs", "kettlebell"],
+    ["Kettlebell Front Squat", "Legs", "kettlebell"],
+    ["Kettlebell Romanian Deadlift", "Legs", "kettlebell"],
+    ["Kettlebell Deadlift", "Legs", "kettlebell"],
+    ["Kettlebell Lunge", "Legs", "kettlebell"],
+    ["Kettlebell Reverse Lunge", "Legs", "kettlebell"],
+    ["Kettlebell Bulgarian Split Squat", "Legs", "kettlebell"],
+    ["Kettlebell Press", "Shoulders", "kettlebell"],
+    ["Kettlebell Push Press", "Shoulders", "kettlebell"],
+    ["Kettlebell Lateral Raise", "Shoulders", "kettlebell"],
+    ["Kettlebell Halo", "Shoulders", "kettlebell"],
+    ["Kettlebell Floor Press", "Chest", "kettlebell"],
+    ["Kettlebell Row", "Back", "kettlebell"],
+    ["Kettlebell Renegade Row", "Back", "kettlebell"],
+    ["Kettlebell High Pull", "Back", "kettlebell"],
+    ["Kettlebell Clean", "Back", "kettlebell"],
+    ["Kettlebell Clean and Press", "Shoulders", "kettlebell"],
+    ["Kettlebell Snatch", "Back", "kettlebell"],
+    ["Kettlebell Thruster", "Shoulders", "kettlebell"],
+    ["Kettlebell Curl", "Biceps", "kettlebell"],
+    ["Kettlebell Turkish Get-Up", "Core", "kettlebell"],
+    ["Kettlebell Windmill", "Core", "kettlebell"],
+    ["Kettlebell Russian Twist", "Core", "kettlebell"],
+    ["Kettlebell Farmer's Walk", "Traps", "kettlebell"],
+
+    // ── Bodyweight / calisthenics ───────────────────────────────────────
+    ["Pike Push-Ups", "Shoulders", "bodyweight"],
+    ["Wide Grip Push-Ups", "Chest", "bodyweight"],
+    ["Incline Push-Ups", "Chest", "bodyweight"],
+    ["Decline Push-Ups", "Chest", "bodyweight"],
+    ["Pseudo Planche Push-Ups", "Chest", "bodyweight"],
+    ["Pistol Squat", "Legs", "bodyweight"],
+    ["Bodyweight Squat", "Legs", "bodyweight"],
+    ["Jump Squat", "Legs", "bodyweight"],
+    ["Box Jump", "Legs", "bodyweight"],
+    ["Bodyweight Lunges", "Legs", "bodyweight"],
+    ["Bodyweight Reverse Lunge", "Legs", "bodyweight"],
+    ["Inverted Row", "Back", "bodyweight"],
+    ["Australian Pull-Ups", "Back", "bodyweight"],
+    ["Nordic Hamstring Curl", "Legs", "bodyweight"],
+    ["Glute Ham Raise", "Legs", "bodyweight"],
+    ["Calf Raise", "Legs", "bodyweight"],
+    ["Superman", "Back", "bodyweight"],
+    ["Bird Dog", "Core", "bodyweight"],
+    ["Hollow Hold", "Core", "bodyweight"],
+    ["Flutter Kicks", "Core", "bodyweight"],
+    ["Leg Raises", "Core", "bodyweight"],
+    ["Lying Leg Raises", "Core", "bodyweight"],
+    ["Bicycle Crunches", "Core", "bodyweight"],
+    ["V-Ups", "Core", "bodyweight"],
+    ["L-Sit", "Core", "bodyweight"],
+    ["Wall Sit", "Legs", "bodyweight"],
+    ["Bear Crawl", "Core", "bodyweight"],
+    ["Jumping Jacks", "Full Body", "bodyweight"],
+    ["High Knees", "Full Body", "bodyweight"],
+    ["Burpees", "Full Body", "bodyweight"],
+
+    // ── Unilateral / positional variations (kneeling, single-arm, seated) ─
+    ["Single-Arm Kettlebell Shoulder Press", "Shoulders", "kettlebell"],
+    ["Kneeling Single-Arm Kettlebell Press", "Shoulders", "kettlebell"],
+    ["Half-Kneeling Kettlebell Press", "Shoulders", "kettlebell"],
+    ["Tall Kneeling Kettlebell Press", "Shoulders", "kettlebell"],
+    ["Seated Kettlebell Shoulder Press", "Shoulders", "kettlebell"],
+    ["Kettlebell Bottoms-Up Press", "Shoulders", "kettlebell"],
+    ["Single-Arm Kettlebell Swing", "Legs", "kettlebell"],
+    ["Single-Arm Kettlebell Clean", "Back", "kettlebell"],
+    ["Single-Arm Kettlebell Clean and Press", "Shoulders", "kettlebell"],
+    ["Single-Arm Kettlebell Row", "Back", "kettlebell"],
+    ["Double Kettlebell Front Squat", "Legs", "kettlebell"],
+    ["Kettlebell Goblet Reverse Lunge", "Legs", "kettlebell"],
+    ["Kettlebell Suitcase Carry", "Core", "kettlebell"],
+    ["Single-Arm Dumbbell Shoulder Press", "Shoulders", "dumbbell"],
+    ["Kneeling Dumbbell Shoulder Press", "Shoulders", "dumbbell"],
+    ["Half-Kneeling Dumbbell Press", "Shoulders", "dumbbell"],
+    ["Tall Kneeling Dumbbell Press", "Shoulders", "dumbbell"],
+    ["Seated Dumbbell Shoulder Press", "Shoulders", "dumbbell"],
+    ["Single-Arm Dumbbell Row", "Back", "dumbbell"],
+    ["Single-Arm Dumbbell Floor Press", "Chest", "dumbbell"],
+    ["Half-Kneeling Landmine Press", "Shoulders", "barbell"],
+    ["Tall Kneeling Landmine Press", "Shoulders", "barbell"],
+    ["Single-Arm Landmine Row", "Back", "barbell"],
+
+    // ── Conditioning / full body ────────────────────────────────────────
+    ["Thrusters", "Full Body", "barbell"],
+    ["Clean and Press", "Full Body", "barbell"],
+    ["Power Clean", "Full Body", "barbell"],
+    ["Battle Ropes", "Full Body", "other"],
+    ["Wall Balls", "Full Body", "other"],
+    ["Sled Push", "Legs", "other"],
+  ];
+
+  const insert = db.prepare(
+    "INSERT OR IGNORE INTO exercises (name, muscle_group, equipment, is_custom) VALUES (?, ?, ?, 0)",
+  );
+  const tx = db.transaction(() => {
+    for (const [name, group, equip] of additions) {
+      insert.run(name, group, equip);
+    }
+  });
+  tx();
 }
 
 /** Offline-first mobile exports (JSON) for background sync from the native app. */
@@ -435,6 +628,7 @@ function seedExercises() {
     ["Ab Wheel Rollout", "Core", "bodyweight"],
     ["Mountain Climbers", "Core", "bodyweight"],
     ["Dead Bug", "Core", "bodyweight"],
+    ["Dead Hang", "Back", "bodyweight"],
     ["Sit-Ups", "Core", "bodyweight"],
     ["Pallof Press", "Core", "cable"],
     ["Woodchoppers", "Core", "cable"],

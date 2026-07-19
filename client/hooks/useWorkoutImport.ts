@@ -94,6 +94,8 @@ export interface PickedFile {
   mediaType: string;
   /** App-owned copy for native multipart upload (PDF). */
   uploadUri?: string;
+  /** Web: browser File/Blob for direct FormData upload. */
+  webFile?: File | Blob;
   /** "pdf" | "spreadsheet" — chosen by mime type / extension. */
   kind: "pdf" | "spreadsheet";
 }
@@ -125,6 +127,52 @@ function logImportError(stage: string, err: unknown, detail?: Record<string, unk
 }
 
 const TEMP_IMPORT_PDF = "temp_import.pdf";
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(",")[1] ?? "";
+      resolve(sanitizeBase64(base64));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function readWebDocumentFile(
+  asset: DocumentPicker.DocumentPickerAsset,
+  kind: PickedFile["kind"],
+): Promise<PickedFile> {
+  const webFile = (asset as DocumentPicker.DocumentPickerAsset & { file?: File }).file;
+  let fileBlob: Blob | File | null = webFile ?? null;
+
+  if (!fileBlob) {
+    try {
+      const res = await fetch(asset.uri);
+      fileBlob = await res.blob();
+    } catch (err) {
+      logImportError("web:fetch_blob_failed", err, { uri: asset.uri.slice(0, 120) });
+      throw err;
+    }
+  }
+
+  const base64 = await blobToBase64(fileBlob);
+  const mediaType =
+    asset.mimeType ||
+    fileBlob.type ||
+    (kind === "pdf" ? "application/pdf" : "application/octet-stream");
+
+  return {
+    uri: asset.uri,
+    name: asset.name,
+    base64,
+    mediaType,
+    webFile: fileBlob,
+    kind,
+  };
+}
 
 /** Strip CRLF from Base64 so JSON transport cannot break on multi-line encodings. */
 function sanitizeBase64(base64String: string): string {
@@ -376,6 +424,10 @@ export function useWorkoutImport() {
     const kind = classifyFile(asset.name, asset.mimeType);
     if (!kind) return null;
 
+    if (Platform.OS === "web") {
+      return readWebDocumentFile(asset, kind);
+    }
+
     let base64: string;
     let uploadUri: string | undefined;
     if (kind === "pdf") {
@@ -409,9 +461,29 @@ export function useWorkoutImport() {
       type: "application/pdf",
     } as unknown as Blob);
 
+    return postImportPdfFormData(form, url, "multipart-pdf-native");
+  }
+
+  async function postImportPdfMultipartWeb(
+    file: File | Blob,
+    fileName: string,
+  ): Promise<ImportedWorkoutPlan> {
+    const url = new URL("/api/import-workout", getApiUrl()).toString();
+    const form = new FormData();
+    const name = fileName.toLowerCase().endsWith(".pdf") ? fileName : "import.pdf";
+    form.append("pdf", file, name);
+
+    return postImportPdfFormData(form, url, "multipart-pdf-web");
+  }
+
+  async function postImportPdfFormData(
+    form: FormData,
+    url: string,
+    transport: string,
+  ): Promise<ImportedWorkoutPlan> {
     logImportDebug("postImport:multipart_pdf_start", {
       url,
-      fileUri: fileUri.slice(0, 120),
+      transport,
       timeoutMs: IMPORT_FETCH_TIMEOUT_MS,
     });
 
@@ -428,7 +500,7 @@ export function useWorkoutImport() {
           signal: controller.signal,
         });
       } catch (err) {
-        return handleImportFetchError(err, url, "multipart-pdf");
+        return handleImportFetchError(err, url, transport);
       } finally {
         clearTimeout(timeoutId);
       }
@@ -640,7 +712,15 @@ export function useWorkoutImport() {
       logImportDebug("analyzeFile:pdf", {
         base64Chars: file.base64.length,
         hasUploadUri: !!file.uploadUri,
+        hasWebFile: !!file.webFile,
       });
+      if (Platform.OS === "web") {
+        if (file.webFile) {
+          return postImportPdfMultipartWeb(file.webFile, file.name);
+        }
+        const blob = await (await fetch(file.uri)).blob();
+        return postImportPdfMultipartWeb(blob, file.name);
+      }
       if (file.uploadUri) {
         return postImportPdfMultipart(file.uploadUri);
       }
@@ -695,5 +775,13 @@ export function useWorkoutImport() {
     return planId;
   }
 
-  return { pickImage, pickFile, analyzeImages, analyzeFile, saveImportedPlan };
+  async function analyzePlainText(text: string): Promise<ImportedWorkoutPlan> {
+    const trimmed = text.trim();
+    if (trimmed.length < 20) {
+      throw new Error("Paste at least a few lines of your workout plan.");
+    }
+    return postImport({ plainText: trimmed });
+  }
+
+  return { pickImage, pickFile, analyzeImages, analyzeFile, analyzePlainText, saveImportedPlan };
 }

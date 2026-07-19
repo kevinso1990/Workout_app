@@ -21,6 +21,12 @@ i18n
       it: { translation: it },
       pt: { translation: pt },
     },
+    // No hardcoded `lng`: let the detector pick the browser/OS language.
+    // German-speaking visitors (de, de-DE, de-AT, de-CH) get German; everyone
+    // else falls back to English. A manual choice in localStorage wins.
+    supportedLngs: ["de", "en"],
+    nonExplicitSupportedLngs: true,
+    load: "languageOnly",
     fallbackLng: "en",
     interpolation: {
       escapeValue: false,

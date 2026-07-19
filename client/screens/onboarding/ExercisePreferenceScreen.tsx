@@ -10,7 +10,7 @@ import Animated, {
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -22,10 +22,13 @@ import {
   setOnboardingComplete,
   setUserPreferences,
   saveWorkoutPlan,
-  generateDefaultPlan,
 } from "@/lib/storage";
+import { scheduleDataSync } from "@/lib/dataSync";
+import { generateWorkoutPlan } from "@/lib/planGeneration";
 import { ProgressBar } from "@/components/onboarding/ProgressBar";
 import { OnboardingHeading } from "@/components/onboarding/OnboardingHeading";
+import { resetToRootMain } from "@/lib/navigationHelpers";
+import { hapticLight, hapticSuccess } from "@/lib/safeHaptics";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -126,6 +129,7 @@ function OptionCard({
 export default function ExercisePreferenceScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const { state, setExercisePreference, getPreferences } = useOnboarding();
@@ -137,7 +141,7 @@ export default function ExercisePreferenceScreen() {
   }));
 
   const handleSelect = (preference: "choose" | "default") => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     setExercisePreference(preference);
   };
 
@@ -156,22 +160,28 @@ export default function ExercisePreferenceScreen() {
         await setUserPreferences(preferences);
 
         if (preferences.exercisePreference === "default") {
-          const defaultPlan = generateDefaultPlan(
-            preferences.workoutDaysPerWeek
-          );
+          const { plan: defaultPlan } = await generateWorkoutPlan({
+            frequency: preferences.workoutDaysPerWeek,
+            experience: preferences.fitnessLevel ?? "beginner",
+            goal: preferences.fitnessGoals?.[0] ?? "build_muscle",
+            equipment: preferences.equipment ?? null,
+            focusMuscles: preferences.focusMuscles,
+          });
           await saveWorkoutPlan(defaultPlan);
+          scheduleDataSync();
         }
       }
 
       await setOnboardingComplete(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Main" as never }],
-        })
-      );
+      hapticSuccess();
+      if (!resetToRootMain()) {
+        navigation.getParent()?.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          }),
+        );
+      }
     } catch (error) {
       console.error("Error saving preferences:", error);
     } finally {
@@ -185,9 +195,9 @@ export default function ExercisePreferenceScreen() {
 
   const getButtonText = () => {
     if (state.splitPreference === "choose") {
-      return "Choose Split";
+      return t("onboarding.exercisePreference.chooseSplitButton");
     }
-    return "Create My Plan";
+    return t("onboarding.exercisePreference.createPlanButton");
   };
 
   return (
@@ -208,16 +218,16 @@ export default function ExercisePreferenceScreen() {
 
           <Animated.View entering={FadeInUp.delay(200).duration(500)}>
             <OnboardingHeading
-              title={"How would you like\nto pick exercises?"}
-              subtitle="Don't worry, you can swap exercises anytime"
+              title={t("onboarding.exercisePreference.title")}
+              subtitle={t("onboarding.exercisePreference.subtitle")}
             />
           </Animated.View>
 
           <View style={styles.optionsContainer}>
             <Animated.View entering={FadeInUp.delay(300).duration(500)}>
               <OptionCard
-                title="Use Defaults"
-                description="Start with proven exercises for each muscle group"
+                title={t("onboarding.exercisePreference.defaultsTitle")}
+                description={t("onboarding.exercisePreference.defaultsDesc")}
                 icon="check-circle"
                 selected={state.exercisePreference === "default"}
                 onPress={() => handleSelect("default")}
@@ -227,8 +237,8 @@ export default function ExercisePreferenceScreen() {
 
             <Animated.View entering={FadeInUp.delay(400).duration(500)}>
               <OptionCard
-                title="I'll Choose"
-                description="Browse our exercise library and pick your favorites"
+                title={t("onboarding.exercisePreference.chooseTitle")}
+                description={t("onboarding.exercisePreference.chooseDesc")}
                 icon="list"
                 selected={state.exercisePreference === "choose"}
                 onPress={() => handleSelect("choose")}
@@ -249,7 +259,7 @@ export default function ExercisePreferenceScreen() {
             testID="button-back"
           >
             <ThemedText style={[styles.backButtonText, { color: theme.text }]}>
-              Back
+              {t("onboarding.back")}
             </ThemedText>
           </Pressable>
 

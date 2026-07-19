@@ -48,6 +48,31 @@ const isWeb = Platform.OS === "web";
 const CardShell = isWeb ? View : Animated.View;
 const PreviewShell = isWeb ? View : Animated.View;
 
+const DAY_NAME_KEYS: Record<string, string> = {
+  Push: "push",
+  Pull: "pull",
+  Legs: "legs",
+  Upper: "upper",
+  Lower: "lower",
+  Chest: "chest",
+  Back: "back",
+  Shoulders: "shoulders",
+  Arms: "arms",
+};
+
+/** Translates a split day-type label for display. `dayName` also doubles as an
+ * exercise-selection key elsewhere, so only the rendered label is translated —
+ * the underlying data stays in English. Handles "Full Body A"/"B" variants. */
+function translateDayLabel(t: (key: string, opts?: any) => string, day: string): string {
+  const fullBodyMatch = day.match(/^Full Body( [ABC])?$/);
+  if (fullBodyMatch) {
+    return t("onboarding.dayNames.fullBody", { defaultValue: "Full Body" }) + (fullBodyMatch[1] ?? "");
+  }
+  const key = DAY_NAME_KEYS[day];
+  if (!key) return day;
+  return t(`onboarding.dayNames.${key}`, { defaultValue: day });
+}
+
 
 function SplitCard({
   split,
@@ -110,7 +135,9 @@ function SplitCard({
           <View style={styles.recommendedBadgeWrap}>
             <View style={[styles.recommendedBadge, { backgroundColor: Colors.light.primary }]}>
               <Feather name="star" size={10} color="#fff" />
-              <ThemedText style={styles.recommendedBadgeText}>Recommended</ThemedText>
+              <ThemedText style={styles.recommendedBadgeText}>
+                {t("onboarding.recommended", { defaultValue: "Recommended" })}
+              </ThemedText>
             </View>
           </View>
         ) : null}
@@ -163,7 +190,7 @@ function SplitCard({
                     },
                   ]}
                 >
-                  {day}
+                  {translateDayLabel(t, day)}
                 </ThemedText>
               </View>
             ))}
@@ -344,7 +371,7 @@ export default function SplitSelectionScreen() {
                         {i + 1}
                       </ThemedText>
                     </View>
-                    <ThemedText style={styles.previewDayName}>{day}</ThemedText>
+                    <ThemedText style={styles.previewDayName}>{translateDayLabel(t, day)}</ThemedText>
                   </View>
                 ));
               })()}

@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { OnboardingHeading } from "@/components/onboarding/OnboardingHeading";
@@ -25,6 +26,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const scale = useSharedValue(1);
@@ -60,8 +62,8 @@ export default function WelcomeScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(600)}>
             <OnboardingHeading
               centered
-              title={"Build Your\nPerfect Workout"}
-              subtitle="Personalised plans, smart progression, and everything you need to keep showing up."
+              title={t("onboarding.welcomeTitle")}
+              subtitle={t("onboarding.welcomeTagline")}
               style={{ marginBottom: 0 }}
             />
           </Animated.View>
@@ -84,7 +86,9 @@ export default function WelcomeScreen() {
             testID="button-get-started"
           >
             <View style={[styles.button, { backgroundColor: Colors.light.primary }]}>
-              <ThemedText style={styles.buttonText}>Get Started</ThemedText>
+              <ThemedText style={styles.buttonText}>
+                {t("onboarding.getStarted")}
+              </ThemedText>
             </View>
           </AnimatedPressable>
         </Animated.View>

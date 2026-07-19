@@ -23,6 +23,7 @@ import Animated, {
   FadeInDown,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
@@ -33,6 +34,8 @@ import { prewarmExerciseMedia } from "@/services/exerciseMedia";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { getApiUrl } from "@/lib/query-client";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
+import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
+import { translateMuscleGroup, translateEquipment, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -41,6 +44,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 interface ExerciseItem {
   id: string;
   name: string;
+  /** German display name from exercise_translations; canonical `name` stays English for matching/history. */
+  nameDe?: string;
   muscleGroup: string;
   equipment: string;
   isCustom?: boolean;
@@ -247,6 +252,7 @@ function ExerciseCard({
   onDetailPress?: () => void;
 }) {
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -264,19 +270,6 @@ function ExerciseCard({
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
-  };
-
-  const getMuscleGroupColor = (group: string) => {
-    const colors: Record<string, string> = {
-      Chest: "#FF6B6B",
-      Back: "#4ECDC4",
-      Shoulders: "#45B7D1",
-      Legs: "#96CEB4",
-      Arms: "#DDA0DD",
-      Core: "#FFB347",
-      "Full Body": Colors.light.primary,
-    };
-    return colors[group] || Colors.light.primary;
   };
 
   return (
@@ -305,7 +298,7 @@ function ExerciseCard({
           />
         </View>
         <ThemedText style={styles.exerciseName} numberOfLines={2}>
-          {exercise.name}
+          {getExerciseDisplayName(exercise, i18n.language)}
         </ThemedText>
         <View
           style={[
@@ -319,18 +312,18 @@ function ExerciseCard({
               { color: getMuscleGroupColor(exercise.muscleGroup) },
             ]}
           >
-            {exercise.muscleGroup}
+            {translateMuscleGroup(t, exercise.muscleGroup)}
           </ThemedText>
         </View>
         <ThemedText
           style={[styles.equipmentText, { color: theme.textSecondary }]}
         >
-          {exercise.equipment}
+          {translateEquipment(t, exercise.equipment)}
         </ThemedText>
         {exercise.isCustom ? (
           <View style={[styles.customBadge, { backgroundColor: Colors.light.primary + "20" }]}>
             <ThemedText style={[styles.customBadgeText, { color: Colors.light.primary }]}>
-              Custom
+              {t("exercisesScreen.createModal.customBadge")}
             </ThemedText>
           </View>
         ) : null}
@@ -349,6 +342,7 @@ function CreateExerciseModal({
   onSave: (exercise: Omit<ExerciseItem, "id">) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [muscleGroup, setMuscleGroup] = useState("Chest");
@@ -369,7 +363,7 @@ function CreateExerciseModal({
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault, paddingBottom: insets.bottom + Spacing.lg }]}>
           <View style={styles.modalHeader}>
-            <ThemedText style={styles.modalTitle}>Create Custom Exercise</ThemedText>
+            <ThemedText style={styles.modalTitle}>{t("exercisesScreen.createModal.title")}</ThemedText>
             <Pressable onPress={onClose}>
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
@@ -378,13 +372,13 @@ function CreateExerciseModal({
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.formGroup}>
               <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
-                Exercise Name
+                {t("exercisesScreen.createModal.nameLabel")}
               </ThemedText>
               <TextInput
                 style={[styles.textInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                 value={name}
                 onChangeText={setName}
-                placeholder="e.g., Single Arm Cable Row"
+                placeholder={t("exercisesScreen.customExercisePlaceholder")}
                 placeholderTextColor={theme.textSecondary}
                 testID="input-exercise-name"
               />
@@ -392,7 +386,7 @@ function CreateExerciseModal({
 
             <View style={styles.formGroup}>
               <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
-                Muscle Group
+                {t("exercisesScreen.createModal.muscleGroupLabel")}
               </ThemedText>
               <View style={styles.optionsGrid}>
                 {MUSCLE_GROUPS.filter(g => g !== "All").map((group) => (
@@ -412,7 +406,7 @@ function CreateExerciseModal({
                         { color: muscleGroup === group ? "#FFFFFF" : theme.text },
                       ]}
                     >
-                      {group}
+                      {translateMuscleGroup(t, group)}
                     </ThemedText>
                   </Pressable>
                 ))}
@@ -421,7 +415,7 @@ function CreateExerciseModal({
 
             <View style={styles.formGroup}>
               <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
-                Equipment
+                {t("exercisesScreen.createModal.equipmentLabel")}
               </ThemedText>
               <View style={styles.optionsGrid}>
                 {EQUIPMENT_OPTIONS.map((equip) => (
@@ -441,7 +435,7 @@ function CreateExerciseModal({
                         { color: equipment === equip ? "#FFFFFF" : theme.text },
                       ]}
                     >
-                      {equip}
+                      {translateEquipment(t, equip)}
                     </ThemedText>
                   </Pressable>
                 ))}
@@ -455,7 +449,7 @@ function CreateExerciseModal({
             disabled={!name.trim()}
             testID="button-save-exercise"
           >
-            <ThemedText style={styles.saveButtonText}>Create Exercise</ThemedText>
+            <ThemedText style={styles.saveButtonText}>{t("exercisesScreen.createModal.createButton")}</ThemedText>
           </Pressable>
         </View>
       </View>
@@ -473,6 +467,7 @@ function APISearchModal({
   onSelect: (exercise: Omit<ExerciseItem, "id">) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<APIExercise[]>([]);
@@ -566,7 +561,7 @@ function APISearchModal({
               style={[styles.apiSearchInput, { color: theme.text }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search 800+ exercises..."
+              placeholder={t("exercisesScreen.searchPlaceholder")}
               placeholderTextColor={theme.textSecondary}
               testID="input-api-search"
             />
@@ -633,6 +628,7 @@ function ExerciseProgressModal({
   history: WorkoutSession[];
 }) {
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
 
   const stats = useMemo<ExerciseStats | null>(() => {
@@ -724,16 +720,16 @@ function ExerciseProgressModal({
         >
           <View style={styles.modalHeader}>
             <View style={{ flex: 1 }}>
-              <ThemedText style={styles.modalTitle}>{exercise.name}</ThemedText>
+              <ThemedText style={styles.modalTitle}>{getExerciseDisplayName(exercise, i18n.language)}</ThemedText>
               <ThemedText style={[styles.progressSubtitle, { color: theme.textSecondary }]}>
-                {exercise.muscleGroup} • {exercise.equipment}
+                {translateMuscleGroup(t, exercise.muscleGroup)} • {translateEquipment(t, exercise.equipment)}
               </ThemedText>
             </View>
             <Pressable
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               testID="button-close-progress-modal"
-              accessibilityLabel="Close"
+              accessibilityLabel={t("exercisesScreen.progressModal.close")}
             >
               <Feather name="x" size={24} color={theme.text} />
             </Pressable>
@@ -758,21 +754,21 @@ function ExerciseProgressModal({
                   <Feather name="calendar" size={20} color={Colors.light.primary} />
                   <ThemedText style={styles.statValue}>{stats.totalSessions}</ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
-                    Sessions
+                    {t("exercisesScreen.progressModal.sessions")}
                   </ThemedText>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
                   <Feather name="layers" size={20} color={Colors.light.primary} />
                   <ThemedText style={styles.statValue}>{stats.totalSets}</ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
-                    Total Sets
+                    {t("exercisesScreen.progressModal.totalSets")}
                   </ThemedText>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
                   <Feather name="repeat" size={20} color={Colors.light.primary} />
                   <ThemedText style={styles.statValue}>{stats.totalReps}</ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
-                    Total Reps
+                    {t("exercisesScreen.progressModal.totalReps")}
                   </ThemedText>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
@@ -783,7 +779,7 @@ function ExerciseProgressModal({
                       : `${stats.totalVolume}kg`}
                   </ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
-                    Total Volume
+                    {t("exercisesScreen.progressModal.totalVolume")}
                   </ThemedText>
                 </View>
               </View>
@@ -793,21 +789,21 @@ function ExerciseProgressModal({
                   <View style={styles.prHeader}>
                     <Feather name="award" size={24} color={Colors.light.primary} />
                     <ThemedText style={[styles.prTitle, { color: Colors.light.primary }]}>
-                      Personal Record
+                      {t("exercisesScreen.progressModal.personalRecord")}
                     </ThemedText>
                   </View>
                   <ThemedText style={styles.prValue}>
                     {stats.bestSet.weight}kg x {stats.bestSet.reps} reps
                   </ThemedText>
                   <ThemedText style={[styles.prVolume, { color: theme.textSecondary }]}>
-                    Volume: {stats.bestSet.volume}kg
+                    {t("exercisesScreen.progressModal.volume", { volume: stats.bestSet.volume })}
                   </ThemedText>
                 </View>
               ) : null}
 
               <View style={styles.trendSection}>
                 <View style={styles.trendHeader}>
-                  <ThemedText style={styles.sectionTitle}>Volume Trend</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>{t("exercisesScreen.progressModal.volumeTrend")}</ThemedText>
                   {stats.volumeTrend !== 0 ? (
                     <View
                       style={[
@@ -848,7 +844,7 @@ function ExerciseProgressModal({
                         />
                       </View>
                       <ThemedText style={[styles.barLabel, { color: theme.textSecondary }]}>
-                        {new Date(session.date).toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                        {new Date(session.date).toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}
                       </ThemedText>
                     </View>
                   ))}
@@ -856,7 +852,7 @@ function ExerciseProgressModal({
               </View>
 
               <View style={styles.historySection}>
-                <ThemedText style={styles.sectionTitle}>Recent Sessions</ThemedText>
+                <ThemedText style={styles.sectionTitle}>{t("exercisesScreen.progressModal.recentSessions")}</ThemedText>
                 {stats.recentSessions
                   .slice()
                   .reverse()
@@ -867,14 +863,14 @@ function ExerciseProgressModal({
                     >
                       <View style={styles.historyLeft}>
                         <ThemedText style={styles.historyDate}>
-                          {new Date(session.date).toLocaleDateString("en-US", {
+                          {new Date(session.date).toLocaleDateString(i18n.language, {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
                           })}
                         </ThemedText>
                         <ThemedText style={[styles.historySets, { color: theme.textSecondary }]}>
-                          {session.sets} sets
+                          {t("exercisesScreen.progressModal.sets", { count: session.sets })}
                         </ThemedText>
                       </View>
                       <ThemedText style={[styles.historyVolume, { color: Colors.light.primary }]}>
@@ -888,10 +884,10 @@ function ExerciseProgressModal({
             <View style={styles.noDataContainer}>
               <Feather name="bar-chart" size={48} color={theme.textSecondary} />
               <ThemedText style={[styles.noDataText, { color: theme.textSecondary }]}>
-                No workout data yet
+                {t("exercisesScreen.progressModal.noDataTitle")}
               </ThemedText>
               <ThemedText style={[styles.noDataSubtext, { color: theme.textSecondary }]}>
-                Complete a workout with this exercise to see your progress
+                {t("exercisesScreen.progressModal.noDataSubtitle")}
               </ThemedText>
             </View>
           )}
@@ -906,6 +902,7 @@ export default function ExercisesScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -931,6 +928,7 @@ export default function ExercisesScreen() {
         const rows = (await res.json()) as {
           id: number;
           name: string;
+          name_de?: string | null;
           muscle_group: string;
           equipment: string;
           is_custom: number;
@@ -940,6 +938,7 @@ export default function ExercisesScreen() {
           rows.map((r) => ({
             id: String(r.id),
             name: r.name,
+            nameDe: r.name_de ?? undefined,
             muscleGroup: r.muscle_group,
             equipment: r.equipment ? r.equipment.charAt(0).toUpperCase() + r.equipment.slice(1) : "",
             isCustom: r.is_custom === 1,
@@ -1051,6 +1050,7 @@ export default function ExercisesScreen() {
       <ExerciseDetailModal
         visible={detailExercise !== null}
         exerciseName={detailExercise?.name ?? ""}
+        displayName={detailExercise ? getExerciseDisplayName(detailExercise, i18n.language) : undefined}
         muscleGroup={detailExercise?.muscleGroup ?? "Exercise"}
         onClose={() => setDetailExercise(null)}
       />
@@ -1104,7 +1104,7 @@ export default function ExercisesScreen() {
                 testID="button-create-exercise"
               >
                 <Feather name="plus" size={18} color="#FFFFFF" />
-                <ThemedText style={styles.actionButtonText}>Create</ThemedText>
+                <ThemedText style={styles.actionButtonText}>{t("exercisesScreen.createAction")}</ThemedText>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -1116,7 +1116,7 @@ export default function ExercisesScreen() {
               >
                 <Feather name="database" size={18} color={Colors.light.primary} />
                 <ThemedText style={[styles.actionButtonText, { color: Colors.light.primary }]}>
-                  Browse 800+
+                  {t("exercisesScreen.browseAction")}
                 </ThemedText>
               </Pressable>
             </View>
@@ -1129,7 +1129,7 @@ export default function ExercisesScreen() {
               <Feather name="search" size={20} color={theme.textSecondary} />
               <TextInput
                 style={[styles.searchInput, { color: theme.text }]}
-                placeholder="Search exercises..."
+                placeholder={t("planBuilder.searchPlaceholder")}
                 placeholderTextColor={theme.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -1146,7 +1146,7 @@ export default function ExercisesScreen() {
               data={MUSCLE_GROUPS}
               renderItem={({ item }) => (
                 <FilterChip
-                  label={item}
+                  label={translateMuscleGroup(t, item)}
                   selected={selectedFilter === item}
                   onPress={() => handleFilterPress(item)}
                 />
@@ -1156,8 +1156,8 @@ export default function ExercisesScreen() {
               contentContainerStyle={styles.filtersContainer}
             />
             <ThemedText style={[styles.exerciseCount, { color: theme.textSecondary }]}>
-              {filteredExercises.length} exercises
-              {customExercises.length > 0 ? ` (${customExercises.length} custom)` : ""}
+              {t("exercises.exerciseCount", { count: filteredExercises.length })}
+              {customExercises.length > 0 ? t("exercises.customCount", { count: customExercises.length }) : ""}
             </ThemedText>
           </View>
         }

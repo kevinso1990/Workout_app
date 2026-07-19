@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { asyncHandler, AppError } from "../middleware/errorHandler";
 import * as sessionService from "../services/sessionService";
-import type { FinishSessionBody } from "../models";
+import type { FinishSessionBody, LogCardioBody } from "../models";
 
 function parseId(raw: string | string[]): number {
   const str = Array.isArray(raw) ? raw[0] : raw;
@@ -43,5 +43,11 @@ export const syncLocal = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.sub ?? null;
   res.status(201).json(
     sessionService.syncLocalWorkoutSession(userId, localId, session),
+  );
+});
+
+export const logCardio = asyncHandler(async (req: Request, res: Response) => {
+  res.status(201).json(
+    sessionService.logCardioSession(req.user!.sub, req.body as LogCardioBody),
   );
 });

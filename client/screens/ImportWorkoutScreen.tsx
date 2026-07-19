@@ -52,6 +52,8 @@ import {
 import { getApiUrl } from "@/lib/query-client";
 import { ImportPlanReviewPanel } from "@/components/import/ImportPlanReviewPanel";
 import type { CatalogRow as ImportCatalogRow } from "@/lib/importCatalog";
+import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
+import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -68,15 +70,15 @@ function countImportedExercises(plan: ImportedWorkoutPlan | null): number {
   return plan.days.reduce((sum, d) => sum + d.exercises.length, 0);
 }
 
-function emptyManualPlan(planName: string): ImportedWorkoutPlan {
+function emptyManualPlan(
+  planName: string,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): ImportedWorkoutPlan {
   return {
-    planName: planName?.trim() || "Mein Plan",
-    days: [{ dayName: "Tag 1", exercises: [] }],
+    planName: planName?.trim() || t("importWorkout.defaultPlanName"),
+    days: [{ dayName: t("importWorkout.defaultDayName"), exercises: [] }],
   };
 }
-
-const MSG_IMPORT_UNREADABLE_DE =
-  "Entschuldigung, ich konnte die Übungen nicht klar lesen. Bitte versuche ein schärferes Foto, mehr Licht oder einen kürzeren Abstand zum Text.";
 
 function ScanningView({
   imageUri,
@@ -88,6 +90,7 @@ function ScanningView({
   subtitle: string;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const frameH = useSharedValue(240);
   const scan = useSharedValue(0);
 
@@ -142,7 +145,7 @@ function ScanningView({
           <View style={[styles.scanPlaceholder, { backgroundColor: theme.backgroundRoot }]}>
             <Feather name="file-text" size={44} color={Colors.light.primary} />
             <ThemedText style={[styles.scanPlaceholderText, { color: theme.textSecondary }]}>
-              Dokument wird analysiert…
+              {t("importWorkout.analyzingDocument")}
             </ThemedText>
           </View>
         )}
@@ -238,6 +241,7 @@ function CatalogPickModal({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return rows;
@@ -263,7 +267,7 @@ function CatalogPickModal({
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
             style={[catalogModalStyles.searchInput, { color: theme.text }]}
-            placeholder="Übung suchen…"
+            placeholder={t("importWorkout.review.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}
             value={query}
             onChangeText={onQueryChange}
@@ -292,9 +296,9 @@ function CatalogPickModal({
                 ]}
               >
                 <View style={{ flex: 1 }}>
-                  <ThemedText style={catalogModalStyles.rowName}>{item.name}</ThemedText>
+                  <ThemedText style={catalogModalStyles.rowName}>{getExerciseDisplayName(item, i18n.language)}</ThemedText>
                   <ThemedText style={[catalogModalStyles.rowSub, { color: theme.textSecondary }]}>
-                    {item.muscle_group}
+                    {translateMuscleGroup(t, item.muscle_group)}
                   </ThemedText>
                 </View>
                 <Feather name="chevron-right" size={18} color={theme.textSecondary} />
@@ -302,7 +306,7 @@ function CatalogPickModal({
             )}
             ListEmptyComponent={
               <ThemedText style={[catalogModalStyles.empty, { color: theme.textSecondary }]}>
-                Keine Treffer
+                {t("importWorkout.review.noMatches")}
               </ThemedText>
             }
           />
@@ -354,12 +358,13 @@ export default function ImportWorkoutScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { pickImage, pickFile, analyzeImages, analyzeFile, saveImportedPlan } = useWorkoutImport();
+  const { pickImage, pickFile, analyzeImages, analyzeFile, analyzePlainText, saveImportedPlan } = useWorkoutImport();
 
   const [screenState, setScreenState] = useState<ScreenState>("landing");
   const [images, setImages] = useState<PickedImage[]>([]);
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
-  const [loadingText, setLoadingText] = useState("Reading your workout plan...");
+  const [pastedText, setPastedText] = useState("");
+  const [loadingText, setLoadingText] = useState(t("importWorkout.loadingReading"));
   const [previewPlan, setPreviewPlan] = useState<ImportedWorkoutPlan | null>(null);
   const [planName, setPlanName] = useState("");
   const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set([0]));
@@ -420,9 +425,9 @@ export default function ImportWorkoutScreen() {
   const presentImportFailure = useCallback((e: unknown, fallback: string) => {
     const detail = formatImportFailure(e, fallback);
     setErrorWithSettings(detail);
-    Alert.alert("Import failed", detail);
+    Alert.alert(t("importWorkout.importFailedTitle"), detail);
     console.error("[ImportWorkoutScreen]", detail, e);
-  }, []);
+  }, [t]);
 
   const handlePickImage = async (source: "camera" | "library") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -436,7 +441,7 @@ export default function ImportWorkoutScreen() {
       setError(null);
       setErrorNeedsSettings(false);
     } catch (e: unknown) {
-      setErrorWithSettings(e instanceof Error ? e.message : "Could not access photos.");
+      setErrorWithSettings(e instanceof Error ? e.message : t("importWorkout.couldNotAccessPhotos"));
     }
   };
 
@@ -447,7 +452,7 @@ export default function ImportWorkoutScreen() {
     try {
       const file = await pickFile();
       if (!file) {
-        setErrorWithSettings("That file type isn't supported yet — try a PDF, Excel, or CSV.");
+        setErrorWithSettings(t("importWorkout.unsupportedFileType"));
         return;
       }
       setPickedFile(file);
@@ -458,7 +463,7 @@ export default function ImportWorkoutScreen() {
       // nothing to multi-select / preview before analysis.
       runAnalyze({ file });
     } catch (e: unknown) {
-      setErrorWithSettings(e instanceof Error ? e.message : "Could not open that file.");
+      setErrorWithSettings(e instanceof Error ? e.message : t("importWorkout.couldNotOpenFile"));
     }
   };
 
@@ -472,30 +477,32 @@ export default function ImportWorkoutScreen() {
   // Single analyze entry point for both image batches and individual files —
   // keeps the preview/error/loading state machine identical regardless of
   // which source the user picked.
-  const runAnalyze = async (input: { images?: PickedImage[]; file?: PickedFile }) => {
+  const runAnalyze = async (input: { images?: PickedImage[]; file?: PickedFile; plainText?: string }) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoadingScanUri(input.file ? null : input.images?.[0]?.uri ?? null);
+    setLoadingScanUri(input.file || input.plainText ? null : input.images?.[0]?.uri ?? null);
     setScreenState("loading");
-    setLoadingText("Reading your workout plan...");
+    setLoadingText(t("importWorkout.loadingReading"));
     setError(null);
     setErrorNeedsSettings(false);
-    loadingTimer.current = setTimeout(() => setLoadingText("Almost done..."), 2000);
+    loadingTimer.current = setTimeout(() => setLoadingText(t("importWorkout.loadingAlmostDone")), 2000);
 
     try {
-      const planRaw = input.file
-        ? await analyzeFile(input.file)
-        : await analyzeImages(input.images ?? []);
+      const planRaw = input.plainText
+        ? await analyzePlainText(input.plainText)
+        : input.file
+          ? await analyzeFile(input.file)
+          : await analyzeImages(input.images ?? []);
       if (loadingTimer.current) clearTimeout(loadingTimer.current);
       setLoadingScanUri(null);
       const plan = planRaw as ImportedWorkoutPlan & { emptyPlan?: boolean };
-      setPlanName(plan.planName || "Imported Plan");
+      setPlanName(plan.planName || t("importWorkout.defaultImportedPlanName"));
       setExpandedDays(new Set([0]));
       setImportSummaryText(null);
       setError(null);
       setErrorNeedsSettings(false);
       const total = countImportedExercises(plan);
       if (plan.emptyPlan || total === 0) {
-        setPreviewPlan(emptyManualPlan(plan.planName || "Mein Plan"));
+        setPreviewPlan(emptyManualPlan(plan.planName || t("importWorkout.defaultPlanName"), t));
         setScreenState("manual");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       } else {
@@ -507,15 +514,13 @@ export default function ImportWorkoutScreen() {
       if (loadingTimer.current) clearTimeout(loadingTimer.current);
       setLoadingScanUri(null);
       if (e instanceof WorkoutImportUnreadableError) {
-        setErrorWithSettings(MSG_IMPORT_UNREADABLE_DE);
-        Alert.alert("Import failed", MSG_IMPORT_UNREADABLE_DE);
+        const unreadableMsg = t("importWorkout.unreadableMessage");
+        setErrorWithSettings(unreadableMsg);
+        Alert.alert(t("importWorkout.importFailedTitle"), unreadableMsg);
       } else {
-        presentImportFailure(
-          e,
-          "Could not read the plan. Try a clearer photo or better lighting.",
-        );
+        presentImportFailure(e, t("importWorkout.couldNotReadPlan"));
       }
-      setScreenState(input.file ? "landing" : "selected");
+      setScreenState(input.file || input.plainText ? "landing" : "selected");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -530,7 +535,7 @@ export default function ImportWorkoutScreen() {
     const total = countImportedExercises(previewPlan);
     if (total === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setErrorWithSettings("Füge mindestens eine Übung hinzu, bevor du speicherst.");
+      setErrorWithSettings(t("importWorkout.addAtLeastOneExercise"));
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -551,7 +556,7 @@ export default function ImportWorkoutScreen() {
       );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
-      setErrorWithSettings("Speichern fehlgeschlagen. Bitte versuche es erneut.");
+      setErrorWithSettings(t("importWorkout.saveFailedTryAgain"));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -642,24 +647,38 @@ export default function ImportWorkoutScreen() {
   };
 
   // ── Landing ────────────────────────────────────────────────────────────────
+  const handleAnalyzePastedText = () => {
+    if (pastedText.trim().length < 20) {
+      setErrorWithSettings(t("importWorkout.pasteTooShort"));
+      return;
+    }
+    void runAnalyze({ plainText: pastedText });
+  };
+
   if (screenState === "landing") {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-        <View style={[styles.centeredContent, { paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing["2xl"]) }]}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.centeredContent,
+            { paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing["2xl"]), paddingBottom: insets.bottom + Spacing.xl },
+          ]}
+        >
           <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.landingInner}>
             <View style={[styles.iconCircle, { backgroundColor: Colors.light.primary + "15" }]}>
               <Feather name="camera" size={48} color={Colors.light.primary} />
             </View>
-            <ThemedText style={styles.landingTitle}>Import Workout Plan</ThemedText>
+            <ThemedText style={styles.landingTitle}>{t("importWorkout.landingTitle")}</ThemedText>
             <ThemedText style={[styles.landingSubtitle, { color: theme.textSecondary }]}>
-              Take a photo or upload a screenshot of any workout plan
+              {t("importWorkout.landingSubtitle")}
             </ThemedText>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.pickButtonRow}>
-            <GradientButton label="Take Photo" icon="camera" onPress={() => handlePickImage("camera")} />
-            <OutlineButton label="Choose from Library" icon="image" onPress={() => handlePickImage("library")} />
-            <OutlineButton label="Pick PDF / Excel / CSV" icon="file-text" onPress={handlePickFile} />
+            <GradientButton label={t("importWorkout.takePhoto")} icon="camera" onPress={() => handlePickImage("camera")} />
+            <OutlineButton label={t("importWorkout.chooseFromLibrary")} icon="image" onPress={() => handlePickImage("library")} />
+            <OutlineButton label={t("importWorkout.pickFile")} icon="file-text" onPress={handlePickFile} />
           </Animated.View>
 
           {error ? (
@@ -674,7 +693,7 @@ export default function ImportWorkoutScreen() {
                   <Pressable onPress={openAppSettings} style={styles.settingsLink}>
                     <Feather name="settings" size={13} color={Colors.light.primary} />
                     <ThemedText style={[styles.settingsLinkText, { color: Colors.light.primary }]}>
-                      Open Settings
+                      {t("importWorkout.openSettings")}
                     </ThemedText>
                   </Pressable>
                 ) : null}
@@ -682,12 +701,34 @@ export default function ImportWorkoutScreen() {
             </Animated.View>
           ) : null}
 
-          <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-            <ThemedText style={[styles.hintText, { color: theme.textSecondary }]}>
-              Works with handwritten plans, screenshots, PDFs, Excel/CSV exports — anything
+          <Animated.View entering={FadeInDown.delay(350).duration(400)} style={styles.pasteSection}>
+            <ThemedText style={[styles.pasteLabel, { color: theme.textSecondary }]}>
+              {t("importWorkout.pasteLabel")}
             </ThemedText>
+            <TextInput
+              value={pastedText}
+              onChangeText={setPastedText}
+              placeholder={t("importWorkout.pastePlaceholder")}
+              placeholderTextColor={theme.textSecondary}
+              multiline
+              style={[
+                styles.pasteInput,
+                { color: theme.text, borderColor: theme.border, backgroundColor: theme.backgroundDefault },
+              ]}
+            />
+            <Pressable
+              style={[
+                styles.pasteAnalyzeBtn,
+                pastedText.trim().length < 20 && { opacity: 0.5 },
+              ]}
+              onPress={handleAnalyzePastedText}
+              disabled={pastedText.trim().length < 20}
+            >
+              <Feather name="cpu" size={18} color="#FFFFFF" />
+              <ThemedText style={styles.pasteAnalyzeText}>{t("importWorkout.analyzePaste")}</ThemedText>
+            </Pressable>
           </Animated.View>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -706,7 +747,7 @@ export default function ImportWorkoutScreen() {
           <Animated.View entering={FadeIn.duration(320)}>
             <ScanningView
               imageUri={loadingScanUri}
-              title="KI-Scan"
+              title={t("importWorkout.aiScanTitle")}
               subtitle={loadingText}
             />
           </Animated.View>
@@ -723,20 +764,20 @@ export default function ImportWorkoutScreen() {
           <Animated.View style={[styles.checkCircle, { backgroundColor: Colors.light.success + "20" }, checkAnimatedStyle]}>
             <Feather name="check-circle" size={64} color={Colors.light.success} />
           </Animated.View>
-          <ThemedText style={styles.successTitle}>Import erfolgreich</ThemedText>
+          <ThemedText style={styles.successTitle}>{t("importWorkout.importSuccessTitle")}</ThemedText>
           <ThemedText style={[styles.successSubtitle, { color: theme.textSecondary }]}>
-            {importSummaryText ?? "Dein Trainingsplan wurde gespeichert."}
+            {importSummaryText ?? t("importWorkout.importSuccessDefault")}
           </ThemedText>
           <View style={styles.successActions}>
             <GradientButton
-              label="Start Workout"
+              label={t("importWorkout.startWorkoutButton")}
               icon="play"
               onPress={() => {
                 if (savedPlanId) navigation.navigate("StartWorkout", { planId: savedPlanId });
               }}
             />
             <OutlineButton
-              label="View Plan"
+              label={t("importWorkout.viewPlanButton")}
               icon="list"
               onPress={() => {
                 if (savedPlanId) navigation.navigate("PlanDetail", { planId: savedPlanId });
@@ -764,7 +805,7 @@ export default function ImportWorkoutScreen() {
         >
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
             <ThemedText style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-              Selected Photos ({images.length}/5)
+              {t("importWorkout.selectedPhotosCount", { count: images.length })}
             </ThemedText>
             <View style={styles.thumbnailGrid}>
               {images.map((img, i) => (
@@ -794,7 +835,7 @@ export default function ImportWorkoutScreen() {
                   <Pressable onPress={openAppSettings} style={styles.settingsLink}>
                     <Feather name="settings" size={13} color={Colors.light.primary} />
                     <ThemedText style={[styles.settingsLinkText, { color: Colors.light.primary }]}>
-                      Open Settings
+                      {t("importWorkout.openSettings")}
                     </ThemedText>
                   </Pressable>
                 ) : null}
@@ -804,13 +845,13 @@ export default function ImportWorkoutScreen() {
 
           {images.length < 5 && (
             <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.addMoreRow}>
-              <OutlineButton label="Camera" icon="camera" onPress={() => handlePickImage("camera")} small />
-              <OutlineButton label="Library" icon="image" onPress={() => handlePickImage("library")} small />
+              <OutlineButton label={t("importWorkout.cameraButton")} icon="camera" onPress={() => handlePickImage("camera")} small />
+              <OutlineButton label={t("importWorkout.libraryButton")} icon="image" onPress={() => handlePickImage("library")} small />
             </Animated.View>
           )}
 
           <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.analyzeWrapper}>
-            <GradientButton label="Analyze with AI" icon="zap" onPress={handleAnalyze} />
+            <GradientButton label={t("importWorkout.analyzePaste")} icon="zap" onPress={handleAnalyze} />
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -963,6 +1004,39 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: Spacing.md,
     marginBottom: Spacing.xl,
+  },
+  pasteSection: {
+    width: "100%",
+    marginBottom: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  pasteLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  pasteInput: {
+    minHeight: 160,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlignVertical: "top",
+  },
+  pasteAnalyzeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.light.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: 14,
+    marginTop: Spacing.xs,
+  },
+  pasteAnalyzeText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
   },
   hintText: {
     fontSize: 13,

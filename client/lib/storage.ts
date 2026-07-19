@@ -66,6 +66,27 @@ export interface WorkoutDay {
   exercises: Exercise[];
 }
 
+export type WorkoutType = "strength" | "cardio";
+
+export type CardioSportType =
+  | "running"
+  | "football"
+  | "tennis"
+  | "cycling"
+  | "swimming"
+  | "boxing"
+  | "custom";
+
+export interface CardioSessionMeta {
+  sport: CardioSportType;
+  /** Display label when sport === custom */
+  sportLabel?: string;
+  durationMinutes: number;
+  distanceKm?: number | null;
+  rpe: number;
+  notes?: string | null;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
@@ -172,6 +193,28 @@ export interface WorkoutSession {
   exercises: Exercise[];
   exerciseProgress?: ExerciseProgress[];
   duration?: number;
+  /** Defaults to strength for legacy sessions. */
+  workoutType?: WorkoutType;
+  cardio?: CardioSessionMeta;
+}
+
+export function isCardioSession(session: WorkoutSession): boolean {
+  return session.workoutType === "cardio" || !!session.cardio;
+}
+
+export function isStrengthSession(session: WorkoutSession): boolean {
+  return !isCardioSession(session);
+}
+
+export function sessionDisplayTitle(session: WorkoutSession): string {
+  if (isCardioSession(session)) {
+    const sport = session.cardio?.sport;
+    if (sport === "custom" && session.cardio?.sportLabel) {
+      return session.cardio.sportLabel;
+    }
+    return session.planName || session.dayName || "Cardio";
+  }
+  return session.planName || session.dayName || "Strength";
 }
 
 export async function getDisclaimerAccepted(): Promise<boolean> {
@@ -294,6 +337,26 @@ export async function addWorkoutSession(
 
 export async function clearAllData(): Promise<void> {
   await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+}
+
+/** Overwrites the full workout history (used by cloud restore). */
+export async function replaceWorkoutHistory(
+  history: WorkoutSession[],
+): Promise<void> {
+  await AsyncStorage.setItem(
+    STORAGE_KEYS.WORKOUT_HISTORY,
+    JSON.stringify(Array.isArray(history) ? history : []),
+  );
+}
+
+/** Overwrites the full set of workout plans (used by cloud restore). */
+export async function replaceWorkoutPlans(
+  plans: WorkoutPlan[],
+): Promise<void> {
+  await AsyncStorage.setItem(
+    STORAGE_KEYS.WORKOUT_PLANS,
+    JSON.stringify(Array.isArray(plans) ? plans : []),
+  );
 }
 
 export const DEFAULT_EXERCISES: Record<string, Exercise[]> = {
@@ -1100,7 +1163,9 @@ function resolveFullBodyVariantDay(
     return buildFullBodyDay(dayIndex);
   }
 
-  return null;
+  // Dumbbells / bodyweight / kettlebell / home_minimal: assemble a varied
+  // full-body day from this equipment's own pool so Day A != Day B != Day C.
+  return buildFullBodyDayFromPool(pool, dayIndex);
 }
 
 export function getEquipmentExercises(
@@ -1238,6 +1303,62 @@ function buildFullBodyDay(dayIndex: number): Exercise[] {
   });
 }
 
+// Ordered movement "slots" for a balanced full-body day. Each slot lists the
+// muscle groups that can fill it. Used to assemble varied full-body days from
+// ANY equipment pool (dumbbells, bodyweight, kettlebell, home_minimal) so that
+// Day A / Day B / Day C never end up identical.
+const FB_GENERIC_SLOTS: Array<{ label: string; muscles: string[] }> = [
+  { label: "Legs", muscles: ["Quads", "Hamstrings", "Glutes"] },
+  { label: "Chest", muscles: ["Chest"] },
+  { label: "Back", muscles: ["Back"] },
+  { label: "Shoulders", muscles: ["Shoulders", "Rear Delts", "Traps"] },
+  { label: "Arms", muscles: ["Biceps", "Triceps"] },
+  { label: "Core", muscles: ["Core"] },
+];
+
+/**
+ * Builds one full-body day from an equipment pool, rotating the exercise picked
+ * for each slot by `dayIndex` so consecutive full-body days differ. Falls back
+ * to the pool's curated "Full Body" list only if the pool is too sparse.
+ */
+function buildFullBodyDayFromPool(
+  pool: Record<string, Exercise[]>,
+  dayIndex: number,
+): Exercise[] {
+  // Collect every unique exercise across all category lists in this pool.
+  const byName = new Map<string, Exercise>();
+  for (const key of Object.keys(pool)) {
+    for (const ex of pool[key]) {
+      if (!byName.has(ex.name)) byName.set(ex.name, ex);
+    }
+  }
+  const all = [...byName.values()];
+
+  const result: Exercise[] = [];
+  const usedNames = new Set<string>();
+
+  for (const slot of FB_GENERIC_SLOTS) {
+    const candidates = all.filter(
+      (e) => slot.muscles.includes(e.muscleGroup) && !usedNames.has(e.name),
+    );
+    if (candidates.length === 0) continue;
+    // Rotate by day so Day A picks [0], Day B picks [1], etc.
+    const pick = candidates[dayIndex % candidates.length];
+    usedNames.add(pick.name);
+    result.push({
+      ...pick,
+      id: `${pick.id}-fb${dayIndex}`,
+      sets: 3,
+    });
+  }
+
+  // Guard: if the pool was too thin to form a real day, use the curated list.
+  if (result.length < 4) {
+    return pool["Full Body"] ?? DEFAULT_EXERCISES["Full Body"];
+  }
+  return result;
+}
+
 export function generateDefaultPlan(
   daysPerWeek: number,
   name: string = "My Workout Plan"
@@ -1262,6 +1383,52 @@ export function generateDefaultPlan(
     return {
       dayName,
       exercises: DEFAULT_EXERCISES[dayName] ?? DEFAULT_EXERCISES["Full Body"],
+    };
+  });
+
+  return {
+    id: Date.now().toString(),
+    name,
+    daysPerWeek,
+    days,
+    createdAt: new Date().toISOString(),
+    lastModified: new Date().toISOString(),
+  };
+}
+
+/**
+ * Like generateDefaultPlan, but respects the user's available equipment and
+ * fitness level (so a "dumbbells only" user never gets barbell/machine moves)
+ * and varies exercises across repeated Full Body days. Used by the manual
+ * "Create Plan" flow so a second plan matches the onboarding equipment choice.
+ */
+export function generateEquipmentAwarePlan(
+  daysPerWeek: number,
+  name: string = "My Workout Plan",
+  equipment: Equipment | null = null,
+  fitnessLevel: FitnessLevel | null = null,
+): WorkoutPlan {
+  const splitDays = SPLIT_RECOMMENDATIONS[daysPerWeek] ?? ["Full Body"];
+
+  const totalFbDays = splitDays.filter((d) => d === "Full Body").length;
+  const variants = ["A", "B", "C"] as const;
+  let fullBodyCount = 0;
+
+  const days: WorkoutDay[] = splitDays.map((dayName) => {
+    if (dayName === "Full Body") {
+      const variantKey =
+        totalFbDays > 1
+          ? (`Full Body ${variants[fullBodyCount % 3]}` as const)
+          : "Full Body";
+      fullBodyCount += 1;
+      return {
+        dayName: variantKey,
+        exercises: getEquipmentExercises(equipment, variantKey, fitnessLevel),
+      };
+    }
+    return {
+      dayName,
+      exercises: getEquipmentExercises(equipment, dayName, fitnessLevel),
     };
   });
 

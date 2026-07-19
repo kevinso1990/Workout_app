@@ -1,6 +1,7 @@
 import express from "express";
 import { rateLimit } from "../middleware/rateLimiter";
-import { generateDailyBriefing, suggestSmartSubstitutions } from "../services/coachService";
+import { generateDailyBriefing, suggestSmartSubstitutions, adaptPlanFromPerformance } from "../services/coachService";
+import type { ClientPlanPayload } from "../services/planModifyService";
 
 const router = express.Router();
 
@@ -61,6 +62,50 @@ router.post("/daily-briefing", coachLimiter, async (req, res) => {
     return res.json({ brief });
   } catch (err) {
     console.error("[coach] daily-briefing:", err);
+    const msg = err instanceof Error ? err.message : "Coach error";
+    return res.status(500).json({ error: msg });
+  }
+});
+
+router.post("/adapt-plan", coachLimiter, async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY) {
+      return res.status(503).json({ error: "Coach AI is not configured" });
+    }
+    const body = req.body as {
+      plan?: { name?: string; days?: unknown[] };
+      performanceSummary?: string;
+      performanceSignals?: {
+        type: string;
+        exercise_name?: string;
+        sessions_analyzed: number;
+        summary: string;
+      }[];
+      locale?: string;
+    };
+    if (!body.plan?.days?.length) {
+      return res.status(400).json({ error: "plan with days required" });
+    }
+    const performanceSummary =
+      typeof body.performanceSummary === "string"
+        ? body.performanceSummary.trim()
+        : "";
+    if (performanceSummary.length < 40) {
+      return res.status(400).json({ error: "performanceSummary too short" });
+    }
+
+    const locale = body.locale === "de" ? "de" : "en";
+    const result = await adaptPlanFromPerformance({
+      plan: body.plan as ClientPlanPayload,
+      performanceSummary,
+      performanceSignals: Array.isArray(body.performanceSignals)
+        ? body.performanceSignals
+        : [],
+      locale,
+    });
+    return res.json(result);
+  } catch (err) {
+    console.error("[coach] adapt-plan:", err);
     const msg = err instanceof Error ? err.message : "Coach error";
     return res.status(500).json({ error: msg });
   }

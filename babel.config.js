@@ -1,5 +1,7 @@
 module.exports = function (api) {
-  api.cache(true);
+  api.cache.using(() => process.env.NODE_ENV);
+  const isProduction = process.env.NODE_ENV === "production";
+
   return {
     presets: [
       [
@@ -21,6 +23,9 @@ module.exports = function (api) {
           extensions: [".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
         },
       ],
+      ...(isProduction
+        ? [["transform-remove-console", { exclude: ["error"] }]]
+        : []),
       "react-native-reanimated/plugin",
     ],
   };

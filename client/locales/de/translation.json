@@ -2,6 +2,7 @@
   "nav": {
     "home": "Start",
     "plans": "Pläne",
+    "exercises": "Übungen",
     "calendar": "Kalender",
     "progress": "Fortschritt",
     "history": "Verlauf",
@@ -10,7 +11,9 @@
   "planDetail": {
     "dayLabel": "Tag",
     "exerciseCount_one": "{{count}} Übung",
-    "exerciseCount_other": "{{count}} Übungen"
+    "exerciseCount_other": "{{count}} Übungen",
+    "daysPerWeekCount_one": "{{count}} Tag pro Woche",
+    "daysPerWeekCount_other": "{{count}} Tage pro Woche"
   },
   "planGeneration": {
     "fallbackBanner": "Wir haben eine Standardvorlage verwendet — die KI-Generierung ist fehlgeschlagen (keine Verbindung oder Serverfehler). Du kannst in den Planeinstellungen neu generieren."
@@ -37,7 +40,9 @@
     "splitRefreshTitle": "Zeit für Abwechslung?",
     "splitRefreshDesc": "Du trainierst {{plan}} seit {{weeks}} Wochen. Neue Übungen geben deinem Körper neue Reize für weiteren Fortschritt.",
     "splitRefreshAction": "Neue Übungen entdecken",
-    "splitRefreshSnooze": "Nicht jetzt"
+    "splitRefreshSnooze": "Nicht jetzt",
+    "coachingReady": "Coaching-Vorschläge bereit",
+    "coachingReadyDesc": "Tippe, um personalisierte Gewichts-/Wdh.-Empfehlungen aus deiner letzten Einheit zu prüfen und zu übernehmen."
   },
   "days": {
     "mon": "Mo",
@@ -50,7 +55,11 @@
   },
   "plans": {
     "title": "Pläne",
-    "planSummary": "{{workouts}} Trainings/Woche · {{days}} Tage",
+    "planSummary": "{{workoutsLabel}} · {{daysLabel}}",
+    "workoutsPerWeek_one": "{{count}} Training/Woche",
+    "workoutsPerWeek_other": "{{count}} Trainings/Woche",
+    "daysCount_one": "{{count}} Tag",
+    "daysCount_other": "{{count}} Tage",
     "importBanner": {
       "title": "Plan importieren",
       "subtitle": "PDF oder Foto → KI-Prüfung",
@@ -67,6 +76,8 @@
     "deleteConfirm": "Bist du sicher? Dies kann nicht rückgängig gemacht werden.",
     "deleteConfirmNamed": "„{{name}}“ entfernen? Das kann nicht rückgängig gemacht werden.",
     "delete": "Löschen",
+    "planNotFound": "Plan nicht gefunden",
+    "planOptions": "Plan-Optionen",
     "seeAllPlans": "{{count}} weitere Pläne anzeigen",
     "showLess": "Weniger Pläne anzeigen",
     "coachBriefTitle": "Coach",
@@ -124,7 +135,18 @@
     "labelGoal": "Ziel",
     "labelEquipment": "Ausrüstung",
     "recommendedSplit": "Empfohlener Split",
-    "generateNow": "Plan generieren"
+    "splitPreview": {
+      "fullBody": "Ganzkörper-Training",
+      "upperLower": "Ober-/Unterkörper-Split",
+      "pushPullLegs": "Push/Pull/Legs-Split",
+      "upperLowerX2": "Ober-/Unterkörper-Split (2x)",
+      "pushPullLegsUpperLower": "Push/Pull/Legs + Ober-/Unterkörper-Split",
+      "pushPullLegsX2": "Push/Pull/Legs-Split (2x)",
+      "fullWeek": "Volles Wochenprogramm"
+    },
+    "generateNow": "Plan generieren",
+    "whyThisPlan": "Warum dieser Plan?",
+    "whyThisPlanDesc": "Bei {{days}} Trainingstagen/Woche als {{experience}} mit dem Ziel {{goal}} ist der {{split}} die effektivste Struktur — er balanciert Häufigkeit und Erholung, damit du Fortschritte machst, ohne auszubrennen."
   },
   "planBuilder": {
     "cancel": "Abbrechen",
@@ -154,6 +176,34 @@
     "pastePlaceholder": "Plan-Text einfügen (z. B. aus PDF, Notizen oder Tabelle)…",
     "analyzePaste": "Per KI analysieren",
     "pasteTooShort": "Bitte mindestens 20 Zeichen Plan-Text einfügen.",
+    "defaultPlanName": "Mein Plan",
+    "defaultDayName": "Tag 1",
+    "defaultImportedPlanName": "Importierter Plan",
+    "unreadableMessage": "Entschuldigung, ich konnte die Übungen nicht klar lesen. Bitte versuche ein schärferes Foto, mehr Licht oder einen kürzeren Abstand zum Text.",
+    "importFailedTitle": "Import fehlgeschlagen",
+    "loadingReading": "Lese deinen Trainingsplan...",
+    "loadingAlmostDone": "Fast fertig...",
+    "couldNotAccessPhotos": "Konnte nicht auf Fotos zugreifen.",
+    "unsupportedFileType": "Dieser Dateityp wird noch nicht unterstützt — versuche es mit PDF, Excel oder CSV.",
+    "couldNotOpenFile": "Die Datei konnte nicht geöffnet werden.",
+    "couldNotReadPlan": "Der Plan konnte nicht gelesen werden. Versuche ein schärferes Foto oder besseres Licht.",
+    "addAtLeastOneExercise": "Füge mindestens eine Übung hinzu, bevor du speicherst.",
+    "saveFailedTryAgain": "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+    "landingTitle": "Trainingsplan importieren",
+    "landingSubtitle": "Mache ein Foto oder lade einen Screenshot eines beliebigen Trainingsplans hoch",
+    "takePhoto": "Foto aufnehmen",
+    "chooseFromLibrary": "Aus Bibliothek wählen",
+    "pickFile": "PDF / Excel / CSV wählen",
+    "openSettings": "Einstellungen öffnen",
+    "startWorkoutButton": "Training starten",
+    "viewPlanButton": "Plan ansehen",
+    "selectedPhotosCount": "Ausgewählte Fotos ({{count}}/5)",
+    "cameraButton": "Kamera",
+    "libraryButton": "Bibliothek",
+    "aiScanTitle": "KI-Scan",
+    "analyzingDocument": "Dokument wird analysiert…",
+    "importSuccessTitle": "Import erfolgreich",
+    "importSuccessDefault": "Dein Trainingsplan wurde gespeichert.",
     "review": {
       "title": "Plan prüfen & korrigieren",
       "subtitle": "{{count}} Übungen erkannt — passe alles an, bevor du speicherst.",
@@ -193,11 +243,21 @@
     "neverPerformed": "Noch nie absolviert",
     "lastPerformedToday": "Heute",
     "lastPerformedYesterday": "Gestern",
-    "lastPerformedDaysAgo": "Vor {{count}} Tagen"
+    "lastPerformedDaysAgo": "Vor {{count}} Tagen",
+    "chooseDay": "Wähle ein Training zum Starten"
   },
   "activeWorkout": {
     "setsLogged": "{{count}} Sätze erfasst",
     "restTimer": "Pausentimer",
+    "restTimerHint": "Schaltet den automatischen Countdown nach jedem abgeschlossenen Satz ein oder aus.",
+    "exerciseChipLabel": "{{name}}, {{completed}} von {{total}} Sätzen",
+    "moveExerciseUp": "Übung nach oben",
+    "moveExerciseDown": "Übung nach unten",
+    "previousExercise": "Vorherige Übung",
+    "nextExercise": "Nächste Übung",
+    "restTitle": "Pause",
+    "restHint": "Verschnauf kurz, du hast es dir verdient",
+    "skipRest": "Pause überspringen",
     "skip": "Überspringen",
     "set": "Satz",
     "previous": "Vorherig",
@@ -215,6 +275,24 @@
       "restored": "Dein aktives Training wurde wiederhergestellt."
     },
     "finishWorkout": "Training beenden",
+    "genericWorkoutName": "Training",
+    "swapExercise": "Übung tauschen",
+    "swapExerciseTitle": "Übung tauschen",
+    "addExercise": "Übung hinzufügen",
+    "addExerciseTitle": "Übung hinzufügen",
+    "removeSet": "Satz entfernen",
+    "exerciseSwapped": "Zu {{name}} gewechselt",
+    "exerciseAdded": "{{name}} hinzugefügt",
+    "picker": {
+      "searchPlaceholder": "Übungen suchen...",
+      "noResults": "Keine Übungen gefunden"
+    },
+    "shareText": {
+      "complete": "💪 Training abgeschlossen — {{name}}",
+      "prs": "🏆 Rekorde: {{list}}",
+      "stats": "⏱ {{time}} · {{sets}} Sätze · {{volume}} kg Volumen",
+      "tagline": "Erfasst mit TrackYourLift"
+    },
     "pauseLabel": "Pause",
     "exerciseOf": "Übung {{current}} von {{total}}",
     "setsRepsSummary": "{{sets}} Sätze × {{reps}} Wdh.",
@@ -234,6 +312,30 @@
     "leave": "Verlassen",
     "rirLabel": "Wiederholungsreserve",
     "rirPrompt": "WRes:",
+    "personalBest": "Persönlicher Bestwert",
+    "estimated1RM": "Gesch. 1RM",
+    "tryProgressWeight": "Du hast letztes Mal alle Wiederholungen geschafft — versuche heute +{{step}}{{unit}}",
+    "addExtraSet": "+ Extra-Satz",
+    "extraSetHint": "Fühlst du dich stark? Füge einen weiteren Satz hinzu — dein Körper passt sich an.",
+    "modeSimple": "Einfach",
+    "modeAdvanced": "Erweitert",
+    "switchToAdvanced": "Zum erweiterten Modus wechseln (RiR, Reduktionssätze, Scheibenrechner)",
+    "switchToSimple": "Zum einfachen Modus wechseln",
+    "tip1Title": "Willkommen zu deinem ersten Training!",
+    "tip1Body": "Tippe auf +/−, um Gewicht und Wiederholungen anzupassen, dann drücke den großen Button, um jeden Satz zu erfassen. Nach jedem Satz startet automatisch ein Pausentimer.",
+    "tip2Title": "Starke Leistung beim letzten Mal!",
+    "tip2Body": "Die Spalte „Vorherig“ zeigt genau, was du letztes Mal gehoben hast — versuche, das zu erreichen oder zu übertreffen. Kleine wöchentliche Verbesserungen summieren sich schnell.",
+    "tip3Title": "Progressive Overload in Aktion",
+    "tip3Body": "Wenn die App vorschlägt, Gewicht hinzuzufügen (grüner Pfeil), nutze das — so wachsen Muskeln. Wechsle jederzeit in den erweiterten Modus für RiR-Tracking und Reduktionssätze.",
+    "firstWorkoutTip": "Erstes Training? Passe das Gewicht mit den +/−-Buttons an, stelle deine Wiederholungen ein und tippe dann auf ✓, um jeden Satz zu erfassen. Nutze das Notizfeld, um festzuhalten, wie es sich angefühlt hat.",
+    "plateCalc": {
+      "title": "Scheibenrechner",
+      "barWeight": "Stangengewicht",
+      "total": "Gesamt: {{weight}}kg",
+      "justTheBar": "Nur die Stange",
+      "perSide": "{{plates}} kg pro Seite",
+      "gotIt": "Verstanden"
+    },
     "pr": {
       "title": "Neuer Rekord!",
       "weightLabel": "Gewicht",
@@ -281,6 +383,7 @@
   },
   "progress": {
     "title": "Fortschritt",
+    "sessions": "Einheiten",
     "overview": "Übersicht",
     "exercises": "Übungen",
     "body": "Körper",
@@ -293,8 +396,15 @@
     "weeklyVolume": "Wöchentliches Volumen",
     "totalKgLifted": "Gesamt kg gehoben",
     "muscleBalanceTitle": "Muskelbalance",
+    "muscleCoverageEmpty": "Absolviere Trainings, um deine Muskelabdeckung zu sehen",
+    "setsCount_one": "{{count}} Satz",
+    "setsCount_other": "{{count}} Sätze",
     "last30Days": "Letzte 30 Tage",
     "trainingHeatmap": "Trainings-Heatmap",
+    "trainToSeeHeatmap": "Trainiere, um deine Heatmap zu sehen",
+    "thisWeekShort": "Diese",
+    "lastWeekShort": "Letzte",
+    "exerciseProgress": "Übungsfortschritt",
     "noDataFor": "Keine Daten für {{exercise}}",
     "logCompoundLifts": "Logge Grundübungen, um deine Kraft zu verfolgen",
     "noWorkoutsYet": "Noch keine Workouts",
@@ -363,7 +473,11 @@
     "kg": "kg",
     "noWorkouts": "Noch keine Trainings aufgezeichnet.",
     "sets": "{{count}} Sätze",
-    "rpe": "RPE {{value}}"
+    "rpe": "RPE {{value}}",
+    "est1RM": "1RM",
+    "repsLabel": "Wdh.",
+    "showAllPRs": "{{count}} weitere Rekorde anzeigen",
+    "showFewerPRs": "Weniger Rekorde anzeigen"
   },
   "sessionDetail": {
     "volume": "Volumen",
@@ -401,7 +515,11 @@
     "badge_hundredWorkouts": "100 Trainings",
     "badge_twoFiftyWorkouts": "250 Trainings",
     "greeting": "TrackYourLift Athlet",
-    "statsSummary": "{{plans}} Pläne erstellt · {{workouts}} Trainings absolviert",
+    "statsSummary": "{{plansLabel}} · {{workoutsLabel}}",
+    "plansCreated_one": "{{count}} Plan erstellt",
+    "plansCreated_other": "{{count}} Pläne erstellt",
+    "workoutsCompleted_one": "{{count}} Training absolviert",
+    "workoutsCompleted_other": "{{count}} Trainings absolviert",
     "preferences": "Einstellungen",
     "restTimer": "Pausen-Timer",
     "restTimerOn": "Startet automatisch nach jedem Satz",
@@ -539,6 +657,19 @@
         "description": "Jeder Tag für bestimmte Muskelgruppen"
       }
     },
+    "recommended": "Empfohlen",
+    "dayNames": {
+      "push": "Push",
+      "pull": "Pull",
+      "legs": "Beine",
+      "upper": "Oberkörper",
+      "lower": "Unterkörper",
+      "fullBody": "Ganzkörper",
+      "chest": "Brust",
+      "back": "Rücken",
+      "shoulders": "Schultern",
+      "arms": "Arme"
+    },
     "creatingPlans": "Pläne werden erstellt...",
     "useRecommended": "Empfohlenen Split verwenden",
     "buildOwn": "Eigenen erstellen",
@@ -550,6 +681,7 @@
     "notificationsEnabled": "Benachrichtigungen aktiviert",
     "notifTitle": "Bleib auf Kurs mit Erinnerungen",
     "notifDesc": "Erhalte Trainingserinnerungen, wöchentliche Zusammenfassungen und Inaktivitäts-Hinweise.",
+    "notifOptional": "Trainingserinnerungen & wöchentliche Zusammenfassungen",
     "equipmentQuestion": "Welche Ausrüstung hast du?",
     "equipmentSubtitle": "Erzähl uns von deiner Trainingsumgebung",
     "equipmentOptions": {
@@ -578,12 +710,124 @@
     "splitDescFullBody": "{{days}} Tage/Woche alle Hauptmuskelgruppen pro Einheit.",
     "splitDescUpperLower": "Ober- und Unterkörper im Wechsel. Jede Muskelgruppe wird 2x pro Woche trainiert.",
     "splitDescUpperLowerFull": "5-Tage-Split mit Ober-/Unterkörper und Ganzkörpereinheit für ausgeglichenes Volumen.",
-    "splitDescPPL": "Der klassische 6-Tage-Split: Push, Pull, Legs — je zweimal pro Woche."
+    "splitDescPPL": "Der klassische 6-Tage-Split: Push, Pull, Legs — je zweimal pro Woche.",
+    "goalStrengthDesc": "Bei den großen Lifts stärker werden",
+    "goalFatDesc": "Fett verbrennen & definieren",
+    "goalFitnessDesc": "Aktiv bleiben & sich großartig fühlen",
+    "goalMuscleDesc": "Muskelmasse aufbauen & Körperzusammensetzung verbessern",
+    "beginnerTip": "Starte mit leichteren Gewichten und konzentriere dich auf die richtige Technik. Du kannst das Gewicht jederzeit in der nächsten Einheit steigern.",
+    "exercisesPerSession": "~{{count}} Übungen",
+    "approxSessionTime": "~{{min}} Min/Einheit",
+    "exercisePreference": {
+      "title": "Wie möchtest du\nÜbungen auswählen?",
+      "subtitle": "Keine Sorge, du kannst Übungen jederzeit tauschen",
+      "defaultsTitle": "Standard verwenden",
+      "defaultsDesc": "Starte mit bewährten Übungen für jede Muskelgruppe",
+      "chooseTitle": "Ich wähle selbst",
+      "chooseDesc": "Durchsuche unsere Übungsbibliothek und wähle deine Favoriten",
+      "chooseSplitButton": "Split wählen",
+      "createPlanButton": "Meinen Plan erstellen"
+    },
+    "cardioSports": {
+      "sportRunning": "Laufen",
+      "sportBasketball": "Basketball",
+      "sportBoxing": "Boxen",
+      "sportSwimming": "Schwimmen",
+      "sportCycling": "Radfahren",
+      "sportSoccer": "Fußball",
+      "sportHIIT": "HIIT",
+      "sportYoga": "Yoga",
+      "title": "Wie viele Tage Cardio\noder andere Sportarten?",
+      "subtitle": "Füge zusätzlich zu deinen Krafttrainingstagen Aktivitäten hinzu, die du liebst",
+      "yesTitle": "Ja, für etwas Abwechslung",
+      "yesDesc": "Cardio oder Sport in meine Woche einbauen",
+      "noTitle": "Nein, nur Gewichte",
+      "noDesc": "Nur auf Krafttraining fokussieren",
+      "selectActivities": "Wähle deine Aktivitäten",
+      "chooseOneOrMore": "Wähle eine oder mehrere"
+    },
+    "splitPreference": {
+      "title": "Wie möchtest du\ndeinen Split einrichten?",
+      "subtitle": "Du kannst das später jederzeit ändern",
+      "recommendTitle": "Für mich empfehlen",
+      "recommendDesc": "Wir erstellen einen optimalen Split basierend auf deinem Zeitplan",
+      "chooseTitle": "Ich wähle selbst",
+      "chooseDesc": "Wähle deinen eigenen Trainings-Split und passe ihn an"
+    }
   },
   "exercisesScreen": {
     "searchPlaceholder": "Über 800 Übungen durchsuchen...",
     "searchModalPlaceholder": "Übungen suchen...",
-    "customExercisePlaceholder": "z. B. einarmiges Kabelrudern"
+    "customExercisePlaceholder": "z. B. einarmiges Kabelrudern",
+    "createAction": "Erstellen",
+    "browseAction": "800+ durchsuchen",
+    "createModal": {
+      "title": "Eigene Übung erstellen",
+      "nameLabel": "Übungsname",
+      "muscleGroupLabel": "Muskelgruppe",
+      "equipmentLabel": "Equipment",
+      "createButton": "Übung erstellen",
+      "customBadge": "Eigene"
+    },
+    "progressModal": {
+      "close": "Schließen",
+      "sessions": "Einheiten",
+      "totalSets": "Sätze gesamt",
+      "totalReps": "Wdh. gesamt",
+      "totalVolume": "Volumen gesamt",
+      "personalRecord": "Persönlicher Rekord",
+      "volume": "Volumen: {{volume}}kg",
+      "volumeTrend": "Volumenverlauf",
+      "recentSessions": "Letzte Einheiten",
+      "sets_one": "{{count}} Satz",
+      "sets_other": "{{count}} Sätze",
+      "noDataTitle": "Noch keine Trainingsdaten",
+      "noDataSubtitle": "Absolviere ein Training mit dieser Übung, um deinen Fortschritt zu sehen"
+    }
+  },
+  "exercises": {
+    "swapBadge": "Tauschen",
+    "exerciseCount_one": "{{count}} Übung",
+    "exerciseCount_other": "{{count}} Übungen",
+    "customCount": " ({{count}} eigene)",
+    "howToPerform": "So geht's",
+    "noInstructions": "Für diese Übung sind noch keine Anleitungen verfügbar.",
+    "repsCount_one": "{{count}} Wdh.",
+    "repsCount_other": "{{count}} Wdh.",
+    "muscleGroups": {
+      "all": "Alle",
+      "chest": "Brust",
+      "back": "Rücken",
+      "shoulders": "Schultern",
+      "legs": "Beine",
+      "arms": "Arme",
+      "core": "Rumpf",
+      "fullBody": "Ganzkörper",
+      "biceps": "Bizeps",
+      "triceps": "Trizeps",
+      "forearms": "Unterarme",
+      "traps": "Trapezmuskel",
+      "rearDelts": "Hintere Schulter",
+      "quads": "Quadrizeps",
+      "hamstrings": "Beinbeuger",
+      "calves": "Waden",
+      "glutes": "Gesäß"
+    },
+    "equipment": {
+      "barbell": "Langhantel",
+      "dumbbell": "Kurzhantel",
+      "cable": "Kabelzug",
+      "machine": "Maschine",
+      "bodyweight": "Körpergewicht",
+      "kettlebell": "Kettlebell",
+      "bands": "Bänder",
+      "other": "Sonstiges"
+    },
+    "category": {
+      "compound": "Verbundübung",
+      "isolation": "Isolationsübung",
+      "genericExercise": "Übung"
+    }
   },
   "splits": {
     "fullBody": "Ganzkörper",
@@ -614,7 +858,27 @@
     "title": "Muskelbalance (7 Tage)"
   },
   "exerciseChart": {
-    "weightProgression": "Gewichtsverlauf"
+    "weightProgression": "Gewichtsverlauf",
+    "sessions": "Einheiten",
+    "bestWeight": "Bestes Gewicht",
+    "est1RM": "Gesch. 1RM",
+    "maxWeight": "Maximalgewicht",
+    "estimated1RM": "Geschätztes 1RM",
+    "firstSession": "Erste Einheit",
+    "pb": "PB",
+    "weight": "Gewicht",
+    "reps": "Wdh.",
+    "logAgainPrompt": "Logge erneut, um den Fortschritt als Diagramm zu sehen",
+    "bestSession": "Beste Einheit",
+    "personalBest": "Persönliche Bestleistung",
+    "est1RMValue": "Gesch. 1RM: {{value}}kg",
+    "sessionCount_one": "{{count}} Einheit",
+    "sessionCount_other": "{{count}} Einheiten",
+    "daysAgoShort_one": "vor {{count}} Tag",
+    "daysAgoShort_other": "vor {{count}} Tagen",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "best": "Bestwert"
   },
   "recovery": {
     "title": "Erholungsstatus",
@@ -698,6 +962,8 @@
   "common": {
     "confirm": "Bestätigen",
     "cancel": "Abbrechen",
+    "back": "Zurück",
+    "loading": "Lädt...",
     "dismiss": "Schließen",
     "ok": "OK",
     "kg": "kg",

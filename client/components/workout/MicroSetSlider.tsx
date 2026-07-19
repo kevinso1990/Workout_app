@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { InteractionManager, StyleSheet, View } from "react-native";
-import Slider from "@react-native-community/slider";
+
+import { PlatformRangeSlider } from "@/components/PlatformRangeSlider";
 
 import { Colors } from "@/constants/theme";
 import { HEVY } from "@/constants/hevyLayout";
@@ -89,7 +90,7 @@ export const MicroSetSlider = React.memo(function MicroSetSlider({
 
   return (
     <View style={styles.wrap}>
-      <Slider
+      <PlatformRangeSlider
         style={styles.slider}
         minimumValue={min}
         maximumValue={max}
