@@ -227,7 +227,8 @@
       "quads": "Quads",
       "hamstrings": "Hamstrings",
       "calves": "Calves",
-      "glutes": "Glutes"
+      "glutes": "Glutes",
+      "mobility": "Mobility"
     },
     "equipment": {
       "barbell": "Barbell",
@@ -931,6 +932,13 @@
     "customNamePlaceholder": "e.g. HIIT, hiking, padel",
     "duration": "Duration (minutes)",
     "distance": "Distance (optional, km)",
+    "durationShort": "Duration",
+    "distanceShort": "Distance",
+    "optional": "optional",
+    "effortEasy": "Easy",
+    "effortModerate": "Moderate",
+    "effortHard": "Hard",
+    "effortMax": "Max",
     "distancePlaceholder": "e.g. 5.2",
     "rpe": "Effort (RPE)",
     "notes": "Notes",

@@ -27,6 +27,7 @@ const MUSCLE_GROUP_KEYS: Record<string, string> = {
   Hamstrings: "hamstrings",
   Calves: "calves",
   Glutes: "glutes",
+  Mobility: "mobility",
 };
 
 const EQUIPMENT_KEYS: Record<string, string> = {
@@ -46,6 +47,21 @@ const EQUIPMENT_KEYS: Record<string, string> = {
 // raw DB muscle_group value, so it needs its own entry outside MUSCLE_GROUP_META.
 const ARMS_COLOR = "#DDA0DD";
 
+// "Mobility" is a name-derived pseudo-category (stretch/mobility moves), not a
+// raw DB muscle_group. Catalog rows keep their real muscle group (Legs, Back…);
+// this only drives the browse/picker filter and its chip color.
+const MOBILITY_COLOR = "#2FB8A6";
+
+/**
+ * Stretch / mobility classifier. The free-exercise-db catalog files these under
+ * their target muscle group (e.g. "Hamstring Stretch" → Legs), so there's no DB
+ * category to key on — every mobility move in the catalog is named "… Stretch",
+ * which makes the name the reliable signal (51 rows, zero false positives).
+ */
+export function isMobilityExercise(name: string): boolean {
+  return name.toLowerCase().includes("stretch");
+}
+
 /**
  * Consistent accent color per muscle group, shared across the catalog grid,
  * plan detail view, and exercise picker rows — single source of truth is
@@ -53,6 +69,7 @@ const ARMS_COLOR = "#DDA0DD";
  */
 export function getMuscleGroupColor(group: string): string {
   if (group === "Arms") return ARMS_COLOR;
+  if (group === "Mobility") return MOBILITY_COLOR;
   return MUSCLE_GROUP_META[group]?.color ?? "#647692";
 }
 

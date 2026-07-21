@@ -811,7 +811,8 @@
       "quads": "Quadrizeps",
       "hamstrings": "Beinbeuger",
       "calves": "Waden",
-      "glutes": "Gesäß"
+      "glutes": "Gesäß",
+      "mobility": "Mobility"
     },
     "equipment": {
       "barbell": "Langhantel",
@@ -931,6 +932,13 @@
     "customNamePlaceholder": "z. B. HIIT, Wandern, Padel",
     "duration": "Dauer (Minuten)",
     "distance": "Distanz (optional, km)",
+    "durationShort": "Dauer",
+    "distanceShort": "Distanz",
+    "optional": "optional",
+    "effortEasy": "Locker",
+    "effortModerate": "Moderat",
+    "effortHard": "Fordernd",
+    "effortMax": "Maximal",
     "distancePlaceholder": "z. B. 5,2",
     "rpe": "Belastung (RPE)",
     "notes": "Notizen",

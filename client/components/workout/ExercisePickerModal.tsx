@@ -19,7 +19,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
-import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
 import type { CatalogRow } from "@/lib/importCatalog";
 
 export type PickerExercise = CatalogRow;
@@ -46,6 +46,7 @@ export function ExercisePickerModal({
   const [query, setQuery] = useState("");
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [mobilityOnly, setMobilityOnly] = useState(false);
 
   useEffect(() => {
     if (!visible || catalog.length > 0) return;
@@ -73,6 +74,7 @@ export function ExercisePickerModal({
     const q = query.trim().toLowerCase();
     return catalog.filter((e) => {
       if (excludeNames?.has(e.name)) return false;
+      if (mobilityOnly && !isMobilityExercise(e.name)) return false;
       if (!q) return true;
       return (
         e.name.toLowerCase().includes(q) ||
@@ -80,10 +82,11 @@ export function ExercisePickerModal({
         e.equipment.toLowerCase().includes(q)
       );
     });
-  }, [catalog, query, excludeNames]);
+  }, [catalog, query, excludeNames, mobilityOnly]);
 
   const handleClose = () => {
     setQuery("");
+    setMobilityOnly(false);
     onClose();
   };
 
@@ -135,6 +138,45 @@ export function ExercisePickerModal({
               <Feather name="x-circle" size={16} color={theme.textSecondary} />
             </Pressable>
           )}
+        </View>
+
+        <View style={styles.filterRow}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setMobilityOnly((v) => !v);
+            }}
+            style={[
+              styles.filterChip,
+              {
+                borderColor: mobilityOnly
+                  ? getMuscleGroupColor("Mobility")
+                  : theme.border,
+                backgroundColor: mobilityOnly
+                  ? getMuscleGroupColor("Mobility") + "1A"
+                  : "transparent",
+              },
+            ]}
+            testID="chip-picker-mobility"
+          >
+            <Feather
+              name="wind"
+              size={13}
+              color={mobilityOnly ? getMuscleGroupColor("Mobility") : theme.textSecondary}
+            />
+            <ThemedText
+              style={[
+                styles.filterChipText,
+                {
+                  color: mobilityOnly
+                    ? getMuscleGroupColor("Mobility")
+                    : theme.textSecondary,
+                },
+              ]}
+            >
+              {translateMuscleGroup(t, "Mobility")}
+            </ThemedText>
+          </Pressable>
         </View>
 
         {loading ? (
@@ -227,6 +269,24 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
+  },
+  filterRow: {
+    flexDirection: "row",
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   centerFill: {
     flex: 1,

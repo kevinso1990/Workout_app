@@ -35,7 +35,7 @@ import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { getApiUrl } from "@/lib/query-client";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
-import { translateMuscleGroup, translateEquipment, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, translateEquipment, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -154,6 +154,9 @@ const EXERCISE_LIBRARY: ExerciseItem[] = [
 ];
 
 const MUSCLE_GROUPS = ["All", "Chest", "Back", "Shoulders", "Legs", "Arms", "Core", "Full Body"];
+// Browse filter adds "Mobility" (a name-derived stretch category) — NOT offered
+// in the create-custom-exercise modal, which only uses real muscle groups.
+const FILTER_GROUPS = [...MUSCLE_GROUPS, "Mobility"];
 const EQUIPMENT_OPTIONS = ["Barbell", "Dumbbells", "Cable", "Machine", "Bodyweight", "Kettlebell", "Other"];
 
 const EXERCISE_IMAGE_MAP: Record<string, string> = {
@@ -1009,7 +1012,9 @@ export default function ExercisesScreen() {
           ? true
           : selectedFilter === "Arms"
             ? armGroups.has(exercise.muscleGroup)
-            : exercise.muscleGroup === selectedFilter;
+            : selectedFilter === "Mobility"
+              ? isMobilityExercise(exercise.name)
+              : exercise.muscleGroup === selectedFilter;
       return matchesSearch && matchesFilter;
     });
   }, [searchQuery, selectedFilter, allExercises]);
@@ -1143,7 +1148,7 @@ export default function ExercisesScreen() {
             </View>
             <FlatList
               horizontal
-              data={MUSCLE_GROUPS}
+              data={FILTER_GROUPS}
               renderItem={({ item }) => (
                 <FilterChip
                   label={translateMuscleGroup(t, item)}
