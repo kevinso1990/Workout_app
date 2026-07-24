@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -41,7 +42,7 @@ import {
   type SplitOption,
 } from "@/lib/onboardingUtils";
 import { resetToRootMain } from "@/lib/navigationHelpers";
-import { hapticLight, hapticSuccess } from "@/lib/safeHaptics";
+import { hapticLight, hapticSuccess, hapticError } from "@/lib/safeHaptics";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const isWeb = Platform.OS === "web";
@@ -246,6 +247,20 @@ export default function SplitSelectionScreen() {
     setSelectedSplit(splitId);
   };
 
+  /** Marks onboarding done and lands the user on the main app. */
+  const finishToMain = async () => {
+    await setOnboardingComplete(true);
+    scheduleDataSync();
+    if (!resetToRootMain()) {
+      navigation.getParent()?.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        }),
+      );
+    }
+  };
+
   const handleContinue = async () => {
     if (!selectedSplit) return;
 
@@ -263,20 +278,30 @@ export default function SplitSelectionScreen() {
       });
 
       await saveWorkoutPlan(plan);
-      await setOnboardingComplete(true);
-      scheduleDataSync();
-
       hapticSuccess();
-      if (!resetToRootMain()) {
-        navigation.getParent()?.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Main" }],
-          }),
-        );
-      }
+      await finishToMain();
     } catch (error) {
-      console.error("Error saving:", error);
+      // Never leave the user stranded at the end of onboarding with a silent
+      // failure — they answered eight screens to get here. Explain it and
+      // always offer a way forward (retry, or continue and create a plan later
+      // from the Plans screen).
+      console.error("Onboarding plan creation failed:", error);
+      hapticError();
+      Alert.alert(
+        t("onboarding.planFailedTitle"),
+        t("onboarding.planFailedMessage"),
+        [
+          {
+            text: t("onboarding.planFailedRetry"),
+            onPress: () => void handleContinue(),
+          },
+          {
+            text: t("onboarding.planFailedSkip"),
+            style: "cancel",
+            onPress: () => void finishToMain(),
+          },
+        ],
+      );
     } finally {
       setIsLoading(false);
     }
@@ -424,7 +449,14 @@ export default function SplitSelectionScreen() {
         >
           <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              // Generating can take a few seconds — say what's happening so the
+              // wait doesn't read as "stuck".
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="#FFFFFF" />
+                <ThemedText style={styles.buttonText}>
+                  {t("onboarding.splitCreatingPlan")}
+                </ThemedText>
+              </View>
             ) : (
               <ThemedText style={styles.buttonText}>{t("onboarding.splitCreatePlan")}</ThemedText>
             )}
@@ -610,5 +642,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
 });

@@ -364,27 +364,6 @@ function EmptyState({
       </ThemedText>
 
       <AnimatedPressable
-        onPress={onImportPress}
-        onPressIn={() => {
-          importScale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
-        }}
-        onPressOut={() => {
-          importScale.value = withSpring(1, { damping: 15, stiffness: 200 });
-        }}
-        style={[
-          importAnimatedStyle,
-          styles.emptyPrimaryBtn,
-          { backgroundColor: Colors.light.primary },
-        ]}
-        testID="button-import-plan-empty"
-      >
-        <Feather name="camera" size={20} color="#FFFFFF" />
-        <ThemedText style={styles.emptyPrimaryBtnText}>
-          {t("plans.emptyState.importPrimary")}
-        </ThemedText>
-      </AnimatedPressable>
-
-      <AnimatedPressable
         onPress={onCreatePress}
         onPressIn={() => {
           createScale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
@@ -394,14 +373,35 @@ function EmptyState({
         }}
         style={[
           createAnimatedStyle,
-          styles.emptySecondaryBtn,
-          { borderColor: HEVY.separator },
+          styles.emptyPrimaryBtn,
+          { backgroundColor: Colors.light.primary },
         ]}
         testID="button-create-first-plan"
       >
-        <Feather name="edit-3" size={18} color={HEVY.textPrimary} />
+        <Feather name="zap" size={20} color="#FFFFFF" />
+        <ThemedText style={styles.emptyPrimaryBtnText}>
+          {t("plans.emptyState.generatePrimary")}
+        </ThemedText>
+      </AnimatedPressable>
+
+      <AnimatedPressable
+        onPress={onImportPress}
+        onPressIn={() => {
+          importScale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
+        }}
+        onPressOut={() => {
+          importScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+        }}
+        style={[
+          importAnimatedStyle,
+          styles.emptySecondaryBtn,
+          { borderColor: HEVY.separator },
+        ]}
+        testID="button-import-plan-empty"
+      >
+        <Feather name="camera" size={18} color={HEVY.textPrimary} />
         <ThemedText style={styles.emptySecondaryBtnText}>
-          {t("plans.emptyState.createSecondary")}
+          {t("plans.emptyState.importSecondary")}
         </ThemedText>
       </AnimatedPressable>
     </View>
@@ -683,12 +683,15 @@ export default function MyPlansScreen() {
         }
         ListHeaderComponent={
           <>
+            {/* At most ONE notice at a time, by priority: something went wrong
+                > actionable coaching offer > daily tip. Stacking three banners
+                pushed the real primary action (starting a workout) off screen.
+                Dismissing one surfaces the next. */}
             {showGenFallback ? (
               <PlanGenerationFallbackBanner
                 onDismiss={() => setShowGenFallback(false)}
               />
-            ) : null}
-            {adaptPlan ? (
+            ) : adaptPlan ? (
               <PlanAdaptationBanner
                 plan={adaptPlan}
                 signals={adaptSignals}
@@ -711,8 +714,7 @@ export default function MyPlansScreen() {
                 }}
                 onDismiss={() => setSplitRefreshOffer(null)}
               />
-            ) : null}
-            {coachBrief ? (
+            ) : coachBrief ? (
               <View
                 style={[
                   styles.coachCard,

@@ -20,7 +20,8 @@ import Svg, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
   FadeInDown,
@@ -34,6 +35,8 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { hapticLight } from "@/lib/safeHaptics";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
@@ -983,6 +986,8 @@ function ExerciseProgressSection({
 function EmptyState() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.emptyContainer}>
@@ -995,6 +1000,25 @@ function EmptyState() {
       <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
         {t("progress.noWorkoutsDesc")}
       </ThemedText>
+
+      {/* An empty state that only describes the gap is a dead end — give the
+          user the action it's asking for. */}
+      <Pressable
+        onPress={() => {
+          hapticLight();
+          navigation.navigate("StartWorkout", {});
+        }}
+        style={({ pressed }) => [
+          styles.emptyCta,
+          { backgroundColor: Colors.light.primary, opacity: pressed ? 0.85 : 1 },
+        ]}
+        testID="button-progress-empty-start"
+      >
+        <Feather name="play" size={18} color="#FFFFFF" />
+        <ThemedText style={styles.emptyCtaText}>
+          {t("progress.startFirstWorkout")}
+        </ThemedText>
+      </Pressable>
     </View>
   );
 }
@@ -1689,6 +1713,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     lineHeight: 22,
+  },
+  emptyCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.md,
+  },
+  emptyCtaText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
   oneRMContainer: {
     borderRadius: BorderRadius.lg,

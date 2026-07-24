@@ -1004,9 +1004,12 @@ export default function ExercisesScreen() {
   const filteredExercises = useMemo(() => {
     const armGroups = new Set(["Biceps", "Triceps", "Forearms", "Arms"]);
     return allExercises.filter((exercise) => {
-      const matchesSearch = exercise.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const q = searchQuery.toLowerCase();
+      // Match the German label too, so a German user can search "Kreuzheben"
+      // even though the canonical name stays English.
+      const matchesSearch =
+        exercise.name.toLowerCase().includes(q) ||
+        (exercise.nameDe?.toLowerCase().includes(q) ?? false);
       const matchesFilter =
         selectedFilter === "All"
           ? true

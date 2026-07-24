@@ -20,6 +20,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import type { CatalogRow } from "@/lib/importCatalog";
 
 export type PickerExercise = CatalogRow;
@@ -40,7 +41,7 @@ export function ExercisePickerModal({
   onClose,
   onSelect,
 }: ExercisePickerModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
@@ -78,6 +79,8 @@ export function ExercisePickerModal({
       if (!q) return true;
       return (
         e.name.toLowerCase().includes(q) ||
+        // Match the German label too, so a German user can type "Bankdrücken".
+        (e.name_de?.toLowerCase().includes(q) ?? false) ||
         e.muscle_group.toLowerCase().includes(q) ||
         e.equipment.toLowerCase().includes(q)
       );
@@ -210,7 +213,10 @@ export function ExercisePickerModal({
               >
                 <View style={styles.rowInfo}>
                   <ThemedText style={styles.rowName} numberOfLines={1}>
-                    {item.name}
+                    {getExerciseDisplayName(
+                      { name: item.name, nameDe: item.name_de },
+                      i18n.language,
+                    )}
                   </ThemedText>
                   <View
                     style={[

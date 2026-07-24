@@ -21,6 +21,17 @@ export function initDb() {
       is_custom INTEGER DEFAULT 0
     );
 
+    -- Localized exercise labels. The canonical English name stays in
+    -- exercises.name (used for matching/history/imports); this table only
+    -- supplies the rendered label per language.
+    CREATE TABLE IF NOT EXISTS exercise_translations (
+      exercise_id INTEGER NOT NULL,
+      lang TEXT NOT NULL,
+      name TEXT NOT NULL,
+      PRIMARY KEY (exercise_id, lang),
+      FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS plans (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,

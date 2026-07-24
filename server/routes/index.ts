@@ -152,6 +152,9 @@ export function registerRoutes(app: Express): void {
       rows.map((r) => ({
         id: r.id,
         name: r.name,
+        // German label; client renders it when the app language is German and
+        // falls back to `name` when null.
+        name_de: r.name_de ?? null,
         muscle_group: r.muscle_group,
         equipment: r.equipment,
         is_custom: r.is_custom,

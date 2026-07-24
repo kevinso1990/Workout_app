@@ -117,6 +117,12 @@ export interface OAuthIdentity {
 export interface Exercise {
   id: number;
   name: string;
+  /**
+   * German display name from `exercise_translations`. The canonical `name`
+   * stays English so matching, history and imports keep working — only the
+   * rendered label switches with the app language.
+   */
+  name_de?: string | null;
   muscle_group: string;
   equipment: string;
   is_custom: number; // 0 | 1

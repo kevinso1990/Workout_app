@@ -101,10 +101,10 @@
       "save": "Save"
     },
     "emptyState": {
-      "title": "No workout plans yet",
-      "subtitle": "Let's digitize your current program and start training smarter.",
-      "importPrimary": "Import plan with AI",
-      "createSecondary": "Create empty plan manually"
+      "title": "Ready for your first workout?",
+      "subtitle": "Let AI build you a plan in seconds — or import one you already have.",
+      "generatePrimary": "Create a plan with AI",
+      "importSecondary": "Import an existing plan"
     },
     "descFullBody": "Full body conditioning",
     "descUpperA": "Upper body strength focus",
@@ -153,7 +153,7 @@
     "editPlan": "Edit Plan",
     "newPlan": "New Plan",
     "save": "Save",
-    "saving": "...",
+    "saving": "Saving…",
     "planNamePlaceholder": "Plan name (e.g. Push Day A)",
     "setsLabel": "Sets",
     "repsLabel": "Reps",
@@ -485,6 +485,7 @@
     "logCompoundLifts": "Log compound lifts to track your strength",
     "noWorkoutsYet": "No Workouts Yet",
     "noWorkoutsDesc": "Complete your first workout to start tracking your progress and see your gains",
+    "startFirstWorkout": "Start a workout",
     "searchExercises": "Search exercises...",
     "noExercises": "No exercises found",
     "setsLogged": "{{count}} sets logged",
@@ -714,6 +715,11 @@
     "splitSubtitle": "Select a workout split for your {{days}}-day schedule",
     "splitSchedule": "Your Schedule",
     "splitCreatePlan": "Create Plan",
+    "splitCreatingPlan": "Building your plan…",
+    "planFailedTitle": "Couldn't create your plan",
+    "planFailedMessage": "Your answers are saved. Try again, or continue and create your plan from the Plans tab whenever you like.",
+    "planFailedRetry": "Try again",
+    "planFailedSkip": "Continue anyway",
     "splitOptions": {
       "push-pull-legs": {
         "name": "Push / Pull / Legs",

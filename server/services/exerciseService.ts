@@ -3,14 +3,28 @@ import { AppError } from "../middleware/errorHandler";
 import type { Exercise, CreateExerciseBody } from "../models";
 import { prefetchSingleExercise } from "./gifPrefetchService";
 
+/**
+ * Rows carry the German label alongside the canonical English `name` so the
+ * client can render either without a second round-trip. LEFT JOIN keeps
+ * untranslated exercises (name_de = null → client falls back to English).
+ */
+const SELECT_EXERCISES_WITH_DE = `
+  SELECT e.*, t.name AS name_de
+  FROM exercises e
+  LEFT JOIN exercise_translations t
+    ON t.exercise_id = e.id AND t.lang = 'de'
+`;
+
 export function listExercises(equipment?: string): Exercise[] {
   if (equipment) {
     return db
-      .prepare("SELECT * FROM exercises WHERE equipment = ? ORDER BY muscle_group, name")
+      .prepare(
+        `${SELECT_EXERCISES_WITH_DE} WHERE e.equipment = ? ORDER BY e.muscle_group, e.name`,
+      )
       .all(equipment) as Exercise[];
   }
   return db
-    .prepare("SELECT * FROM exercises ORDER BY muscle_group, name")
+    .prepare(`${SELECT_EXERCISES_WITH_DE} ORDER BY e.muscle_group, e.name`)
     .all() as Exercise[];
 }
 
