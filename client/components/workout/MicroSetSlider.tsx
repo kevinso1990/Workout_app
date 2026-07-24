@@ -116,6 +116,8 @@ const styles = StyleSheet.create({
   },
   slider: {
     width: "100%",
-    height: 22,
+    // Taller than the visual track so there's a generous vertical finger
+    // target — the thin 22px row was fiddly to grab mid-workout.
+    height: 40,
   },
 });

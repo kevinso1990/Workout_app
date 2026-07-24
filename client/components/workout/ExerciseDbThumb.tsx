@@ -2,13 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { EXERCISEDB_KEY_HINT, isExerciseDbConfigured } from "@/lib/rapidApiConfig";
 import { fetchExerciseGif } from "@/services/exerciseApi";
 import { getExerciseImageUrl } from "@/lib/exerciseImages";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
@@ -92,11 +91,12 @@ export function ExerciseDbThumb({
             }
           }}
         />
-      ) : fetchDone && !isExerciseDbConfigured() ? (
-        <View style={styles.hintWrap}>
-          <Text style={styles.hintText} numberOfLines={3}>
-            {EXERCISEDB_KEY_HINT}
-          </Text>
+      ) : fetchDone ? (
+        // No animation and no static image for this exercise (e.g. custom or
+        // newly-added moves like Dead Hang) — show a neutral dumbbell glyph so
+        // the tile looks intentional instead of blank or leaking a config hint.
+        <View style={styles.placeholderWrap}>
+          <MaterialCommunityIcons name="dumbbell" size={22} color="#B0B0B8" />
         </View>
       ) : null}
     </>
@@ -134,17 +134,10 @@ const styles = StyleSheet.create({
   imageHidden: {
     opacity: 0,
   },
-  hintWrap: {
+  placeholderWrap: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    padding: 4,
     backgroundColor: "#F2F2F7",
-  },
-  hintText: {
-    fontSize: 8,
-    lineHeight: 10,
-    textAlign: "center",
-    color: "#8E8E93",
   },
 });

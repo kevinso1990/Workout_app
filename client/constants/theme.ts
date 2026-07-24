@@ -1,7 +1,8 @@
 import { Platform } from "react-native";
 
-/** Slate blue-grey — active controls, primary actions, slider tracks (Hevy-style). */
-const activeColor = "#5B6B7A";
+/** Warm amber — active controls, primary actions, slider tracks. Energetic but
+ * warmer than pure orange; replaces the muted slate that felt flat. */
+const activeColor = "#D97706";
 /** Orange reserved ONLY for completed-set checkbox 1px indicators. */
 export const setCompleteAccent = "#FF4D00";
 

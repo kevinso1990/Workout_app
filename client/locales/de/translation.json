@@ -561,7 +561,7 @@
     "waistCm": "Taille (cm)",
     "saveMeasurement": "Messung speichern",
     "cloudBackupTitle": "Cloud-Backup",
-    "cloudBackupHint": "Deine Daten werden automatisch gesichert. Notiere diesen Backup-Code, um sie nach einem Geräte-Reset oder auf einem anderen Gerät wiederherzustellen:",
+    "cloudBackupHint": "Du hast kein Konto — dieser Code ist dein Schlüssel zu deinen Daten. Bewahre ihn sicher auf, um Pläne und Verlauf nach einer Neuinstallation oder auf einem neuen Handy wiederherzustellen:",
     "cloudBackupNow": "Jetzt sichern",
     "cloudRestore": "Wiederherstellen",
     "cloudRestoreTitle": "Aus Backup-Code wiederherstellen",

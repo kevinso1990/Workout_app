@@ -1,4 +1,8 @@
-export const WEIGHT_SLIDER_STEP_KG = 2.5;
+// 1 kg increments — users expect per-kilo control on the slider (2.5 kg jumps
+// felt too coarse and always landed on odd values like 22.5). Exact/half-kg
+// values (e.g. fixed 22.5 kg dumbbells) are still enterable via tap-to-type,
+// which uses clampAndFormatWeightExact and does NOT snap to this step.
+export const WEIGHT_SLIDER_STEP_KG = 1;
 
 export function roundToStepWeight(value: number, step = WEIGHT_SLIDER_STEP_KG): number {
   return Math.round(value / step) * step;

@@ -636,7 +636,7 @@
     "waistCm": "Waist (cm)",
     "saveMeasurement": "Save Measurement",
     "cloudBackupTitle": "Cloud Backup",
-    "cloudBackupHint": "Your data is backed up automatically. Save this backup code to restore after a device reset or on another device:",
+    "cloudBackupHint": "There's no account or login — this code is your key to your data. Save it somewhere safe to restore your plans and history after reinstalling the app or on a new phone:",
     "cloudBackupNow": "Back up now",
     "cloudRestore": "Restore",
     "cloudRestoreTitle": "Restore from backup code",

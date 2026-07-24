@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, CommonActions, useNavigation } from "@react-navigation/native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -466,10 +466,16 @@ const EQUIPMENT_OPTIONS: {
   id: Equipment;
   labelKey: string;
   icon: keyof typeof Feather.glyphMap;
+  mciIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
 }[] = [
   { id: "full_gym", labelKey: "profile.equipmentFullGym", icon: "zap" },
   { id: "dumbbells_only", labelKey: "profile.equipmentDumbbells", icon: "disc" },
-  { id: "kettlebell", labelKey: "profile.equipmentKettlebell", icon: "anchor" },
+  {
+    id: "kettlebell",
+    labelKey: "profile.equipmentKettlebell",
+    icon: "anchor",
+    mciIcon: "kettlebell",
+  },
   { id: "bodyweight", labelKey: "profile.equipmentBodyweight", icon: "user" },
 ];
 
@@ -495,8 +501,9 @@ function EquipmentCard({
         <ThemedText style={styles.prefsCardTitle}>{t("profile.equipment")}</ThemedText>
       </View>
       <View style={styles.equipmentOptions}>
-        {EQUIPMENT_OPTIONS.map(({ id, labelKey, icon }) => {
+        {EQUIPMENT_OPTIONS.map(({ id, labelKey, icon, mciIcon }) => {
           const isActive = equipment === id;
+          const iconColor = isActive ? Colors.light.primary : theme.textSecondary;
           return (
             <Pressable
               key={id}
@@ -513,11 +520,11 @@ function EquipmentCard({
               ]}
               testID={`button-equipment-${id}`}
             >
-              <Feather
-                name={icon}
-                size={16}
-                color={isActive ? Colors.light.primary : theme.textSecondary}
-              />
+              {mciIcon ? (
+                <MaterialCommunityIcons name={mciIcon} size={18} color={iconColor} />
+              ) : (
+                <Feather name={icon} size={16} color={iconColor} />
+              )}
               <ThemedText
                 style={[
                   styles.fitnessLevelLabel,

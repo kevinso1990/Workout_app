@@ -45,8 +45,9 @@ function generateId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
-  // Fallback for environments without crypto.randomUUID.
-  return `dev-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  // Fallback for environments without crypto.randomUUID. Neutral "tyl-" prefix
+  // (never "dev-", which looked broken when shown to users as a backup code).
+  return `tyl-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 /** Returns the stable anonymous backup id, generating + persisting one once. */
