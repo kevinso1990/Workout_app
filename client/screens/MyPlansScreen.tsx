@@ -22,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -517,6 +518,8 @@ export default function MyPlansScreen() {
       setShowGenFallback(!!fallback);
     } catch (error) {
       console.error("Error loading plans:", error);
+      // Without this, a load failure looks identical to "you have no plans yet".
+      toast.error(t("common.loadFailed"));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -579,6 +582,7 @@ export default function MyPlansScreen() {
     } catch (error) {
       console.error("Error renaming plan:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      toast.error(t("common.saveFailed"));
     }
   };
 
@@ -601,6 +605,7 @@ export default function MyPlansScreen() {
     } catch (error) {
       console.error("Error deleting plan:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      toast.error(t("common.deleteFailed"));
     }
   };
 

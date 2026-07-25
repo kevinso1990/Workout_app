@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useAnimatedStyle,
@@ -183,7 +183,29 @@ export default function ExercisePreferenceScreen() {
         );
       }
     } catch (error) {
+      // Same trap as the split step: a failure here left the user stranded at
+      // the end of onboarding with no feedback. Explain it and always offer a
+      // way forward.
       console.error("Error saving preferences:", error);
+      Alert.alert(
+        t("onboarding.planFailedTitle"),
+        t("onboarding.planFailedMessage"),
+        [
+          { text: t("onboarding.planFailedRetry"), onPress: () => void handleFinish() },
+          {
+            text: t("onboarding.planFailedSkip"),
+            style: "cancel",
+            onPress: async () => {
+              await setOnboardingComplete(true);
+              if (!resetToRootMain()) {
+                navigation.getParent()?.dispatch(
+                  CommonActions.reset({ index: 0, routes: [{ name: "Main" }] }),
+                );
+              }
+            },
+          },
+        ],
+      );
     } finally {
       setIsLoading(false);
     }

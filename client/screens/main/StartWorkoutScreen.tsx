@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 import {
   View,
   StyleSheet,
@@ -132,6 +133,7 @@ export default function StartWorkoutScreen() {
       }
     } catch (error) {
       console.error("Error loading data:", error);
+      toast.error(t("common.loadFailed"));
     } finally {
       setIsLoading(false);
     }

@@ -20,6 +20,7 @@ import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -754,6 +755,9 @@ export default function EditPlanScreen() {
     } catch (err) {
       console.error("EditPlanScreen: failed to save plan", err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      // Stay on screen (edits preserved) and tell the user it didn't save —
+      // silently swallowing this looked like a successful save with lost edits.
+      toast.error(t("common.saveFailed"));
     } finally {
       setIsSaving(false);
     }

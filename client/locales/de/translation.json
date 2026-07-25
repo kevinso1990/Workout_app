@@ -258,6 +258,8 @@
     "restTitle": "Pause",
     "restHint": "Verschnauf kurz, du hast es dir verdient",
     "skipRest": "Pause überspringen",
+    "restMinus15": "15 Sekunden weniger Pause",
+    "restPlus15": "15 Sekunden mehr Pause",
     "skip": "Überspringen",
     "set": "Satz",
     "previous": "Vorherig",
@@ -982,6 +984,10 @@
     "ok": "OK",
     "kg": "kg",
     "lbs": "lbs",
-    "min": "Min"
+    "min": "Min",
+    "saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+    "deleteFailed": "Löschen fehlgeschlagen. Bitte erneut versuchen.",
+    "loadFailed": "Laden fehlgeschlagen. Prüfe deine Verbindung und zieh zum Aktualisieren.",
+    "actionFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
   }
 }

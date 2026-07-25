@@ -13,6 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
@@ -853,6 +854,8 @@ export default function ProfileScreen() {
               );
             } catch (error) {
               console.error("Error resetting:", error);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              toast.error(t("common.actionFailed"));
             }
           },
         },

@@ -333,6 +333,8 @@
     "restTitle": "Rest Time",
     "restHint": "Take a breather, you earned it",
     "skipRest": "Skip Rest",
+    "restMinus15": "15 seconds less rest",
+    "restPlus15": "15 seconds more rest",
     "skip": "Skip",
     "set": "Set",
     "previous": "Previous",
@@ -982,6 +984,10 @@
     "ok": "OK",
     "kg": "kg",
     "lbs": "lbs",
-    "min": "min"
+    "min": "min",
+    "saveFailed": "Couldn't save. Please try again.",
+    "deleteFailed": "Couldn't delete. Please try again.",
+    "loadFailed": "Couldn't load. Check your connection and pull to refresh.",
+    "actionFailed": "Something went wrong. Please try again."
   }
 }

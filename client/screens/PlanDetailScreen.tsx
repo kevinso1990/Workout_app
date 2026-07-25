@@ -16,6 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/lib/toast";
 
 import { ThemedText } from "@/components/ThemedText";
 import { PlanDetailView } from "@/components/workout/PlanDetailView";
@@ -100,6 +101,7 @@ export default function PlanDetailScreen() {
             } catch (error) {
               console.error("Error deleting plan:", error);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              toast.error(t("common.deleteFailed"));
             } finally {
               setIsDeleting(false);
             }

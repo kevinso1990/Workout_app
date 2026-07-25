@@ -312,11 +312,13 @@ function RestTimerModal({
   timeLeft,
   totalSeconds = DEFAULT_REST_TIME,
   onSkip,
+  onAdjust,
 }: {
   visible: boolean;
   timeLeft: number;
   totalSeconds?: number;
   onSkip: () => void;
+  onAdjust: (delta: number) => void;
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
@@ -361,6 +363,30 @@ function RestTimerModal({
           <ThemedText style={[styles.restHint, { color: theme.textSecondary }]}>
             {t("activeWorkout.restHint")}
           </ThemedText>
+
+          <View style={styles.restAdjustRow}>
+            <Pressable
+              onPress={() => onAdjust(-15)}
+              style={[styles.restAdjustBtn, { borderColor: theme.border }]}
+              accessibilityLabel={t("activeWorkout.restMinus15")}
+              testID="button-rest-minus"
+            >
+              <ThemedText style={[styles.restAdjustText, { color: theme.text }]}>
+                −15s
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => onAdjust(15)}
+              style={[styles.restAdjustBtn, { borderColor: theme.border }]}
+              accessibilityLabel={t("activeWorkout.restPlus15")}
+              testID="button-rest-plus"
+            >
+              <ThemedText style={[styles.restAdjustText, { color: theme.text }]}>
+                +15s
+              </ThemedText>
+            </Pressable>
+          </View>
+
           <Pressable onPress={onSkip} style={styles.skipRestButton}>
             <ThemedText style={[styles.skipRestText, { color: Colors.light.primary }]}>
               {t("activeWorkout.skipRest")}
@@ -1614,6 +1640,17 @@ export default function ActiveWorkoutScreen() {
     setRestTimeLeft(restDuration);
   };
 
+  /** ±15s mid-rest — extend for a heavy set, cut it short when you're ready. */
+  const handleAdjustRest = (delta: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRestTimeLeft((prev) => {
+      const next = Math.max(5, prev + delta);
+      // Keep the background notification in sync with the new end time.
+      void scheduleRestNotification(next);
+      return next;
+    });
+  };
+
   const handleFinishWorkout = async () => {
     if (!plan) return;
 
@@ -1757,6 +1794,7 @@ export default function ActiveWorkoutScreen() {
         timeLeft={restTimeLeft}
         totalSeconds={restDuration}
         onSkip={handleSkipRest}
+        onAdjust={handleAdjustRest}
       />
       <PRCelebration
         visible={showPRCelebration}
@@ -2939,9 +2977,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: Spacing.xl,
   },
+  restAdjustRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  restAdjustBtn: {
+    minWidth: 84,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  restAdjustText: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
   skipRestButton: {
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.xs,
   },
   skipRestText: {
     fontSize: 16,

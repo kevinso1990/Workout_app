@@ -321,7 +321,14 @@ export function HevySetRow({
   const canLogSet = !validation.repsInvalid && !validation.weightInvalid;
 
   const handleCheck = () => {
-    if (setData.completed) return;
+    // Tapping a completed set un-checks it and reactivates it for editing —
+    // an accidental check used to freeze the row with no way back.
+    if (setData.completed) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onUpdate({ completed: false, rating: null });
+      onActivate?.();
+      return;
+    }
 
     if (!canLogSet) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -420,7 +427,6 @@ export function HevySetRow({
       <View style={styles.colCheck}>
         <Pressable
           onPress={handleCheck}
-          disabled={setData.completed}
           hitSlop={10}
           style={[
             styles.checkBox,
@@ -433,10 +439,7 @@ export function HevySetRow({
           testID={`button-complete-set-${setIndex}`}
           accessibilityRole="checkbox"
           accessibilityLabel="Satz protokollieren"
-          accessibilityState={{
-            checked: setData.completed,
-            disabled: setData.completed,
-          }}
+          accessibilityState={{ checked: setData.completed }}
         >
           <Feather
             name="check"
