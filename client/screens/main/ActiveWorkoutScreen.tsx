@@ -1746,7 +1746,9 @@ export default function ActiveWorkoutScreen() {
   };
 
   const calculateTotalVolume = () => {
-    return progress.reduce((total, ep) => {
+    // Round the total — half-kg weights (e.g. 22.5 × 8) otherwise surface as
+    // "2,812.5 kg" in the summary, which reads like a glitch.
+    const raw = progress.reduce((total, ep) => {
       return (
         total +
         ep.sets
@@ -1758,6 +1760,7 @@ export default function ActiveWorkoutScreen() {
           }, 0)
       );
     }, 0);
+    return Math.round(raw);
   };
 
   if (!plan || progress.length === 0) {

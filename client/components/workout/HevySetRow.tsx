@@ -438,7 +438,7 @@ export function HevySetRow({
           ]}
           testID={`button-complete-set-${setIndex}`}
           accessibilityRole="checkbox"
-          accessibilityLabel="Satz protokollieren"
+          accessibilityLabel={t("activeWorkout.toggleSetA11y")}
           accessibilityState={{ checked: setData.completed }}
         >
           <Feather

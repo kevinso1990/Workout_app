@@ -849,7 +849,7 @@ export default function EditPlanScreen() {
   if (!plan) {
     return (
       <View style={[styles.center, { backgroundColor: theme.backgroundRoot }]}>
-        <ThemedText>Plan not found</ThemedText>
+        <ThemedText>{t("plans.planNotFound")}</ThemedText>
       </View>
     );
   }

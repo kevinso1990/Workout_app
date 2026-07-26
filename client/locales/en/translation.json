@@ -335,6 +335,7 @@
     "skipRest": "Skip Rest",
     "restMinus15": "15 seconds less rest",
     "restPlus15": "15 seconds more rest",
+    "toggleSetA11y": "Log or undo this set",
     "skip": "Skip",
     "set": "Set",
     "previous": "Previous",
