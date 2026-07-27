@@ -45,7 +45,11 @@ const autoGenerateSchema = z.object({
   equipment:    z.enum(VALID_EQUIPMENT).optional().default("barbell"),
   focusMuscles: z.array(z.enum(VALID_MUSCLE_GROUPS)).optional().default([]),
   splitPreference: z.enum(VALID_SPLIT_PREFERENCES).optional(),
+  goalText: z.string().trim().min(3).max(200).optional(),
 });
+
+/** Equipment categories that hold mobility / stretching / warm-up movements. */
+const MOBILITY_EQUIPMENT = ["other", "bodyweight", "bands"] as const;
 
 /**
  * Maps UI muscle group names (lowercase, from OnboardingContext MuscleGroup type)
@@ -733,20 +737,27 @@ function makeAutoGenRuntime(
     const msg = parsed.error.errors.map((e) => e.message).join("; ");
     throw new AppError(400, msg);
   }
-  const { frequency, experience, goal, equipment, focusMuscles, splitPreference } =
+  const { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText } =
     parsed.data;
   const planShape = resolvePlanShape(splitPreference, frequency, experience);
   const exerciseCount = getExerciseCount(experience, planShape);
   const weeklyMuscleFreq =
     planShape === "fullBody" ? Math.min(frequency, 3) : 2;
-  const allowedEquip = ALLOWED_EQUIPMENT[equipment] ?? ALLOWED_EQUIPMENT["barbell"];
+  const baseEquip = ALLOWED_EQUIPMENT[equipment] ?? ALLOWED_EQUIPMENT["barbell"];
+  // Free-text goals (e.g. "improve hip mobility") need mobility/stretch moves,
+  // which live under other/bodyweight/bands equipment. Broaden the allow-list so
+  // those exercises survive the whitelist AND the resolveExercise equipment
+  // filter downstream. Structured onboarding generation is untouched (no goalText).
+  const allowedEquip = goalText
+    ? [...new Set([...baseEquip, ...MOBILITY_EQUIPMENT])]
+    : baseEquip;
   const dislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
   const tpl = selectTemplates(equipment);
   const prefix = equipment === "kettlebell" ? "KB " : "";
   const maxSessionSets =
     experience === "beginner" ? 14 : experience === "advanced" ? 25 : 21;
   return {
-    parsed: { frequency, experience, goal, equipment, focusMuscles },
+    parsed: { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText },
     planShape,
     exerciseCount,
     weeklyMuscleFreq,
@@ -1146,6 +1157,7 @@ export async function tryAutoGeneratePlansWithGemini(
     equipment: rt.parsed.equipment,
     focusMuscles: rt.parsed.focusMuscles,
     splitPreference: rt.parsed.splitPreference,
+    goalText: rt.parsed.goalText,
     sessionLines: defaultSessions.map((s, idx) => `${idx + 1}. ${s.name}`).join("\n"),
     whitelistLines,
     sessionCount: defaultSessions.length,

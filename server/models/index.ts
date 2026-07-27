@@ -413,6 +413,12 @@ export interface AutoGeneratePlansBody {
   focusMuscles?: string[];
   /** Native onboarding split id: push-pull-legs | upper-lower | full-body | bro-split */
   splitPreference?: string;
+  /**
+   * Free-text goal from the "AI goal" feature (e.g. "improve hip mobility").
+   * When present, the generator prioritizes exercises serving this goal and
+   * unlocks mobility/stretching movements that the structured path filters out.
+   */
+  goalText?: string;
 }
 
 export interface AcceptRecommendationsBody {

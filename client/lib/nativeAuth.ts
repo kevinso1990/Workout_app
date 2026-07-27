@@ -76,6 +76,23 @@ export async function ensureAuthToken(): Promise<string | null> {
   return bootstrapPromise;
 }
 
+/**
+ * Force a brand-new guest token, discarding the stored one. Guest JWTs expire
+ * after 7 days; without this a client keeps sending its dead token forever —
+ * every request 401s and server features silently fall back. Callers use this
+ * to recover from a 401 and retry once. De-duplicated via bootstrapPromise so a
+ * burst of 401s triggers only one re-login.
+ */
+export async function refreshAuthToken(): Promise<string | null> {
+  await setStoredToken(null);
+  if (!bootstrapPromise) {
+    bootstrapPromise = guestLogin().finally(() => {
+      bootstrapPromise = null;
+    });
+  }
+  return bootstrapPromise;
+}
+
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const token = await ensureAuthToken();
   const headers: Record<string, string> = {

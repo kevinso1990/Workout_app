@@ -908,7 +908,29 @@
     "startStrengthDesc": "Pick a plan and log sets & reps",
     "logCardio": "Log sport / cardio",
     "logCardioDesc": "Running, football, tennis and more",
+    "goalPlan": "Plan from a goal (AI)",
+    "goalPlanDesc": "Type a goal — e.g. \"improve hip mobility\"",
     "createPlan": "Create a new plan"
+  },
+  "goalPlan": {
+    "title": "What's your goal?",
+    "subtitle": "Describe your goal in your own words — the AI builds a matching plan from it.",
+    "inputLabel": "Your goal",
+    "placeholder": "e.g. I want to improve my hip mobility",
+    "daysLabel": "Days per week",
+    "generate": "Create plan",
+    "loadingBuilding": "The AI is building your plan …",
+    "loadingAlmost": "Almost done — selecting exercises …",
+    "created": "Plan created",
+    "failed": "Couldn't create the plan. Please try again.",
+    "aiUnavailable": "AI is unavailable right now. Please try again later.",
+    "suggestions": {
+      "hipMobility": "Improve hip mobility",
+      "shoulderMobility": "Shoulder mobility",
+      "lowerBack": "Loosen the lower back",
+      "fullBodyMobility": "Full-body mobility",
+      "hamstrings": "Stretch hamstrings"
+    }
   },
   "calendar": {
     "title": "Training calendar",

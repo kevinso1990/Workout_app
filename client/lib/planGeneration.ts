@@ -41,6 +41,8 @@ export type GenerateWorkoutPlanInput = {
   planName?: string;
   /** Native onboarding split id — sent to API as splitPreference. */
   splitId?: string;
+  /** Free-text goal ("improve hip mobility") from the AI-goal feature. */
+  goalText?: string;
 };
 
 export type GenerateWorkoutPlanResult = {
@@ -106,6 +108,7 @@ async function fetchAiGeneratedPlan(
     equipment: mapNativeEquipmentToApi(input.equipment),
     focusMuscles: input.focusMuscles ?? [],
     splitPreference: input.splitId,
+    ...(input.goalText ? { goalText: input.goalText } : {}),
   };
 
   if (__DEV__) {

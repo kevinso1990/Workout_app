@@ -62,6 +62,12 @@ export function CreatePlanFab() {
     navigation.navigate("CreatePlan");
   };
 
+  const goGoalPlan = () => {
+    closeSheet();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("GoalPlan");
+  };
+
   return (
     <>
       <View
@@ -135,6 +141,20 @@ export function CreatePlanFab() {
                 </ThemedText>
                 <ThemedText style={styles.sheetItemDesc}>
                   {t("addWorkout.logCardioDesc")}
+                </ThemedText>
+              </View>
+            </Pressable>
+
+            <Pressable style={styles.sheetItem} onPress={goGoalPlan} testID="button-add-goal-plan">
+              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
+                <Feather name="target" size={20} color={Colors.light.primary} />
+              </View>
+              <View style={styles.sheetCopy}>
+                <ThemedText style={styles.sheetItemTitle}>
+                  {t("addWorkout.goalPlan")}
+                </ThemedText>
+                <ThemedText style={styles.sheetItemDesc}>
+                  {t("addWorkout.goalPlanDesc")}
                 </ThemedText>
               </View>
             </Pressable>

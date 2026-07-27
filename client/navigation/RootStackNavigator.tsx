@@ -8,6 +8,7 @@ import CreatePlanScreen from "@/screens/CreatePlanScreen";
 import EditPlanScreen from "@/screens/EditPlanScreen";
 import PlanDetailScreen from "@/screens/PlanDetailScreen";
 import ImportWorkoutScreen from "@/screens/ImportWorkoutScreen";
+import GoalPlanScreen from "@/screens/GoalPlanScreen";
 import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
 import ActiveWorkoutScreen from "@/screens/main/ActiveWorkoutScreen";
 import LogCardioScreen from "@/screens/LogCardioScreen";
@@ -31,6 +32,7 @@ export type RootStackParamList = {
   EditPlan: { planId: string };
   PlanDetail: { planId: string };
   ImportWorkout: undefined;
+  GoalPlan: undefined;
   StartWorkout: { planId?: string };
   ActiveWorkout: {
     planId: string;
@@ -176,6 +178,14 @@ export default function RootStackNavigator({
       <Stack.Screen
         name="ImportWorkout"
         component={ImportWorkoutScreen}
+        options={{
+          headerTitle: () => <HeaderTitle brand />,
+          presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="GoalPlan"
+        component={GoalPlanScreen}
         options={{
           headerTitle: () => <HeaderTitle brand />,
           presentation: "modal",

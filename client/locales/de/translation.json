@@ -908,7 +908,29 @@
     "startStrengthDesc": "Plan wählen, Sätze & Wdh. loggen",
     "logCardio": "Sport / Cardio loggen",
     "logCardioDesc": "Laufen, Fußball, Tennis u. v. m.",
+    "goalPlan": "Plan aus Ziel (KI)",
+    "goalPlanDesc": "Ziel eingeben – z. B. »Hüftmobilität verbessern«",
     "createPlan": "Neuen Plan erstellen"
+  },
+  "goalPlan": {
+    "title": "Was ist dein Ziel?",
+    "subtitle": "Beschreibe dein Ziel in eigenen Worten – die KI baut daraus einen passenden Plan.",
+    "inputLabel": "Dein Ziel",
+    "placeholder": "z. B. Ich möchte die Beweglichkeit meiner Hüfte verbessern",
+    "daysLabel": "Tage pro Woche",
+    "generate": "Plan erstellen",
+    "loadingBuilding": "Die KI stellt deinen Plan zusammen …",
+    "loadingAlmost": "Fast fertig – Übungen werden ausgewählt …",
+    "created": "Plan erstellt",
+    "failed": "Plan konnte nicht erstellt werden. Bitte erneut versuchen.",
+    "aiUnavailable": "KI gerade nicht erreichbar. Bitte später erneut versuchen.",
+    "suggestions": {
+      "hipMobility": "Hüftmobilität verbessern",
+      "shoulderMobility": "Beweglichkeit der Schultern",
+      "lowerBack": "Unteren Rücken lockern",
+      "fullBodyMobility": "Ganzkörper-Beweglichkeit",
+      "hamstrings": "Beinrückseite dehnen"
+    }
   },
   "calendar": {
     "title": "Trainingskalender",

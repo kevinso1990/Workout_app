@@ -170,6 +170,7 @@ export function buildGeminiAutoGeneratePrompt(params: {
   equipment: string;
   focusMuscles: string[];
   splitPreference?: string;
+  goalText?: string;
   sessionLines: string;
   whitelistLines: string;
   sessionCount: number;
@@ -181,6 +182,7 @@ export function buildGeminiAutoGeneratePrompt(params: {
     equipment,
     focusMuscles,
     splitPreference,
+    goalText,
     sessionLines,
     whitelistLines,
     sessionCount,
@@ -188,9 +190,25 @@ export function buildGeminiAutoGeneratePrompt(params: {
 
   const physiologyGoal = goalPhysiologyLabel(goal);
 
+  // Free-text goal ("improve hip mobility"): this outranks the structured goal
+  // key. Steer the whole plan toward it, and only then unlock mobility work.
+  const freeTextGoalBlock = goalText
+    ? `PRIMARY USER GOAL (free text — HIGHEST PRIORITY): "${goalText.replace(/"/g, "'")}"
+- Design EVERY day of the plan to serve this goal above the generic goal_key below.
+- Name each day to reflect the goal (e.g. "Hip Mobility A") using the dayName field.
+- If the goal is about mobility, flexibility, or loosening a specific body region:
+  * Prioritize the relevant stretching / mobility / activation movements from the whitelist.
+  * Program them as timed holds: put the hold length in SECONDS into the "reps" field (e.g. 30-45), with 2-3 sets and weight 0.
+  * You MAY use fewer, gentler compound movements as warm-ups, but stretches/mobility drills must dominate.
+- If the goal is strength or hypertrophy focused: prioritize compound + accessory lifts for the targeted area and do NOT include stretching-only movements.
+- Match the free-text goal's language, but keep exercise "name" values EXACTLY as in the whitelist.
+
+`
+    : "";
+
   return `${PLAN_GENERATOR_FULL_JSON_PROMPT}
 
-User profile:
+${freeTextGoalBlock}User profile:
 - days_per_week: ${frequency}
 - experience: ${experience}
 - goal_key: ${goal}

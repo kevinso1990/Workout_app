@@ -45,6 +45,15 @@ export const autoGenerate = asyncHandler(async (req: Request, res: Response) => 
       res.json(geminiPlans);
       return;
     }
+    // Free-text goal requests depend on the AI to interpret the goal. The
+    // deterministic template generator ignores goalText, so falling back to it
+    // would hand the user a generic strength split mislabeled as their goal
+    // (e.g. a bench-press plan named "improve hip mobility"). Fail honestly so
+    // the client can say "AI unavailable, try again" instead. The structured
+    // onboarding path (no goalText) still gets the reliable template fallback.
+    if (body.goalText) {
+      throw new AppError(503, "AI plan generation is temporarily unavailable");
+    }
     res.json(planService.autoGeneratePlans(body, userId, deviceId));
   } catch (err) {
     planService.cleanupOrphanAutoGeneratePlans(userId);
