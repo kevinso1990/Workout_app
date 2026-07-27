@@ -1178,7 +1178,13 @@ export async function tryAutoGeneratePlansWithAi(
   } catch {
     return null;
   }
-  const defaultSessions = getDefaultPlanSessions(rt);
+  const baseSessions = getDefaultPlanSessions(rt);
+  // In goal mode, strip the Upper/Lower strength-split names so neither the model
+  // nor the fallback anchors to a split the goal has nothing to do with — the
+  // model names each day after the goal instead (see buildGeminiAutoGeneratePrompt).
+  const defaultSessions = rt.parsed.goalText
+    ? baseSessions.map((s, idx) => ({ ...s, name: `Tag ${idx + 1}` }))
+    : baseSessions;
   const whitelist = getExerciseNameWhitelist(rt.allowedEquip);
   if (whitelist.size < 12) return null;
 

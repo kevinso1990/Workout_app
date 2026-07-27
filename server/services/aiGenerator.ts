@@ -206,6 +206,27 @@ export function buildGeminiAutoGeneratePrompt(params: {
 `
     : "";
 
+  // Goal-driven plans must NOT inherit the Upper/Lower strength-split structure
+  // or the "compounds first" bias — otherwise a mobility goal comes back as a
+  // bench/row/squat plan with a few stretches appended.
+  const structureBlock = goalText
+    ? `You must output exactly ${sessionCount} day objects. Do NOT use generic strength-split titles like "Upper A" or "Lower A". Name each day yourself (via dayName) after the goal and the region it trains that day, in the goal's language (e.g. "Hüfte & Beinrückseite", "Rumpf & Rotation", "Ganzkörper-Mobilität").
+
+Programming requirements (GOAL-DRIVEN — the goal above overrides everything):
+- The overwhelming majority of exercises on EVERY day must directly serve the primary goal. Do not pad days with unrelated heavy barbell lifts (bench press, rows, curls, shrugs) just to reach an exercise count.
+- Mobility/flexibility goal → fill each day with the relevant stretching / mobility / activation drills as timed holds (seconds go in "reps", e.g. 30-45, with 2-3 sets and weight 0). At most 1 light supporting strength movement per day, and only if it serves the goal.
+- Strength/hypertrophy goal → prioritize the compound + accessory lifts for the targeted area; do not include stretching-only movements.
+- Each day: 5-7 exercises. Copy "name" values EXACTLY from the whitelist. No name may repeat across days. Individualize sets/reps. weight 0 for bodyweight/stretch movements.`
+    : `You must output exactly ${sessionCount} day objects in this fixed order and with these day titles (use each dayName exactly as listed unless a clearer Ganzkörper label is provided):
+${sessionLines}
+
+Programming requirements:
+- Each day must include 5–8 exercises in performance order (compounds first, then accessories/core).
+- Exercise "name" values MUST be copied EXACTLY from the whitelist (spelling and capitalization).
+- No exercise name may appear on more than one day in this plan.
+- Assign individualized sets and reps per exercise — never copy the same sets×reps block to every movement.
+- For equipment_key "bodyweight", every exercise "weight" must be 0.`;
+
   return `${PLAN_GENERATOR_FULL_JSON_PROMPT}
 
 ${freeTextGoalBlock}User profile:
@@ -217,15 +238,7 @@ ${freeTextGoalBlock}User profile:
 - split_preference: ${splitPreference ?? "auto"}
 - focus_muscles_UI: ${JSON.stringify(focusMuscles)}
 
-You must output exactly ${sessionCount} day objects in this fixed order and with these day titles (use each dayName exactly as listed unless a clearer Ganzkörper label is provided):
-${sessionLines}
-
-Programming requirements:
-- Each day must include 5–8 exercises in performance order (compounds first, then accessories/core).
-- Exercise "name" values MUST be copied EXACTLY from the whitelist (spelling and capitalization).
-- No exercise name may appear on more than one day in this plan.
-- Assign individualized sets and reps per exercise — never copy the same sets×reps block to every movement.
-- For equipment_key "bodyweight", every exercise "weight" must be 0.
+${structureBlock}
 
 Whitelist — use ONLY these exercise names:
 ${whitelistLines}
