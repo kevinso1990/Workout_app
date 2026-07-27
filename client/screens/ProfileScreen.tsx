@@ -1116,6 +1116,17 @@ export default function ProfileScreen() {
   );
 }
 
+// Soft lift so the setting cards read as raised surfaces instead of flat
+// white rectangles on the grey canvas. Shadow-only keeps it theme-safe
+// (subtle in light mode, invisibly neutral in dark).
+const CARD_ELEVATION = {
+  shadowColor: "#000",
+  shadowOpacity: 0.06,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 2,
+} as const;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1161,6 +1172,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
+    ...CARD_ELEVATION,
   },
   settingsIcon: {
     width: 40,
@@ -1185,6 +1197,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     marginTop: Spacing.sm,
+    ...CARD_ELEVATION,
   },
   reminderInfo: {
     flex: 1,
@@ -1202,6 +1215,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     marginTop: Spacing.sm,
+    ...CARD_ELEVATION,
   },
   themeCardHeader: {
     flexDirection: "row",
@@ -1240,6 +1254,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     marginTop: Spacing.sm,
+    ...CARD_ELEVATION,
   },
   prefsCardHeader: {
     flexDirection: "row",

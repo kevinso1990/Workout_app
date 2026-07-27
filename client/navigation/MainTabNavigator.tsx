@@ -54,6 +54,17 @@ export default function MainTabNavigator() {
             ) : null,
           headerTransparent: true,
           headerTintColor: theme.text,
+          // Frosted-glass header background (matches the tab bar). Without this
+          // the transparent header let content scroll straight under the logo
+          // with no separation — the logo looked like it was covering the page.
+          headerBackground: () =>
+            Platform.OS === "ios" ? (
+              <BlurView
+                intensity={100}
+                tint={isDark ? "dark" : "light"}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : null,
           headerStyle: {
             backgroundColor: Platform.select({
               ios: "transparent",
