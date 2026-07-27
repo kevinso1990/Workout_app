@@ -202,6 +202,7 @@ export function buildGeminiAutoGeneratePrompt(params: {
   * You MAY use fewer, gentler compound movements as warm-ups, but stretches/mobility drills must dominate.
 - If the goal is strength or hypertrophy focused: prioritize compound + accessory lifts for the targeted area and do NOT include stretching-only movements.
 - Match the free-text goal's language, but keep exercise "name" values EXACTLY as in the whitelist.
+- Set "planName" to a short, clean plan title in the goal's language — a NOUN phrase of at most 4 words, with NO imperative verb (e.g. "Hüftmobilität & Beweglichkeit", NOT "Hüftmobilität verbessern"; "Shoulder Mobility", NOT "Improve shoulder mobility").
 
 `
     : "";

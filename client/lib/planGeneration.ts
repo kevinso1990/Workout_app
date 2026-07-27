@@ -118,7 +118,10 @@ async function fetchAiGeneratedPlan(
   // AI plan generation (Claude, multi-day) legitimately runs 20-40s — well past
   // the default 20s request timeout. Give it 75s so the client waits for the
   // real plan instead of aborting and falling back to a generic template.
-  const { planIds } = await nativeRequest<{ planIds: number[] }>(
+  const { planIds, planName: aiPlanName } = await nativeRequest<{
+    planIds: number[];
+    planName?: string;
+  }>(
     "/api/plans/auto-generate",
     {
       method: "POST",
@@ -137,8 +140,17 @@ async function fetchAiGeneratedPlan(
 
   if (apiPlans.some((p) => !p?.exercises?.length)) return null;
 
+  // For a free-text goal, prefer the AI's clean plan title (a noun phrase in the
+  // goal's language) over the raw goal sentence the user typed. Cap the length
+  // so a runaway title can't break the UI; fall back to the caller's name.
+  const cleanAiName = aiPlanName?.trim();
+  const resolvedName =
+    input.goalText && cleanAiName && cleanAiName.length <= 60
+      ? cleanAiName
+      : input.planName ?? "My Workout Plan";
+
   return mergeApiPlansIntoWorkoutPlan(apiPlans, {
-    planName: input.planName ?? "My Workout Plan",
+    planName: resolvedName,
     daysPerWeek: input.frequency,
   });
 }

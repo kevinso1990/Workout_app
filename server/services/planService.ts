@@ -1167,7 +1167,7 @@ export async function tryAutoGeneratePlansWithAi(
   body: AutoGeneratePlansBody,
   userId?: number,
   deviceId?: string,
-): Promise<{ planIds: number[] } | null> {
+): Promise<{ planIds: number[]; planName?: string } | null> {
   // Deterministic template path in Vitest; avoids flaky overlap assertions when a real API key is present.
   if (process.env.VITEST === "true") return null;
   if (!process.env.ANTHROPIC_API_KEY?.trim() && !process.env.GEMINI_API_KEY?.trim()) return null;
@@ -1211,7 +1211,7 @@ export async function tryAutoGeneratePlansWithAi(
       console.warn("[tryAutoGeneratePlansWithAi] model output failed validation (day count or <4 matched exercises per day)");
       return null;
     }
-    return { planIds: persistStructuredGeminiPlan(rt, structured) };
+    return { planIds: persistStructuredGeminiPlan(rt, structured), planName: structured.planName };
   } catch (e) {
     console.warn("[tryAutoGeneratePlansWithAi]", e instanceof Error ? e.message : e);
     return null;
