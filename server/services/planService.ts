@@ -1,4 +1,5 @@
 import { z } from "zod";
+import Anthropic from "@anthropic-ai/sdk";
 import db from "../db";
 import { AppError } from "../middleware/errorHandler";
 import { getDislikedExerciseIds } from "./voteService";
@@ -1129,14 +1130,47 @@ function persistStructuredGeminiPlan(
  * then persists sets/reps/weight from the model (not local tier tables).
  * Returns `null` on any failure so callers can fall back to `autoGeneratePlans`.
  */
-export async function tryAutoGeneratePlansWithGemini(
+async function callClaudeGeneratePlan(prompt: string): Promise<string> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const message = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 16000,
+    messages: [{ role: "user", content: prompt }],
+  });
+  const textBlock = message.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") throw new Error("Empty Claude response");
+  return textBlock.text;
+}
+
+/**
+ * Runs the AI plan generator: Claude (primary) → Gemini (fallback), matching
+ * the rest of the app (import, modify, coach). Previously this path was
+ * Gemini-only, so it silently failed whenever Gemini credits ran out even
+ * though Anthropic — the primary provider — had capacity.
+ */
+async function generatePlanText(prompt: string): Promise<string> {
+  if (process.env.ANTHROPIC_API_KEY?.trim()) {
+    try {
+      return await callClaudeGeneratePlan(prompt);
+    } catch (e) {
+      if (!process.env.GEMINI_API_KEY?.trim()) throw e;
+      console.warn(
+        "[autoGenerate] Claude failed, trying Gemini fallback:",
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+  return geminiGenerateContent([{ text: prompt }], { grounding: true });
+}
+
+export async function tryAutoGeneratePlansWithAi(
   body: AutoGeneratePlansBody,
   userId?: number,
   deviceId?: string,
 ): Promise<{ planIds: number[] } | null> {
   // Deterministic template path in Vitest; avoids flaky overlap assertions when a real API key is present.
   if (process.env.VITEST === "true") return null;
-  if (!process.env.GEMINI_API_KEY?.trim()) return null;
+  if (!process.env.ANTHROPIC_API_KEY?.trim() && !process.env.GEMINI_API_KEY?.trim()) return null;
   cleanupOrphanAutoGeneratePlans(userId);
   let rt: AutoGenRuntime;
   try {
@@ -1164,13 +1198,16 @@ export async function tryAutoGeneratePlansWithGemini(
   });
 
   try {
-    const text = await geminiGenerateContent([{ text: prompt }], { grounding: true });
+    const text = await generatePlanText(prompt);
     const data = extractJsonFromModelText(text);
     const structured = parseGeminiGeneratedPlan(data, rt, whitelist, defaultSessions);
-    if (!structured) return null;
+    if (!structured) {
+      console.warn("[tryAutoGeneratePlansWithAi] model output failed validation (day count or <4 matched exercises per day)");
+      return null;
+    }
     return { planIds: persistStructuredGeminiPlan(rt, structured) };
   } catch (e) {
-    console.warn("[tryAutoGeneratePlansWithGemini]", e instanceof Error ? e.message : e);
+    console.warn("[tryAutoGeneratePlansWithAi]", e instanceof Error ? e.message : e);
     return null;
   }
 }

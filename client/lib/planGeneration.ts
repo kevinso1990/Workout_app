@@ -115,12 +115,16 @@ async function fetchAiGeneratedPlan(
     console.info("[planGeneration] POST /api/plans/auto-generate", body);
   }
 
+  // AI plan generation (Claude, multi-day) legitimately runs 20-40s — well past
+  // the default 20s request timeout. Give it 75s so the client waits for the
+  // real plan instead of aborting and falling back to a generic template.
   const { planIds } = await nativeRequest<{ planIds: number[] }>(
     "/api/plans/auto-generate",
     {
       method: "POST",
       body: JSON.stringify(body),
     },
+    75_000,
   );
 
   if (!Array.isArray(planIds) || planIds.length === 0) return null;

@@ -7,9 +7,10 @@ async function fetchOnce(
   url: string,
   init: RequestInit | undefined,
   authHeaders: Record<string, string>,
+  timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, {
       ...init,
@@ -27,11 +28,13 @@ async function fetchOnce(
 export async function nativeRequest<T>(
   path: string,
   init?: RequestInit,
+  /** Override the default 20s timeout for slow endpoints (e.g. AI generation). */
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
 ): Promise<T> {
   await ensureAuthToken();
   const url = new URL(path, getApiUrl()).toString();
 
-  let res = await fetchOnce(url, init, await getAuthHeaders());
+  let res = await fetchOnce(url, init, await getAuthHeaders(), timeoutMs);
 
   // Guest JWTs expire after 7 days. On a 401 the stored token is dead, so mint a
   // fresh guest token and retry once — otherwise the client would 401 forever
@@ -39,7 +42,7 @@ export async function nativeRequest<T>(
   if (res.status === 401) {
     const refreshed = await refreshAuthToken();
     if (refreshed) {
-      res = await fetchOnce(url, init, await getAuthHeaders());
+      res = await fetchOnce(url, init, await getAuthHeaders(), timeoutMs);
     }
   }
 

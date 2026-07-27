@@ -40,9 +40,9 @@ export const autoGenerate = asyncHandler(async (req: Request, res: Response) => 
   const userId = req.user!.sub;
   planService.cleanupOrphanAutoGeneratePlans(userId);
   try {
-    const geminiPlans = await planService.tryAutoGeneratePlansWithGemini(body, userId, deviceId);
-    if (geminiPlans) {
-      res.json(geminiPlans);
+    const aiPlans = await planService.tryAutoGeneratePlansWithAi(body, userId, deviceId);
+    if (aiPlans) {
+      res.json(aiPlans);
       return;
     }
     // Free-text goal requests depend on the AI to interpret the goal. The
