@@ -17,11 +17,26 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
+import { nativeRequest } from "@/lib/nativeApi";
+import { toast } from "@/lib/toast";
 import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import type { CatalogRow } from "@/lib/importCatalog";
+
+/** Muscle groups a user can file a self-defined exercise under. */
+const CUSTOM_MUSCLE_GROUPS = [
+  "Chest",
+  "Back",
+  "Legs",
+  "Shoulders",
+  "Biceps",
+  "Triceps",
+  "Core",
+  "Full Body",
+  "Mobility",
+] as const;
 
 export type PickerExercise = CatalogRow;
 
@@ -48,6 +63,9 @@ export function ExercisePickerModal({
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [mobilityOnly, setMobilityOnly] = useState(false);
+  /** Name pending a muscle-group choice before it's created as a custom exercise. */
+  const [pendingCustomName, setPendingCustomName] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!visible || catalog.length > 0) return;
@@ -87,10 +105,57 @@ export function ExercisePickerModal({
     });
   }, [catalog, query, excludeNames, mobilityOnly]);
 
+  const trimmedQuery = query.trim();
+  // Offer "create custom" only when the search text isn't already an exact
+  // catalog name (case-insensitive) — no point creating a duplicate.
+  const hasExactMatch = useMemo(
+    () =>
+      catalog.some(
+        (e) =>
+          e.name.toLowerCase() === trimmedQuery.toLowerCase() ||
+          e.name_de?.toLowerCase() === trimmedQuery.toLowerCase(),
+      ),
+    [catalog, trimmedQuery],
+  );
+  const canOfferCustom = trimmedQuery.length >= 2 && !hasExactMatch;
+
   const handleClose = () => {
     setQuery("");
     setMobilityOnly(false);
+    setPendingCustomName(null);
+    setCreating(false);
     onClose();
+  };
+
+  const createCustomExercise = async (muscleGroup: string) => {
+    const name = pendingCustomName?.trim();
+    if (!name || creating) return;
+    setCreating(true);
+    try {
+      const created = await nativeRequest<{
+        id: number;
+        name: string;
+        muscle_group: string;
+        equipment?: string;
+      }>("/api/exercises", {
+        method: "POST",
+        body: JSON.stringify({ name, muscle_group: muscleGroup }),
+      });
+      const row: CatalogRow = {
+        id: created.id,
+        name: created.name,
+        name_de: null,
+        muscle_group: created.muscle_group,
+        equipment: created.equipment ?? "barbell",
+      };
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onSelect(row);
+      handleClose();
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      toast.error(t("activeWorkout.picker.createFailed"));
+      setCreating(false);
+    }
   };
 
   return (
@@ -182,15 +247,54 @@ export function ExercisePickerModal({
           </Pressable>
         </View>
 
-        {loading ? (
+        {pendingCustomName !== null ? (
+          <View style={styles.customPanel}>
+            <ThemedText style={[styles.customPanelLabel, { color: theme.textSecondary }]}>
+              {t("activeWorkout.picker.chooseMuscleGroup")}
+            </ThemedText>
+            <ThemedText style={styles.customPanelName} numberOfLines={2}>
+              {pendingCustomName}
+            </ThemedText>
+            {creating ? (
+              <ActivityIndicator color={Colors.light.primary} style={{ marginTop: Spacing.xl }} />
+            ) : (
+              <>
+                <View style={styles.muscleGrid}>
+                  {CUSTOM_MUSCLE_GROUPS.map((mg) => (
+                    <Pressable
+                      key={mg}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        void createCustomExercise(mg);
+                      }}
+                      style={[
+                        styles.muscleOption,
+                        { borderColor: getMuscleGroupColor(mg), backgroundColor: getMuscleGroupColor(mg) + "12" },
+                      ]}
+                      testID={`option-custom-muscle-${mg}`}
+                    >
+                      <ThemedText style={[styles.muscleOptionText, { color: getMuscleGroupColor(mg) }]}>
+                        {translateMuscleGroup(t, mg)}
+                      </ThemedText>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable
+                  onPress={() => setPendingCustomName(null)}
+                  style={styles.customCancel}
+                  hitSlop={8}
+                >
+                  <Feather name="chevron-left" size={16} color={theme.textSecondary} />
+                  <ThemedText style={[styles.customCancelText, { color: theme.textSecondary }]}>
+                    {t("common.back")}
+                  </ThemedText>
+                </Pressable>
+              </>
+            )}
+          </View>
+        ) : loading ? (
           <View style={styles.centerFill}>
             <ActivityIndicator color={theme.text} />
-          </View>
-        ) : results.length === 0 ? (
-          <View style={styles.centerFill}>
-            <ThemedText style={{ color: theme.textSecondary }}>
-              {t("activeWorkout.picker.noResults")}
-            </ThemedText>
           </View>
         ) : (
           <FlatList
@@ -237,6 +341,34 @@ export function ExercisePickerModal({
                 <Feather name="chevron-right" size={18} color={theme.textSecondary} />
               </Pressable>
             )}
+            ListEmptyComponent={
+              <View style={styles.centerFill}>
+                <ThemedText style={{ color: theme.textSecondary }}>
+                  {t("activeWorkout.picker.noResults")}
+                </ThemedText>
+              </View>
+            }
+            ListFooterComponent={
+              canOfferCustom ? (
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setPendingCustomName(trimmedQuery);
+                  }}
+                  style={({ pressed }) => [
+                    styles.createRow,
+                    { borderColor: Colors.light.primary },
+                    pressed && { backgroundColor: Colors.light.primary + "10" },
+                  ]}
+                  testID="row-create-custom-exercise"
+                >
+                  <Feather name="plus-circle" size={18} color={Colors.light.primary} />
+                  <ThemedText style={[styles.createRowText, { color: Colors.light.primary }]} numberOfLines={1}>
+                    {t("activeWorkout.picker.createCustom", { name: trimmedQuery })}
+                  </ThemedText>
+                </Pressable>
+              ) : null
+            }
           />
         )}
       </KeyboardAvoidingView>
@@ -324,6 +456,67 @@ const styles = StyleSheet.create({
   },
   muscleTagText: {
     fontSize: 11,
+    fontWeight: "600",
+  },
+  createRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+  },
+  createRowText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  customPanel: {
+    flex: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+  },
+  customPanelLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.xs,
+  },
+  customPanelName: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: Spacing.lg,
+  },
+  muscleGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  muscleOption: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+  },
+  muscleOptionText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  customCancel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: Spacing.xl,
+    alignSelf: "flex-start",
+    paddingVertical: Spacing.sm,
+  },
+  customCancelText: {
+    fontSize: 15,
     fontWeight: "600",
   },
 });

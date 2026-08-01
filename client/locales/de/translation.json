@@ -288,7 +288,10 @@
     "exerciseAdded": "{{name}} hinzugefügt",
     "picker": {
       "searchPlaceholder": "Übungen suchen...",
-      "noResults": "Keine Übungen gefunden"
+      "noResults": "Keine Übungen gefunden",
+      "createCustom": "Eigene Übung erstellen: „{{name}}“",
+      "chooseMuscleGroup": "Welche Muskelgruppe?",
+      "createFailed": "Übung konnte nicht erstellt werden. Bitte erneut versuchen."
     },
     "shareText": {
       "complete": "💪 Training abgeschlossen — {{name}}",
