@@ -7,19 +7,23 @@ import { registerRoutes } from "./routes/index";
 import { errorHandler } from "./middleware/errorHandler";
 import { corsMiddleware } from "./middleware/cors";
 import { runGifPrefetch } from "./services/gifPrefetchService";
+import { initSentry, Sentry, captureFatalAndFlush } from "./lib/sentry";
+
+// Initialise error reporting first thing, before anything can throw.
+initSentry();
 
 // ── Process-level error safety ────────────────────────────────────────────────
 // These are last-resort handlers. Bugs that escape asyncHandler end up here.
-// Log the error and exit (process manager / dev restarts the server).
+// Report to Sentry (if configured), log, then exit (the process manager restarts).
 
 process.on("uncaughtException", (err) => {
   console.error("[fatal] uncaughtException:", err);
-  process.exit(1);
+  captureFatalAndFlush(err, "uncaughtException").finally(() => process.exit(1));
 });
 
 process.on("unhandledRejection", (reason) => {
   console.error("[fatal] unhandledRejection:", reason);
-  process.exit(1);
+  captureFatalAndFlush(reason, "unhandledRejection").finally(() => process.exit(1));
 });
 
 const app = express();
@@ -115,6 +119,10 @@ if (isProd) {
   });
 
   registerRoutes(app);
+
+  // Sentry captures unhandled route errors (no-op unless SENTRY_DSN is set).
+  // Must sit after routes and before our own error handler.
+  Sentry.setupExpressErrorHandler(app);
 
   // Global error handler — must be registered after all routes
   app.use(errorHandler);

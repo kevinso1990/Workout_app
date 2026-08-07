@@ -2,6 +2,10 @@ import { registerRootComponent } from "expo";
 import { Platform } from "react-native";
 
 import { installWebGlobalErrorHandlers } from "@/lib/installWebGlobalErrorHandlers";
+import { initSentry } from "@/lib/sentry";
+
+// Crash/error reporting — no-op until EXPO_PUBLIC_SENTRY_DSN is configured.
+initSentry();
 
 // React Native defines a global `window` (without DOM APIs), so a bare
 // `typeof window !== "undefined"` check is true on native and crashes at

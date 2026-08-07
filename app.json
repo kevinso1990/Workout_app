@@ -67,7 +67,8 @@
       "expo-video",
       "expo-dev-client",
       "./plugins/withPrivacyManifest.js",
-      "expo-localization"
+      "expo-localization",
+      "@sentry/react-native"
     ],
     "experiments": {
       "reactCompiler": false
