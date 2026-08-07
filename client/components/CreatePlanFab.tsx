@@ -68,6 +68,12 @@ export function CreatePlanFab() {
     navigation.navigate("GoalPlan");
   };
 
+  const goImport = () => {
+    closeSheet();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("ImportWorkout");
+  };
+
   return (
     <>
       <View
@@ -92,7 +98,7 @@ export function CreatePlanFab() {
           accessibilityLabel={t("addWorkout.fabLabel")}
         >
           <View style={[styles.fab, { backgroundColor: Colors.light.primary }]}>
-            <Feather name="plus" size={28} color="#FFFFFF" />
+            <Feather name="plus" size={24} color="#FFFFFF" />
           </View>
         </AnimatedPressable>
       </View>
@@ -159,6 +165,20 @@ export function CreatePlanFab() {
               </View>
             </Pressable>
 
+            <Pressable style={styles.sheetItem} onPress={goImport} testID="button-add-import">
+              <View style={[styles.sheetIcon, { backgroundColor: "#EFF6FF" }]}>
+                <Feather name="file-text" size={20} color="#2563EB" />
+              </View>
+              <View style={styles.sheetCopy}>
+                <ThemedText style={styles.sheetItemTitle}>
+                  {t("plans.importBanner.title", { defaultValue: "Plan importieren" })}
+                </ThemedText>
+                <ThemedText style={styles.sheetItemDesc}>
+                  {t("plans.importBanner.subtitle", { defaultValue: "PDF oder Foto → KI-Prüfung" })}
+                </ThemedText>
+              </View>
+            </Pressable>
+
             <Pressable style={styles.sheetItemSecondary} onPress={goCreatePlan}>
               <Feather name="clipboard" size={18} color={theme.textSecondary} />
               <ThemedText style={styles.sheetItemSecondaryText}>
@@ -184,9 +204,9 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.sm,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

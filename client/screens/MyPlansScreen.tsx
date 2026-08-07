@@ -623,9 +623,14 @@ export default function MyPlansScreen() {
     [],
   );
 
+  // Once the user has at least one plan, importing is a deliberate action they
+  // reach through the "+" create sheet — so the top import banner only shows on
+  // an empty plan list (first-run discovery), not permanently above real plans.
+  const showImportBanner = !bannerDismissed && plans.length === 0;
+
   return (
     <View style={[styles.screen, { backgroundColor: HEVY.canvas }]}>
-      {!bannerDismissed ? (
+      {showImportBanner ? (
         <View
           onLayout={(e) => setBannerHeight(e.nativeEvent.layout.height)}
           style={[
@@ -671,8 +676,10 @@ export default function MyPlansScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: listPaddingTop + (bannerDismissed ? 0 : bannerHeight + 12),
-            paddingBottom: tabBarHeight + Spacing.xl,
+            paddingTop: listPaddingTop + (showImportBanner ? bannerHeight + 12 : 0),
+            // Clear the floating create-FAB so the last plan can always be
+            // scrolled out from under it instead of sitting permanently covered.
+            paddingBottom: tabBarHeight + Spacing.xl + 120,
           },
         ]}
         refreshControl={
