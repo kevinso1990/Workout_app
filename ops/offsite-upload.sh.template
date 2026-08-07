@@ -1,0 +1,30 @@
+#!/bin/bash
+# OFF-SITE BACKUP UPLOAD — TEMPLATE (not active until you rename it).
+#
+# To activate off-site backups so the data survives even if the whole VPS dies:
+#   1. Pick ONE method below and fill in your credentials/target.
+#   2. Save this file as:  /root/backups/offsite-upload.sh
+#   3. chmod +x /root/backups/offsite-upload.sh
+# The daily backup cron will then call it automatically with the .gz path as $1.
+#
+# $1 = absolute path to the fresh gzipped backup, e.g.
+#      /root/backups/workout-2026-08-07-06-37-42.db.gz
+set -e
+BACKUP_FILE="$1"
+
+# ── Option A: rclone (S3, Backblaze B2, Google Drive, Hetzner, etc.) ──────────
+#   apt install rclone && rclone config   (create a remote called "offsite")
+# rclone copy "$BACKUP_FILE" offsite:trackyourlift-backups/
+
+# ── Option B: AWS S3 CLI ─────────────────────────────────────────────────────
+#   apt install awscli && aws configure
+# aws s3 cp "$BACKUP_FILE" s3://YOUR-BUCKET/trackyourlift-backups/
+
+# ── Option C: scp to another server / Hetzner Storage Box ────────────────────
+# scp -i /root/.ssh/backup_key "$BACKUP_FILE" user@storage-host:/backups/
+
+# ── Option D: Backblaze B2 CLI ───────────────────────────────────────────────
+# b2 upload-file YOUR-BUCKET "$BACKUP_FILE" "trackyourlift/$(basename "$BACKUP_FILE")"
+
+echo "offsite-upload.sh is still a template — no upload target configured." >&2
+exit 1
