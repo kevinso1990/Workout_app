@@ -798,11 +798,20 @@ const styles = StyleSheet.create({
   },
   planCard: {
     backgroundColor: HEVY.surface,
-    borderRadius: HEVY.radiusCard,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: HEVY.separator,
+    // Slim brand-amber accent down the leading edge + soft depth so the cards
+    // read as raised and a touch sportier than a flat outlined box.
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.light.primary,
     padding: HEVY.pad,
     position: "relative",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   planName: {
     fontSize: 16,
