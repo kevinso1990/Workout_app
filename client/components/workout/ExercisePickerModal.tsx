@@ -45,6 +45,8 @@ interface ExercisePickerModalProps {
   title: string;
   /** Exercise names already in this workout — filtered out of results. */
   excludeNames?: Set<string>;
+  /** Pre-filter results to this muscle group (e.g. when swapping an exercise). */
+  initialMuscleGroup?: string;
   onClose: () => void;
   onSelect: (exercise: PickerExercise) => void;
 }
@@ -53,6 +55,7 @@ export function ExercisePickerModal({
   visible,
   title,
   excludeNames,
+  initialMuscleGroup,
   onClose,
   onSelect,
 }: ExercisePickerModalProps) {
@@ -63,6 +66,13 @@ export function ExercisePickerModal({
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [mobilityOnly, setMobilityOnly] = useState(false);
+  // Active muscle-group filter — seeded from initialMuscleGroup on open so a
+  // swap lands straight on same-muscle alternatives; user can clear it.
+  const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (visible) setMuscleFilter(initialMuscleGroup ?? null);
+  }, [visible, initialMuscleGroup]);
   /** Name pending a muscle-group choice before it's created as a custom exercise. */
   const [pendingCustomName, setPendingCustomName] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -94,6 +104,7 @@ export function ExercisePickerModal({
     return catalog.filter((e) => {
       if (excludeNames?.has(e.name)) return false;
       if (mobilityOnly && !isMobilityExercise(e.name)) return false;
+      if (muscleFilter && e.muscle_group !== muscleFilter) return false;
       if (!q) return true;
       return (
         e.name.toLowerCase().includes(q) ||
@@ -103,7 +114,7 @@ export function ExercisePickerModal({
         e.equipment.toLowerCase().includes(q)
       );
     });
-  }, [catalog, query, excludeNames, mobilityOnly]);
+  }, [catalog, query, excludeNames, mobilityOnly, muscleFilter]);
 
   const trimmedQuery = query.trim();
   // Offer "create custom" only when the search text isn't already an exact
@@ -122,6 +133,7 @@ export function ExercisePickerModal({
   const handleClose = () => {
     setQuery("");
     setMobilityOnly(false);
+    setMuscleFilter(null);
     setPendingCustomName(null);
     setCreating(false);
     onClose();
@@ -209,6 +221,29 @@ export function ExercisePickerModal({
         </View>
 
         <View style={styles.filterRow}>
+          {muscleFilter ? (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setMuscleFilter(null);
+              }}
+              style={[
+                styles.filterChip,
+                {
+                  borderColor: getMuscleGroupColor(muscleFilter),
+                  backgroundColor: getMuscleGroupColor(muscleFilter) + "1A",
+                },
+              ]}
+              testID="chip-picker-muscle"
+            >
+              <ThemedText
+                style={[styles.filterChipText, { color: getMuscleGroupColor(muscleFilter) }]}
+              >
+                {translateMuscleGroup(t, muscleFilter)}
+              </ThemedText>
+              <Feather name="x" size={13} color={getMuscleGroupColor(muscleFilter)} />
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -410,6 +445,7 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
+    gap: 8,
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
   },

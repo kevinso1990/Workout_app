@@ -1508,10 +1508,14 @@ export default function ActiveWorkoutScreen() {
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [swapTargetIndex, setSwapTargetIndex] = useState<number | null>(null);
+  // Muscle group of the exercise being swapped, so the picker can pre-filter to
+  // sensible alternatives (e.g. swap a row → other back exercises in one tap).
+  const [swapMuscleGroup, setSwapMuscleGroup] = useState<string | undefined>(undefined);
 
-  const openSwapPicker = useCallback((exerciseIndex: number) => {
+  const openSwapPicker = useCallback((exerciseIndex: number, muscleGroup?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSwapTargetIndex(exerciseIndex);
+    setSwapMuscleGroup(muscleGroup);
     setPickerVisible(true);
   }, []);
 
@@ -1802,6 +1806,7 @@ export default function ActiveWorkoutScreen() {
             ? t("activeWorkout.swapExerciseTitle")
             : t("activeWorkout.addExerciseTitle")
         }
+        initialMuscleGroup={swapTargetIndex !== null ? swapMuscleGroup : undefined}
         excludeNames={
           new Set(
             (plan?.days[route.params.dayIndex]?.exercises ?? []).map((e) => e.name),
@@ -2141,7 +2146,7 @@ export default function ActiveWorkoutScreen() {
                         />
                       </Pressable>
                       <Pressable
-                        onPress={() => openSwapPicker(exIdx)}
+                        onPress={() => openSwapPicker(exIdx, exercise.muscleGroup)}
                         hitSlop={6}
                         style={({ pressed }) => [
                           styles.exerciseReorderBtn,
