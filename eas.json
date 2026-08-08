@@ -17,7 +17,8 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "ios": {
         "credentialsSource": "remote"
@@ -30,7 +31,8 @@
       "autoIncrement": true,
       "distribution": "store",
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "ios": {
         "credentialsSource": "remote"
