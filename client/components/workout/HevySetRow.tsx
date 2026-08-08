@@ -143,7 +143,11 @@ export type HevySetRowProps = {
   isBodyweight: boolean;
   suppressBottomBorder?: boolean;
   targetReps?: string;
+  /** True when this completed set is a new personal record for the exercise. */
+  isPR?: boolean;
   onActivate?: () => void;
+  /** Cycles the set between a working set and a warm-up set. */
+  onToggleWarmup?: () => void;
   onUpdate: (data: Partial<SetData>) => void;
   onComplete: (payload: {
     rating: SetRating;
@@ -298,10 +302,13 @@ export function HevySetRow({
   isBodyweight,
   suppressBottomBorder,
   targetReps,
+  isPR,
   onActivate,
+  onToggleWarmup,
   onUpdate,
   onComplete,
 }: HevySetRowProps) {
+  const isWarmup = setData.setType === "warmup";
   const weightAlertRef = useRef<(() => void) | null>(null);
   const repsAlertRef = useRef<(() => void) | null>(null);
   const { t } = useTranslation();
@@ -388,18 +395,37 @@ export function HevySetRow({
       testID={`set-row-${setIndex}`}
     >
       <View style={styles.colSet}>
-        <Text style={[styles.setNum, rowMuted && styles.textMuted]}>
-          {setIndex + 1}
-        </Text>
+        <Pressable
+          onPress={onToggleWarmup}
+          disabled={setData.completed}
+          hitSlop={8}
+          testID={`button-set-type-${setIndex}`}
+          accessibilityLabel={t("activeWorkout.toggleWarmupA11y")}
+        >
+          {isWarmup ? (
+            <Text style={styles.warmupBadge}>W</Text>
+          ) : (
+            <Text style={[styles.setNum, rowMuted && styles.textMuted]}>
+              {setIndex + 1}
+            </Text>
+          )}
+        </Pressable>
       </View>
 
       <View style={styles.colPrev}>
-        <Text
-          style={[styles.prevText, rowMuted && styles.textMuted]}
-          numberOfLines={1}
-        >
-          {previousLabel}
-        </Text>
+        {isPR ? (
+          <View style={styles.prBadge}>
+            <Feather name="award" size={11} color="#FFFFFF" />
+            <Text style={styles.prBadgeText}>PR</Text>
+          </View>
+        ) : (
+          <Text
+            style={[styles.prevText, rowMuted && styles.textMuted]}
+            numberOfLines={1}
+          >
+            {previousLabel}
+          </Text>
+        )}
       </View>
 
       {!isBodyweight ? (
@@ -692,6 +718,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "400",
     color: HEVY.textSecondary,
+  },
+  warmupBadge: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#D97706",
+    textAlign: "center",
+  },
+  prBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    alignSelf: "flex-start",
+    backgroundColor: "#D97706",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  prBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.3,
   },
   cellPress: {
     width: "100%",

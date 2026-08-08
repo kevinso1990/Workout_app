@@ -74,6 +74,7 @@ import {
   FitnessLevel,
   FitnessGoal,
   UserPreferences,
+  SetType,
 } from "@/lib/storage";
 import {
   getMuscleGroupMeta,
@@ -121,6 +122,7 @@ interface SetData {
   reps: string;
   rating: SetRating;
   completed: boolean;
+  setType?: SetType;
 }
 
 interface ExerciseProgress {
@@ -1292,6 +1294,13 @@ export default function ActiveWorkoutScreen() {
     });
   };
 
+  const handleToggleWarmup = (exerciseIndex: number, setIndex: number) => {
+    Haptics.selectionAsync();
+    const cur = progress[exerciseIndex]?.sets[setIndex];
+    const nextType = cur?.setType === "warmup" ? "working" : "warmup";
+    handleUpdateSet(exerciseIndex, setIndex, { setType: nextType });
+  };
+
   const activateSet = (exerciseIndex: number, setIndex: number) => {
     setCurrentExerciseIndex(exerciseIndex);
     setCurrentSetIndex(setIndex);
@@ -1568,7 +1577,7 @@ export default function ActiveWorkoutScreen() {
 
     const weight = parseFloat(completedSet.weight) || 0;
     const reps = parseInt(completedSet.reps) || 0;
-    if (weight > 0 && reps > 0) {
+    if (weight > 0 && reps > 0 && completedSet.setType !== "warmup") {
       checkForPR(exercise.name, weight, reps);
     }
 
@@ -1733,7 +1742,7 @@ export default function ActiveWorkoutScreen() {
       return (
         total +
         ep.sets
-          .filter((s) => s.completed)
+          .filter((s) => s.completed && s.setType !== "warmup")
           .reduce((setTotal, s) => {
             const weight = parseFloat(s.weight) || 0;
             const reps = parseInt(s.reps) || 0;
@@ -1755,12 +1764,14 @@ export default function ActiveWorkoutScreen() {
   const day = plan.days[route.params.dayIndex];
   const detailExercise = day.exercises[detailExerciseIndex] ?? day.exercises[0];
 
+  // Warm-up sets don't count toward the working-set progress ("1/23").
   const totalSets = progress.reduce(
-    (acc, ex) => acc + ex.sets.length,
+    (acc, ex) => acc + ex.sets.filter((s) => s.setType !== "warmup").length,
     0
   );
   const completedSets = progress.reduce(
-    (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
+    (acc, ex) =>
+      acc + ex.sets.filter((s) => s.completed && s.setType !== "warmup").length,
     0
   );
   const progressPercent =
@@ -2173,6 +2184,15 @@ export default function ActiveWorkoutScreen() {
                   {ep.sets.map((setData, setIdx) => {
                     const isActiveSet =
                       exIdx === currentExerciseIndex && setIdx === currentSetIndex;
+                    const exercisePR = prsThisSession.find(
+                      (p) => p.exerciseName === exercise.name,
+                    );
+                    const isSetPR =
+                      setData.completed &&
+                      setData.setType !== "warmup" &&
+                      !!exercisePR &&
+                      (parseFloat(setData.weight) || 0) === exercisePR.weight &&
+                      (parseInt(setData.reps) || 0) === exercisePR.reps;
                     const row = (
                       <HevySetRowWithPrefill
                         key={setIdx}
@@ -2181,6 +2201,7 @@ export default function ActiveWorkoutScreen() {
                         lastWeekData={lastWeekExercise?.sets[setIdx] || null}
                         isBodyweight={isBodyweight}
                         isActive={isActiveSet}
+                        isPR={isSetPR}
                         targetReps={
                           exercise.targetReps != null &&
                           Number.isFinite(exercise.targetReps)
@@ -2190,6 +2211,7 @@ export default function ActiveWorkoutScreen() {
                         progressionWeight={progression?.recommendedWeight ?? null}
                         progressionReps={progression?.recommendedReps ?? null}
                         onActivate={() => activateSet(exIdx, setIdx)}
+                        onToggleWarmup={() => handleToggleWarmup(exIdx, setIdx)}
                         onUpdate={(data) => handleUpdateSet(exIdx, setIdx, data)}
                         onComplete={(payload) =>
                           handleSetComplete(exIdx, setIdx, payload)
