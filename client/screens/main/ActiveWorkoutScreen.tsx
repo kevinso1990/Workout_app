@@ -43,6 +43,7 @@ import Animated, {
   withSpring,
   FadeIn,
   FadeInDown,
+  FadeOutDown,
   FadeInUp,
   ZoomIn,
 } from "react-native-reanimated";
@@ -307,14 +308,17 @@ function WorkoutWebStyles() {
   );
 }
 
-function RestTimerModal({
-  visible,
+/**
+ * Non-blocking rest timer: a compact bar that sits above the bottom action
+ * buttons so the athlete can still see and scroll their workout (next set,
+ * previous numbers) while resting — unlike the old full-screen modal.
+ */
+function RestTimerBar({
   timeLeft,
   totalSeconds = DEFAULT_REST_TIME,
   onSkip,
   onAdjust,
 }: {
-  visible: boolean;
   timeLeft: number;
   totalSeconds?: number;
   onSkip: () => void;
@@ -322,79 +326,56 @@ function RestTimerModal({
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const progress =
     totalSeconds > 0 ? Math.min(Math.max(timeLeft / totalSeconds, 0), 1) : 0;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <View
-        style={[
-          styles.restModalOverlay,
-          { paddingTop: insets.top, paddingBottom: insets.bottom },
-        ]}
-      >
-        <Animated.View
-          entering={ZoomIn.duration(300)}
-          style={[styles.restModalContent, { backgroundColor: theme.backgroundDefault }]}
-        >
-          <ThemedText style={styles.restTitle}>{t("activeWorkout.restTitle")}</ThemedText>
-          <View style={styles.timerCircle}>
-            <View style={styles.timerCircleProgressTrack} pointerEvents="none">
-              <View
-                style={[
-                  styles.timerCircleProgress,
-                  { width: `${progress * 100}%` },
-                ]}
-              />
-            </View>
-            <View style={styles.timerTextWrap}>
-              <ThemedText
-                nativeID="fitplan-rest-timer-num"
-                style={styles.timerText}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
-                {formatTime(timeLeft)}
-              </ThemedText>
-            </View>
-          </View>
-          <ThemedText style={[styles.restHint, { color: theme.textSecondary }]}>
-            {t("activeWorkout.restHint")}
-          </ThemedText>
-
-          <View style={styles.restAdjustRow}>
-            <Pressable
-              onPress={() => onAdjust(-15)}
-              style={[styles.restAdjustBtn, { borderColor: theme.border }]}
-              accessibilityLabel={t("activeWorkout.restMinus15")}
-              testID="button-rest-minus"
-            >
-              <ThemedText style={[styles.restAdjustText, { color: theme.text }]}>
-                −15s
-              </ThemedText>
-            </Pressable>
-            <Pressable
-              onPress={() => onAdjust(15)}
-              style={[styles.restAdjustBtn, { borderColor: theme.border }]}
-              accessibilityLabel={t("activeWorkout.restPlus15")}
-              testID="button-rest-plus"
-            >
-              <ThemedText style={[styles.restAdjustText, { color: theme.text }]}>
-                +15s
-              </ThemedText>
-            </Pressable>
-          </View>
-
-          <Pressable onPress={onSkip} style={styles.skipRestButton}>
-            <ThemedText style={[styles.skipRestText, { color: Colors.light.primary }]}>
-              {t("activeWorkout.skipRest")}
-            </ThemedText>
-          </Pressable>
-        </Animated.View>
+    <Animated.View
+      entering={FadeInDown.duration(200)}
+      exiting={FadeOutDown.duration(150)}
+      style={[styles.restBar, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
+    >
+      <View style={styles.restBarTrack} pointerEvents="none">
+        <View
+          style={[
+            styles.restBarFill,
+            { width: `${progress * 100}%`, backgroundColor: Colors.light.primary },
+          ]}
+        />
       </View>
-    </Modal>
+      <View style={styles.restBarRow}>
+        <Feather name="clock" size={16} color={Colors.light.primary} />
+        <ThemedText style={styles.restBarTime}>{formatTime(timeLeft)}</ThemedText>
+        <View style={styles.restBarSpacer} />
+        <Pressable
+          onPress={() => onAdjust(-15)}
+          style={[styles.restBarStep, { borderColor: theme.border }]}
+          hitSlop={6}
+          accessibilityLabel={t("activeWorkout.restMinus15")}
+          testID="button-rest-minus"
+        >
+          <ThemedText style={[styles.restBarStepText, { color: theme.text }]}>−15s</ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={() => onAdjust(15)}
+          style={[styles.restBarStep, { borderColor: theme.border }]}
+          hitSlop={6}
+          accessibilityLabel={t("activeWorkout.restPlus15")}
+          testID="button-rest-plus"
+        >
+          <ThemedText style={[styles.restBarStepText, { color: theme.text }]}>+15s</ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={onSkip}
+          style={[styles.restBarSkip, { backgroundColor: Colors.light.primary }]}
+          hitSlop={6}
+          accessibilityLabel={t("activeWorkout.skipRest")}
+          testID="button-rest-skip"
+        >
+          <Feather name="skip-forward" size={16} color="#FFFFFF" />
+        </Pressable>
+      </View>
+    </Animated.View>
   );
 }
 
@@ -1792,13 +1773,6 @@ export default function ActiveWorkoutScreen() {
   return (
     <ThemedView style={styles.container}>
       <WorkoutWebStyles />
-      <RestTimerModal
-        visible={showRestTimer}
-        timeLeft={restTimeLeft}
-        totalSeconds={restDuration}
-        onSkip={handleSkipRest}
-        onAdjust={handleAdjustRest}
-      />
       <PRCelebration
         visible={showPRCelebration}
         pr={currentPR}
@@ -2280,6 +2254,14 @@ export default function ActiveWorkoutScreen() {
             },
           ]}
         >
+          {showRestTimer ? (
+            <RestTimerBar
+              timeLeft={restTimeLeft}
+              totalSeconds={restDuration}
+              onSkip={handleSkipRest}
+              onAdjust={handleAdjustRest}
+            />
+          ) : null}
           {workoutComplete ? (
             <AnimatedPressable
               onPress={handleFinishWorkout}
@@ -2873,6 +2855,59 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
+  },
+  restBar: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+    overflow: "hidden",
+  },
+  restBarTrack: {
+    height: 3,
+    width: "100%",
+    backgroundColor: "rgba(0,0,0,0.06)",
+  },
+  restBarFill: {
+    height: 3,
+  },
+  restBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+  },
+  restBarTime: {
+    fontSize: 18,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  restBarLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  restBarSpacer: {
+    flex: 1,
+  },
+  restBarStep: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  restBarStepText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  restBarSkip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.md,
+  },
+  restBarSkipText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   nextButton: {
     flexDirection: "row",
