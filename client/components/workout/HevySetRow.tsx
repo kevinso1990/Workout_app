@@ -1,20 +1,28 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Pressable, Text, Animated, Alert, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Text,
+  TextInput,
+  Animated,
+  Alert,
+  Platform,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 
-import { MicroSetSlider } from "@/components/workout/MicroSetSlider";
 import { HEVY } from "@/constants/hevyLayout";
 import type { SetData } from "@/lib/storage";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
   clampAndFormatReps,
-  clampAndFormatWeight,
   clampAndFormatWeightExact,
-  roundToStepWeight,
-  WEIGHT_SLIDER_STEP_KG,
 } from "@/lib/activeWorkoutSetFormat";
+
+/** Plate-friendly weight increment for the +/- steppers. */
+const WEIGHT_STEP_KG = 2.5;
 
 const ROW_SEPARATOR = "#E5E5EA";
 const CELL_TEXT = "#121212";
@@ -180,88 +188,104 @@ export function HevySetGridHeader({ isBodyweight }: { isBodyweight: boolean }) {
   );
 }
 
-function HevySetMicroSliders({
-  setIndex,
+/** One labelled editor: [ − ] [ tap-to-type field ] [ + ]. */
+function StepperField({
+  label,
+  value,
+  decimal,
+  onChangeText,
+  onCommit,
+  onStep,
+  testID,
+}: {
+  label: string;
+  value: string;
+  decimal?: boolean;
+  onChangeText: (t: string) => void;
+  onCommit: () => void;
+  onStep: (dir: 1 | -1) => void;
+  testID?: string;
+}) {
+  return (
+    <View style={styles.stepField}>
+      <Text style={styles.stepLabel}>{label}</Text>
+      <View style={styles.stepControls}>
+        <Pressable
+          onPress={() => onStep(-1)}
+          hitSlop={8}
+          style={styles.stepBtn}
+          testID={testID ? `${testID}-minus` : undefined}
+        >
+          <Feather name="minus" size={18} color={CELL_TEXT} />
+        </Pressable>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          onEndEditing={onCommit}
+          onBlur={onCommit}
+          keyboardType={decimal ? "decimal-pad" : "number-pad"}
+          selectTextOnFocus
+          returnKeyType="done"
+          style={styles.stepInput}
+          testID={testID}
+        />
+        <Pressable
+          onPress={() => onStep(1)}
+          hitSlop={8}
+          style={styles.stepBtn}
+          testID={testID ? `${testID}-plus` : undefined}
+        >
+          <Feather name="plus" size={18} color={CELL_TEXT} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function HevySetEditor({
   isBodyweight,
   draftWeight,
   draftReps,
-  lastWeekData,
-  targetReps,
-  progressionWeight,
-  onDraftWeight,
-  onDraftReps,
+  onChangeWeight,
+  onChangeReps,
   onCommitWeight,
   onCommitReps,
-  onInteractionStart,
-  onInteractionEnd,
+  onStepWeight,
+  onStepReps,
+  setIndex,
 }: {
-  setIndex: number;
   isBodyweight: boolean;
   draftWeight: string;
   draftReps: string;
-  lastWeekData: LastSet;
-  targetReps?: string;
-  progressionWeight?: number | null;
-  onDraftWeight: (n: number) => void;
-  onDraftReps: (n: number) => void;
-  onCommitWeight: (n: number) => void;
-  onCommitReps: (n: number) => void;
-  onInteractionStart: () => void;
-  onInteractionEnd: () => void;
+  onChangeWeight: (t: string) => void;
+  onChangeReps: (t: string) => void;
+  onCommitWeight: () => void;
+  onCommitReps: () => void;
+  onStepWeight: (dir: 1 | -1) => void;
+  onStepReps: (dir: 1 | -1) => void;
+  setIndex: number;
 }) {
-  const weightVal = parseFloat(String(draftWeight).replace(",", ".")) || 0;
-  const lastWeight = lastWeekData
-    ? parseFloat(String(lastWeekData.weight).replace(",", ".")) || 0
-    : 0;
-  const recW = progressionWeight ?? 0;
-  const weightMax = Math.min(
-    500,
-    Math.max(50, roundToStepWeight(Math.max(weightVal, lastWeight, recW, 22.5) * 1.35)),
-  );
-
-  const repVal = parseInt(String(draftReps).replace(/\D/g, ""), 10) || 0;
-  const lastRep = lastWeekData
-    ? parseInt(String(lastWeekData.reps).replace(/\D/g, ""), 10) || 0
-    : 0;
-  const targetRepParsed = parseInt(String(targetReps ?? "").replace(/\D/g, ""), 10);
-  const targetRepBase =
-    Number.isFinite(targetRepParsed) && targetRepParsed > 0 ? targetRepParsed : 10;
-  // 95% of training lives in 1–15 reps, so keep the track short for a finer
-  // hitbox. Floor at 15 (always reachable) and hard-cap at 25 so the thumb
-  // can't shoot into unrealistic ranges.
-  const repsMax = Math.min(
-    25,
-    Math.max(15, Math.ceil(Math.max(repVal, lastRep, targetRepBase) * 1.25)),
-  );
-
   return (
-    <View style={styles.microPanel}>
-      <View style={[styles.microRow, isBodyweight && styles.microRowSingle]}>
-        {!isBodyweight ? (
-          <MicroSetSlider
-            value={weightVal}
-            min={0}
-            max={weightMax}
-            step={WEIGHT_SLIDER_STEP_KG}
-            onDraft={onDraftWeight}
-            onCommit={onCommitWeight}
-            onInteractionStart={onInteractionStart}
-            onInteractionEnd={onInteractionEnd}
-            testID={`micro-weight-${setIndex}`}
-          />
-        ) : null}
-        <MicroSetSlider
-          value={repVal}
-          min={0}
-          max={repsMax}
-          step={1}
-          onDraft={onDraftReps}
-          onCommit={onCommitReps}
-          onInteractionStart={onInteractionStart}
-          onInteractionEnd={onInteractionEnd}
-          testID={`micro-reps-${setIndex}`}
+    <View style={styles.editorPanel}>
+      {!isBodyweight ? (
+        <StepperField
+          label="KG"
+          value={draftWeight}
+          decimal
+          onChangeText={onChangeWeight}
+          onCommit={onCommitWeight}
+          onStep={onStepWeight}
+          testID={`step-weight-${setIndex}`}
         />
-      </View>
+      ) : null}
+      <StepperField
+        label="WDH."
+        value={draftReps}
+        onChangeText={onChangeReps}
+        onCommit={onCommitReps}
+        onStep={onStepReps}
+        testID={`step-reps-${setIndex}`}
+      />
     </View>
   );
 }
@@ -464,7 +488,8 @@ export type HevySetRowWithPrefillProps = HevySetRowProps & {
   progressionReps?: number | null;
 };
 
-/** Active set: sliders under row; local draft during drag, commit after gesture ends. */
+/** Active set: a tap-to-type + stepper editor under the row. Local draft while
+ *  typing so keystrokes aren't reformatted mid-entry; commit on blur / stepper. */
 export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
   const {
     isActive,
@@ -476,20 +501,20 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
     onUpdate,
   } = props;
 
-  const draggingRef = useRef(false);
-  const sliderTouchesRef = useRef(0);
-  const [sliderGestureActive, setSliderGestureActive] = useState(false);
+  const typingRef = useRef(false);
   const [draft, setDraft] = useState({
     weight: setData.weight,
     reps: setData.reps,
   });
 
+  // Keep the draft in sync with committed data unless the user is mid-edit.
   useEffect(() => {
-    if (!draggingRef.current) {
+    if (!typingRef.current) {
       setDraft({ weight: setData.weight, reps: setData.reps });
     }
   }, [setData.weight, setData.reps]);
 
+  // Prefill an empty active set from the recommended progression / last session.
   useEffect(() => {
     if (!isActive || setData.completed) return;
     if (setData.weight !== "" || setData.reps !== "") return;
@@ -508,73 +533,81 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
         progressionReps != null
           ? String(progressionReps)
           : lastWeekData?.reps ?? "";
-      onUpdate({
-        weight: String(progressionWeight),
-        reps: repPrefill,
-      });
+      onUpdate({ weight: String(progressionWeight), reps: repPrefill });
     } else if (lastWeekData) {
-      onUpdate({
-        weight: lastWeekData.weight,
-        reps: lastWeekData.reps,
-      });
+      onUpdate({ weight: lastWeekData.weight, reps: lastWeekData.reps });
     }
   }, [isActive]);
 
-  const onSliderInteractionStart = useCallback(() => {
-    sliderTouchesRef.current += 1;
-    setSliderGestureActive(true);
-  }, []);
+  const showEditor = isActive && !setData.completed;
 
-  const onSliderInteractionEnd = useCallback(() => {
-    sliderTouchesRef.current = Math.max(0, sliderTouchesRef.current - 1);
-    if (sliderTouchesRef.current === 0) {
-      draggingRef.current = false;
-      setSliderGestureActive(false);
-    }
-  }, []);
+  const commitWeight = useCallback(() => {
+    typingRef.current = false;
+    const formatted = clampAndFormatWeightExact(draft.weight);
+    setDraft((d) => ({ ...d, weight: formatted }));
+    onUpdate({ weight: formatted });
+  }, [draft.weight, onUpdate]);
 
-  const showMicroSliders =
-    isActive && (!setData.completed || sliderGestureActive);
+  const commitReps = useCallback(() => {
+    typingRef.current = false;
+    const formatted = clampAndFormatReps(draft.reps);
+    setDraft((d) => ({ ...d, reps: formatted }));
+    onUpdate({ reps: formatted });
+  }, [draft.reps, onUpdate]);
+
+  const stepWeight = useCallback(
+    (dir: 1 | -1) => {
+      const base = parseFloat(String(draft.weight).replace(",", ".")) || 0;
+      const next = Math.max(0, base + dir * WEIGHT_STEP_KG);
+      const formatted = clampAndFormatWeightExact(String(next));
+      typingRef.current = false;
+      setDraft((d) => ({ ...d, weight: formatted }));
+      onUpdate({ weight: formatted });
+      Haptics.selectionAsync();
+    },
+    [draft.weight, onUpdate],
+  );
+
+  const stepReps = useCallback(
+    (dir: 1 | -1) => {
+      const base = parseInt(String(draft.reps).replace(/\D/g, ""), 10) || 0;
+      const next = Math.max(0, base + dir);
+      const formatted = clampAndFormatReps(String(next));
+      typingRef.current = false;
+      setDraft((d) => ({ ...d, reps: formatted }));
+      onUpdate({ reps: formatted });
+      Haptics.selectionAsync();
+    },
+    [draft.reps, onUpdate],
+  );
 
   const displaySet: SetData = {
     ...setData,
-    weight: showMicroSliders ? draft.weight : setData.weight,
-    reps: showMicroSliders ? draft.reps : setData.reps,
+    weight: showEditor ? draft.weight : setData.weight,
+    reps: showEditor ? draft.reps : setData.reps,
   };
 
   return (
     <View style={styles.setBlock}>
-      <HevySetRow
-        {...props}
-        setData={displaySet}
-        suppressBottomBorder={showMicroSliders}
-      />
-      {showMicroSliders ? (
-        <HevySetMicroSliders
+      <HevySetRow {...props} setData={displaySet} suppressBottomBorder={showEditor} />
+      {showEditor ? (
+        <HevySetEditor
           setIndex={props.setIndex}
           isBodyweight={isBodyweight}
           draftWeight={draft.weight}
           draftReps={draft.reps}
-          lastWeekData={lastWeekData}
-          targetReps={props.targetReps}
-          progressionWeight={progressionWeight}
-          onInteractionStart={() => {
-            draggingRef.current = true;
-            onSliderInteractionStart();
+          onChangeWeight={(t) => {
+            typingRef.current = true;
+            setDraft((d) => ({ ...d, weight: t }));
           }}
-          onInteractionEnd={onSliderInteractionEnd}
-          onDraftWeight={(n) =>
-            setDraft((d) => ({ ...d, weight: clampAndFormatWeight(String(n)) }))
-          }
-          onDraftReps={(n) =>
-            setDraft((d) => ({ ...d, reps: clampAndFormatReps(String(Math.round(n))) }))
-          }
-          onCommitWeight={(n) =>
-            onUpdate({ weight: clampAndFormatWeight(String(n)) })
-          }
-          onCommitReps={(n) =>
-            onUpdate({ reps: clampAndFormatReps(String(Math.round(n))) })
-          }
+          onChangeReps={(t) => {
+            typingRef.current = true;
+            setDraft((d) => ({ ...d, reps: t }));
+          }}
+          onCommitWeight={commitWeight}
+          onCommitReps={commitReps}
+          onStepWeight={stepWeight}
+          onStepReps={stepReps}
         />
       ) : null}
     </View>
@@ -708,20 +741,50 @@ const styles = StyleSheet.create({
   checkIconIdle: {
     opacity: 0.5,
   },
-  microPanel: {
+  editorPanel: {
+    flexDirection: "row",
+    gap: 12,
     paddingHorizontal: HEVY.pad,
-    paddingTop: 2,
-    paddingBottom: 8,
+    paddingTop: 4,
+    paddingBottom: 10,
     backgroundColor: HEVY.surface,
     borderBottomWidth: 0.5,
     borderBottomColor: ROW_SEPARATOR,
   },
-  microRow: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
+  stepField: {
+    flex: 1,
+    gap: 4,
   },
-  microRowSingle: {
-    flexDirection: "column",
+  stepLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    color: HEVY.textMuted,
+    textAlign: "center",
+  },
+  stepControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: ROW_SEPARATOR,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: HEVY.surface,
+  },
+  stepBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: HEVY.canvas,
+  },
+  stepInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 17,
+    fontWeight: "700",
+    color: CELL_TEXT,
+    textAlign: "center",
+    paddingVertical: 0,
   },
 });
