@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as planController from "../controllers/planController";
 import { optionalAuth } from "../middleware/authMiddleware";
 import { rateLimit } from "../middleware/rateLimiter";
+import { aiUsageGuard } from "../middleware/aiUsageGuard";
 
 const router = Router();
 
@@ -13,8 +14,8 @@ const generateLimiter = rateLimit(5, 60_000);
 const modifyLimiter = rateLimit(10, 60_000);
 
 // NOTE: /auto-generate and /modify must come before /:id to avoid being matched as an ID
-router.post("/auto-generate", generateLimiter, planController.autoGenerate);
-router.post("/modify", modifyLimiter, planController.modify);
+router.post("/auto-generate", generateLimiter, aiUsageGuard, planController.autoGenerate);
+router.post("/modify", modifyLimiter, aiUsageGuard, planController.modify);
 
 router.get("/", planController.list);
 router.post("/", planController.create);

@@ -1,5 +1,6 @@
 import express from "express";
 import { rateLimit } from "../middleware/rateLimiter";
+import { aiUsageGuard } from "../middleware/aiUsageGuard";
 import { generateDailyBriefing, suggestSmartSubstitutions, adaptPlanFromPerformance } from "../services/coachService";
 import type { ClientPlanPayload } from "../services/planModifyService";
 
@@ -7,7 +8,7 @@ const router = express.Router();
 
 const coachLimiter = rateLimit(30, 24 * 60 * 60 * 1000);
 
-router.post("/smart-substitutions", coachLimiter, async (req, res) => {
+router.post("/smart-substitutions", coachLimiter, aiUsageGuard, async (req, res) => {
   try {
     if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY) {
       return res.status(503).json({ error: "Coach AI is not configured" });
@@ -38,7 +39,7 @@ router.post("/smart-substitutions", coachLimiter, async (req, res) => {
   }
 });
 
-router.post("/daily-briefing", coachLimiter, async (req, res) => {
+router.post("/daily-briefing", coachLimiter, aiUsageGuard, async (req, res) => {
   try {
     if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY) {
       return res.status(503).json({ error: "Coach AI is not configured" });
@@ -67,7 +68,7 @@ router.post("/daily-briefing", coachLimiter, async (req, res) => {
   }
 });
 
-router.post("/adapt-plan", coachLimiter, async (req, res) => {
+router.post("/adapt-plan", coachLimiter, aiUsageGuard, async (req, res) => {
   try {
     if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY) {
       return res.status(503).json({ error: "Coach AI is not configured" });

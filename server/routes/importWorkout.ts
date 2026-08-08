@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 // Import the worker directly to avoid pdf-parse's index.js debug-mode side effect.
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import { rateLimit } from '../middleware/rateLimiter';
+import { aiUsageGuard } from '../middleware/aiUsageGuard';
 import { geminiGenerateContent } from '../services/geminiGenerate';
 import { matchExerciseToCatalog } from '../services/importExerciseMatchService';
 import {
@@ -572,7 +573,7 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
   }
 }
 
-router.post('/import-workout', importLimiter, (req, res, next) => {
+router.post('/import-workout', importLimiter, aiUsageGuard, (req, res, next) => {
   const ct = req.headers['content-type'] ?? '';
   if (ct.includes('multipart/form-data')) {
     pdfUpload.single('pdf')(req, res, (err) => {
