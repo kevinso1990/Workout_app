@@ -21,8 +21,10 @@ import {
   clampAndFormatWeightExact,
 } from "@/lib/activeWorkoutSetFormat";
 
-/** Plate-friendly weight increment for the +/- steppers. */
-const WEIGHT_STEP_KG = 2.5;
+// 1 kg step so the +/- buttons reach whole-kilo values (dumbbells come in
+// kilo increments). 2.5 kg jumps always landed on odd values like 32.5 and
+// couldn't hit 32/33. Exact/half-kg weights are still enterable by typing.
+const WEIGHT_STEP_KG = 1;
 
 const ROW_SEPARATOR = "#E5E5EA";
 const CELL_TEXT = "#121212";
