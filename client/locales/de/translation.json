@@ -303,6 +303,7 @@
     "pauseLabel": "Pause",
     "exerciseOf": "Übung {{current}} von {{total}}",
     "setsRepsSummary": "{{sets}} Sätze × {{reps}} Wdh.",
+    "setsSecondsSummary": "{{sets}} Sätze × {{reps}} Sek.",
     "finishEarly": "Früh beenden",
     "incompleteTitle": "Unvollständiges Training",
     "incompleteMessage": "Du hast {{completed}} von {{total}} Sätzen absolviert. Trotzdem beenden?",

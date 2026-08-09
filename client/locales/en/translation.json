@@ -380,6 +380,7 @@
     "pauseLabel": "Pause",
     "exerciseOf": "Exercise {{current}} of {{total}}",
     "setsRepsSummary": "{{sets}} sets × {{reps}} reps",
+    "setsSecondsSummary": "{{sets}} sets × {{reps}} s",
     "finishEarly": "Finish Early",
     "incompleteTitle": "Incomplete Workout",
     "incompleteMessage": "You've completed {{completed}} of {{total}} sets. Finish anyway?",

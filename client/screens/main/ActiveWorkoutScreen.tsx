@@ -2080,10 +2080,12 @@ export default function ActiveWorkoutScreen() {
                           style={[styles.targetSetsLine, { color: theme.text }]}
                           numberOfLines={1}
                         >
-                          {t("activeWorkout.setsRepsSummary", {
-                            sets: exercise.sets,
-                            reps: exercise.reps,
-                          })}
+                          {t(
+                            isHold
+                              ? "activeWorkout.setsSecondsSummary"
+                              : "activeWorkout.setsRepsSummary",
+                            { sets: exercise.sets, reps: exercise.reps },
+                          )}
                         </ThemedText>
                       </View>
                     </View>
