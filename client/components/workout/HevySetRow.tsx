@@ -348,9 +348,6 @@ export function HevySetRow({
   const weightDisplay = setData.weight?.trim() ? setData.weight : "—";
   const repsDisplay = setData.reps?.trim() ? setData.reps : "—";
 
-  const validation = validateSetFields(setData, isBodyweight);
-  const canLogSet = !validation.repsInvalid && !validation.weightInvalid;
-
   const handleCheck = () => {
     // Tapping a completed set un-checks it and reactivates it for editing —
     // an accidental check used to freeze the row with no way back.
@@ -361,13 +358,9 @@ export function HevySetRow({
       return;
     }
 
-    if (!canLogSet) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      if (validation.weightInvalid) weightAlertRef.current?.();
-      if (validation.repsInvalid) repsAlertRef.current?.();
-      return;
-    }
-
+    // Completing a set never requires weight/reps — a bodyweight move, a set
+    // you just want to tick off, or doing 3 of 4 sets are all valid. Empty
+    // values simply contribute 0 volume and don't count as a PR.
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const rating: SetRating = "yellow";
     onUpdate({ rating, completed: true });
@@ -438,11 +431,7 @@ export function HevySetRow({
               style={styles.cellPress}
             >
               <Text
-                style={[
-                  styles.cellValue,
-                  rowMuted && styles.textMuted,
-                  validation.weightInvalid && isActive && styles.cellValueAlert,
-                ]}
+                style={[styles.cellValue, rowMuted && styles.textMuted]}
                 numberOfLines={1}
               >
                 {weightDisplay}
@@ -461,11 +450,7 @@ export function HevySetRow({
             style={styles.cellPress}
           >
             <Text
-              style={[
-                styles.cellValue,
-                rowMuted && styles.textMuted,
-                validation.repsInvalid && isActive && styles.cellValueAlert,
-              ]}
+              style={[styles.cellValue, rowMuted && styles.textMuted]}
               numberOfLines={1}
             >
               {repsDisplay}
@@ -482,7 +467,7 @@ export function HevySetRow({
             styles.checkBox,
             setData.completed
               ? styles.checkBoxDone
-              : isActive && canLogSet
+              : isActive
                 ? styles.checkBoxReady
                 : styles.checkBoxIdle,
           ]}
@@ -497,7 +482,7 @@ export function HevySetRow({
             color={
               setData.completed
                 ? "#FFFFFF"
-                : isActive && canLogSet
+                : isActive
                   ? LOG_CHECK_GREEN + "99"
                   : LOG_CHECK_BORDER
             }
