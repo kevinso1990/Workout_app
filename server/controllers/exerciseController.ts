@@ -10,5 +10,6 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const body = req.body as CreateExerciseBody;
-  res.json(exerciseService.createExercise(body));
+  // Route is behind requireAuth, so stamp the creator for ownership.
+  res.json(exerciseService.createExercise(body, req.user?.sub));
 });

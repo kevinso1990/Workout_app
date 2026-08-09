@@ -28,9 +28,15 @@ export function listExercises(equipment?: string): Exercise[] {
     .all() as Exercise[];
 }
 
-/** Public catalog (same rows as list, for native clients without extra auth wiring). */
+/**
+ * Public catalog for native clients. Excludes user-created custom exercises
+ * (is_custom = 1) so one user's custom entries never leak into everyone else's
+ * catalog — they're added straight to that user's workout on creation instead.
+ */
 export function listCatalogExercises(): Exercise[] {
-  return listExercises();
+  return db
+    .prepare(`${SELECT_EXERCISES_WITH_DE} WHERE e.is_custom = 0 ORDER BY e.muscle_group, e.name`)
+    .all() as Exercise[];
 }
 
 /** Same muscle group alternatives (DB names), excluding the current exercise. */
@@ -51,14 +57,14 @@ export function listAlternativesByName(exerciseName: string, limit = 48): Exerci
     .all(row.muscle_group, exerciseName.trim(), limit) as Exercise[];
 }
 
-export function createExercise(body: CreateExerciseBody): Exercise {
+export function createExercise(body: CreateExerciseBody, userId?: number): Exercise {
   const { name, muscle_group } = body;
   if (!name || !muscle_group) {
     throw new AppError(400, "name and muscle_group required");
   }
   const result = db
-    .prepare("INSERT INTO exercises (name, muscle_group, is_custom) VALUES (?, ?, 1)")
-    .run(name, muscle_group);
+    .prepare("INSERT INTO exercises (name, muscle_group, is_custom, user_id) VALUES (?, ?, 1, ?)")
+    .run(name, muscle_group, userId ?? null);
   const newId = result.lastInsertRowid as number;
 
   prefetchSingleExercise(newId, name);

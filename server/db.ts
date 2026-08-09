@@ -390,6 +390,10 @@ function migrateSubscriptions() {
   try { db.exec("ALTER TABLE users ADD COLUMN subscription_provider TEXT"); } catch {}
   try { db.exec("ALTER TABLE users ADD COLUMN subscription_expires_at TEXT"); } catch {}
 
+  // Ownership for user-created custom exercises, so they never leak into the
+  // shared catalog served to every user (catalog filters is_custom = 0).
+  try { db.exec("ALTER TABLE exercises ADD COLUMN user_id INTEGER"); } catch {}
+
   // Tracks validated receipts/tokens from Apple and Google
   db.exec(`
     CREATE TABLE IF NOT EXISTS subscription_receipts (
