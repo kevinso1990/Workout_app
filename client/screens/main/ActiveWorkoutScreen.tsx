@@ -75,6 +75,7 @@ import {
   FitnessGoal,
   UserPreferences,
   SetType,
+  SetData,
 } from "@/lib/storage";
 import {
   getMuscleGroupMeta,
@@ -116,14 +117,6 @@ type DifficultyRating = "easy" | "good" | "hard";
 
 
 
-
-interface SetData {
-  weight: string;
-  reps: string;
-  rating: SetRating;
-  completed: boolean;
-  setType?: SetType;
-}
 
 interface ExerciseProgress {
   exerciseId: string;
@@ -2909,10 +2902,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
   },
-  restBarLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   restBarSpacer: {
     flex: 1,
   },
@@ -2930,11 +2919,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: BorderRadius.md,
-  },
-  restBarSkipText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
   },
   nextButton: {
     flexDirection: "row",
@@ -2973,97 +2957,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   skipButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  restModalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.lg,
-  },
-  restModalContent: {
-    width: "100%",
-    maxWidth: 360,
-    borderRadius: BorderRadius.xl,
-    paddingVertical: Spacing["2xl"],
-    paddingHorizontal: Spacing.xl,
-    alignItems: "center",
-    overflow: "visible",
-  },
-  restTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-    marginBottom: Spacing.xl,
-  },
-  timerCircle: {
-    width: 188,
-    height: 188,
-    minHeight: 188,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.light.primary + "15",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.lg,
-    overflow: "visible",
-  },
-  timerCircleProgressTrack: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: BorderRadius.lg,
-    overflow: "hidden",
-  },
-  timerCircleProgress: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: Colors.light.primary,
-    opacity: 0.2,
-  },
-  timerTextWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 140,
-    minHeight: 56,
-    paddingHorizontal: Spacing.sm,
-    zIndex: 2,
-  },
-  timerText: {
-    fontSize: 44,
-    lineHeight: 52,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-    textAlign: "center",
-    ...(Platform.OS === "android" ? { includeFontPadding: false as const } : {}),
-  },
-  restHint: {
-    fontSize: 14,
-    marginBottom: Spacing.xl,
-  },
-  restAdjustRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  restAdjustBtn: {
-    minWidth: 84,
-    paddingVertical: 12,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  restAdjustText: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  skipRestButton: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.xs,
-  },
-  skipRestText: {
     fontSize: 16,
     fontWeight: "600",
   },
