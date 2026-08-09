@@ -145,6 +145,8 @@ export type HevySetRowProps = {
   targetReps?: string;
   /** True when this completed set is a new personal record for the exercise. */
   isPR?: boolean;
+  /** Isometric hold — the reps field represents seconds, not reps. */
+  isHold?: boolean;
   onActivate?: () => void;
   /** Cycles the set between a working set and a warm-up set. */
   onToggleWarmup?: () => void;
@@ -168,7 +170,13 @@ function formatPrevious(last: LastSet, bodyweight: boolean): string {
   return "—";
 }
 
-export function HevySetGridHeader({ isBodyweight }: { isBodyweight: boolean }) {
+export function HevySetGridHeader({
+  isBodyweight,
+  isHold,
+}: {
+  isBodyweight: boolean;
+  isHold?: boolean;
+}) {
   return (
     <View style={[styles.row, styles.headerRow]}>
       <View style={styles.colSet}>
@@ -183,7 +191,7 @@ export function HevySetGridHeader({ isBodyweight }: { isBodyweight: boolean }) {
         </View>
       ) : null}
       <View style={[styles.colReps, isBodyweight && styles.colRepsWide]}>
-        <Text style={styles.headerLabel}>REPS</Text>
+        <Text style={styles.headerLabel}>{isHold ? "SEK." : "REPS"}</Text>
       </View>
       <View style={styles.colCheck}>
         <Text style={styles.headerLabel}> </Text>
@@ -248,6 +256,7 @@ function StepperField({
 
 function HevySetEditor({
   isBodyweight,
+  isHold,
   draftWeight,
   draftReps,
   onChangeWeight,
@@ -259,6 +268,7 @@ function HevySetEditor({
   setIndex,
 }: {
   isBodyweight: boolean;
+  isHold?: boolean;
   draftWeight: string;
   draftReps: string;
   onChangeWeight: (t: string) => void;
@@ -283,7 +293,7 @@ function HevySetEditor({
         />
       ) : null}
       <StepperField
-        label="WDH."
+        label={isHold ? "SEK." : "WDH."}
         value={draftReps}
         onChangeText={onChangeReps}
         onCommit={onCommitReps}
@@ -605,6 +615,7 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
         <HevySetEditor
           setIndex={props.setIndex}
           isBodyweight={isBodyweight}
+          isHold={props.isHold}
           draftWeight={draft.weight}
           draftReps={draft.reps}
           onChangeWeight={(t) => {

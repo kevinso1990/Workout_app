@@ -63,6 +63,28 @@ export function isMobilityExercise(name: string): boolean {
 }
 
 /**
+ * Isometric "hold" moves are logged in SECONDS, not reps (e.g. Dead Hang,
+ * Plank, Wall Sit, L-Sit). Stretches also count as timed holds. Keyed on the
+ * name since the catalog has no isometric flag.
+ */
+const HOLD_PATTERNS = [
+  "hold",
+  "hang",
+  "plank",
+  "wall sit",
+  "l-sit",
+  "hollow",
+  "superman",
+  "isometric",
+  "bird dog",
+  "dead bug",
+];
+export function isHoldExercise(name: string): boolean {
+  const n = name.toLowerCase();
+  return isMobilityExercise(name) || HOLD_PATTERNS.some((p) => n.includes(p));
+}
+
+/**
  * Consistent accent color per muscle group, shared across the catalog grid,
  * plan detail view, and exercise picker rows — single source of truth is
  * MUSCLE_GROUP_META (also used for the exercise detail modal's icon+color badge).

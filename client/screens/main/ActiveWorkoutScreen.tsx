@@ -32,7 +32,7 @@ import {
   type PickerExercise,
 } from "@/components/workout/ExercisePickerModal";
 import { isBodyweightExercise } from "@/lib/exerciseBodyweight";
-import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, getMuscleGroupColor, isHoldExercise } from "@/lib/exerciseTaxonomy";
 import { HEVY } from "@/constants/hevyLayout";
 import { WEIGHT_SLIDER_STEP_KG } from "@/lib/activeWorkoutSetFormat";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -2042,6 +2042,7 @@ export default function ActiveWorkoutScreen() {
             );
             const progression = getProgressionForExercise(exIdx);
             const isBodyweight = isBodyweightExercise(exercise);
+            const isHold = isHoldExercise(exercise.name);
             const isCurrentExercise = exIdx === currentExerciseIndex;
 
             return (
@@ -2178,7 +2179,7 @@ export default function ActiveWorkoutScreen() {
                     { backgroundColor: HEVY.surface, overflow: "hidden" },
                   ]}
                 >
-                  <HevySetGridHeader isBodyweight={isBodyweight} />
+                  <HevySetGridHeader isBodyweight={isBodyweight} isHold={isHold} />
                   {ep.sets.map((setData, setIdx) => {
                     const isActiveSet =
                       exIdx === currentExerciseIndex && setIdx === currentSetIndex;
@@ -2200,6 +2201,7 @@ export default function ActiveWorkoutScreen() {
                         isBodyweight={isBodyweight}
                         isActive={isActiveSet}
                         isPR={isSetPR}
+                        isHold={isHold}
                         targetReps={
                           exercise.targetReps != null &&
                           Number.isFinite(exercise.targetReps)
