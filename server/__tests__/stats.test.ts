@@ -95,6 +95,14 @@ describe("getTotals() — streak calculation", () => {
   });
 
   it("correctly counts consecutive weeks as a streak", async () => {
+    // Format a Date as a LOCAL YYYY-MM-DD. Using toISOString() here was flaky:
+    // it converts to UTC, so near midnight / week boundaries the stored date
+    // could shift into the wrong week and break the 3-week streak expectation.
+    const ymd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate(),
+      ).padStart(2, "0")}`;
+
     // Insert sessions for the current week and the two preceding weeks
     const now = new Date();
     const thisMonday = new Date(now);
@@ -105,21 +113,15 @@ describe("getTotals() — streak calculation", () => {
     const twoWeeksAgo = new Date(thisMonday);
     twoWeeksAgo.setDate(thisMonday.getDate() - 14);
 
-    await logSession(
-      `${thisMonday.toISOString().split("T")[0]}T10:00:00`,
-      `${thisMonday.toISOString().split("T")[0]}T11:00:00`,
-      [{ weight: 80, reps: 5 }]
-    );
-    await logSession(
-      `${weekAgo.toISOString().split("T")[0]}T10:00:00`,
-      `${weekAgo.toISOString().split("T")[0]}T11:00:00`,
-      [{ weight: 77.5, reps: 5 }]
-    );
-    await logSession(
-      `${twoWeeksAgo.toISOString().split("T")[0]}T10:00:00`,
-      `${twoWeeksAgo.toISOString().split("T")[0]}T11:00:00`,
-      [{ weight: 75, reps: 5 }]
-    );
+    await logSession(`${ymd(thisMonday)}T10:00:00`, `${ymd(thisMonday)}T11:00:00`, [
+      { weight: 80, reps: 5 },
+    ]);
+    await logSession(`${ymd(weekAgo)}T10:00:00`, `${ymd(weekAgo)}T11:00:00`, [
+      { weight: 77.5, reps: 5 },
+    ]);
+    await logSession(`${ymd(twoWeeksAgo)}T10:00:00`, `${ymd(twoWeeksAgo)}T11:00:00`, [
+      { weight: 75, reps: 5 },
+    ]);
 
     const res = await request(app)
       .get("/api/stats/totals")
