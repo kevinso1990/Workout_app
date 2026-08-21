@@ -1014,7 +1014,7 @@ function EmptyState() {
         ]}
         testID="button-progress-empty-start"
       >
-        <Feather name="play" size={18} color="#FFFFFF" />
+        <Feather name="play" size={18} color={Colors.light.onChalk} />
         <ThemedText style={styles.emptyCtaText}>
           {t("progress.startFirstWorkout")}
         </ThemedText>

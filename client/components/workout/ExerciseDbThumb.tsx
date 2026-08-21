@@ -10,6 +10,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { fetchExerciseGif } from "@/services/exerciseApi";
 import { getExerciseImageUrl } from "@/lib/exerciseImages";
+import { Colors } from "@/constants/theme";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { ExerciseGifSkeleton } from "@/components/workout/ExerciseGifSkeleton";
 
@@ -96,7 +97,7 @@ export function ExerciseDbThumb({
         // newly-added moves like Dead Hang) — show a neutral dumbbell glyph so
         // the tile looks intentional instead of blank or leaking a config hint.
         <View style={styles.placeholderWrap}>
-          <MaterialCommunityIcons name="dumbbell" size={22} color="#B0B0B8" />
+          <MaterialCommunityIcons name="dumbbell" size={22} color={Colors.dark.chalkFaint} />
         </View>
       ) : null}
     </>
@@ -125,7 +126,7 @@ export function ExerciseDbThumb({
 const styles = StyleSheet.create({
   frame: {
     overflow: "hidden",
-    backgroundColor: "#F2F2F7",
+    backgroundColor: Colors.dark.ironElevated2,
   },
   image: {
     width: "100%",
@@ -138,6 +139,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F2F2F7",
+    backgroundColor: Colors.dark.ironElevated2,
   },
 });

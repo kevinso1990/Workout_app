@@ -24,14 +24,17 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>("light");
+  // "Chalk & Iron" is a committed dark identity — dark is the default and
+  // the palette is identical in both schemes, so this only drives StatusBar
+  // and any isDark checks. 'light' is honoured if a user explicitly picks it.
+  const [mode, setModeState] = useState<ThemeMode>("dark");
   const systemScheme = useColorScheme();
 
-  // Load persisted theme on mount.
-  // 'dark' is the only value we honour — everything else (null, 'system', 'light') maps to light.
+  // Load persisted theme on mount. Default to dark; only an explicit stored
+  // 'light' switches away from the Chalk & Iron dark default.
   useEffect(() => {
     AsyncStorage.getItem(THEME_STORAGE_KEY).then((saved) => {
-      setModeState(saved === "dark" ? "dark" : "light");
+      setModeState(saved === "light" ? "light" : "dark");
     });
   }, []);
 

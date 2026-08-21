@@ -8,6 +8,22 @@ import {
   Montserrat_600SemiBold,
   Montserrat_700Bold,
 } from "@expo-google-fonts/montserrat";
+import {
+  Oswald_500Medium,
+  Oswald_600SemiBold,
+  Oswald_700Bold,
+} from "@expo-google-fonts/oswald";
+import {
+  Archivo_400Regular,
+  Archivo_500Medium,
+  Archivo_600SemiBold,
+  Archivo_700Bold,
+} from "@expo-google-fonts/archivo";
+import {
+  IBMPlexMono_400Regular,
+  IBMPlexMono_500Medium,
+  IBMPlexMono_600SemiBold,
+} from "@expo-google-fonts/ibm-plex-mono";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -28,6 +44,7 @@ import {
 } from "@/navigation/ActiveWorkoutRecovery";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { initDataSync } from "@/lib/dataSync";
+import { hydrateExerciseNameCatalog } from "@/lib/exerciseNameCatalog";
 import { registerWebServiceWorker } from "@/lib/installWebGlobalErrorHandlers";
 
 // Provider ordering rationale (outside-in):
@@ -56,9 +73,23 @@ export default function AppNative() {
     Montserrat_500Medium,
     Montserrat_600SemiBold,
     Montserrat_700Bold,
+    Oswald_500Medium,
+    Oswald_600SemiBold,
+    Oswald_700Bold,
+    Archivo_400Regular,
+    Archivo_500Medium,
+    Archivo_600SemiBold,
+    Archivo_700Bold,
+    IBMPlexMono_400Regular,
+    IBMPlexMono_500Medium,
+    IBMPlexMono_600SemiBold,
   });
 
   useEffect(() => initDataSync(), []);
+
+  useEffect(() => {
+    void hydrateExerciseNameCatalog();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === "web" && typeof window !== "undefined") {

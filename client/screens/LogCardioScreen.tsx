@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Colors } from "@/constants/theme";
 import {
   View,
   StyleSheet,
@@ -44,8 +45,8 @@ const SPORTS: CardioSportType[] = [
 // calendar's cardio markers) — using it here instead of the muted slate
 // primary gives the screen energy and a distinct feel.
 const CARDIO_ACCENT = "#D97706";
-const CARDIO_SOFT = "#FEF3C7";
-const CARDIO_ACCENT_DARK = "#92400E";
+const CARDIO_SOFT = Colors.dark.ironElevated2;
+const CARDIO_ACCENT_DARK = Colors.dark.chalk;
 
 const SPORT_EMOJI: Record<CardioSportType, string> = {
   running: "🏃",
@@ -311,7 +312,7 @@ export default function LogCardioScreen() {
           disabled={saving}
           testID="button-save-cardio"
         >
-          <Feather name="check" size={18} color="#FFFFFF" />
+          <Feather name="check" size={18} color={Colors.light.onChalk} />
           <ThemedText style={styles.saveBtnText}>
             {saving ? t("logCardio.saving") : t("logCardio.save")}
           </ThemedText>
@@ -358,19 +359,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: BorderRadius.full,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.backgroundDefault,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: Colors.light.hairline,
   },
   chipActive: {
     backgroundColor: CARDIO_SOFT,
     borderColor: CARDIO_ACCENT,
   },
   chipEmoji: { fontSize: 16 },
-  chipText: { fontSize: 14, fontWeight: "600", color: "#4B5563" },
+  chipText: { fontSize: 14, fontWeight: "600", color: Colors.light.chalkDim },
   chipTextActive: { color: CARDIO_ACCENT_DARK, fontWeight: "700" },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.backgroundDefault,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginTop: Spacing.md,
@@ -453,5 +454,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  saveBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
+  saveBtnText: { color: Colors.light.onChalk, fontWeight: "700", fontSize: 16 },
 });

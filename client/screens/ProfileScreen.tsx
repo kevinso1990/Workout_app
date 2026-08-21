@@ -696,7 +696,7 @@ function CloudBackupCard() {
                 ]}
                 testID="button-restore-confirm"
               >
-                <ThemedText style={[styles.cloudButtonText, { color: "#FFFFFF" }]}>
+                <ThemedText style={[styles.cloudButtonText, { color: Colors.light.onChalk }]}>
                   {t("profile.cloudLoad")}
                 </ThemedText>
               </Pressable>
@@ -1364,7 +1364,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairline,
   },
   bodyStatsHeader: {
     flexDirection: "row",
@@ -1470,7 +1470,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   measurementSaveText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "600",
   },

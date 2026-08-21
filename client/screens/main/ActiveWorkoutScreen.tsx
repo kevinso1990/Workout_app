@@ -32,7 +32,7 @@ import {
   type PickerExercise,
 } from "@/components/workout/ExercisePickerModal";
 import { isBodyweightExercise } from "@/lib/exerciseBodyweight";
-import { translateMuscleGroup, getMuscleGroupColor, isHoldExercise } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, isHoldExercise } from "@/lib/exerciseTaxonomy";
 import { HEVY } from "@/constants/hevyLayout";
 import { WEIGHT_SLIDER_STEP_KG } from "@/lib/activeWorkoutSetFormat";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -54,6 +54,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -629,7 +630,7 @@ function WorkoutSummary({
               <View style={styles.shareCardPRList}>
                 {prs.map((pr) => (
                   <View key={pr.exerciseName} style={styles.shareCardPR}>
-                    <Feather name="award" size={14} color="#B8860B" />
+                    <Feather name="award" size={14} color={theme.plateMedium} />
                     <ThemedText style={styles.shareCardPRText}>
                       {pr.exerciseName} — {pr.weight}kg × {pr.reps}
                     </ThemedText>
@@ -738,6 +739,7 @@ export default function ActiveWorkoutScreen() {
   const route = useRoute<ActiveWorkoutRouteProp>();
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const localizeName = useLocalizeExerciseName();
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
   const [lastWeekProgress, setLastWeekProgress] = useState<ExerciseProgress[]>(
@@ -1887,9 +1889,9 @@ export default function ActiveWorkoutScreen() {
                 <Switch
                   value={restTimerEnabled}
                   onValueChange={persistRestTimerPreference}
-                  trackColor={{ false: "#E5E5EA", true: "#34C759" }}
-                  thumbColor="#FFFFFF"
-                  ios_backgroundColor="#E5E5EA"
+                  trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
+                  thumbColor={theme.chalk}
+                  ios_backgroundColor={theme.ironElevated3}
                   style={styles.headerRestSwitch}
                   testID="switch-rest-timer-header"
                   accessibilityLabel={t("activeWorkout.restTimer")}
@@ -1950,10 +1952,11 @@ export default function ActiveWorkoutScreen() {
               const totalCount = ep?.sets.length ?? exercise.sets;
               const isDone = completedCount >= totalCount && totalCount > 0;
               const isCurrent = exIdx === currentExerciseIndex;
+              const localizedName = localizeName(exercise.name);
               const shortName =
-                exercise.name.length > 14
-                  ? `${exercise.name.slice(0, 13)}…`
-                  : exercise.name;
+                localizedName.length > 14
+                  ? `${localizedName.slice(0, 13)}…`
+                  : localizedName;
 
               return (
                 <Pressable
@@ -2064,13 +2067,13 @@ export default function ActiveWorkoutScreen() {
                         style={styles.exerciseName}
                         numberOfLines={2}
                       >
-                        {exercise.name}
+                        {localizeName(exercise.name)}
                       </ThemedText>
                       <View style={styles.exerciseMeta}>
                         <ThemedText
                           style={[
                             styles.metaMuscleLabel,
-                            { color: getMuscleGroupColor(exercise.muscleGroup) },
+                            { color: HEVY.textSecondary },
                           ]}
                           numberOfLines={1}
                         >
@@ -2361,7 +2364,8 @@ export default function ActiveWorkoutScreen() {
                 style={[
                   styles.bottomNavBtn,
                   {
-                    borderColor: theme.border,
+                    borderColor: theme.chalk,
+                    backgroundColor: theme.chalk,
                     opacity:
                       currentExerciseIndex >= day.exercises.length - 1
                         ? 0.35
@@ -2372,7 +2376,7 @@ export default function ActiveWorkoutScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t("activeWorkout.nextExercise")}
               >
-                <Feather name="chevron-right" size={22} color={theme.text} />
+                <Feather name="chevron-right" size={22} color={theme.iron} />
               </Pressable>
             </View>
           )}
@@ -2439,7 +2443,7 @@ const styles = StyleSheet.create({
   dayTitle: {
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     width: "100%",
   },
@@ -2495,7 +2499,7 @@ const styles = StyleSheet.create({
   },
   exerciseChipLabel: {
     fontSize: 13,
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   exerciseChipMeta: {
     fontSize: 11,
@@ -2629,9 +2633,11 @@ const styles = StyleSheet.create({
   },
   exerciseName: {
     fontSize: 26,
-    lineHeight: 32,
+    lineHeight: 30,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
     marginBottom: Spacing.sm,
     flexShrink: 1,
     flexWrap: "wrap",
@@ -2651,7 +2657,7 @@ const styles = StyleSheet.create({
   targetSetsLine: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   coachHintBanner: {
     flexDirection: "row",
@@ -2731,7 +2737,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   activeSetInfo: {
     flex: 1,
@@ -2739,7 +2745,7 @@ const styles = StyleSheet.create({
   activeSetTitle: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: 2,
   },
   lastWeekBadge: {
@@ -2814,13 +2820,13 @@ const styles = StyleSheet.create({
   sliderValue: {
     fontSize: 24,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   sliderValueHero: {
     fontSize: 34,
     lineHeight: 40,
     fontWeight: "800",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   sliderUnit: {
     fontSize: 14,
@@ -2841,7 +2847,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 24,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   inputUnit: {
     fontSize: 16,
@@ -2936,7 +2942,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   finishButton: {
     flexDirection: "row",
@@ -2950,7 +2956,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   skipButton: {
     alignItems: "center",
@@ -2985,7 +2991,7 @@ const styles = StyleSheet.create({
   manualModalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     marginBottom: Spacing.xs,
   },
   manualModalHint: {
@@ -3077,7 +3083,7 @@ const styles = StyleSheet.create({
   prTitle: {
     fontSize: 22,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     width: "100%",
   },
@@ -3090,7 +3096,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 24,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     textAlign: "center",
     width: "100%",
     flexWrap: "wrap",
@@ -3126,7 +3132,7 @@ const styles = StyleSheet.create({
   prStatBoxValue: {
     fontSize: 28,
     fontWeight: "800",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     width: "100%",
     maxWidth: "100%",
@@ -3150,7 +3156,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   summaryOverlay: {
     // Sits above all workout content; zIndex keeps it above sibling views.
@@ -3173,7 +3179,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 28,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     marginBottom: Spacing.sm,
   },
@@ -3197,7 +3203,7 @@ const styles = StyleSheet.create({
   summaryStatValue: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   summaryStatLabel: {
     fontSize: 12,
@@ -3217,7 +3223,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   summaryBottom: {
     position: "absolute",
@@ -3237,7 +3243,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   shareableCard: {
     borderRadius: BorderRadius.xl,
@@ -3261,7 +3267,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   shareCardDate: {
     color: "rgba(255,255,255,0.9)",
@@ -3278,7 +3284,7 @@ const styles = StyleSheet.create({
   shareCardTitle: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
   },
   shareCardSubtitle: {
@@ -3298,7 +3304,7 @@ const styles = StyleSheet.create({
   shareCardStatValue: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   shareCardStatLabel: {
     fontSize: 11,
@@ -3325,7 +3331,7 @@ const styles = StyleSheet.create({
   shareCardPRText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#B8860B",
+    color: Colors.light.plateMedium,
     flexShrink: 1,
   },
   shareActions: {
@@ -3345,7 +3351,7 @@ const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   plateModalOverlay: {
     flex: 1,
@@ -3367,7 +3373,7 @@ const styles = StyleSheet.create({
   plateTitle: {
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   plateBarSection: {
     flexDirection: "row",
@@ -3381,7 +3387,7 @@ const styles = StyleSheet.create({
   plateValue: {
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   plateDivider: {
     paddingVertical: Spacing.md,
@@ -3442,7 +3448,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   logHint: {
     fontSize: 12,
@@ -3476,7 +3482,7 @@ const styles = StyleSheet.create({
   difficultyLabel: {
     fontSize: 12,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   difficultyBack: {
     paddingVertical: Spacing.xs,
@@ -3537,7 +3543,7 @@ const styles = StyleSheet.create({
   targetWeight: {
     fontSize: 28,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   targetReps: {
     fontSize: 16,

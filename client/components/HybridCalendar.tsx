@@ -114,7 +114,7 @@ export function HybridCalendar({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.backgroundDefault,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
   },

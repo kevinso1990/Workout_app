@@ -1,4 +1,5 @@
 import React from "react";
+import { Colors } from "@/constants/theme";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#121212",
+    color: Colors.dark.chalk,
     letterSpacing: -0.5,
     lineHeight: 30,
     paddingTop: 16,

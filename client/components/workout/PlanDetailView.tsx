@@ -5,14 +5,15 @@ import { useTranslation } from "react-i18next";
 import { Feather } from "@expo/vector-icons";
 
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
-import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
+import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { HEVY } from "@/constants/hevyLayout";
 import { Colors } from "@/constants/theme";
 import type { Exercise, WorkoutDay } from "@/lib/storage";
 
-const TITLE_COLOR = "#1C1C1E";
-const META_COLOR = "#8E8E93";
-const HAIRLINE = "#ECECEF";
+const TITLE_COLOR = Colors.dark.chalk;
+const META_COLOR = Colors.dark.chalkDim;
+const HAIRLINE = Colors.dark.hairline;
 
 type PlanDetailViewProps = {
   days: WorkoutDay[];
@@ -37,6 +38,7 @@ function PlanExerciseRow({
   onExercisePress?: (exercise: Exercise) => void;
 }) {
   const { t } = useTranslation();
+  const localizeName = useLocalizeExerciseName();
   return (
     <Animated.View
       entering={FadeInDown.delay(40 + index * 24).duration(220)}
@@ -50,16 +52,16 @@ function PlanExerciseRow({
       />
       <View style={styles.exerciseBody}>
         <Text style={styles.exerciseTitle} numberOfLines={2}>
-          {exercise.name}
+          {localizeName(exercise.name)}
         </Text>
         <View
           style={[
             styles.muscleTag,
-            { backgroundColor: getMuscleGroupColor(exercise.muscleGroup) + "1A" },
+            { backgroundColor: Colors.light.ironElevated2 },
           ]}
         >
           <Text
-            style={[styles.muscleTagText, { color: getMuscleGroupColor(exercise.muscleGroup) }]}
+            style={[styles.muscleTagText, { color: Colors.light.chalkDim }]}
             numberOfLines={1}
           >
             {translateMuscleGroup(t, exercise.muscleGroup)}
@@ -111,7 +113,7 @@ function DayCard({
       </View>
       {canStart ? (
         <View style={styles.startBtn}>
-          <Feather name="play" size={14} color="#FFFFFF" />
+          <Feather name="play" size={14} color={Colors.light.onChalk} />
           <Text style={styles.startBtnText}>{t("plans.start")}</Text>
         </View>
       ) : (
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   startBtnText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayBadgeText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 18,
     fontWeight: "800",
     fontFamily: "Montserrat_700Bold",

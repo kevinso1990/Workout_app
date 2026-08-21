@@ -52,7 +52,7 @@ function SessionRow({ session }: { session: WorkoutSession }) {
       <View
         style={[
           styles.sessionIcon,
-          { backgroundColor: cardio ? "#FEF3C7" : "#EEF2FF" },
+          { backgroundColor: Colors.light.ironElevated2 },
         ]}
       >
         <Feather
@@ -242,7 +242,7 @@ export default function CalendarScreen() {
               style={styles.primaryBtn}
               onPress={() => openLogCardio(selectedDateKey ?? undefined)}
             >
-              <Feather name="plus" size={18} color="#FFFFFF" />
+              <Feather name="plus" size={18} color={Colors.light.onChalk} />
               <ThemedText style={styles.primaryBtnText}>
                 {t("calendar.logCardioForDay")}
               </ThemedText>
@@ -267,7 +267,7 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F5F5F7" },
+  screen: { flex: 1, backgroundColor: Colors.light.backgroundRoot },
   heading: { fontSize: 28, fontWeight: "700", marginBottom: 4 },
   subtitle: { fontSize: 14, opacity: 0.65, marginBottom: Spacing.lg },
   monthNav: {
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.backgroundDefault,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.backgroundDefault,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
   },
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.backgroundDefault,
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#D1D5DB",
+    backgroundColor: Colors.light.chalkFaint,
     alignSelf: "center",
     marginBottom: Spacing.md,
   },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: Colors.light.hairline,
   },
   sessionIcon: {
     width: 40,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: Spacing.lg,
   },
-  primaryBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: Colors.light.onChalk, fontWeight: "700", fontSize: 15 },
   secondaryBtn: {
     alignItems: "center",
     paddingVertical: 14,

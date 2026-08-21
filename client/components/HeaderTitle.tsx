@@ -1,30 +1,33 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ThemedText } from "@/components/ThemedText";
+import { FontFamily } from "@/constants/theme";
 
 interface HeaderTitleProps {
   title?: string;
-  /** When true, show brand logo instead of text (default for My Plans). */
+  /** When true, show brand wordmark instead of text (default for My Plans). */
   brand?: boolean;
 }
 
 export function HeaderTitle({ title, brand = false }: HeaderTitleProps) {
-  const insets = useSafeAreaInsets();
-
+  // React Navigation already positions the title inside the (safe-area aware)
+  // header bar — adding our own top inset here pushed the mark down into the
+  // page content, where it floated over the list. Let the header place it.
   if (brand || !title || title === "TrackYourLift" || title === "Track Your Lift") {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <BrandLogo height={38} centered />
+      <View style={styles.container}>
+        <BrandLogo height={26} centered />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ThemedText style={styles.title}>{title}</ThemedText>
+    <View style={styles.container}>
+      <ThemedText style={styles.title} numberOfLines={1}>
+        {title}
+      </ThemedText>
     </View>
   );
 }
@@ -33,11 +36,11 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
   },
   title: {
     fontSize: 17,
-    fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: FontFamily.displaySemi,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
 });

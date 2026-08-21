@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+
+import { Colors } from "@/constants/theme";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -19,8 +21,8 @@ type ExerciseGifSkeletonProps = {
 /** Fixed-size pulsing placeholder while an exercise GIF loads. */
 export function ExerciseGifSkeleton({
   style,
-  baseColor = "#E8E8ED",
-  pulseColor = "#F4F4F8",
+  baseColor = Colors.dark.ironElevated2,
+  pulseColor = Colors.dark.ironElevated3,
 }: ExerciseGifSkeletonProps) {
   const opacity = useSharedValue(0.35);
 

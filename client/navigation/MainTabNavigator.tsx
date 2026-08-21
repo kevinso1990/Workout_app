@@ -73,7 +73,7 @@ export default function MainTabNavigator() {
             }),
           },
           sceneStyle: {
-            backgroundColor: "#F5F5F7",
+            backgroundColor: theme.backgroundRoot,
           },
         }}
       >

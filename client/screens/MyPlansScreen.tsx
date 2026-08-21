@@ -55,6 +55,7 @@ import {
   type SplitRefreshOffer,
 } from "@/lib/splitRefreshEvaluation";
 import { SplitRefreshBanner } from "@/components/SplitRefreshBanner";
+import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -75,8 +76,13 @@ function PlanCard({
   onOpenMenu: () => void;
 }) {
   const { t } = useTranslation();
+  const localizeName = useLocalizeExerciseName();
   const scale = useSharedValue(1);
-  const exerciseLine = useMemo(() => firstDayExercisePreview(plan), [plan]);
+  const exerciseLine = useMemo(
+    () =>
+      (plan.days[0]?.exercises.map((e) => localizeName(e.name)).filter(Boolean) ?? []).join(", "),
+    [plan, localizeName],
+  );
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -312,7 +318,7 @@ function RenamePlanModal({
               ]}
               testID="button-rename-save"
             >
-              <ThemedText style={[styles.renameBtnText, { color: "#FFFFFF" }]}>
+              <ThemedText style={[styles.renameBtnText, { color: Colors.light.onChalk }]}>
                 {t("plans.menu.save")}
               </ThemedText>
             </Pressable>
@@ -379,7 +385,7 @@ function EmptyState({
         ]}
         testID="button-create-first-plan"
       >
-        <Feather name="zap" size={20} color="#FFFFFF" />
+        <Feather name="zap" size={20} color={Colors.light.onChalk} />
         <ThemedText style={styles.emptyPrimaryBtnText}>
           {t("plans.emptyState.generatePrimary")}
         </ThemedText>
@@ -823,7 +829,7 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 16,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     color: HEVY.textPrimary,
     marginBottom: 4,
     paddingRight: 36,
@@ -872,7 +878,7 @@ const styles = StyleSheet.create({
   coachCardTitle: {
     fontSize: 14,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     color: HEVY.textPrimary,
     marginBottom: Spacing.xs,
   },
@@ -903,7 +909,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     color: HEVY.textPrimary,
     letterSpacing: -0.3,
@@ -926,10 +932,10 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   emptyPrimaryBtnText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     flexShrink: 1,
   },
   emptySecondaryBtn: {
@@ -947,7 +953,7 @@ const styles = StyleSheet.create({
   emptySecondaryBtnText: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     color: HEVY.textPrimary,
     flexShrink: 1,
   },
@@ -972,7 +978,7 @@ const styles = StyleSheet.create({
   importBannerTitle: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     color: HEVY.textPrimary,
   },
   importBannerSubtitle: {
@@ -987,10 +993,10 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   importBannerButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   importBannerDismiss: {
     position: "absolute",
@@ -1018,7 +1024,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 15,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     marginBottom: Spacing.sm,
   },
@@ -1044,7 +1050,7 @@ const styles = StyleSheet.create({
   sheetCancelText: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   renameOverlay: {
     flex: 1,
@@ -1062,7 +1068,7 @@ const styles = StyleSheet.create({
   renameTitle: {
     fontSize: 17,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     marginBottom: Spacing.md,
   },
   renameInput: {
@@ -1089,6 +1095,6 @@ const styles = StyleSheet.create({
   renameBtnText: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
 });

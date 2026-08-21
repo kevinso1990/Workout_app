@@ -14,6 +14,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 
 import { HEVY } from "@/constants/hevyLayout";
+import { Colors, FontFamily, plateColor, loadTier } from "@/constants/theme";
 import type { SetData } from "@/lib/storage";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
@@ -26,12 +27,16 @@ import {
 // couldn't hit 32/33. Exact/half-kg weights are still enterable by typing.
 const WEIGHT_STEP_KG = 1;
 
-const ROW_SEPARATOR = "#E5E5EA";
-const CELL_TEXT = "#121212";
-const LOG_CHECK_BORDER = "#D1D1D6";
-const LOG_CHECK_GREEN = "#34C759";
-const FIELD_ALERT_BG = "rgba(255, 149, 0, 0.28)";
-const ACTIVE_ROW_BG = "rgba(79, 142, 247, 0.06)";
+// Chalk & Iron: committed dark, so the static dark palette is used directly.
+const C = Colors.dark;
+const ROW_SEPARATOR = C.hairline;
+const CELL_TEXT = C.chalk;
+const LOG_CHECK_BORDER = C.hairlineStrong;
+// Completing a set fills the box with chalk (the primary "done" mark), not a
+// green tick — colour in this identity is reserved for load, not status.
+const DONE_FILL = C.chalk;
+const FIELD_ALERT_BG = "rgba(203, 58, 44, 0.30)"; // plate-heavy wash
+const ACTIVE_ROW_BG = "rgba(236,233,225,0.045)";
 
 type SetRating = "green" | "yellow" | "red" | null;
 
@@ -357,8 +362,17 @@ export function HevySetRow({
 
   const previousLabel = formatPrevious(lastWeekData, isBodyweight);
   const repsNum = parseInt(String(setData.reps).replace(/\D/g, ""), 10) || 0;
+  const weightNum = parseFloat(String(setData.weight).replace(",", ".")) || 0;
   const weightDisplay = setData.weight?.trim() ? setData.weight : "—";
   const repsDisplay = setData.reps?.trim() ? setData.reps : "—";
+
+  // Plate spine: the row's left edge is coloured by load. Warm-ups read as the
+  // light plate; sets with no weight yet stay neutral until a weight is entered.
+  const spineColor = isWarmup
+    ? C.plateLight
+    : weightNum > 0
+      ? plateColor(loadTier(weightNum))
+      : C.hairlineStrong;
 
   const handleCheck = () => {
     // Tapping a completed set un-checks it and reactivates it for editing —
@@ -392,6 +406,7 @@ export function HevySetRow({
       }}
       style={[
         styles.row,
+        { borderLeftWidth: 3, borderLeftColor: spineColor },
         isActive && !setData.completed && styles.rowActive,
         rowMuted && styles.rowMuted,
         setData.completed && styles.rowCompleted,
@@ -420,7 +435,7 @@ export function HevySetRow({
       <View style={styles.colPrev}>
         {isPR ? (
           <View style={styles.prBadge}>
-            <Feather name="award" size={11} color="#FFFFFF" />
+            <Feather name="award" size={11} color={C.iron} />
             <Text style={styles.prBadgeText}>PR</Text>
           </View>
         ) : (
@@ -493,10 +508,10 @@ export function HevySetRow({
             size={setData.completed ? 16 : 14}
             color={
               setData.completed
-                ? "#FFFFFF"
+                ? C.iron
                 : isActive
-                  ? LOG_CHECK_GREEN + "99"
-                  : LOG_CHECK_BORDER
+                  ? C.chalkDim
+                  : C.chalkFaint
             }
             style={!setData.completed ? styles.checkIconIdle : undefined}
           />
@@ -666,10 +681,12 @@ const styles = StyleSheet.create({
     borderBottomColor: ROW_SEPARATOR,
   },
   rowMuted: {
-    opacity: 0.55,
+    // On the dark iron ground, 0.55 buried upcoming sets almost completely.
+    // Keep them clearly readable but still secondary to the active row.
+    opacity: 0.82,
   },
   rowCompleted: {
-    opacity: 0.88,
+    opacity: 0.95,
   },
   colSet: {
     width: "10%",
@@ -700,27 +717,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerLabel: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 10,
+    fontFamily: FontFamily.displaySemi,
     color: HEVY.textMuted,
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
     textAlign: "center",
   },
   setNum: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontFamily: FontFamily.mono,
     color: CELL_TEXT,
     textAlign: "center",
   },
   prevText: {
     fontSize: 13,
-    fontWeight: "400",
+    fontFamily: FontFamily.body,
     color: HEVY.textSecondary,
   },
   warmupBadge: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#D97706",
+    fontSize: 13,
+    fontFamily: FontFamily.display,
+    color: C.plateMedium,
+    letterSpacing: 0.5,
     textAlign: "center",
   },
   prBadge: {
@@ -728,16 +746,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
     alignSelf: "flex-start",
-    backgroundColor: "#D97706",
-    borderRadius: 6,
+    backgroundColor: C.plateMedium,
+    borderRadius: 5,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   prBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.3,
+    fontSize: 10,
+    fontFamily: FontFamily.display,
+    color: C.iron,
+    letterSpacing: 0.4,
   },
   cellPress: {
     width: "100%",
@@ -745,14 +763,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cellValue: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontFamily: FontFamily.mono,
     color: CELL_TEXT,
     textAlign: "center",
     width: "100%",
   },
   cellValueAlert: {
-    color: "#C93400",
+    color: C.plateHeavy,
   },
   alertCellWrap: {
     width: "100%",
@@ -778,11 +796,11 @@ const styles = StyleSheet.create({
   },
   checkBoxReady: {
     borderColor: LOG_CHECK_BORDER,
-    backgroundColor: LOG_CHECK_GREEN + "0A",
+    backgroundColor: "rgba(236,233,225,0.06)",
   },
   checkBoxDone: {
-    borderColor: LOG_CHECK_GREEN,
-    backgroundColor: LOG_CHECK_GREEN,
+    borderColor: DONE_FILL,
+    backgroundColor: DONE_FILL,
   },
   checkIconIdle: {
     opacity: 0.5,
@@ -803,8 +821,8 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontFamily: FontFamily.displaySemi,
+    letterSpacing: 1.2,
     color: HEVY.textMuted,
     textAlign: "center",
   },
@@ -827,8 +845,8 @@ const styles = StyleSheet.create({
   stepInput: {
     flex: 1,
     height: 40,
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontFamily: FontFamily.mono,
     color: CELL_TEXT,
     textAlign: "center",
     paddingVertical: 0,

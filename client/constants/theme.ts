@@ -1,47 +1,111 @@
 import { Platform } from "react-native";
 
-/** Warm amber — active controls, primary actions, slider tracks. Energetic but
- * warmer than pure orange; replaces the muted slate that felt flat. */
-const activeColor = "#D97706";
-/** Orange reserved ONLY for completed-set checkbox 1px indicators. */
-export const setCompleteAccent = "#FF4D00";
+/**
+ * TrackYourLift — "Chalk & Iron" design language.
+ *
+ * Iron is structure (ground, cards, frame). Chalk is ink AND the primary
+ * action (the primary button is chalk-filled, not a coloured CTA). The
+ * competition-plate colours (green → yellow → red) are reserved to encode
+ * LOAD intensity and nothing else. No glow: depth comes from material —
+ * hairlines, matte surfaces, knurl texture.
+ *
+ * This is a committed dark identity, so `light` and `dark` intentionally
+ * resolve to the same Chalk & Iron palette. Every one of the ~47 screens
+ * reads its colours from here via useTheme(), so restyling happens centrally.
+ */
+
+// Iron — structural greys, warm-neutral (a hint of green-grey, not pure).
+const iron = "#191B1D";
+const ironElevated = "#212427";
+const ironElevated2 = "#2A2E32";
+const ironElevated3 = "#33383D";
+
+// Chalk — warm off-white ink, and the colour of the primary action.
+const chalk = "#ECE9E1";
+const chalkDim = "#9BA09A";
+const chalkFaint = "#686D69";
+const onChalk = "#191B1D"; // iron text sitting on a chalk-filled surface
+
+// Hairlines — chalk at low alpha over iron.
+const hairline = "rgba(236,233,225,0.09)";
+const hairlineStrong = "rgba(236,233,225,0.17)";
+
+// Plate colours — LOAD intensity only. Do not use for decoration.
+const plateLight = "#2FA35F"; // green  — warm-up / isolation
+const plateMedium = "#E8B10E"; // yellow — working sets
+const plateHeavy = "#CB3A2C"; // red    — top set / PR zone
+const plateInfo = "#2E77BE"; // blue   — informational links / neutral accent
+
+/** The primary action colour is chalk itself. */
+const primaryColor = chalk;
+/** Completed-set indicator fills with chalk (was a bright orange tick). */
+export const setCompleteAccent = chalk;
+
+const palette = {
+  text: chalk,
+  textSecondary: chalkDim,
+  buttonText: onChalk,
+  tabIconDefault: chalkFaint,
+  tabIconSelected: chalk,
+  link: plateInfo,
+  primary: primaryColor,
+  setCompleteAccent,
+  backgroundRoot: iron,
+  backgroundDefault: ironElevated,
+  backgroundSecondary: ironElevated2,
+  backgroundTertiary: ironElevated3,
+  border: hairlineStrong,
+  success: plateLight,
+  error: plateHeavy,
+
+  // --- Chalk & Iron additions (new semantic tokens) ---
+  iron,
+  ironElevated,
+  ironElevated2,
+  ironElevated3,
+  chalk,
+  chalkDim,
+  chalkFaint,
+  onChalk,
+  hairline,
+  hairlineStrong,
+  plateLight,
+  plateMedium,
+  plateHeavy,
+  plateInfo,
+};
 
 export const Colors = {
-  light: {
-    text: "#1A1A1A",
-    textSecondary: "#6B6B6B",
-    buttonText: "#FFFFFF",
-    tabIconDefault: "#6B6B6B",
-    tabIconSelected: activeColor,
-    link: activeColor,
-    primary: activeColor,
-    setCompleteAccent,
-    backgroundRoot: "#FAFAFA",
-    backgroundDefault: "#FFFFFF",
-    backgroundSecondary: "#F5F5F5",
-    backgroundTertiary: "#EEEEEE",
-    border: "#E0E0E0",
-    success: "#00C853",
-    error: "#D32F2F",
-  },
-  dark: {
-    text: "#ECEDEE",
-    textSecondary: "#9BA1A6",
-    buttonText: "#FFFFFF",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: activeColor,
-    link: activeColor,
-    primary: activeColor,
-    setCompleteAccent,
-    backgroundRoot: "#121212",
-    backgroundDefault: "#1A1A1A",
-    backgroundSecondary: "#252525",
-    backgroundTertiary: "#303030",
-    border: "#333333",
-    success: "#00C853",
-    error: "#FF5252",
-  },
+  light: palette,
+  dark: palette,
 };
+
+/** Maps a load tier to its plate colour. Use for spines, dots, tier chips. */
+export type LoadTier = "light" | "medium" | "heavy";
+export function plateColor(tier: LoadTier): string {
+  return tier === "heavy"
+    ? plateHeavy
+    : tier === "medium"
+      ? plateMedium
+      : plateLight;
+}
+
+/**
+ * Classifies a working weight into a load tier relative to the exercise's
+ * best known top set, so the UI can colour it. Falls back to a coarse
+ * absolute scale when no reference is available.
+ */
+export function loadTier(weightKg: number, referenceTopKg?: number): LoadTier {
+  if (referenceTopKg && referenceTopKg > 0) {
+    const r = weightKg / referenceTopKg;
+    if (r >= 0.85) return "heavy";
+    if (r >= 0.6) return "medium";
+    return "light";
+  }
+  if (weightKg >= 60) return "heavy";
+  if (weightKg >= 25) return "medium";
+  return "light";
+}
 
 export const Spacing = {
   xs: 4,
@@ -57,84 +121,133 @@ export const Spacing = {
   buttonHeight: 52,
 };
 
-/** All surface corners use 8px — no 20+ card radii. Circles use explicit half-width in local styles when needed. */
+/** Real radius ramp — cards get generous corners, controls stay tighter. */
 export const BorderRadius = {
-  xs: 8,
+  xs: 6,
   sm: 8,
-  md: 8,
-  lg: 8,
-  xl: 8,
-  "2xl": 8,
-  "3xl": 8,
-  full: 8,
+  md: 10,
+  lg: 12,
+  xl: 14,
+  "2xl": 16,
+  "3xl": 18,
+  full: 999,
 };
 
+const OSWALD_BOLD = "Oswald_700Bold";
+const OSWALD_SEMI = "Oswald_600SemiBold";
+const OSWALD_MED = "Oswald_500Medium";
+const ARCHIVO = "Archivo_400Regular";
+const ARCHIVO_MED = "Archivo_500Medium";
+const ARCHIVO_SEMI = "Archivo_600SemiBold";
+const MONO_MED = "IBMPlexMono_500Medium";
+
+/**
+ * Oswald (condensed, uppercase) for titles — stamped-on-iron feel.
+ * Archivo for body. IBM Plex Mono for numeric values.
+ */
 export const Typography = {
   display: {
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: 30,
+    lineHeight: 32,
     fontWeight: "700" as const,
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: OSWALD_BOLD,
+    letterSpacing: 0.4,
+    textTransform: "uppercase" as const,
   },
   h1: {
     fontSize: 24,
-    lineHeight: 32,
+    lineHeight: 27,
     fontWeight: "700" as const,
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: OSWALD_BOLD,
+    letterSpacing: 0.4,
+    textTransform: "uppercase" as const,
   },
   h2: {
-    fontSize: 18,
-    lineHeight: 26,
+    fontSize: 19,
+    lineHeight: 23,
     fontWeight: "600" as const,
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: OSWALD_SEMI,
+    letterSpacing: 0.3,
+    textTransform: "uppercase" as const,
   },
   h3: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 22,
     fontWeight: "600" as const,
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: OSWALD_SEMI,
+    letterSpacing: 0.2,
   },
   h4: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "600" as const,
-    fontFamily: "Montserrat_600SemiBold",
+    fontWeight: "500" as const,
+    fontFamily: OSWALD_MED,
+    letterSpacing: 0.2,
   },
   body: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: "400" as const,
+    fontFamily: ARCHIVO,
   },
   small: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "400" as const,
+    fontFamily: ARCHIVO,
   },
   link: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400" as const,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "500" as const,
+    fontFamily: ARCHIVO_MED,
   },
+  /** Uppercase tracked micro-label — eyebrows, column heads. */
+  label: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "600" as const,
+    fontFamily: OSWALD_SEMI,
+    letterSpacing: 1.4,
+    textTransform: "uppercase" as const,
+  },
+  /** Monospace numeric readout — weights, reps, timers. */
+  numeric: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "500" as const,
+    fontFamily: MONO_MED,
+  },
+} as const;
+
+/** Named font families for ad-hoc use in component styles. */
+export const FontFamily = {
+  display: OSWALD_BOLD,
+  displaySemi: OSWALD_SEMI,
+  displayMed: OSWALD_MED,
+  body: ARCHIVO,
+  bodyMed: ARCHIVO_MED,
+  bodySemi: ARCHIVO_SEMI,
+  mono: MONO_MED,
 };
 
 export const Fonts = Platform.select({
   ios: {
-    sans: "system-ui",
+    sans: "Archivo_400Regular",
     serif: "ui-serif",
-    rounded: "ui-rounded",
-    mono: "ui-monospace",
+    rounded: "Oswald_600SemiBold",
+    mono: "IBMPlexMono_500Medium",
   },
   default: {
-    sans: "normal",
+    sans: "Archivo_400Regular",
     serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
+    rounded: "Oswald_600SemiBold",
+    mono: "IBMPlexMono_500Medium",
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: "Archivo, system-ui, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    rounded: "Oswald, system-ui, sans-serif",
+    mono: "'IBM Plex Mono', SFMono-Regular, Menlo, monospace",
   },
 });

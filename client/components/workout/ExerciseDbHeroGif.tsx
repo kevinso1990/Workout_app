@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Colors } from "@/constants/theme";
 import {
   Dimensions,
   StyleSheet,
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#F2F2F7",
+    backgroundColor: Colors.dark.ironElevated2,
   },
   frameDark: {
     backgroundColor: "#121212",

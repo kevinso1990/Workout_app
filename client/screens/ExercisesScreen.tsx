@@ -35,7 +35,7 @@ import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { getApiUrl } from "@/lib/query-client";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
-import { translateMuscleGroup, translateEquipment, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, translateEquipment, isMobilityExercise } from "@/lib/exerciseTaxonomy";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -231,7 +231,7 @@ function FilterChip({
       <ThemedText
         style={[
           styles.filterChipText,
-          { color: selected ? "#FFFFFF" : theme.text },
+          { color: selected ? Colors.light.onChalk : theme.text },
         ]}
       >
         {label}
@@ -306,13 +306,13 @@ function ExerciseCard({
         <View
           style={[
             styles.muscleTag,
-            { backgroundColor: getMuscleGroupColor(exercise.muscleGroup) + "20" },
+            { backgroundColor: Colors.light.ironElevated2 },
           ]}
         >
           <ThemedText
             style={[
               styles.muscleTagText,
-              { color: getMuscleGroupColor(exercise.muscleGroup) },
+              { color: Colors.light.chalkDim },
             ]}
           >
             {translateMuscleGroup(t, exercise.muscleGroup)}
@@ -406,7 +406,7 @@ function CreateExerciseModal({
                     <ThemedText
                       style={[
                         styles.optionChipText,
-                        { color: muscleGroup === group ? "#FFFFFF" : theme.text },
+                        { color: muscleGroup === group ? Colors.light.onChalk : theme.text },
                       ]}
                     >
                       {translateMuscleGroup(t, group)}
@@ -435,7 +435,7 @@ function CreateExerciseModal({
                     <ThemedText
                       style={[
                         styles.optionChipText,
-                        { color: equipment === equip ? "#FFFFFF" : theme.text },
+                        { color: equipment === equip ? Colors.light.onChalk : theme.text },
                       ]}
                     >
                       {translateEquipment(t, equip)}
@@ -811,18 +811,18 @@ function ExerciseProgressModal({
                     <View
                       style={[
                         styles.trendBadge,
-                        { backgroundColor: stats.volumeTrend > 0 ? "#4CAF50" + "20" : "#FF5252" + "20" },
+                        { backgroundColor: stats.volumeTrend > 0 ? Colors.light.plateLight + "20" : Colors.light.plateHeavy + "20" },
                       ]}
                     >
                       <Feather
                         name={stats.volumeTrend > 0 ? "trending-up" : "trending-down"}
                         size={14}
-                        color={stats.volumeTrend > 0 ? "#4CAF50" : "#FF5252"}
+                        color={stats.volumeTrend > 0 ? Colors.light.plateLight : Colors.light.plateHeavy}
                       />
                       <ThemedText
                         style={[
                           styles.trendText,
-                          { color: stats.volumeTrend > 0 ? "#4CAF50" : "#FF5252" },
+                          { color: stats.volumeTrend > 0 ? Colors.light.plateLight : Colors.light.plateHeavy },
                         ]}
                       >
                         {stats.volumeTrend > 0 ? "+" : ""}
@@ -1111,7 +1111,7 @@ export default function ExercisesScreen() {
                 style={[styles.actionButton, { backgroundColor: Colors.light.primary }]}
                 testID="button-create-exercise"
               >
-                <Feather name="plus" size={18} color="#FFFFFF" />
+                <Feather name="plus" size={18} color={Colors.light.onChalk} />
                 <ThemedText style={styles.actionButtonText}>{t("exercisesScreen.createAction")}</ThemedText>
               </Pressable>
               <Pressable
@@ -1203,10 +1203,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   actionButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   searchContainer: {
     flexDirection: "row",
@@ -1252,7 +1252,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.border,
   },
   exerciseIcon: {
     width: 56,
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
   exerciseName: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     textAlign: "center",
     marginBottom: Spacing.sm,
     minHeight: 40,
@@ -1313,7 +1313,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   formGroup: {
     marginBottom: Spacing.xl,
@@ -1350,10 +1350,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   saveButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   apiSearchContainer: {
     flexDirection: "row",
@@ -1393,7 +1393,7 @@ const styles = StyleSheet.create({
   apiResultName: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: 4,
   },
   apiResultMeta: {
@@ -1425,7 +1425,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   statLabel: {
     fontSize: 12,
@@ -1444,12 +1444,12 @@ const styles = StyleSheet.create({
   prTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   prValue: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     marginBottom: 4,
   },
   prVolume: {
@@ -1467,7 +1467,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   trendBadge: {
     flexDirection: "row",
@@ -1529,7 +1529,7 @@ const styles = StyleSheet.create({
   historyVolume: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   noDataContainer: {
     flex: 1,
@@ -1541,7 +1541,7 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   noDataSubtext: {
     fontSize: 14,
@@ -1553,14 +1553,14 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.sm,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: Colors.light.backgroundSecondary,
   },
   progressModalImage: {
     width: "100%",
     height: 150,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.lg,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: Colors.light.backgroundSecondary,
   },
   progressModalImagePlaceholder: {
     width: "100%",
