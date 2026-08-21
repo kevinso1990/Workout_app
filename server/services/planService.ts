@@ -1160,7 +1160,11 @@ async function generatePlanText(prompt: string): Promise<string> {
       );
     }
   }
-  return geminiGenerateContent([{ text: prompt }], { grounding: true });
+  // Google Search grounding needs a paid Gemini tier; gate it so the free
+  // tier works. Enable later with GEMINI_GROUNDING=true on a billed key.
+  return geminiGenerateContent([{ text: prompt }], {
+    grounding: process.env.GEMINI_GROUNDING === "true",
+  });
 }
 
 export async function tryAutoGeneratePlansWithAi(
