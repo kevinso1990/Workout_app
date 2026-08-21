@@ -919,10 +919,10 @@ export default function EditPlanScreen() {
             testID="button-save-plan"
           >
             {isSaving ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={Colors.light.onChalk} />
             ) : (
               <>
-                <Feather name="check" size={18} color="#FFFFFF" />
+                <Feather name="check" size={18} color={Colors.light.onChalk} />
                 <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
               </>
             )}
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   saveButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

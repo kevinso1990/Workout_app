@@ -85,7 +85,7 @@ function DayCard({
             </ThemedText>
           </View>
           <View style={styles.playBtn}>
-            <Feather name="play" size={18} color="#FFFFFF" />
+            <Feather name="play" size={18} color={Colors.light.onChalk} />
           </View>
         </View>
       </AnimatedPressable>

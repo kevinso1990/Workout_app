@@ -266,7 +266,7 @@ export default function CreatePlanScreen() {
         >
           <View style={[styles.button, { backgroundColor: Colors.light.primary }]}>
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={Colors.light.onChalk} />
             ) : (
               <ThemedText style={styles.buttonText}>
                 {t("plans.createPlan")}
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_600SemiBold",
   },
   dayPillTextSelected: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 18,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

@@ -179,7 +179,7 @@ function GradientButton({
       style={animatedStyle}
     >
       <View style={[styles.gradientButton, { backgroundColor: Colors.light.primary }]}>
-        <Feather name={icon} size={18} color="#FFFFFF" />
+        <Feather name={icon} size={18} color={Colors.light.onChalk} />
         <ThemedText style={styles.gradientButtonText}>{label}</ThemedText>
       </View>
     </AnimatedPressable>
@@ -724,7 +724,7 @@ export default function ImportWorkoutScreen() {
               onPress={handleAnalyzePastedText}
               disabled={pastedText.trim().length < 20}
             >
-              <Feather name="cpu" size={18} color="#FFFFFF" />
+              <Feather name="cpu" size={18} color={Colors.light.onChalk} />
               <ThemedText style={styles.pasteAnalyzeText}>{t("importWorkout.analyzePaste")}</ThemedText>
             </Pressable>
           </Animated.View>
@@ -1034,7 +1034,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   pasteAnalyzeText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontWeight: "700",
     fontSize: 15,
   },
@@ -1377,7 +1377,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing["2xl"],
   },
   gradientButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

@@ -273,7 +273,7 @@ export default function GoalPlanScreen() {
             style={[styles.generateBtn, !canGenerate && { opacity: 0.5 }]}
             testID="button-generate-goal-plan"
           >
-            <Feather name="cpu" size={18} color="#FFFFFF" />
+            <Feather name="cpu" size={18} color={Colors.light.onChalk} />
             <ThemedText style={styles.generateBtnText}>{t("goalPlan.generate")}</ThemedText>
           </Pressable>
         </Animated.View>
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   generateBtnText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
