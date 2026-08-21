@@ -3,18 +3,26 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiUrl } from "@/lib/query-client";
 
 /**
- * German display names for exercises. Plans and logged workouts store only the
- * canonical English `name`, so the browse screen (which fetches the catalog
- * with `name_de`) showed German while plan/workout screens showed English.
- * This module fetches the catalog once, keeps an English→German map in memory
- * (persisted so it survives restarts and is available before the network call),
- * and localises names synchronously. Image lookups keep using the English name.
+ * German display names AND per-exercise image URLs for the catalog.
+ *
+ * Plans and logged workouts store only the canonical English `name`, so:
+ *  - the browse screen showed German while plan/workout screens showed English;
+ *  - image lookups relied on a hand-maintained name→folder guess-map with gaps
+ *    (missing images) and errors (wrong image for the exercise).
+ *
+ * This module fetches the catalog once (which now returns `name_de` and the
+ * correct per-exercise `gif_url`), keeps English→German and English→image maps
+ * in memory (persisted so they survive restarts and are available before the
+ * network call), and resolves both synchronously with a tolerant fallback.
  */
 
-const STORAGE_KEY = "exerciseNameCatalog.de.v1";
+const NAME_KEY = "exerciseNameCatalog.de.v1";
+const GIF_KEY = "exerciseNameCatalog.gif.v1";
 
 let deMap = new Map<string, string>();
 let deMapLoose = new Map<string, string>();
+let gifMap = new Map<string, string>();
+let gifMapLoose = new Map<string, string>();
 let hydrated = false;
 const listeners = new Set<() => void>();
 
@@ -29,12 +37,13 @@ function looseNorm(s: string): string {
   return k.endsWith("s") ? k.slice(0, -1) : k;
 }
 
-function rebuildLoose(): void {
-  deMapLoose = new Map();
-  for (const [k, v] of deMap) {
+function buildLoose(src: Map<string, string>): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const [k, v] of src) {
     const lk = looseNorm(k);
-    if (!deMapLoose.has(lk)) deMapLoose.set(lk, v);
+    if (!out.has(lk)) out.set(lk, v);
   }
+  return out;
 }
 
 function emit(): void {
@@ -61,17 +70,32 @@ export function localizeExerciseName(name: string, language: string): string {
   return name;
 }
 
+/** The correct free-exercise-db image URL for an exercise, or null if unknown. */
+export function catalogImageUrl(name: string): string | null {
+  if (!name) return null;
+  return gifMap.get(norm(name)) ?? gifMapLoose.get(looseNorm(name)) ?? null;
+}
+
 let hydrating = false;
 
-/** Load the cached map immediately, then refresh from the server. Idempotent. */
+/** Load the cached maps immediately, then refresh from the server. Idempotent. */
 export async function hydrateExerciseNameCatalog(): Promise<void> {
   if (hydrating) return;
   hydrating = true;
   try {
-    const cached = await AsyncStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      deMap = new Map(JSON.parse(cached) as [string, string][]);
-      rebuildLoose();
+    const [cachedDe, cachedGif] = await Promise.all([
+      AsyncStorage.getItem(NAME_KEY),
+      AsyncStorage.getItem(GIF_KEY),
+    ]);
+    if (cachedDe) {
+      deMap = new Map(JSON.parse(cachedDe) as [string, string][]);
+      deMapLoose = buildLoose(deMap);
+    }
+    if (cachedGif) {
+      gifMap = new Map(JSON.parse(cachedGif) as [string, string][]);
+      gifMapLoose = buildLoose(gifMap);
+    }
+    if (cachedDe || cachedGif) {
       hydrated = true;
       emit();
     }
@@ -86,20 +110,30 @@ export async function hydrateExerciseNameCatalog(): Promise<void> {
     const rows = (await res.json()) as {
       name: string;
       name_de?: string | null;
+      gif_url?: string | null;
     }[];
-    const entries: [string, string][] = [];
+    const deEntries: [string, string][] = [];
+    const gifEntries: [string, string][] = [];
     for (const r of rows) {
-      if (r.name && r.name_de) entries.push([norm(r.name), r.name_de]);
+      if (r.name && r.name_de) deEntries.push([norm(r.name), r.name_de]);
+      if (r.name && r.gif_url) gifEntries.push([norm(r.name), r.gif_url]);
     }
-    if (entries.length) {
-      deMap = new Map(entries);
-      rebuildLoose();
+    if (deEntries.length || gifEntries.length) {
+      if (deEntries.length) {
+        deMap = new Map(deEntries);
+        deMapLoose = buildLoose(deMap);
+        AsyncStorage.setItem(NAME_KEY, JSON.stringify(deEntries)).catch(() => {});
+      }
+      if (gifEntries.length) {
+        gifMap = new Map(gifEntries);
+        gifMapLoose = buildLoose(gifMap);
+        AsyncStorage.setItem(GIF_KEY, JSON.stringify(gifEntries)).catch(() => {});
+      }
       hydrated = true;
       emit();
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(entries)).catch(() => {});
     }
   } catch {
-    // offline / server down — cached map (if any) still serves
+    // offline / server down — cached maps (if any) still serve
   } finally {
     hydrating = false;
   }

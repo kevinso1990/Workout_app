@@ -818,7 +818,9 @@ const styles = StyleSheet.create({
     // read as raised and a touch sportier than a flat outlined box.
     borderLeftWidth: 3,
     borderLeftColor: Colors.light.primary,
-    padding: HEVY.pad,
+    padding: 22,
+    minHeight: 132,
+    justifyContent: "center",
     position: "relative",
     shadowColor: "#000",
     shadowOpacity: 0.06,

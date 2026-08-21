@@ -148,7 +148,7 @@ const MONO_MED = "IBMPlexMono_500Medium";
 export const Typography = {
   display: {
     fontSize: 30,
-    lineHeight: 32,
+    lineHeight: 38,
     fontWeight: "700" as const,
     fontFamily: OSWALD_BOLD,
     letterSpacing: 0.4,
@@ -156,7 +156,7 @@ export const Typography = {
   },
   h1: {
     fontSize: 24,
-    lineHeight: 27,
+    lineHeight: 31,
     fontWeight: "700" as const,
     fontFamily: OSWALD_BOLD,
     letterSpacing: 0.4,
@@ -164,7 +164,7 @@ export const Typography = {
   },
   h2: {
     fontSize: 19,
-    lineHeight: 23,
+    lineHeight: 25,
     fontWeight: "600" as const,
     fontFamily: OSWALD_SEMI,
     letterSpacing: 0.3,

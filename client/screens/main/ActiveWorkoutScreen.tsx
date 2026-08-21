@@ -2442,6 +2442,7 @@ const styles = StyleSheet.create({
   },
   dayTitle: {
     fontSize: 18,
+    lineHeight: 24,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
     textAlign: "center",
@@ -3082,6 +3083,7 @@ const styles = StyleSheet.create({
   },
   prTitle: {
     fontSize: 22,
+    lineHeight: 28,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
     textAlign: "center",
@@ -3178,6 +3180,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 28,
+    lineHeight: 34,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
     textAlign: "center",
@@ -3283,6 +3286,7 @@ const styles = StyleSheet.create({
   },
   shareCardTitle: {
     fontSize: 20,
+    lineHeight: 26,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
     textAlign: "center",
@@ -3372,6 +3376,7 @@ const styles = StyleSheet.create({
   },
   plateTitle: {
     fontSize: 18,
+    lineHeight: 24,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
   },

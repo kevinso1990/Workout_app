@@ -15,6 +15,7 @@ import {
 } from "@/lib/rapidApiConfig";
 import { fetchExerciseDetail } from "@/services/exerciseApi";
 import { getExerciseImageFrames } from "@/lib/exerciseImages";
+import { catalogImageUrl } from "@/lib/exerciseNameCatalog";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { ExerciseGifSkeleton } from "@/components/workout/ExerciseGifSkeleton";
 
@@ -107,7 +108,9 @@ export function ExerciseDbHeroGif({
   onDetailLoaded,
 }: ExerciseDbHeroGifProps) {
   const frames = useMemo(
-    () => getExerciseImageFrames(exerciseName),
+    () => (catalogImageUrl(exerciseName)
+    ? [catalogImageUrl(exerciseName)!, catalogImageUrl(exerciseName)!.replace(/\/0\.jpg$/, "/1.jpg")]
+    : getExerciseImageFrames(exerciseName)),
     [exerciseName],
   );
   const hasFrames = frames.length > 0;

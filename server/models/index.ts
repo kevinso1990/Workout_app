@@ -126,6 +126,8 @@ export interface Exercise {
   muscle_group: string;
   equipment: string;
   is_custom: number; // 0 | 1
+  /** free-exercise-db still image URL for this exercise (may be null). */
+  gif_url?: string | null;
 }
 
 export interface PlanExercise {

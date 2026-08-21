@@ -42,7 +42,7 @@ export function BrandLogo({
         numberOfLines={1}
         style={[
           styles.mark,
-          { fontSize, letterSpacing: fontSize * 0.03, lineHeight: Math.round(fontSize * 1.02) },
+          { fontSize, letterSpacing: fontSize * 0.03, lineHeight: Math.round(fontSize * 1.3) },
         ]}
       >
         TRACK<Text style={styles.dim}>YOUR</Text>LIFT
@@ -66,6 +66,6 @@ const styles = StyleSheet.create({
   },
   dim: {
     fontFamily: FontFamily.display,
-    color: C.chalkFaint,
+    color: C.chalkDim,
   },
 });

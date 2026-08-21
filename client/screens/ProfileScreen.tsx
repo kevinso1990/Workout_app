@@ -1011,7 +1011,6 @@ export default function ProfileScreen() {
         />
       </Animated.View>
 
-      <ThemeToggleCard />
 
       <LanguageToggleCard />
 

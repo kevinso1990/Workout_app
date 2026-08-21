@@ -158,6 +158,7 @@ export function registerRoutes(app: Express): void {
         muscle_group: r.muscle_group,
         equipment: r.equipment,
         is_custom: r.is_custom,
+        gif_url: r.gif_url ?? null,
       })),
     );
   });

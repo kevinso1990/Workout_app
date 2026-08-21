@@ -34,7 +34,7 @@ export default function MainTabNavigator() {
         initialRouteName="MyPlans"
         screenOptions={{
           tabBarActiveTintColor: Colors.light.primary,
-          tabBarInactiveTintColor: theme.tabIconDefault,
+          tabBarInactiveTintColor: theme.textSecondary,
           tabBarStyle: {
             position: "absolute",
             backgroundColor: Platform.select({
