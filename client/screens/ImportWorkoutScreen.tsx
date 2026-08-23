@@ -990,6 +990,7 @@ const styles = StyleSheet.create({
   },
   landingTitle: {
     fontSize: 24,
+    lineHeight: 29,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
     textAlign: "center",
@@ -1190,6 +1191,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 24,
+    lineHeight: 29,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
     textAlign: "center",

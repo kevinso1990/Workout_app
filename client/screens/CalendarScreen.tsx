@@ -268,7 +268,7 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.light.backgroundRoot },
-  heading: { fontSize: 28, fontWeight: "700", marginBottom: 4 },
+  heading: { fontSize: 28, lineHeight: 34, fontWeight: "700", marginBottom: 4 },
   subtitle: { fontSize: 14, opacity: 0.65, marginBottom: Spacing.lg },
   monthNav: {
     flexDirection: "row",

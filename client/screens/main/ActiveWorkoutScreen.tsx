@@ -368,7 +368,7 @@ function RestTimerBar({
           accessibilityLabel={t("activeWorkout.skipRest")}
           testID="button-rest-skip"
         >
-          <Feather name="skip-forward" size={16} color="#FFFFFF" />
+          <Feather name="skip-forward" size={16} color={Colors.light.onChalk} />
         </Pressable>
       </View>
     </Animated.View>
@@ -397,7 +397,7 @@ function PRCelebration({
           style={[styles.prModalContent, { backgroundColor: theme.backgroundDefault }]}
         >
           <View style={[styles.prBadge, { backgroundColor: Colors.light.primary }]}>
-            <Feather name="award" size={40} color="#FFFFFF" />
+            <Feather name="award" size={40} color={Colors.light.onChalk} />
           </View>
 
           <View style={styles.prColumn}>
@@ -555,7 +555,7 @@ function WorkoutSummary({
         <View
           style={[styles.shareableCard, { backgroundColor: theme.backgroundRoot }]}
         >
-          <View style={[styles.shareCardHeader, { backgroundColor: Colors.light.primary }]}>
+          <View style={[styles.shareCardHeader, { backgroundColor: theme.iron }]}>
             <BrandLogo height={28} centered={false} style={{ marginRight: 0 }} />
             <ThemedText style={styles.shareCardDate}>{today}</ThemedText>
           </View>
@@ -2308,7 +2308,7 @@ export default function ActiveWorkoutScreen() {
               testID="button-finish"
             >
               <View style={[styles.finishButton, { backgroundColor: Colors.light.primary }]}>
-                <Feather name="check" size={20} color="#FFFFFF" />
+                <Feather name="check" size={20} color={Colors.light.onChalk} />
                 <ThemedText style={styles.finishButtonText}>
                   {t("activeWorkout.finishWorkout")}
                 </ThemedText>
@@ -2820,6 +2820,7 @@ const styles = StyleSheet.create({
   },
   sliderValue: {
     fontSize: 24,
+    lineHeight: 29,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
   },
@@ -2847,6 +2848,7 @@ const styles = StyleSheet.create({
   inputText: {
     flex: 1,
     fontSize: 24,
+    lineHeight: 29,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
   },
@@ -2954,7 +2956,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   finishButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -3133,6 +3135,7 @@ const styles = StyleSheet.create({
   },
   prStatBoxValue: {
     fontSize: 28,
+    lineHeight: 34,
     fontWeight: "800",
     fontFamily: "Oswald_700Bold",
     textAlign: "center",
@@ -3155,7 +3158,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   prButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -3243,7 +3246,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   summaryButtonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -3273,7 +3276,7 @@ const styles = StyleSheet.create({
     fontFamily: "Oswald_700Bold",
   },
   shareCardDate: {
-    color: "rgba(255,255,255,0.9)",
+    color: Colors.dark.chalkDim,
     fontSize: 12,
   },
   shareCardContent: {
@@ -3547,6 +3550,7 @@ const styles = StyleSheet.create({
   },
   targetWeight: {
     fontSize: 28,
+    lineHeight: 34,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
   },

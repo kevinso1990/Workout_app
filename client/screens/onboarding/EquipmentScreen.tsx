@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    lineHeight: 34,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
     marginBottom: Spacing.sm,

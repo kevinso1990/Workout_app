@@ -467,6 +467,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
+    lineHeight: 29,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
     color: HEVY.textPrimary,
