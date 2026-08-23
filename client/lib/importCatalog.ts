@@ -10,14 +10,19 @@ export type CatalogRow = {
 
 export function isImportedExerciseUnmapped(ex: ImportedExercise): boolean {
   if (ex.importMeta?.needsUserMapping) return true;
+  // "fuzzy" is a guess, not a confirmed match (e.g. word-overlap scoring can
+  // pick a same-family-but-wrong exercise, like a seated cable row resolving
+  // to a single-arm kettlebell row) — flag it for review same as "uncertain"
+  // rather than presenting it as equally certain as an exact match.
   if (
-    typeof ex.catalogExerciseId === "number" &&
-    ex.catalogExerciseId > 0 &&
-    ex.importMeta?.matchQuality !== "uncertain"
+    ex.importMeta?.matchQuality === "uncertain" ||
+    ex.importMeta?.matchQuality === "fuzzy"
   ) {
+    return true;
+  }
+  if (typeof ex.catalogExerciseId === "number" && ex.catalogExerciseId > 0) {
     return false;
   }
-  if (ex.importMeta?.matchQuality === "uncertain") return true;
   return !ex.catalogExerciseId;
 }
 

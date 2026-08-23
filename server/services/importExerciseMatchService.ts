@@ -146,12 +146,29 @@ const EXERCISE_ALIASES: Record<string, string> = {
   russischerdreher: "Russian Twist",
 };
 
+/**
+ * Match candidates: every catalog entry's canonical (English) name, PLUS its
+ * German translation as a separate alias pointing back at the same canonical
+ * name. Import sources (photos/PDFs of real training plans) are very often
+ * German ("KH Schrägbankdrücken", "Rudern sitzend") — without this, only the
+ * ~90 hand-curated EXERCISE_ALIASES entries below could ever match German
+ * text, even though exercise_translations already has all 1000+ names the
+ * rest of the app already uses for display. `name` is always the canonical
+ * English name (what gets persisted); `lower` is the string actually
+ * searched against (English or German).
+ */
 function loadCatalog(): { name: string; lower: string }[] {
   if (cachedNames) return cachedNames;
   const rows = db
-    .prepare("SELECT name, muscle_group FROM exercises WHERE is_custom = 0 ORDER BY length(name) ASC, name ASC")
-    .all() as { name: string; muscle_group: string }[];
-  cachedNames = rows.map((r) => ({ name: r.name, lower: r.name.toLowerCase().trim() }));
+    .prepare(
+      `SELECT e.name AS canonical, e.name AS alias FROM exercises e WHERE e.is_custom = 0
+       UNION ALL
+       SELECT e.name AS canonical, t.name AS alias
+       FROM exercises e JOIN exercise_translations t ON t.exercise_id = e.id AND t.lang = 'de'
+       WHERE e.is_custom = 0 AND t.name IS NOT NULL AND t.name != e.name`,
+    )
+    .all() as { canonical: string; alias: string }[];
+  cachedNames = rows.map((r) => ({ name: r.canonical, lower: r.alias.toLowerCase().trim() }));
   return cachedNames;
 }
 
@@ -200,6 +217,52 @@ function catalogIdForName(canonical: string): number | null {
   return row?.id ?? null;
 }
 
+function equipmentForName(canonical: string): string | null {
+  const row = db
+    .prepare("SELECT equipment FROM exercises WHERE name = ? COLLATE NOCASE LIMIT 1")
+    .get(canonical) as { equipment: string | null } | undefined;
+  return row?.equipment ?? null;
+}
+
+/**
+ * Equipment explicitly named in the source text, keyed by whole-word German
+ * abbreviation/term. When the input names a specific piece of equipment, a
+ * fuzzy/token/substring/Levenshtein match that resolves to a DIFFERENT
+ * equipment category is a wrong match, not a close one — e.g. "KH
+ * Schrägbankdrücken" (dumbbell) must never silently resolve to the barbell
+ * incline press just because that catalog name scored higher on word
+ * overlap. A wrong match is worse than "needs mapping": it shows a
+ * confidently incorrect image instead of prompting the user to pick.
+ */
+const QUALIFIER_EQUIPMENT: Record<string, string> = {
+  kh: "dumbbell",
+  kurzhantel: "dumbbell",
+  kurzhanteln: "dumbbell",
+  lh: "barbell",
+  langhantel: "barbell",
+  kb: "kettlebell",
+  kettlebell: "kettlebell",
+  kettlebells: "kettlebell",
+  kabel: "cable",
+  cable: "cable",
+  maschine: "machine",
+  machine: "machine",
+};
+
+function statedEquipment(originalName: string): string | null {
+  const words = originalName
+    .toLowerCase()
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  for (const w of words) {
+    if (QUALIFIER_EQUIPMENT[w]) return QUALIFIER_EQUIPMENT[w];
+  }
+  return null;
+}
+
 /** Levenshtein distance for fuzzy matching (bounded cost for ~130 names). */
 function levenshtein(a: string, b: string): number {
   const m = a.length;
@@ -238,6 +301,12 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
   const searchName = canonicalizeQualifiers(originalName);
   const lower = searchName.toLowerCase();
   const catalog = loadCatalog();
+  // Only fuzzy/token/substring/Levenshtein layers are gated — an exact string
+  // match or a hand-curated alias is trustworthy even if the equipment word
+  // isn't itself in the matched canonical name.
+  const stated = statedEquipment(originalName);
+  const equipmentOk = (canonical: string): boolean =>
+    !stated || equipmentForName(canonical) === stated;
 
   for (const row of catalog) {
     if (row.lower === lower) {
@@ -265,7 +334,7 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
   }
 
   const tokenMatch = matchByTokenOverlap(lower);
-  if (tokenMatch) {
+  if (tokenMatch && equipmentOk(tokenMatch)) {
     return {
       canonicalName: tokenMatch,
       originalName,
@@ -293,7 +362,7 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
       if (!bestContains || score > bestContains.score) bestContains = { name: row.name, score };
     }
   }
-  if (bestContains && bestContains.score >= 0.45) {
+  if (bestContains && bestContains.score >= 0.45 && equipmentOk(bestContains.name)) {
     return {
       canonicalName: bestContains.name,
       originalName,
@@ -316,7 +385,7 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
       }
     }
     const threshold = lower.length <= 12 ? 2 : lower.length <= 20 ? 4 : 5;
-    if (bestName && bestDist <= threshold) {
+    if (bestName && bestDist <= threshold && equipmentOk(bestName)) {
       return {
         canonicalName: bestName,
         originalName,
