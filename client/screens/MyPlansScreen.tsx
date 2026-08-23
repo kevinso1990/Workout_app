@@ -829,7 +829,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   planName: {
-    fontSize: 16,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
     color: HEVY.textPrimary,

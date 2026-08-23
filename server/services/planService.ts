@@ -49,8 +49,14 @@ const autoGenerateSchema = z.object({
   goalText: z.string().trim().min(3).max(200).optional(),
 });
 
-/** Equipment categories that hold mobility / stretching / warm-up movements. */
-const MOBILITY_EQUIPMENT = ["other", "bodyweight", "bands"] as const;
+/**
+ * Equipment categories to unlock for free-text goals, on top of the user's
+ * stored equipment_key. Covers mobility/stretching work AND home/hybrid gear
+ * (kettlebell) that a free-text goal often names explicitly (e.g. "3
+ * kettlebells and a jump rope at home") even though the user's stored
+ * equipment preference is something unrelated like "full_gym".
+ */
+const GOAL_TEXT_EQUIPMENT = ["other", "bodyweight", "bands", "kettlebell"] as const;
 
 /**
  * Maps UI muscle group names (lowercase, from OnboardingContext MuscleGroup type)
@@ -750,7 +756,7 @@ function makeAutoGenRuntime(
   // those exercises survive the whitelist AND the resolveExercise equipment
   // filter downstream. Structured onboarding generation is untouched (no goalText).
   const allowedEquip = goalText
-    ? [...new Set([...baseEquip, ...MOBILITY_EQUIPMENT])]
+    ? [...new Set([...baseEquip, ...GOAL_TEXT_EQUIPMENT])]
     : baseEquip;
   const dislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
   const tpl = selectTemplates(equipment);

@@ -110,6 +110,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#FFFFFF",
     fontSize: 20,
+    lineHeight: 25,
     fontWeight: "700",
     marginBottom: 6,
   },

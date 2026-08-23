@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
   dayBadgeText: {
     color: Colors.light.onChalk,
     fontSize: 18,
+    lineHeight: 22,
     fontWeight: "800",
     fontFamily: "Montserrat_700Bold",
   },
