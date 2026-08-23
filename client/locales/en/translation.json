@@ -363,6 +363,8 @@
     "addExerciseTitle": "Add Exercise",
     "removeSet": "Remove set",
     "exerciseSwapped": "Swapped to {{name}}",
+    "exerciseSwappedFirstUse": "Swapped to {{name}} — this only changes today's workout, your plan stays the same.",
+    "exerciseReorderedFirstUse": "Order changed — this only applies to today's workout.",
     "exerciseAdded": "Added {{name}}",
     "picker": {
       "searchPlaceholder": "Search exercises...",

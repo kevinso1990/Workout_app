@@ -86,6 +86,8 @@ import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import { toast } from "@/lib/toast";
+import { consumeFirstUseHint } from "@/lib/firstUseHint";
+import { NativeToastHost } from "@/components/NativeToastHost";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
 import {
   buildExerciseCoachMeta,
@@ -1367,8 +1369,11 @@ export default function ActiveWorkoutScreen() {
 
       scheduleActiveWorkoutAutosave();
       requestAnimationFrame(() => scrollToExercise(toIndex));
+      consumeFirstUseHint("exercise-reorder").then((isFirstUse) => {
+        if (isFirstUse) toast.show(t("activeWorkout.exerciseReorderedFirstUse"));
+      });
     },
-    [plan, route.params.dayIndex, scheduleActiveWorkoutAutosave, scrollToExercise],
+    [plan, route.params.dayIndex, scheduleActiveWorkoutAutosave, scrollToExercise, t],
   );
 
   const handleRemoveSet = useCallback(
@@ -1462,10 +1467,19 @@ export default function ActiveWorkoutScreen() {
         return updated;
       });
 
-      toast.show(t("activeWorkout.exerciseSwapped", { name: newExercise.name }));
+      consumeFirstUseHint("exercise-swap").then((isFirstUse) => {
+        toast.show(
+          t(
+            isFirstUse
+              ? "activeWorkout.exerciseSwappedFirstUse"
+              : "activeWorkout.exerciseSwapped",
+            { name: localizeName(newExercise.name) },
+          ),
+        );
+      });
       scheduleActiveWorkoutAutosave();
     },
-    [plan, route.params.dayIndex, buildExerciseFromCatalog, scheduleActiveWorkoutAutosave, t],
+    [plan, route.params.dayIndex, buildExerciseFromCatalog, scheduleActiveWorkoutAutosave, t, localizeName],
   );
 
   const handleAddExercise = useCallback(
@@ -1783,6 +1797,14 @@ export default function ActiveWorkoutScreen() {
   return (
     <ThemedView style={styles.container}>
       <WorkoutWebStyles />
+      {/* This screen presents as a native fullScreenModal, a separate iOS
+          view-controller layer above the app root — the root-mounted
+          NativeToastHost (AppNative.tsx) is composited underneath it and
+          never visible here. Mount a second instance inside this screen's
+          own tree so toasts (exercise swap, reorder, etc.) render on top of
+          it. Both subscribe to the same toast bus, so this is safe even
+          though two hosts briefly co-exist while a toast is active. */}
+      <NativeToastHost />
       <PRCelebration
         visible={showPRCelebration}
         pr={currentPR}

@@ -286,6 +286,8 @@
     "addExerciseTitle": "Übung hinzufügen",
     "removeSet": "Satz entfernen",
     "exerciseSwapped": "Zu {{name}} gewechselt",
+    "exerciseSwappedFirstUse": "Zu {{name}} gewechselt — gilt nur für dieses Workout, dein Plan bleibt unverändert.",
+    "exerciseReorderedFirstUse": "Reihenfolge geändert — gilt nur für dieses Workout.",
     "exerciseAdded": "{{name}} hinzugefügt",
     "picker": {
       "searchPlaceholder": "Übungen suchen...",

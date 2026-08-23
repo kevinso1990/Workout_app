@@ -24,6 +24,7 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { toast } from "@/lib/toast";
+import { NativeToastHost } from "@/components/NativeToastHost";
 import { generateWorkoutPlan } from "@/lib/planGeneration";
 import {
   saveWorkoutPlan,
@@ -171,6 +172,12 @@ export default function GoalPlanScreen() {
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {/* This screen presents as a native "modal" — a separate iOS
+          view-controller layer above the app root — so the root-mounted
+          NativeToastHost (AppNative.tsx) renders underneath it and is never
+          visible here. Mount a second instance in this screen's own tree so
+          the generation success/error toasts actually render on top of it. */}
+      <NativeToastHost />
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
