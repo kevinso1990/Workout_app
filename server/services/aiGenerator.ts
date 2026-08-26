@@ -228,6 +228,21 @@ Programming requirements:
 - Assign individualized sets and reps per exercise — never copy the same sets×reps block to every movement.
 - For equipment_key "bodyweight", every exercise "weight" must be 0.`;
 
+  // "experience" was previously passed through as an inert data field — the
+  // model had no instruction on what it should mean for exercise SELECTION
+  // (only sets/reps/exercise-count are varied elsewhere in this codebase).
+  // A true beginner then routinely got a squat/deadlift/bench/row-heavy plan,
+  // the most technique-demanding, injury-risky movements to learn unsupervised.
+  // The app's own template fallback already encodes the right philosophy (a
+  // dedicated machine/dumbbell-only "beg-" pool) — mirror it here so the AI
+  // path matches instead of contradicting it.
+  const experienceBlock =
+    experience === "beginner"
+      ? `EXPERIENCE — beginner: prioritize machine, cable, dumbbell, and other guided/stabilized movements. AVOID free-weight barbell compound lifts that demand real technique to perform safely unsupervised — Barbell Squat, Barbell Deadlift, Barbell Bench Press, Bent Over Barbell Row, Barbell Overhead Press and similar. If the whitelist truly offers nothing else for a muscle group, a machine or dumbbell substitute (Leg Press, Goblet Squat, Machine Chest Press, Seated Cable Row, Dumbbell Shoulder Press, etc.) is always preferred over the barbell version.\n`
+      : experience === "advanced"
+        ? `EXPERIENCE — advanced: prioritize free-weight barbell compound lifts (Barbell Squat, Barbell Deadlift, Barbell Bench Press, Bent Over Barbell Row, Barbell Overhead Press) as the main movement of each day where the whitelist allows it.\n`
+        : "";
+
   return `${PLAN_GENERATOR_FULL_JSON_PROMPT}
 
 ${freeTextGoalBlock}User profile:
@@ -239,7 +254,7 @@ ${freeTextGoalBlock}User profile:
 - split_preference: ${splitPreference ?? "auto"}
 - focus_muscles_UI: ${JSON.stringify(focusMuscles)}
 
-${structureBlock}
+${experienceBlock}${structureBlock}
 
 Whitelist — use ONLY these exercise names:
 ${whitelistLines}
