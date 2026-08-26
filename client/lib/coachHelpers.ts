@@ -1,4 +1,10 @@
-import type { WorkoutPlan, WorkoutSession } from "./storage";
+import { isStrengthSession, type WorkoutPlan, type WorkoutSession } from "./storage";
+import { primaryPlanFromHistory } from "./planAdaptation";
+import {
+  detectPerformanceSignals,
+  formatSignalsForPrompt,
+  type SignalDetectionSession,
+} from "../../shared/signalDetection";
 
 /**
  * Text block for the coach / LLM: recent sessions that include this exercise name.
@@ -55,11 +61,48 @@ export function repsMeetsTarget(reps: number, targetReps?: string | null): boole
   return reps === n;
 }
 
+/** Best set per exercise (with the athlete's own effort feedback) for the last few sessions. */
+function buildRecentPerformanceDetail(sessions: WorkoutSession[], maxSessions = 4): string {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+  );
+
+  const lines: string[] = [];
+  for (const s of sorted.slice(0, maxSessions)) {
+    const setLines: string[] = [];
+    for (const ep of s.exerciseProgress ?? []) {
+      const ex = s.exercises.find((e) => e.id === ep.exerciseId);
+      const name = ex?.name ?? ep.exerciseId;
+      const done = ep.sets.filter((st) => st.completed !== false);
+      if (done.length === 0) continue;
+      const best = done.reduce(
+        (a, st) => {
+          const w = parseFloat(st.weight) || 0;
+          const r = parseInt(st.reps, 10) || 0;
+          return w > a.w ? { w, r } : a;
+        },
+        { w: 0, r: 0 },
+      );
+      const rating = done.find((st) => st.rating)?.rating ?? "none";
+      setLines.push(`${name} ${best.w}kg×${best.r} (${rating})`);
+    }
+    if (setLines.length === 0) continue;
+    lines.push(`${(s.completedAt || "").slice(0, 10)} ${s.dayName}: ${setLines.join(", ")}`);
+  }
+  return lines.join("\n").slice(0, 2500);
+}
+
 export function buildDailyBriefingPayload(
   plans: WorkoutPlan[],
   sessions: WorkoutSession[],
   language: string,
-): { locale: "de" | "en"; planSummary: string; sessionSummary: string } {
+): {
+  locale: "de" | "en";
+  planSummary: string;
+  sessionSummary: string;
+  signalsText: string;
+  performanceDetail: string;
+} {
   const locale: "de" | "en" = language.startsWith("de") ? "de" : "en";
 
   const planSummary = plans
@@ -84,5 +127,31 @@ export function buildDailyBriefingPayload(
     })
     .join("\n");
 
-  return { locale, planSummary, sessionSummary };
+  // Ground the briefing in the same structured signals (PLATEAU/OVERREACH/
+  // UNDERLOAD/MISSED_SESSIONS) and best-set numbers used for plan adaptation,
+  // so the one-liner can cite a real weight/rep/feedback instead of being
+  // generic filler ("Push day today!" every time regardless of history).
+  let signalsText = "";
+  let performanceDetail = "";
+  const primary = primaryPlanFromHistory(plans, sessions);
+  if (primary) {
+    const planSessions = sessions.filter(
+      (s) => s.planId === primary.id && isStrengthSession(s),
+    );
+    if (planSessions.length > 0) {
+      const signalSessions: SignalDetectionSession[] = planSessions.map((s) => ({
+        completedAt: s.completedAt,
+        exercises: s.exercises.map((e) => ({ id: e.id, name: e.name })),
+        exerciseProgress: s.exerciseProgress,
+      }));
+      const signals = detectPerformanceSignals(
+        { id: primary.id, daysPerWeek: primary.daysPerWeek, createdAt: primary.createdAt },
+        signalSessions,
+      );
+      signalsText = formatSignalsForPrompt(signals);
+      performanceDetail = buildRecentPerformanceDetail(planSessions);
+    }
+  }
+
+  return { locale, planSummary, sessionSummary, signalsText, performanceDetail };
 }

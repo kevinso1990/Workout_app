@@ -148,6 +148,8 @@ export async function generateDailyBriefing(input: {
   locale: "de" | "en";
   planSummary: string;
   sessionSummary: string;
+  signalsText?: string;
+  performanceDetail?: string;
 }): Promise<string> {
   const lang = input.locale === "de" ? "German" : "English";
   const prompt = `You are a concise gym coach for a tracking app.
@@ -160,9 +162,16 @@ ${input.planSummary}
 Recent training summary (may be empty):
 ${input.sessionSummary || "(no recent sessions)"}
 
+Recent logged performance — best set per exercise, with the athlete's own effort feedback where available (may be empty):
+${input.performanceDetail || "(no logged sets yet)"}
+
+${input.signalsText || ""}
+
 Rules:
+- If a detected performance signal or a concrete recent number (weight, reps, or green/yellow/red feedback) is available above, reference it specifically — do not write generic filler when real data exists.
 - Mention today’s focus if inferable (e.g. pull / push / legs) OR the next logical session.
-- If the user was strong on a lift last week, encourage a small progression there.
+- If the athlete was strong (green feedback) on a lift recently, suggest a small, concrete progression there (e.g. "+2.5kg on X").
+- If a signal indicates overreach, plateau, or missed sessions, acknowledge it supportively instead of pushing more load.
 - No markdown, no quotes, no bullet points — plain sentence only.`;
 
   const raw = (await callCoachText(prompt)).trim();

@@ -37,7 +37,7 @@ async function isSnoozed(): Promise<boolean> {
   return new Date(raw) > new Date();
 }
 
-function primaryPlanFromHistory(
+export function primaryPlanFromHistory(
   plans: WorkoutPlan[],
   history: WorkoutSession[],
 ): WorkoutPlan | null {

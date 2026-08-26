@@ -48,17 +48,25 @@ router.post("/daily-briefing", coachLimiter, aiUsageGuard, async (req, res) => {
       locale?: string;
       planSummary?: string;
       sessionSummary?: string;
+      signalsText?: string;
+      performanceDetail?: string;
     };
     const locale = body.locale === "de" ? "de" : "en";
     const planSummary =
       typeof body.planSummary === "string" ? body.planSummary.slice(0, 6000) : "";
     const sessionSummary =
       typeof body.sessionSummary === "string" ? body.sessionSummary.slice(0, 8000) : "";
+    const signalsText =
+      typeof body.signalsText === "string" ? body.signalsText.slice(0, 2000) : "";
+    const performanceDetail =
+      typeof body.performanceDetail === "string" ? body.performanceDetail.slice(0, 3000) : "";
 
     const brief = await generateDailyBriefing({
       locale,
       planSummary: planSummary || "User has no plan description.",
       sessionSummary,
+      signalsText,
+      performanceDetail,
     });
     return res.json({ brief });
   } catch (err) {
