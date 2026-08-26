@@ -1036,6 +1036,159 @@ const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
   ],
 };
 
+// BEGINNER_BODYWEIGHT_EXERCISES / BEGINNER_HOME_MINIMAL_EXERCISES —
+// true beginners often cannot do a single unassisted Pull-Up/Chin-Up, so
+// using those as the sole Back exercise leaves the whole Pull day
+// unachievable. These pools swap in isometric/regression-friendly back and
+// shoulder work (Superman, Hyperextension, Bird Dog, Seated Front Deltoid,
+// Seated Biceps) so every exercise is realistically completable without any
+// equipment or prior training.
+const BEGINNER_BODYWEIGHT_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "beg-bw-incline-push", name: "Incline Push-Ups",     muscleGroup: "Chest",     sets: 4, reps: "10-15" },
+    { id: "beg-bw-push-ups",     name: "Push-Ups",             muscleGroup: "Chest",     sets: 3, reps: "8-12" },
+    { id: "beg-bw-front-delt",   name: "Seated Front Deltoid", muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-bw-tricep-dips",  name: "Tricep Dips",          muscleGroup: "Triceps",   sets: 3, reps: "8-12" },
+    { id: "beg-bw-plank",        name: "Plank",                muscleGroup: "Core",      sets: 3, reps: "45-60s" },
+  ],
+  Pull: [
+    { id: "beg-bw-superman",     name: "Superman",             muscleGroup: "Back",  sets: 4, reps: "12-15" },
+    { id: "beg-bw-hyperext",     name: "Hyperextension",       muscleGroup: "Back",  sets: 3, reps: "12-15" },
+    { id: "beg-bw-bird-dog",     name: "Bird Dog",             muscleGroup: "Core",  sets: 3, reps: "10-12" },
+    { id: "beg-bw-seated-bicep", name: "Seated Biceps",        muscleGroup: "Biceps",sets: 3, reps: "12-15" },
+    { id: "beg-bw-dead-bug",     name: "Dead Bug",             muscleGroup: "Core",  sets: 3, reps: "10-12" },
+  ],
+  Legs: [
+    { id: "beg-bw-reverse-lunges", name: "Reverse Lunges",   muscleGroup: "Quads",  sets: 4, reps: "10-12" },
+    { id: "beg-bw-glute-bridge",   name: "Glute Bridge",     muscleGroup: "Glutes", sets: 4, reps: "12-15" },
+    { id: "beg-bw-squat",          name: "Bodyweight Squat", muscleGroup: "Quads",  sets: 3, reps: "12-15" },
+    { id: "beg-bw-dead-bug-legs",  name: "Dead Bug",         muscleGroup: "Core",   sets: 3, reps: "10-12" },
+    { id: "beg-bw-plank-legs",     name: "Plank",            muscleGroup: "Core",   sets: 3, reps: "45-60s" },
+  ],
+  Upper: [
+    { id: "beg-bw-incline-push-u", name: "Incline Push-Ups",     muscleGroup: "Chest",     sets: 4, reps: "10-15" },
+    { id: "beg-bw-superman-u",     name: "Superman",             muscleGroup: "Back",      sets: 4, reps: "12-15" },
+    { id: "beg-bw-front-delt-u",   name: "Seated Front Deltoid", muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-bw-hyperext-u",     name: "Hyperextension",       muscleGroup: "Back",      sets: 3, reps: "12-15" },
+    { id: "beg-bw-tricep-dips-u",  name: "Tricep Dips",          muscleGroup: "Triceps",   sets: 3, reps: "8-12" },
+  ],
+  Lower: [
+    { id: "beg-bw-reverse-lunges-l", name: "Reverse Lunges",   muscleGroup: "Quads",  sets: 4, reps: "10-12" },
+    { id: "beg-bw-glute-bridge-l",   name: "Glute Bridge",     muscleGroup: "Glutes", sets: 4, reps: "12-15" },
+    { id: "beg-bw-squat-l",          name: "Bodyweight Squat", muscleGroup: "Quads",  sets: 3, reps: "12-15" },
+    { id: "beg-bw-dead-bug-l",       name: "Dead Bug",         muscleGroup: "Core",   sets: 3, reps: "10-12" },
+    { id: "beg-bw-plank-l",          name: "Plank",            muscleGroup: "Core",   sets: 3, reps: "45-60s" },
+  ],
+  "Full Body": [
+    { id: "beg-bw-fb-incline",  name: "Incline Push-Ups", muscleGroup: "Chest",  sets: 3, reps: "10-15" },
+    { id: "beg-bw-fb-superman", name: "Superman",         muscleGroup: "Back",   sets: 3, reps: "12-15" },
+    { id: "beg-bw-fb-lunges",   name: "Reverse Lunges",   muscleGroup: "Quads",  sets: 3, reps: "10-12" },
+    { id: "beg-bw-fb-bridge",   name: "Glute Bridge",     muscleGroup: "Glutes", sets: 3, reps: "12-15" },
+    { id: "beg-bw-fb-plank",    name: "Plank",            muscleGroup: "Core",   sets: 3, reps: "45-60s" },
+  ],
+  Chest: [
+    { id: "beg-bw-c-incline",     name: "Incline Push-Ups",     muscleGroup: "Chest",     sets: 4, reps: "10-15" },
+    { id: "beg-bw-c-push-ups",    name: "Push-Ups",             muscleGroup: "Chest",     sets: 4, reps: "8-12" },
+    { id: "beg-bw-c-front-delt",  name: "Seated Front Deltoid", muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-bw-c-tricep-dips", name: "Tricep Dips",          muscleGroup: "Triceps",   sets: 3, reps: "8-12" },
+    { id: "beg-bw-c-plank",       name: "Plank",                muscleGroup: "Core",      sets: 3, reps: "45-60s" },
+  ],
+  Back: [
+    { id: "beg-bw-b-superman",     name: "Superman",       muscleGroup: "Back",  sets: 4, reps: "12-15" },
+    { id: "beg-bw-b-hyperext",     name: "Hyperextension", muscleGroup: "Back",  sets: 4, reps: "12-15" },
+    { id: "beg-bw-b-bird-dog",     name: "Bird Dog",       muscleGroup: "Core",  sets: 3, reps: "10-12" },
+    { id: "beg-bw-b-seated-bicep", name: "Seated Biceps",  muscleGroup: "Biceps",sets: 3, reps: "12-15" },
+    { id: "beg-bw-b-dead-bug",     name: "Dead Bug",       muscleGroup: "Core",  sets: 3, reps: "10-12" },
+  ],
+  Shoulders: [
+    { id: "beg-bw-s-front-delt", name: "Seated Front Deltoid", muscleGroup: "Shoulders", sets: 4, reps: "12-15" },
+    { id: "beg-bw-s-incline",    name: "Incline Push-Ups",     muscleGroup: "Chest",     sets: 3, reps: "10-15" },
+    { id: "beg-bw-s-plank",      name: "Plank",                muscleGroup: "Core",      sets: 4, reps: "45-60s" },
+    { id: "beg-bw-s-bird-dog",   name: "Bird Dog",             muscleGroup: "Core",      sets: 3, reps: "10-12" },
+    { id: "beg-bw-s-dead-bug",   name: "Dead Bug",             muscleGroup: "Core",      sets: 3, reps: "10-12" },
+  ],
+  Arms: [
+    { id: "beg-bw-a-seated-bicep", name: "Seated Biceps", muscleGroup: "Biceps",  sets: 4, reps: "12-15" },
+    { id: "beg-bw-a-tricep-dips",  name: "Tricep Dips",   muscleGroup: "Triceps", sets: 4, reps: "8-12" },
+    { id: "beg-bw-a-incline",      name: "Incline Push-Ups", muscleGroup: "Chest",sets: 3, reps: "10-15" },
+    { id: "beg-bw-a-superman",     name: "Superman",      muscleGroup: "Back",    sets: 3, reps: "12-15" },
+    { id: "beg-bw-a-plank",        name: "Plank",         muscleGroup: "Core",    sets: 3, reps: "45-60s" },
+  ],
+};
+
+const BEGINNER_HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "beg-hm-incline-push", name: "Incline Push-Ups", muscleGroup: "Chest",     sets: 4, reps: "10-15" },
+    { id: "beg-hm-push-ups",     name: "Push-Ups",         muscleGroup: "Chest",     sets: 3, reps: "8-12" },
+    { id: "beg-hm-lat-raise",    name: "Lateral Raise",    muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-hm-tricep-dips",  name: "Tricep Dips",      muscleGroup: "Triceps",   sets: 3, reps: "8-12" },
+    { id: "beg-hm-plank",        name: "Plank",            muscleGroup: "Core",      sets: 3, reps: "45-60s" },
+  ],
+  Pull: [
+    { id: "beg-hm-superman",     name: "Superman",         muscleGroup: "Back",       sets: 4, reps: "12-15" },
+    { id: "beg-hm-hyperext",     name: "Hyperextension",   muscleGroup: "Back",       sets: 3, reps: "12-15" },
+    { id: "beg-hm-rear-delt",    name: "Rear Delt Fly",    muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "beg-hm-hammer-curl",  name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "beg-hm-dead-bug",     name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  Legs: [
+    { id: "beg-hm-reverse-lunges", name: "Reverse Lunges",   muscleGroup: "Quads",  sets: 4, reps: "10-12" },
+    { id: "beg-hm-glute-bridge",   name: "Glute Bridge",     muscleGroup: "Glutes", sets: 4, reps: "12-15" },
+    { id: "beg-hm-squat",          name: "Bodyweight Squat", muscleGroup: "Quads",  sets: 3, reps: "12-15" },
+    { id: "beg-hm-dead-bug-legs",  name: "Dead Bug",         muscleGroup: "Core",   sets: 3, reps: "10-12" },
+    { id: "beg-hm-plank-legs",     name: "Plank",            muscleGroup: "Core",   sets: 3, reps: "45-60s" },
+  ],
+  Upper: [
+    { id: "beg-hm-incline-push-u", name: "Incline Push-Ups", muscleGroup: "Chest",     sets: 4, reps: "10-15" },
+    { id: "beg-hm-superman-u",     name: "Superman",         muscleGroup: "Back",      sets: 4, reps: "12-15" },
+    { id: "beg-hm-lat-raise-u",    name: "Lateral Raise",    muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-hm-hyperext-u",     name: "Hyperextension",   muscleGroup: "Back",      sets: 3, reps: "12-15" },
+    { id: "beg-hm-hammer-curl-u",  name: "Hammer Curls",     muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+  ],
+  Lower: [
+    { id: "beg-hm-reverse-lunges-l", name: "Reverse Lunges",   muscleGroup: "Quads",  sets: 4, reps: "10-12" },
+    { id: "beg-hm-glute-bridge-l",   name: "Glute Bridge",     muscleGroup: "Glutes", sets: 4, reps: "12-15" },
+    { id: "beg-hm-squat-l",          name: "Bodyweight Squat", muscleGroup: "Quads",  sets: 3, reps: "12-15" },
+    { id: "beg-hm-dead-bug-l",       name: "Dead Bug",         muscleGroup: "Core",   sets: 3, reps: "10-12" },
+    { id: "beg-hm-plank-l",          name: "Plank",            muscleGroup: "Core",   sets: 3, reps: "45-60s" },
+  ],
+  "Full Body": [
+    { id: "beg-hm-fb-incline",  name: "Incline Push-Ups", muscleGroup: "Chest",  sets: 3, reps: "10-15" },
+    { id: "beg-hm-fb-superman", name: "Superman",         muscleGroup: "Back",   sets: 3, reps: "12-15" },
+    { id: "beg-hm-fb-lunges",   name: "Reverse Lunges",   muscleGroup: "Quads",  sets: 3, reps: "10-12" },
+    { id: "beg-hm-fb-bridge",   name: "Glute Bridge",     muscleGroup: "Glutes", sets: 3, reps: "12-15" },
+    { id: "beg-hm-fb-plank",    name: "Plank",            muscleGroup: "Core",   sets: 3, reps: "45-60s" },
+  ],
+  Chest: [
+    { id: "beg-hm-c-incline",     name: "Incline Push-Ups", muscleGroup: "Chest",     sets: 4, reps: "10-15" },
+    { id: "beg-hm-c-push-ups",    name: "Push-Ups",         muscleGroup: "Chest",     sets: 4, reps: "8-12" },
+    { id: "beg-hm-c-lat-raise",   name: "Lateral Raise",    muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-hm-c-tricep-dips", name: "Tricep Dips",      muscleGroup: "Triceps",   sets: 3, reps: "8-12" },
+    { id: "beg-hm-c-plank",       name: "Plank",            muscleGroup: "Core",      sets: 3, reps: "45-60s" },
+  ],
+  Back: [
+    { id: "beg-hm-b-superman",    name: "Superman",         muscleGroup: "Back",       sets: 4, reps: "12-15" },
+    { id: "beg-hm-b-hyperext",    name: "Hyperextension",   muscleGroup: "Back",       sets: 4, reps: "12-15" },
+    { id: "beg-hm-b-rear-delt",   name: "Rear Delt Fly",    muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "beg-hm-b-hammer-curl", name: "Hammer Curls",     muscleGroup: "Biceps",     sets: 3, reps: "10-12" },
+    { id: "beg-hm-b-dead-bug",    name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  Shoulders: [
+    { id: "beg-hm-s-lat-raise",  name: "Lateral Raise",    muscleGroup: "Shoulders",  sets: 4, reps: "12-15" },
+    { id: "beg-hm-s-incline",    name: "Incline Push-Ups", muscleGroup: "Chest",      sets: 3, reps: "10-15" },
+    { id: "beg-hm-s-plank",      name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
+    { id: "beg-hm-s-rear-delt",  name: "Rear Delt Fly",    muscleGroup: "Rear Delts", sets: 3, reps: "12-15" },
+    { id: "beg-hm-s-dead-bug",   name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
+  ],
+  Arms: [
+    { id: "beg-hm-a-hammer-curl", name: "Hammer Curls",     muscleGroup: "Biceps",  sets: 4, reps: "10-12" },
+    { id: "beg-hm-a-tricep-dips", name: "Tricep Dips",      muscleGroup: "Triceps", sets: 4, reps: "8-12" },
+    { id: "beg-hm-a-incline",     name: "Incline Push-Ups", muscleGroup: "Chest",   sets: 3, reps: "10-15" },
+    { id: "beg-hm-a-superman",    name: "Superman",         muscleGroup: "Back",    sets: 3, reps: "12-15" },
+    { id: "beg-hm-a-plank",       name: "Plank",            muscleGroup: "Core",    sets: 3, reps: "45-60s" },
+  ],
+};
+
 const KETTLEBELL_EXERCISES: Record<string, Exercise[]> = {
   Push: [
     { id: "kb-floor-press",  name: "KB Floor Press",             muscleGroup: "Chest",     sets: 4, reps: "8-10" },
@@ -1179,10 +1332,10 @@ export function getEquipmentExercises(
       pool = DUMBBELL_EXERCISES;
       break;
     case "home_minimal":
-      pool = HOME_MINIMAL_EXERCISES;
+      pool = fitnessLevel === "beginner" ? BEGINNER_HOME_MINIMAL_EXERCISES : HOME_MINIMAL_EXERCISES;
       break;
     case "bodyweight":
-      pool = BODYWEIGHT_EXERCISES;
+      pool = fitnessLevel === "beginner" ? BEGINNER_BODYWEIGHT_EXERCISES : BODYWEIGHT_EXERCISES;
       break;
     case "kettlebell":
       pool = KETTLEBELL_EXERCISES;
