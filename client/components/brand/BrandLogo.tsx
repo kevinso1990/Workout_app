@@ -28,6 +28,10 @@ export function BrandLogo({
   testID = "brand-logo",
 }: BrandLogoProps) {
   // Cap height ≈ 0.66 of the box; Oswald is tall so this fills the slot well.
+  // At small (header) sizes this always fits on one line. At large hero sizes
+  // (onboarding uses height=140 → ~92pt) "TRACKYOURLIFT" is wider than any
+  // phone screen and used to hard-truncate to "TRACK…". adjustsFontSizeToFit
+  // shrinks it to whatever width it's actually given instead of clipping.
   const fontSize = Math.round(height * 0.66);
 
   return (
@@ -40,8 +44,11 @@ export function BrandLogo({
       <Text
         allowFontScaling={false}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.3}
         style={[
           styles.mark,
+          centered && styles.markCentered,
           { fontSize, letterSpacing: fontSize * 0.03, lineHeight: Math.round(fontSize * 1.3) },
         ]}
       >
@@ -54,15 +61,19 @@ export function BrandLogo({
 const styles = StyleSheet.create({
   wrap: {
     justifyContent: "center",
+    width: "100%",
   },
   centered: {
-    alignSelf: "center",
     alignItems: "center",
   },
   mark: {
     fontFamily: FontFamily.display,
     color: C.chalk,
     textTransform: "uppercase",
+  },
+  markCentered: {
+    width: "100%",
+    textAlign: "center",
   },
   dim: {
     fontFamily: FontFamily.display,

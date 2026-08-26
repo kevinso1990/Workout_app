@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 36,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     marginBottom: Spacing.md,
   },
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   choiceName: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: Spacing.xs,
   },
   choiceDesc: {
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: Spacing.xs,
   },
   sectionSubtitle: {
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   continueButtonContainer: {
     flex: 1,
@@ -500,6 +500,6 @@ const styles = StyleSheet.create({
     color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
 });

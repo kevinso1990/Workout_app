@@ -207,6 +207,52 @@ export function HevySetGridHeader({
   );
 }
 
+/**
+ * Press-and-hold repeat for a stepper button: one immediate step on press,
+ * then (after a short delay so quick taps stay single steps) repeats at a
+ * moderate rate, accelerating after ~1.2s of holding. Without this, reaching
+ * a heavy weight (e.g. 150kg on a deadlift) meant 100+ individual taps.
+ */
+function useHoldToRepeat(onStep: (dir: 1 | -1) => void) {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const accelerateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clear = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (accelerateRef.current) {
+      clearTimeout(accelerateRef.current);
+      accelerateRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clear, [clear]);
+
+  const start = useCallback(
+    (dir: 1 | -1) => {
+      onStep(dir);
+      clear();
+      timeoutRef.current = setTimeout(() => {
+        intervalRef.current = setInterval(() => onStep(dir), 90);
+        accelerateRef.current = setTimeout(() => {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = setInterval(() => onStep(dir), 35);
+        }, 1200);
+      }, 400);
+    },
+    [onStep, clear],
+  );
+
+  return { start, stop: clear };
+}
+
 /** One labelled editor: [ − ] [ tap-to-type field ] [ + ]. */
 function StepperField({
   label,
@@ -225,12 +271,14 @@ function StepperField({
   onStep: (dir: 1 | -1) => void;
   testID?: string;
 }) {
+  const hold = useHoldToRepeat(onStep);
   return (
     <View style={styles.stepField}>
       <Text style={styles.stepLabel}>{label}</Text>
       <View style={styles.stepControls}>
         <Pressable
-          onPress={() => onStep(-1)}
+          onPressIn={() => hold.start(-1)}
+          onPressOut={hold.stop}
           hitSlop={8}
           style={styles.stepBtn}
           testID={testID ? `${testID}-minus` : undefined}
@@ -249,7 +297,8 @@ function StepperField({
           testID={testID}
         />
         <Pressable
-          onPress={() => onStep(1)}
+          onPressIn={() => hold.start(1)}
+          onPressOut={hold.stop}
           hitSlop={8}
           style={styles.stepBtn}
           testID={testID ? `${testID}-plus` : undefined}

@@ -139,7 +139,7 @@ export default function GoalsScreen() {
                   ]}
                 >
                   {isSelected ? (
-                    <Feather name="check" size={14} color="#FFFFFF" />
+                    <Feather name="check" size={14} color={Colors.light.onChalk} />
                   ) : null}
                 </View>
               </Pressable>
@@ -165,7 +165,7 @@ export default function GoalsScreen() {
           >
             <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
               <ThemedText style={styles.continueText}>{t("onboarding.next")}</ThemedText>
-              <Feather name="arrow-right" size={20} color="#FFFFFF" />
+              <Feather name="arrow-right" size={20} color={Colors.light.onChalk} />
             </View>
           </Pressable>
         </View>
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: 2,
   },
   optionDescription: {
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   continueWrapper: {
     flex: 1,
@@ -252,9 +252,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   continueText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
 });

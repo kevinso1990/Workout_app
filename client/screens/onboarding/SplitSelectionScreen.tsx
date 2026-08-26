@@ -452,7 +452,7 @@ export default function SplitSelectionScreen() {
               // Generating can take a few seconds — say what's happening so the
               // wait doesn't read as "stuck".
               <View style={styles.loadingRow}>
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={Colors.light.onChalk} />
                 <ThemedText style={styles.buttonText}>
                   {t("onboarding.splitCreatingPlan")}
                 </ThemedText>
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 36,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     marginBottom: Spacing.md,
   },
@@ -515,10 +515,10 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: BorderRadius.sm,
   },
   recommendedBadgeText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 11,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
   },
   splitIcon: {
     width: 48,
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   splitName: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: Spacing.xs,
   },
   splitDescription: {
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
     marginBottom: Spacing.md,
   },
   previewCard: {
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   continueButtonContainer: {
     flex: 1,
@@ -638,10 +638,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
   loadingRow: {
     flexDirection: "row",

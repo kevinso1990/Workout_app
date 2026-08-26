@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 40,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Oswald_700Bold",
     textAlign: "center",
     marginBottom: Spacing.sm,
   },
@@ -139,9 +139,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Oswald_600SemiBold",
   },
 });

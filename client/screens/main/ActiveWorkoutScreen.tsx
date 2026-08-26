@@ -2085,10 +2085,7 @@ export default function ActiveWorkoutScreen() {
                 <View style={styles.exerciseHeader}>
                   <View style={styles.exerciseHeaderRow}>
                     <View style={styles.exerciseHeaderText}>
-                      <ThemedText
-                        style={styles.exerciseName}
-                        numberOfLines={2}
-                      >
+                      <ThemedText style={styles.exerciseName}>
                         {localizeName(exercise.name)}
                       </ThemedText>
                       <View style={styles.exerciseMeta}>
