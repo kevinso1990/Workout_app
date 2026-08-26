@@ -1283,16 +1283,96 @@ const KETTLEBELL_EXERCISES: Record<string, Exercise[]> = {
   ],
 };
 
+// BEGINNER_KETTLEBELL_EXERCISES — a true beginner has no business loading
+// KB Swing, KB Renegade Row, KB High Pull, or KB Turkish Get-Up on day one;
+// they're ballistic/technical movements that take real coaching to learn
+// safely. This pool keeps only controlled, low-technicality kettlebell
+// movements (goblet squat, floor press, row, curls) until the athlete has
+// a base to build the ballistic work on top of.
+const BEGINNER_KETTLEBELL_EXERCISES: Record<string, Exercise[]> = {
+  Push: [
+    { id: "beg-kb-floor-press",  name: "KB Floor Press",              muscleGroup: "Chest",     sets: 4, reps: "8-10" },
+    { id: "beg-kb-squeeze",      name: "KB Squeeze Press",            muscleGroup: "Chest",     sets: 3, reps: "10-12" },
+    { id: "beg-kb-press",        name: "KB Press",                    muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+    { id: "beg-kb-lateral",      name: "KB Lateral Raise",            muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+    { id: "beg-kb-overhead-tri", name: "KB Overhead Tricep Extension",muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+  ],
+  Pull: [
+    { id: "beg-kb-row",          name: "KB Row",                      muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "beg-kb-rdl",          name: "KB Romanian Deadlift",        muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "beg-kb-halo",         name: "KB Halo",                     muscleGroup: "Shoulders", sets: 3, reps: "10-12" },
+    { id: "beg-kb-curl",         name: "KB Curl",                     muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+    { id: "beg-kb-hammer-curl",  name: "KB Hammer Curl",              muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+  ],
+  Legs: [
+    { id: "beg-kb-goblet",       name: "KB Goblet Squat",             muscleGroup: "Quads",     sets: 4, reps: "8-10" },
+    { id: "beg-kb-rdl-l",        name: "KB Romanian Deadlift",        muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "beg-kb-lunges",       name: "KB Lunges",                   muscleGroup: "Quads",     sets: 3, reps: "10-12" },
+    { id: "beg-kb-bss",          name: "KB Bulgarian Split Squat",    muscleGroup: "Quads",     sets: 3, reps: "10-12" },
+    { id: "beg-kb-calf",         name: "KB Calf Raise",               muscleGroup: "Calves",    sets: 3, reps: "12-15" },
+  ],
+  Upper: [
+    { id: "beg-kb-floor-press-u",name: "KB Floor Press",              muscleGroup: "Chest",     sets: 4, reps: "8-10" },
+    { id: "beg-kb-row-u",        name: "KB Row",                      muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "beg-kb-press-u",      name: "KB Press",                    muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+    { id: "beg-kb-curl-u",       name: "KB Curl",                     muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+    { id: "beg-kb-lateral-u",    name: "KB Lateral Raise",            muscleGroup: "Shoulders", sets: 3, reps: "12-15" },
+  ],
+  Lower: [
+    { id: "beg-kb-goblet-l",     name: "KB Goblet Squat",             muscleGroup: "Quads",     sets: 4, reps: "8-10" },
+    { id: "beg-kb-rdl-lo",       name: "KB Romanian Deadlift",        muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "beg-kb-lunges-lo",    name: "KB Lunges",                   muscleGroup: "Quads",     sets: 3, reps: "10-12" },
+    { id: "beg-kb-bss-lo",       name: "KB Bulgarian Split Squat",    muscleGroup: "Quads",     sets: 3, reps: "10-12" },
+    { id: "beg-kb-calf-lo",      name: "KB Calf Raise",               muscleGroup: "Calves",    sets: 3, reps: "12-15" },
+  ],
+  "Full Body": [
+    { id: "beg-kb-fb-goblet",    name: "KB Goblet Squat",             muscleGroup: "Quads",     sets: 3, reps: "8-10" },
+    { id: "beg-kb-fb-floor",     name: "KB Floor Press",              muscleGroup: "Chest",     sets: 3, reps: "8-10" },
+    { id: "beg-kb-fb-row",       name: "KB Row",                      muscleGroup: "Back",      sets: 3, reps: "8-10" },
+    { id: "beg-kb-fb-rdl",       name: "KB Romanian Deadlift",        muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "beg-kb-fb-halo",      name: "KB Halo",                     muscleGroup: "Shoulders", sets: 3, reps: "10-12" },
+  ],
+  Chest: [
+    { id: "beg-kb-c-floor",      name: "KB Floor Press",              muscleGroup: "Chest",     sets: 4, reps: "8-10" },
+    { id: "beg-kb-c-squeeze",    name: "KB Squeeze Press",            muscleGroup: "Chest",     sets: 4, reps: "10-12" },
+    { id: "beg-kb-c-overhead",   name: "KB Overhead Tricep Extension",muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+    { id: "beg-kb-c-skull",      name: "KB Skull Crusher",            muscleGroup: "Triceps",   sets: 3, reps: "10-12" },
+    { id: "beg-kb-c-press",      name: "KB Press",                    muscleGroup: "Shoulders", sets: 3, reps: "8-10" },
+  ],
+  Back: [
+    { id: "beg-kb-b-row",        name: "KB Row",                      muscleGroup: "Back",      sets: 4, reps: "8-10" },
+    { id: "beg-kb-b-rdl",        name: "KB Romanian Deadlift",        muscleGroup: "Hamstrings",sets: 3, reps: "8-10" },
+    { id: "beg-kb-b-halo",       name: "KB Halo",                     muscleGroup: "Shoulders", sets: 3, reps: "10-12" },
+    { id: "beg-kb-b-curl",       name: "KB Curl",                     muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+    { id: "beg-kb-b-hammer",     name: "KB Hammer Curl",              muscleGroup: "Biceps",    sets: 3, reps: "10-12" },
+  ],
+  Shoulders: [
+    { id: "beg-kb-s-press",      name: "KB Press",                    muscleGroup: "Shoulders", sets: 4, reps: "8-10" },
+    { id: "beg-kb-s-lateral",    name: "KB Lateral Raise",            muscleGroup: "Shoulders", sets: 4, reps: "12-15" },
+    { id: "beg-kb-s-halo",       name: "KB Halo",                     muscleGroup: "Shoulders", sets: 3, reps: "10-12" },
+    { id: "beg-kb-s-floor",      name: "KB Floor Press",              muscleGroup: "Chest",     sets: 3, reps: "8-10" },
+    { id: "beg-kb-s-row",        name: "KB Row",                      muscleGroup: "Back",      sets: 3, reps: "8-10" },
+  ],
+  Arms: [
+    { id: "beg-kb-a-curl",       name: "KB Curl",                     muscleGroup: "Biceps",    sets: 4, reps: "10-12" },
+    { id: "beg-kb-a-hammer",     name: "KB Hammer Curl",              muscleGroup: "Biceps",    sets: 4, reps: "10-12" },
+    { id: "beg-kb-a-overhead",   name: "KB Overhead Tricep Extension",muscleGroup: "Triceps",  sets: 3, reps: "10-12" },
+    { id: "beg-kb-a-skull",      name: "KB Skull Crusher",            muscleGroup: "Triceps",   sets: 3, reps: "10-12" },
+    { id: "beg-kb-a-floor",      name: "KB Floor Press",              muscleGroup: "Chest",     sets: 3, reps: "8-10" },
+  ],
+};
+
 /**
  * Returns the exercise list for a given equipment type, fitness level, and
  * split-day name. Guaranteed to return valid exercises — falls back gracefully.
  *
- * Level-aware routing for full_gym:
- *   beginner    → BEGINNER_GYM_EXERCISES  (machines + dumbbells, no barbells)
- *   intermediate/advanced → DEFAULT_EXERCISES (barbell compounds + cables)
+ * Level-aware routing for full_gym / bodyweight / home_minimal / kettlebell:
+ *   beginner    → BEGINNER_* pool (no barbells, no unassisted pull-ups/dips,
+ *                 no ballistic/technical kettlebell lifts)
+ *   intermediate/advanced → the regular pool for that equipment
  *
- * All other equipment types are level-agnostic because their pools already
- * exclude barbells by definition (dumbbells, bodyweight, kettlebell, minimal).
+ * dumbbells_only is level-agnostic — its pool already has no barbell,
+ * unassisted-bodyweight, or ballistic-technical movements to filter out.
  */
 function resolveFullBodyVariantDay(
   pool: Record<string, Exercise[]>,
@@ -1338,7 +1418,7 @@ export function getEquipmentExercises(
       pool = fitnessLevel === "beginner" ? BEGINNER_BODYWEIGHT_EXERCISES : BODYWEIGHT_EXERCISES;
       break;
     case "kettlebell":
-      pool = KETTLEBELL_EXERCISES;
+      pool = fitnessLevel === "beginner" ? BEGINNER_KETTLEBELL_EXERCISES : KETTLEBELL_EXERCISES;
       break;
     case "full_gym":
     default:
