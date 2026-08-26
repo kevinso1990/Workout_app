@@ -907,7 +907,7 @@ const BODYWEIGHT_EXERCISES: Record<string, Exercise[]> = {
   Legs: [
     { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",    sets: 4, reps: "10-12" },
     { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",   sets: 4, reps: "12-15" },
-    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",    sets: 3, reps: "8-12" },
+    { id: "bw-squat",         name: "Bodyweight Squat", muscleGroup: "Quads",    sets: 3, reps: "12-15" },
     { id: "mtn-climbers",    name: "Mountain Climbers",muscleGroup: "Core",     sets: 3, reps: "20-30" },
     { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
   ],
@@ -921,7 +921,7 @@ const BODYWEIGHT_EXERCISES: Record<string, Exercise[]> = {
   Lower: [
     { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",    sets: 4, reps: "10-12" },
     { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",   sets: 4, reps: "12-15" },
-    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",    sets: 3, reps: "8-12" },
+    { id: "bw-squat",         name: "Bodyweight Squat", muscleGroup: "Quads",    sets: 3, reps: "12-15" },
     { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",     sets: 3, reps: "10-12" },
     { id: "plank",           name: "Plank",            muscleGroup: "Core",     sets: 3, reps: "45-60s" },
   ],
@@ -982,7 +982,7 @@ const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
     { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",      sets: 4, reps: "10-12" },
     { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",     sets: 4, reps: "12-15" },
     { id: "bulgarian-ss",    name: "Bulgarian Split Squat", muscleGroup: "Quads", sets: 3, reps: "10-12" },
-    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",      sets: 3, reps: "8-12" },
+    { id: "bw-squat",         name: "Bodyweight Squat", muscleGroup: "Quads",      sets: 3, reps: "12-15" },
     { id: "plank",           name: "Plank",            muscleGroup: "Core",       sets: 3, reps: "45-60s" },
   ],
   Upper: [
@@ -996,7 +996,7 @@ const HOME_MINIMAL_EXERCISES: Record<string, Exercise[]> = {
     { id: "reverse-lunges",  name: "Reverse Lunges",   muscleGroup: "Quads",      sets: 4, reps: "10-12" },
     { id: "glute-bridge",    name: "Glute Bridge",     muscleGroup: "Glutes",     sets: 4, reps: "12-15" },
     { id: "bulgarian-ss",    name: "Bulgarian Split Squat", muscleGroup: "Quads", sets: 3, reps: "10-12" },
-    { id: "sissy-squat",     name: "Sissy Squat",      muscleGroup: "Quads",      sets: 3, reps: "8-12" },
+    { id: "bw-squat",         name: "Bodyweight Squat", muscleGroup: "Quads",      sets: 3, reps: "12-15" },
     { id: "dead-bug",        name: "Dead Bug",         muscleGroup: "Core",       sets: 3, reps: "10-12" },
   ],
   "Full Body": [

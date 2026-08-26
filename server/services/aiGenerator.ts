@@ -238,9 +238,13 @@ Programming requirements:
   // path matches instead of contradicting it.
   const experienceBlock =
     experience === "beginner"
-      ? `EXPERIENCE — beginner: prioritize machine, cable, dumbbell, and other guided/stabilized movements. AVOID free-weight barbell compound lifts that demand real technique to perform safely unsupervised — Barbell Squat, Barbell Deadlift, Barbell Bench Press, Bent Over Barbell Row, Barbell Overhead Press and similar. If the whitelist truly offers nothing else for a muscle group, a machine or dumbbell substitute (Leg Press, Goblet Squat, Machine Chest Press, Seated Cable Row, Dumbbell Shoulder Press, etc.) is always preferred over the barbell version.\n`
+      ? `EXPERIENCE — beginner: this principle applies across EVERY equipment category, not barbell alone. Avoid movements that demand real technique or strength to perform safely unsupervised, regardless of what equipment they use:
+- Barbell: avoid Barbell Squat, Barbell Deadlift, Barbell Bench Press, Bent Over Barbell Row, Barbell Overhead Press and similar free-weight barbell compounds. Prefer machine, cable, or dumbbell equivalents (Leg Press, Goblet Squat, Machine Chest Press, Seated Cable Row, Dumbbell Shoulder Press, etc.) whenever the whitelist offers one.
+- Kettlebell: avoid ballistic/technical lifts — Swing, Snatch, Clean, Renegade Row, Turkish Get-Up, Windmill. Prefer controlled, supported movements — Goblet Squat, Deadlift, Row, Suitcase Carry.
+- Bodyweight: avoid movements most untrained people cannot yet perform for real reps — unassisted Pull-Up/Chin-Up, Dip, Muscle-Up, Pistol Squat, Sissy Squat, Handstand Push-Up. Prefer regressions and simpler patterns — Bodyweight Squat, Push-Up (or Incline/Knee Push-Up), Glute Bridge, Plank, Superman, Reverse Lunge.
+If the whitelist truly offers nothing gentler for a muscle group, the least-demanding option available is still better than the most demanding one.\n`
       : experience === "advanced"
-        ? `EXPERIENCE — advanced: prioritize free-weight barbell compound lifts (Barbell Squat, Barbell Deadlift, Barbell Bench Press, Bent Over Barbell Row, Barbell Overhead Press) as the main movement of each day where the whitelist allows it.\n`
+        ? `EXPERIENCE — advanced: for each muscle group, prioritize the heaviest, most technically demanding compound movement available within the whitelist for the given equipment (e.g. free-weight barbell compounds when equipment is barbell/full_gym; Snatch/Clean/Turkish Get-Up when equipment is kettlebell; weighted or strict Pull-Up/Dip/Pistol Squat when equipment is bodyweight) rather than defaulting to easier machine or assisted variants.\n`
         : "";
 
   return `${PLAN_GENERATOR_FULL_JSON_PROMPT}
