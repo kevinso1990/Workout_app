@@ -744,24 +744,6 @@
       "chooseSplitButton": "Split wählen",
       "createPlanButton": "Meinen Plan erstellen"
     },
-    "cardioSports": {
-      "sportRunning": "Laufen",
-      "sportBasketball": "Basketball",
-      "sportBoxing": "Boxen",
-      "sportSwimming": "Schwimmen",
-      "sportCycling": "Radfahren",
-      "sportSoccer": "Fußball",
-      "sportHIIT": "HIIT",
-      "sportYoga": "Yoga",
-      "title": "Wie viele Tage Cardio\noder andere Sportarten?",
-      "subtitle": "Füge zusätzlich zu deinen Krafttrainingstagen Aktivitäten hinzu, die du liebst",
-      "yesTitle": "Ja, für etwas Abwechslung",
-      "yesDesc": "Cardio oder Sport in meine Woche einbauen",
-      "noTitle": "Nein, nur Gewichte",
-      "noDesc": "Nur auf Krafttraining fokussieren",
-      "selectActivities": "Wähle deine Aktivitäten",
-      "chooseOneOrMore": "Wähle eine oder mehrere"
-    },
     "splitPreference": {
       "title": "Wie möchtest du\ndeinen Split einrichten?",
       "subtitle": "Du kannst das später jederzeit ändern",

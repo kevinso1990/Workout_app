@@ -73,7 +73,6 @@ interface OnboardingState {
   focusMuscles: MuscleGroup[];
   splitPreference: "choose" | "recommended" | null;
   exercisePreference: "choose" | "default" | null;
-  cardioDays: string[];
 }
 
 function makeInitialState(): OnboardingState {
@@ -85,7 +84,6 @@ function makeInitialState(): OnboardingState {
     focusMuscles: [],
     splitPreference: null,
     exercisePreference: null,
-    cardioDays: [],
   };
 }
 
@@ -391,7 +389,6 @@ describe("Full onboarding sequence", () => {
       workoutDaysPerWeek: state.workoutDaysPerWeek,
       splitPreference: "recommended",
       exercisePreference: "default",
-      cardioDays: [],
       fitnessLevel: state.fitnessLevel,
       fitnessGoals: state.fitnessGoals,
       equipment: state.equipment,

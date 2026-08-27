@@ -819,24 +819,6 @@
       "chooseSplitButton": "Choose Split",
       "createPlanButton": "Create My Plan"
     },
-    "cardioSports": {
-      "sportRunning": "Running",
-      "sportBasketball": "Basketball",
-      "sportBoxing": "Boxing",
-      "sportSwimming": "Swimming",
-      "sportCycling": "Cycling",
-      "sportSoccer": "Soccer",
-      "sportHIIT": "HIIT",
-      "sportYoga": "Yoga",
-      "title": "How many days cardio\nor other sports?",
-      "subtitle": "Beyond your gym days, add activities you love",
-      "yesTitle": "Yes, add some variety",
-      "yesDesc": "Include cardio or sports in my week",
-      "noTitle": "No, just weights",
-      "noDesc": "Focus on strength training only",
-      "selectActivities": "Select your activities",
-      "chooseOneOrMore": "Choose one or more"
-    },
     "splitPreference": {
       "title": "How would you like to\nset up your split?",
       "subtitle": "You can always change this later",

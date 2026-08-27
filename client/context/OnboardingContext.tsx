@@ -10,7 +10,6 @@ export type { FitnessLevel, FitnessGoal, Equipment, MuscleGroup } from "@/lib/on
 
 interface OnboardingState {
   workoutDaysPerWeek: number;
-  cardioDays: string[];
   splitPreference: "choose" | "recommended" | null;
   exercisePreference: "choose" | "default" | null;
   fitnessLevel: FitnessLevel | null;
@@ -22,7 +21,6 @@ interface OnboardingState {
 interface OnboardingContextType {
   state: OnboardingState;
   setWorkoutDays: (days: number) => void;
-  setCardioDays: (sports: string[]) => void;
   setSplitPreference: (preference: "choose" | "recommended") => void;
   setExercisePreference: (preference: "choose" | "default") => void;
   setFitnessLevel: (level: FitnessLevel) => void;
@@ -39,7 +37,6 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(
 
 const initialState: OnboardingState = {
   workoutDaysPerWeek: 3,
-  cardioDays: [],
   splitPreference: null,
   exercisePreference: null,
   fitnessLevel: null,
@@ -53,10 +50,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const setWorkoutDays = (days: number) => {
     setState((prev) => ({ ...prev, workoutDaysPerWeek: days }));
-  };
-
-  const setCardioDays = (sports: string[]) => {
-    setState((prev) => ({ ...prev, cardioDays: sports }));
   };
 
   const setSplitPreference = (preference: "choose" | "recommended") => {
@@ -88,7 +81,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       workoutDaysPerWeek: state.workoutDaysPerWeek,
       splitPreference: state.splitPreference ?? "choose",
       exercisePreference: state.exercisePreference ?? "default",
-      cardioDays: state.cardioDays,
       fitnessLevel: state.fitnessLevel,
       fitnessGoals: state.fitnessGoals,
       equipment: state.equipment,
@@ -105,7 +97,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         setWorkoutDays,
-        setCardioDays,
         setSplitPreference,
         setExercisePreference,
         setFitnessLevel,

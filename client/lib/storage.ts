@@ -21,7 +21,6 @@ export interface UserPreferences {
   workoutDaysPerWeek: number;
   splitPreference: "choose" | "recommended";
   exercisePreference: "choose" | "default";
-  cardioDays?: string[];
   fitnessLevel?: FitnessLevel | null;
   fitnessGoals?: FitnessGoal[];
   equipment?: Equipment | null;
