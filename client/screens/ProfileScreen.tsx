@@ -924,8 +924,6 @@ export default function ProfileScreen() {
     setFitnessLevelState(level);
     const current = preferences ?? {
       workoutDaysPerWeek: 3,
-      splitPreference: "recommended" as const,
-      exercisePreference: "default" as const,
     };
     const updated = { ...current, fitnessLevel: level };
     setPreferences(updated);
@@ -937,8 +935,6 @@ export default function ProfileScreen() {
     setEquipmentState(value);
     const current = preferences ?? {
       workoutDaysPerWeek: 3,
-      splitPreference: "recommended" as const,
-      exercisePreference: "default" as const,
     };
     const updated = { ...current, equipment: value };
     setPreferences(updated);

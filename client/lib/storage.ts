@@ -19,8 +19,6 @@ export type MuscleGroupType = "chest" | "back" | "shoulders" | "arms" | "legs" |
 
 export interface UserPreferences {
   workoutDaysPerWeek: number;
-  splitPreference: "choose" | "recommended";
-  exercisePreference: "choose" | "default";
   fitnessLevel?: FitnessLevel | null;
   fitnessGoals?: FitnessGoal[];
   equipment?: Equipment | null;
@@ -31,8 +29,6 @@ export interface UserPreferences {
 
 const DEFAULT_USER_PREFERENCES: UserPreferences = {
   workoutDaysPerWeek: 3,
-  splitPreference: "recommended",
-  exercisePreference: "default",
 };
 
 /** Merged prefs when toggling rest timer — shared by Profile and ActiveWorkout (no duplicated defaults). */

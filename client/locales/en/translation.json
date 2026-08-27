@@ -808,25 +808,7 @@
     "beginnerTip": "Start with lighter weights and focus on learning correct form. You can always increase the weight next session.",
     "exercisesPerSession": "~{{count}} exercises",
     "approxSessionTime": "~{{min}} min/session",
-    "notifOptional": "Workout reminders & weekly summaries",
-    "exercisePreference": {
-      "title": "How would you like\nto pick exercises?",
-      "subtitle": "Don't worry, you can swap exercises anytime",
-      "defaultsTitle": "Use Defaults",
-      "defaultsDesc": "Start with proven exercises for each muscle group",
-      "chooseTitle": "I'll Choose",
-      "chooseDesc": "Browse our exercise library and pick your favorites",
-      "chooseSplitButton": "Choose Split",
-      "createPlanButton": "Create My Plan"
-    },
-    "splitPreference": {
-      "title": "How would you like to\nset up your split?",
-      "subtitle": "You can always change this later",
-      "recommendTitle": "Recommend for Me",
-      "recommendDesc": "We'll create an optimal split based on your schedule",
-      "chooseTitle": "I'll Choose",
-      "chooseDesc": "Select your own workout split and customize it"
-    }
+    "notifOptional": "Workout reminders & weekly summaries"
   },
   "splits": {
     "fullBody": "Full Body",

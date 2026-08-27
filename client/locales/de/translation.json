@@ -733,25 +733,7 @@
     "goalMuscleDesc": "Muskelmasse aufbauen & Körperzusammensetzung verbessern",
     "beginnerTip": "Starte mit leichteren Gewichten und konzentriere dich auf die richtige Technik. Du kannst das Gewicht jederzeit in der nächsten Einheit steigern.",
     "exercisesPerSession": "~{{count}} Übungen",
-    "approxSessionTime": "~{{min}} Min/Einheit",
-    "exercisePreference": {
-      "title": "Wie möchtest du\nÜbungen auswählen?",
-      "subtitle": "Keine Sorge, du kannst Übungen jederzeit tauschen",
-      "defaultsTitle": "Standard verwenden",
-      "defaultsDesc": "Starte mit bewährten Übungen für jede Muskelgruppe",
-      "chooseTitle": "Ich wähle selbst",
-      "chooseDesc": "Durchsuche unsere Übungsbibliothek und wähle deine Favoriten",
-      "chooseSplitButton": "Split wählen",
-      "createPlanButton": "Meinen Plan erstellen"
-    },
-    "splitPreference": {
-      "title": "Wie möchtest du\ndeinen Split einrichten?",
-      "subtitle": "Du kannst das später jederzeit ändern",
-      "recommendTitle": "Für mich empfehlen",
-      "recommendDesc": "Wir erstellen einen optimalen Split basierend auf deinem Zeitplan",
-      "chooseTitle": "Ich wähle selbst",
-      "chooseDesc": "Wähle deinen eigenen Trainings-Split und passe ihn an"
-    }
+    "approxSessionTime": "~{{min}} Min/Einheit"
   },
   "exercisesScreen": {
     "searchPlaceholder": "Über 800 Übungen durchsuchen...",

@@ -71,8 +71,6 @@ interface OnboardingState {
   fitnessGoals: FitnessGoal[];
   equipment: Equipment | null;
   focusMuscles: MuscleGroup[];
-  splitPreference: "choose" | "recommended" | null;
-  exercisePreference: "choose" | "default" | null;
 }
 
 function makeInitialState(): OnboardingState {
@@ -82,8 +80,6 @@ function makeInitialState(): OnboardingState {
     fitnessGoals: [],
     equipment: null,
     focusMuscles: [],
-    splitPreference: null,
-    exercisePreference: null,
   };
 }
 
@@ -387,8 +383,6 @@ describe("Full onboarding sequence", () => {
     // Persist user preferences
     await setUserPreferences({
       workoutDaysPerWeek: state.workoutDaysPerWeek,
-      splitPreference: "recommended",
-      exercisePreference: "default",
       fitnessLevel: state.fitnessLevel,
       fitnessGoals: state.fitnessGoals,
       equipment: state.equipment,

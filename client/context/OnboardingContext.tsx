@@ -10,8 +10,6 @@ export type { FitnessLevel, FitnessGoal, Equipment, MuscleGroup } from "@/lib/on
 
 interface OnboardingState {
   workoutDaysPerWeek: number;
-  splitPreference: "choose" | "recommended" | null;
-  exercisePreference: "choose" | "default" | null;
   fitnessLevel: FitnessLevel | null;
   fitnessGoals: FitnessGoal[];
   equipment: Equipment | null;
@@ -21,8 +19,6 @@ interface OnboardingState {
 interface OnboardingContextType {
   state: OnboardingState;
   setWorkoutDays: (days: number) => void;
-  setSplitPreference: (preference: "choose" | "recommended") => void;
-  setExercisePreference: (preference: "choose" | "default") => void;
   setFitnessLevel: (level: FitnessLevel) => void;
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setEquipment: (equipment: Equipment) => void;
@@ -37,8 +33,6 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(
 
 const initialState: OnboardingState = {
   workoutDaysPerWeek: 3,
-  splitPreference: null,
-  exercisePreference: null,
   fitnessLevel: null,
   fitnessGoals: [],
   equipment: null,
@@ -50,14 +44,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const setWorkoutDays = (days: number) => {
     setState((prev) => ({ ...prev, workoutDaysPerWeek: days }));
-  };
-
-  const setSplitPreference = (preference: "choose" | "recommended") => {
-    setState((prev) => ({ ...prev, splitPreference: preference }));
-  };
-
-  const setExercisePreference = (preference: "choose" | "default") => {
-    setState((prev) => ({ ...prev, exercisePreference: preference }));
   };
 
   const setFitnessLevel = (level: FitnessLevel) => {
@@ -79,8 +65,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const getPreferences = (): UserPreferences => {
     return {
       workoutDaysPerWeek: state.workoutDaysPerWeek,
-      splitPreference: state.splitPreference ?? "choose",
-      exercisePreference: state.exercisePreference ?? "default",
       fitnessLevel: state.fitnessLevel,
       fitnessGoals: state.fitnessGoals,
       equipment: state.equipment,
@@ -97,8 +81,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         setWorkoutDays,
-        setSplitPreference,
-        setExercisePreference,
         setFitnessLevel,
         setFitnessGoals,
         setEquipment,
