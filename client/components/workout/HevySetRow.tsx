@@ -239,13 +239,17 @@ function useHoldToRepeat(onStep: (dir: 1 | -1) => void) {
     (dir: 1 | -1) => {
       onStep(dir);
       clear();
+      // Timings are tuned for the real job: getting from 0 to a working weight
+      // like 100-150 kg in 1 kg steps without lifting a thumb. Reaching the fast
+      // tier sooner is what makes that bearable (~3.5 s to 100 kg); the parent's
+      // autosave is debounced, so the tick rate costs nothing on disk.
       timeoutRef.current = setTimeout(() => {
-        intervalRef.current = setInterval(() => onStep(dir), 90);
+        intervalRef.current = setInterval(() => onStep(dir), 80);
         accelerateRef.current = setTimeout(() => {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          intervalRef.current = setInterval(() => onStep(dir), 35);
-        }, 1200);
-      }, 400);
+          intervalRef.current = setInterval(() => onStep(dir), 25);
+        }, 800);
+      }, 350);
     },
     [onStep, clear],
   );
@@ -642,30 +646,49 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
     onUpdate({ reps: formatted });
   }, [draft.reps, onUpdate]);
 
+  // Hold-to-repeat drives these from an interval that captures the callback ONCE
+  // at press time. Reading `draft` out of the closure therefore recomputes from
+  // the same stale base on every tick: the number freezes after the first step
+  // while the haptics keep firing. Mirror the draft into a ref and advance it
+  // synchronously, so each tick builds on what the previous tick just wrote —
+  // independent of React's commit timing.
+  const draftRef = useRef(draft);
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
   const stepWeight = useCallback(
     (dir: 1 | -1) => {
-      const base = parseFloat(String(draft.weight).replace(",", ".")) || 0;
+      const current = draftRef.current.weight;
+      const base = parseFloat(String(current).replace(",", ".")) || 0;
       const next = Math.max(0, base + dir * WEIGHT_STEP_KG);
       const formatted = clampAndFormatWeightExact(String(next));
+      // At the floor (or a clamped ceiling) nothing moves — don't buzz for a
+      // step that didn't happen.
+      if (formatted === current) return;
+      draftRef.current = { ...draftRef.current, weight: formatted };
       typingRef.current = false;
       setDraft((d) => ({ ...d, weight: formatted }));
       onUpdate({ weight: formatted });
       Haptics.selectionAsync();
     },
-    [draft.weight, onUpdate],
+    [onUpdate],
   );
 
   const stepReps = useCallback(
     (dir: 1 | -1) => {
-      const base = parseInt(String(draft.reps).replace(/\D/g, ""), 10) || 0;
+      const current = draftRef.current.reps;
+      const base = parseInt(String(current).replace(/\D/g, ""), 10) || 0;
       const next = Math.max(0, base + dir);
       const formatted = clampAndFormatReps(String(next));
+      if (formatted === current) return;
+      draftRef.current = { ...draftRef.current, reps: formatted };
       typingRef.current = false;
       setDraft((d) => ({ ...d, reps: formatted }));
       onUpdate({ reps: formatted });
       Haptics.selectionAsync();
     },
-    [draft.reps, onUpdate],
+    [onUpdate],
   );
 
   const displaySet: SetData = {
