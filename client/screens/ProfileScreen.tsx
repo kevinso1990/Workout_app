@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, StyleSheet, Image, Pressable, Alert, Modal, TextInput, ScrollView, Switch } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Modal, TextInput, ScrollView, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -42,6 +42,7 @@ import {
 } from "@/lib/cloudSync";
 import { runDataSync } from "@/lib/dataSync";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
+import { BrandMark } from "@/components/brand/BrandLogo";
 import * as WebBrowser from "expo-web-browser";
 import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from "@/lib/legalLinks";
 import { api } from "@/lib/api";
@@ -958,11 +959,7 @@ export default function ProfileScreen() {
         entering={FadeInDown.duration(400)}
         style={styles.profileHeader}
       >
-        <Image
-          source={require("../../assets/images/avatar-default.png")}
-          style={styles.avatar}
-          resizeMode="cover"
-        />
+        <BrandMark size={64} style={styles.avatar} />
         <ThemedText style={styles.greeting}>{t("profile.greeting")}</ThemedText>
         <ThemedText style={[styles.statsText, { color: theme.textSecondary }]}>
           {t("profile.statsSummary", {
@@ -1135,9 +1132,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing["2xl"],
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.sm,
+    // Size/radius come from BrandMark itself — only spacing belongs here.
     marginBottom: 16,
   },
   greeting: {

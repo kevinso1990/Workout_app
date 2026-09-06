@@ -124,7 +124,7 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
           style={[styles.cta, { backgroundColor: Colors.light.primary }]}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={Colors.light.onChalk} size="small" />
           ) : (
             <ThemedText style={styles.ctaText}>{t("planAdaptation.cta")}</ThemedText>
           )}
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
     alignItems: "center",
   },
-  ctaText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  ctaText: { color: Colors.light.onChalk, fontWeight: "600", fontSize: 13 },
   dismiss: { padding: 4 },
   error: { fontSize: 12, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   modalBackdrop: {
@@ -226,5 +226,5 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.lg,
   },
-  modalBtnPrimaryText: { color: "#fff", fontWeight: "600" },
+  modalBtnPrimaryText: { color: Colors.light.onChalk, fontWeight: "600" },
 });

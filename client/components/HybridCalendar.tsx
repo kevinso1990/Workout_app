@@ -85,7 +85,7 @@ export function HybridCalendar({
               <View style={styles.dots}>
                 {hasStrength ? (
                   <View style={[styles.dot, styles.dotStrength]}>
-                    <Feather name="activity" size={8} color="#FFFFFF" />
+                    <Feather name="activity" size={8} color={Colors.light.onChalk} />
                   </View>
                 ) : null}
                 {hasCardio ? (
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   dayNumSelected: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
   },
   dots: {
     flexDirection: "row",

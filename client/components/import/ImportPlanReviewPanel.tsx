@@ -69,7 +69,7 @@ function PrimarySaveButton({
       ]}
       testID="button-import-save-plan"
     >
-      <Feather name="check" size={20} color="#FFFFFF" />
+      <Feather name="check" size={20} color={Colors.light.onChalk} />
       <ThemedText style={styles.primarySaveBtnText}>{label}</ThemedText>
     </Pressable>
   );
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   primarySaveBtnText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

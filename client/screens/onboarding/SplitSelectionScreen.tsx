@@ -135,7 +135,7 @@ function SplitCard({
         {recommended ? (
           <View style={styles.recommendedBadgeWrap}>
             <View style={[styles.recommendedBadge, { backgroundColor: Colors.light.primary }]}>
-              <Feather name="star" size={10} color="#fff" />
+              <Feather name="star" size={10} color={Colors.light.onChalk} />
               <ThemedText style={styles.recommendedBadgeText}>
                 {t("onboarding.recommended", { defaultValue: "Recommended" })}
               </ThemedText>

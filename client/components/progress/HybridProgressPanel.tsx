@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   segmentTextActive: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
   },
   metricGrid: {
     flexDirection: "row",

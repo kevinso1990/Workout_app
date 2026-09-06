@@ -1725,7 +1725,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   emptyCtaText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 16,
     fontWeight: "700",
   },

@@ -2753,12 +2753,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: Spacing.md,
   },
-  setNumberLargeText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    fontFamily: "Oswald_700Bold",
-  },
   activeSetInfo: {
     flex: 1,
   },
@@ -2960,12 +2954,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
   },
-  nextButtonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "600",
-    fontFamily: "Oswald_600SemiBold",
-  },
   finishButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -3050,11 +3038,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,
-  },
-  manualModalBtnPrimaryText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 16,
   },
   headerRestToggle: {
     alignItems: "flex-end",
@@ -3244,12 +3227,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     gap: Spacing.sm,
   },
-  prSummaryText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-    fontFamily: "Oswald_600SemiBold",
-  },
   summaryBottom: {
     position: "absolute",
     bottom: 0,
@@ -3287,12 +3264,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
-  },
-  shareCardAppName: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    fontFamily: "Oswald_700Bold",
   },
   shareCardDate: {
     color: Colors.dark.chalkDim,
@@ -3441,7 +3412,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   plateChipText: {
-    color: "#FFFFFF",
+    color: Colors.light.onChalk,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -3470,12 +3441,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
-  },
-  logButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-    fontFamily: "Oswald_700Bold",
   },
   logHint: {
     fontSize: 12,

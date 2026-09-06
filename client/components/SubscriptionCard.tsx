@@ -86,7 +86,7 @@ export function SubscriptionCard() {
           testID="button-subscribe-pro"
         >
           {busy === "purchase" ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={Colors.light.onChalk} />
           ) : (
             <ThemedText style={styles.primaryBtnText}>
               {t("subscription.subscribe")}
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryBtnText: {
-    color: "#fff",
+    color: Colors.light.onChalk,
     fontWeight: "700",
     fontSize: 15,
   },

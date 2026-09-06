@@ -58,10 +58,75 @@ export function BrandLogo({
   );
 }
 
+export type BrandMarkProps = {
+  /** Edge length in dp. */
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+  testID?: string;
+};
+
+/**
+ * Compact square brand mark — the wordmark condensed to a monogram for slots
+ * that need a square logo rather than a lockup (profile header, empty states).
+ *
+ * Built from tokens only, so it stays on-system and needs no raster asset:
+ * matte iron surface, hairline edge, chalk monogram in the display face. The
+ * profile header previously used a peach / orange-red running-figure PNG, which
+ * broke two rules at once — plate colours are reserved for load intensity, and
+ * a running motif reads as cardio in a strength app.
+ */
+export function BrandMark({
+  size = 64,
+  style,
+  accessibilityLabel = "Track Your Lift",
+  testID = "brand-mark",
+}: BrandMarkProps) {
+  const fontSize = Math.round(size * 0.34);
+  return (
+    <View
+      style={[
+        styles.markBox,
+        { width: size, height: size, borderRadius: Math.round(size * 0.22) },
+        style,
+      ]}
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+    >
+      <Text
+        allowFontScaling={false}
+        style={[
+          styles.markMonogram,
+          {
+            fontSize,
+            letterSpacing: fontSize * 0.04,
+            lineHeight: Math.round(fontSize * 1.2),
+          },
+        ]}
+      >
+        T<Text style={styles.dim}>Y</Text>L
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   wrap: {
     justifyContent: "center",
     width: "100%",
+  },
+  markBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.ironElevated2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.hairlineStrong,
+  },
+  markMonogram: {
+    fontFamily: FontFamily.display,
+    color: C.chalk,
+    textTransform: "uppercase",
   },
   centered: {
     alignItems: "center",

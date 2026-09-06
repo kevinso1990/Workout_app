@@ -98,7 +98,7 @@ export function CreatePlanFab() {
           accessibilityLabel={t("addWorkout.fabLabel")}
         >
           <View style={[styles.fab, { backgroundColor: Colors.light.primary }]}>
-            <Feather name="plus" size={24} color="#FFFFFF" />
+            <Feather name="plus" size={24} color={Colors.light.onChalk} />
           </View>
         </AnimatedPressable>
       </View>
