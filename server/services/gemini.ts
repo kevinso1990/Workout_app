@@ -94,6 +94,24 @@ async function generateWithSdk(modelName: string, parts: Part[]): Promise<string
  * Generate text from Gemini parts. Tries each model in `GEMINI_MODEL_CHAIN`.
  * When `grounding` is true, uses Google Search via REST (`google_search` tool).
  */
+/**
+ * Transient upstream conditions, not "this model is wrong". Gemini's free tier
+ * returns 503 "high demand" regularly under load, and the old behaviour treated
+ * that as fatal for the model: it moved straight on, exhausted the short chain,
+ * and gave up — so a temporary capacity blip took plan generation down entirely
+ * while the client sat waiting for its 75s timeout.
+ */
+export function isRetryableGeminiError(message: string): boolean {
+  return (
+    /\b(429|500|502|503|504)\b/.test(message) ||
+    /high demand|overloaded|unavailable|rate.?limit|quota|deadline|timeout|timed out|ECONNRESET|ETIMEDOUT|EAI_AGAIN|fetch failed|socket hang up/i.test(
+      message,
+    )
+  );
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function geminiGenerateContent(
   parts: Part[],
   options?: GeminiGenerateOptions,
@@ -102,8 +120,27 @@ export async function geminiGenerateContent(
   const useSchema = !!options?.responseSchema;
   const errors: string[] = [];
 
+  const attemptsPerModel = Math.max(
+    1,
+    parseInt(process.env.GEMINI_ATTEMPTS_PER_MODEL || "3", 10) || 3,
+  );
+  // Stay comfortably inside the client's own 75s ceiling: returning a template
+  // plan at 50s is a far better outcome than a request the app abandons.
+  const deadlineMs = Math.max(
+    5_000,
+    parseInt(process.env.GEMINI_DEADLINE_MS || "50000", 10) || 50_000,
+  );
+  const startedAt = Date.now();
+  const timeLeft = () => deadlineMs - (Date.now() - startedAt);
+
   for (const modelName of modelChain()) {
-    try {
+    for (let attempt = 1; attempt <= attemptsPerModel; attempt++) {
+      if (timeLeft() <= 0) {
+        throw new Error(
+          `Gemini deadline of ${deadlineMs}ms exceeded — ${errors.join(" | ") || "no attempts completed"}`,
+        );
+      }
+      try {
       // Structured JSON or grounding require REST API.
       if (useSchema || useGrounding) {
         return await generateWithRest(modelName, parts, options);
@@ -111,8 +148,32 @@ export async function geminiGenerateContent(
       return await generateWithSdk(modelName, parts);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`${modelName}: ${msg}`);
-      console.warn(`[Gemini] ${modelName} failed, trying next if any`);
+      errors.push(`${modelName}#${attempt}: ${msg}`);
+      // Log the actual reason. Without it a failing model is indistinguishable
+      // from a rate limit, an oversized prompt, or a bad key — which is exactly
+      // the hole that made a production generation outage undiagnosable from
+      // the logs. Prompt size is included because the failures that matter here
+      // only show up on real (large) prompts, never on a smoke test.
+      const promptChars = parts.reduce(
+        (n, p) => n + (typeof (p as { text?: string }).text === "string" ? (p as { text: string }).text.length : 0),
+        0,
+      );
+      const retryable = isRetryableGeminiError(msg);
+      console.warn(
+        `[Gemini] ${modelName} attempt ${attempt}/${attemptsPerModel} failed ` +
+          `(prompt ${promptChars} chars, ` +
+          `${useSchema ? "schema" : useGrounding ? "grounding" : "sdk"} path, ` +
+          `${retryable ? "retryable" : "fatal"}): ${msg}`,
+      );
+
+      if (!retryable) break; // a real problem with this model — move on
+      if (attempt >= attemptsPerModel) break;
+      // Back off before retrying the SAME model: a 503 means "busy now",
+      // and the next model in the chain is usually just as busy.
+      const backoff = Math.min(1_000 * 2 ** (attempt - 1), 4_000);
+      if (timeLeft() <= backoff) break;
+      await sleep(backoff);
+    }
     }
   }
 
