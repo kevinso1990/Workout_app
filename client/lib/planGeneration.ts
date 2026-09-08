@@ -13,6 +13,10 @@ import {
 import { mapNativeEquipmentToApi } from "@/lib/equipmentApiMap";
 import { nativeRequest } from "@/lib/nativeApi";
 import { setPlanGenerationFallbackNotice } from "@/lib/planGenerationFallback";
+import {
+  describeCommitmentsForPrompt,
+  type WeeklyCommitment,
+} from "@shared/weeklySchedule";
 
 type ApiPlanExercise = {
   exercise_id: number;
@@ -43,7 +47,24 @@ export type GenerateWorkoutPlanInput = {
   splitId?: string;
   /** Free-text goal ("improve hip mobility") from the AI-goal feature. */
   goalText?: string;
+  /**
+   * Fixed weekly sport commitments. Two effects: the requested frequency can
+   * never exceed the days actually left free, and the model is told what the
+   * strength plan has to coexist with (a week with two court-sport days should
+   * not also carry maximal lower-body volume).
+   */
+  commitments?: WeeklyCommitment[];
 };
+
+/**
+ * Gym sessions can only go on days no sport already occupies. Asking for six
+ * sessions with three sport days would generate a plan that cannot be placed,
+ * so the request is capped instead of failing later at scheduling time.
+ */
+export function maxGymSessionsPerWeek(commitments?: WeeklyCommitment[]): number {
+  const takenDays = new Set((commitments ?? []).map((c) => c.weekday));
+  return Math.max(1, 7 - takenDays.size);
+}
 
 export type GenerateWorkoutPlanResult = {
   plan: WorkoutPlan;
@@ -101,14 +122,16 @@ function classifyGenerationError(err: unknown): string {
 async function fetchAiGeneratedPlan(
   input: GenerateWorkoutPlanInput,
 ): Promise<WorkoutPlan | null> {
+  const commitmentsText = describeCommitmentsForPrompt(input.commitments ?? []);
   const body = {
-    frequency: input.frequency,
+    frequency: Math.min(input.frequency, maxGymSessionsPerWeek(input.commitments)),
     experience: input.experience,
     goal: input.goal,
     equipment: mapNativeEquipmentToApi(input.equipment),
     focusMuscles: input.focusMuscles ?? [],
     splitPreference: input.splitId,
     ...(input.goalText ? { goalText: input.goalText } : {}),
+    ...(commitmentsText ? { commitmentsText } : {}),
   };
 
   if (__DEV__) {

@@ -47,6 +47,12 @@ const autoGenerateSchema = z.object({
   focusMuscles: z.array(z.enum(VALID_MUSCLE_GROUPS)).optional().default([]),
   splitPreference: z.enum(VALID_SPLIT_PREFERENCES).optional(),
   goalText: z.string().trim().min(3).max(200).optional(),
+  /**
+   * Pre-rendered description of the athlete's fixed weekly sport commitments
+   * ("Tuesday: basketball; Thursday: running"), built client-side by
+   * describeCommitmentsForPrompt so the wire format stays a plain string.
+   */
+  commitmentsText: z.string().trim().max(600).optional(),
 });
 
 /**
@@ -744,7 +750,7 @@ function makeAutoGenRuntime(
     const msg = parsed.error.errors.map((e) => e.message).join("; ");
     throw new AppError(400, msg);
   }
-  const { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText } =
+  const { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText, commitmentsText } =
     parsed.data;
   const planShape = resolvePlanShape(splitPreference, frequency, experience);
   const exerciseCount = getExerciseCount(experience, planShape);
@@ -764,7 +770,7 @@ function makeAutoGenRuntime(
   const maxSessionSets =
     experience === "beginner" ? 14 : experience === "advanced" ? 25 : 21;
   return {
-    parsed: { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText },
+    parsed: { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText, commitmentsText },
     planShape,
     exerciseCount,
     weeklyMuscleFreq,
@@ -1208,6 +1214,7 @@ export async function tryAutoGeneratePlansWithAi(
     focusMuscles: rt.parsed.focusMuscles,
     splitPreference: rt.parsed.splitPreference,
     goalText: rt.parsed.goalText,
+    commitmentsText: rt.parsed.commitmentsText,
     sessionLines: defaultSessions.map((s, idx) => `${idx + 1}. ${s.name}`).join("\n"),
     whitelistLines,
     sessionCount: defaultSessions.length,

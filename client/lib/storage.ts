@@ -1,5 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
+import type { WeeklyCommitment } from "@shared/weeklySchedule";
+
+export type { WeeklyCommitment, Weekday } from "@shared/weeklySchedule";
 
 const STORAGE_KEYS = {
   /** Legal disclaimer accepted (v1 — bump key if disclaimer text materially changes). */
@@ -19,6 +22,13 @@ export type MuscleGroupType = "chest" | "back" | "shoulders" | "arms" | "legs" |
 
 export interface UserPreferences {
   workoutDaysPerWeek: number;
+  /**
+   * Fixed weekly sport commitments ("Tuesday basketball, Thursday jogging").
+   * The week's gym days are derived from these rather than stored alongside
+   * them — see scheduleTrainingWeek — so changing a commitment can never leave
+   * a stale schedule behind.
+   */
+  weeklyCommitments?: WeeklyCommitment[];
   fitnessLevel?: FitnessLevel | null;
   fitnessGoals?: FitnessGoal[];
   equipment?: Equipment | null;

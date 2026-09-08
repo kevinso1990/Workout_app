@@ -171,6 +171,8 @@ export function buildGeminiAutoGeneratePrompt(params: {
   focusMuscles: string[];
   splitPreference?: string;
   goalText?: string;
+  /** Fixed weekly sport commitments, pre-rendered client-side. */
+  commitmentsText?: string;
   sessionLines: string;
   whitelistLines: string;
   sessionCount: number;
@@ -183,6 +185,7 @@ export function buildGeminiAutoGeneratePrompt(params: {
     focusMuscles,
     splitPreference,
     goalText,
+    commitmentsText,
     sessionLines,
     whitelistLines,
     sessionCount,
@@ -247,6 +250,12 @@ If the whitelist truly offers nothing gentler for a muscle group, the least-dema
         ? `EXPERIENCE — advanced: for each muscle group, prioritize the heaviest, most technically demanding compound movement available within the whitelist for the given equipment (e.g. free-weight barbell compounds when equipment is barbell/full_gym; Snatch/Clean/Turkish Get-Up when equipment is kettlebell; weighted or strict Pull-Up/Dip/Pistol Squat when equipment is bodyweight) rather than defaulting to easier machine or assisted variants.\n`
         : "";
 
+  // The athlete's fixed sport days constrain the strength plan: a week that
+  // already contains two court-sport sessions cannot also carry maximal
+  // lower-body volume. Placement of the sessions themselves is decided
+  // deterministically in shared/weeklySchedule.ts, not here.
+  const commitmentsBlock = commitmentsText ? `${commitmentsText}\n\n` : "";
+
   return `${PLAN_GENERATOR_FULL_JSON_PROMPT}
 
 ${freeTextGoalBlock}User profile:
@@ -258,7 +267,7 @@ ${freeTextGoalBlock}User profile:
 - split_preference: ${splitPreference ?? "auto"}
 - focus_muscles_UI: ${JSON.stringify(focusMuscles)}
 
-${experienceBlock}${structureBlock}
+${commitmentsBlock}${experienceBlock}${structureBlock}
 
 Whitelist — use ONLY these exercise names:
 ${whitelistLines}
