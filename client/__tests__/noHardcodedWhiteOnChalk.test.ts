@@ -68,6 +68,46 @@ function walk(dir: string): string[] {
   return out;
 }
 
+/**
+ * The mirror image of the same bug: a pale background left over from the old
+ * light theme. The app is committed dark, so a near-white chip renders as a
+ * bright blob — and anything chalk-coloured drawn on top of it disappears. This
+ * is how the "Start strength training" icon in the add-workout sheet became
+ * invisible (chalk glyph on #EEF2FF) while passing the white-foreground check.
+ */
+const LIGHT_BG = /backgroundColor:\s*["']#([0-9a-f]{6})["']/gi;
+/** Perceptual luminance; 0.75 clears amber (#F59E0B ≈ 0.65) and red (#EF4444 ≈ 0.47). */
+const LIGHT_THRESHOLD = 0.75;
+
+function luminance(hex: string): number {
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+describe("no pale hardcoded backgrounds (light-theme leftovers)", () => {
+  const files = SCAN_DIRS.flatMap((d) => walk(join(CLIENT_ROOT, d)));
+
+  for (const file of files) {
+    const rel = relative(CLIENT_ROOT, file).split("\\").join("/");
+    it(`${rel} has no near-white hardcoded surface`, () => {
+      const src = readFileSync(file, "utf-8");
+      const offenders: string[] = [];
+      for (const m of src.matchAll(LIGHT_BG)) {
+        if (luminance(m[1]) > LIGHT_THRESHOLD) offenders.push(`#${m[1]}`);
+      }
+      expect(
+        offenders,
+        offenders.length
+          ? `${rel}: pale hardcoded background(s) ${offenders.join(", ")} in a committed-dark app. ` +
+            `Use a theme token (e.g. Colors.light.primary + "1A" over iron) instead.`
+          : undefined,
+      ).toEqual([]);
+    });
+  }
+});
+
 describe("no hardcoded white foregrounds outside the verified allowlist", () => {
   const files = SCAN_DIRS.flatMap((d) => walk(join(CLIENT_ROOT, d)));
 

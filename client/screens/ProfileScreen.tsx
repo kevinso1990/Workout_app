@@ -998,8 +998,12 @@ export default function ProfileScreen() {
         <Switch
           value={restTimerEnabled}
           onValueChange={handleToggleRestTimer}
-          trackColor={{ false: theme.border, true: Colors.light.primary }}
+          // "On" must not be chalk: the primary colour is near-white, so a
+          // chalk track under the white thumb read as a blank white pill with
+          // no discernible state. Green is what a switch is expected to do.
+          trackColor={{ false: theme.border, true: Colors.light.success }}
           thumbColor="#fff"
+          ios_backgroundColor={theme.border}
           testID="switch-rest-timer"
         />
       </Animated.View>

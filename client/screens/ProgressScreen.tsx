@@ -1960,7 +1960,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: "#C7C7CC",
+    backgroundColor: Colors.light.border,
   },
   modalHeader: {
     flexDirection: "row",

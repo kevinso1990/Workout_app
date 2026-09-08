@@ -124,8 +124,8 @@ export function CreatePlanFab() {
             <ThemedText style={styles.sheetTitle}>{t("addWorkout.title")}</ThemedText>
 
             <Pressable style={styles.sheetItem} onPress={goStrength} testID="button-add-strength">
-              <View style={[styles.sheetIcon, { backgroundColor: "#EEF2FF" }]}>
-                <Feather name="activity" size={20} color={Colors.light.primary} />
+              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
+                <Feather name="activity" size={20} color={Colors.light.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -138,8 +138,8 @@ export function CreatePlanFab() {
             </Pressable>
 
             <Pressable style={styles.sheetItem} onPress={goCardio} testID="button-add-cardio">
-              <View style={[styles.sheetIcon, { backgroundColor: "#FEF3C7" }]}>
-                <Feather name="zap" size={20} color="#D97706" />
+              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
+                <Feather name="zap" size={20} color={Colors.light.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -153,7 +153,7 @@ export function CreatePlanFab() {
 
             <Pressable style={styles.sheetItem} onPress={goGoalPlan} testID="button-add-goal-plan">
               <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <Feather name="target" size={20} color={Colors.light.primary} />
+                <Feather name="target" size={20} color={Colors.light.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -166,8 +166,8 @@ export function CreatePlanFab() {
             </Pressable>
 
             <Pressable style={styles.sheetItem} onPress={goImport} testID="button-add-import">
-              <View style={[styles.sheetIcon, { backgroundColor: "#EFF6FF" }]}>
-                <Feather name="file-text" size={20} color="#2563EB" />
+              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
+                <Feather name="file-text" size={20} color={Colors.light.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingVertical: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "rgba(236,233,225,0.09)",
   },
   sheetIcon: {
     width: 44,
