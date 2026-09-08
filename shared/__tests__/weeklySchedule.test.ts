@@ -169,6 +169,34 @@ describe("scheduleTrainingWeek — recovery rules", () => {
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(2);
   });
 
+  it("does not stack two leg days back to back when avoiding sport days", () => {
+    // Found by driving the real app: with Tue and Thu taken, an Upper/Lower x2
+    // plan pushed both Lower days to Sat+Sun — legs correctly kept away from
+    // basketball and running, but then given no recovery between themselves.
+    const s = scheduleTrainingWeek({
+      commitments: [commitment(TUE, "basketball"), commitment(THU, "running")],
+      sessionDayNames: ["Upper", "Lower", "Upper 2", "Lower 2"],
+    });
+    const lowerDays = s.slots
+      .filter((x) => x.kind === "gym" && isLowerBodySession(x.dayName!))
+      .map((x) => x.weekday)
+      .sort((a, b) => a - b);
+    expect(lowerDays).toHaveLength(2);
+    const raw = Math.abs(lowerDays[0] - lowerDays[1]);
+    const gap = Math.min(raw, 7 - raw);
+    expect(gap, `leg days landed on ${lowerDays.join(" and ")}`).toBeGreaterThanOrEqual(2);
+  });
+
+  it("still allows an upper day next to a lower day — that pairing is fine", () => {
+    const s = scheduleTrainingWeek({
+      commitments: [],
+      sessionDayNames: ["Upper", "Lower", "Upper 2", "Lower 2", "Upper 3"],
+    });
+    // Five sessions in seven days forces adjacency; it must not refuse to place.
+    expect(s.slots.filter((x) => x.kind === "gym")).toHaveLength(5);
+    expect(s.unplacedDayNames).toEqual([]);
+  });
+
   it("fills a tight week even when every choice is compromised", () => {
     // Five sessions, two sport days: only five free days, so back-to-back is
     // unavoidable. It must still place all five rather than give up.

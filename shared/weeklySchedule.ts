@@ -130,10 +130,15 @@ function clusteringCost(days: Weekday[], dayNames: string[]): number {
       const raw = Math.abs(days[i] - days[j]);
       const gap = Math.min(raw, 7 - raw);
       if (gap === 1) {
-        const bothFullBody =
-          /full\s*body|ganzk[oö]rper/i.test(dayNames[i]) &&
-          /full\s*body|ganzk[oö]rper/i.test(dayNames[j]);
-        cost += bothFullBody ? 8 : 3;
+        // Back-to-back sessions that load the SAME region are the real problem:
+        // Lower/Lower (or two full-body days) gives the legs no recovery at all,
+        // whereas Upper followed by Lower is a normal, perfectly trainable
+        // pairing. Penalising both equally produced schedules that pushed the
+        // leg days away from the sport days and then stacked them on the
+        // weekend, which trades one recovery problem for another.
+        const sameRegion =
+          isLowerBodySession(dayNames[i]) === isLowerBodySession(dayNames[j]);
+        cost += sameRegion ? 8 : 3;
       }
     }
   }
