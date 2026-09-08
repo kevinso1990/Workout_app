@@ -10,7 +10,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["server/__tests__/**/*.test.ts", "client/__tests__/**/*.test.ts"],
+    include: [
+      "server/__tests__/**/*.test.ts",
+      "client/__tests__/**/*.test.ts",
+      "shared/__tests__/**/*.test.ts",
+    ],
     // Each test file gets its own isolated process so in-memory DBs don't collide
     pool: "forks",
     env: {
