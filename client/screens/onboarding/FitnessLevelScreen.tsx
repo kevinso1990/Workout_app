@@ -67,7 +67,7 @@ export default function FitnessLevelScreen() {
         { flex: 1, backgroundColor: theme.backgroundRoot, ...screenHeaderSafeAreaStyle(insets.top) },
       ]}
     >
-      <ProgressBar showBrand step={4} total={4} style={{ marginBottom: Spacing.xl }} />
+      <ProgressBar showBrand step={5} total={5} style={{ marginBottom: Spacing.xl }} />
       <Animated.View entering={FadeInDown.duration(400)}>
         <OnboardingHeading
           title={t("onboarding.experienceQuestion")}

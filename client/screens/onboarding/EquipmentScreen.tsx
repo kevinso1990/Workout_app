@@ -80,7 +80,7 @@ export default function EquipmentScreen() {
         { flex: 1, backgroundColor: theme.backgroundRoot, ...screenHeaderSafeAreaStyle(insets.top) },
       ]}
     >
-      <ProgressBar showBrand step={1} total={4} style={{ marginBottom: Spacing.xl }} />
+      <ProgressBar showBrand step={1} total={5} style={{ marginBottom: Spacing.xl }} />
 
       <Animated.View entering={FadeInDown.duration(400)}>
         <OnboardingHeading

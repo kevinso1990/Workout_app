@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -97,6 +97,16 @@ export default function FrequencyScreen() {
     transform: [{ scale: buttonScale.value }],
   }));
 
+  // Gym days can only go where no sport already sits. Offering 6x to someone
+  // with three sport days would take an answer the plan cannot honour, so the
+  // options are trimmed here rather than the answer being capped later.
+  const freeDays = 7 - state.weeklyCommitments.length;
+  const availableDays = DAYS.filter((d) => d.value <= freeDays);
+
+  useEffect(() => {
+    if (state.workoutDaysPerWeek > freeDays) setWorkoutDays(Math.max(1, freeDays));
+  }, [freeDays, state.workoutDaysPerWeek, setWorkoutDays]);
+
   const handleDaySelect = (day: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setWorkoutDays(day);
@@ -119,7 +129,7 @@ export default function FrequencyScreen() {
       >
         <View>
           <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-            <ProgressBar showBrand step={3} total={4} style={{ marginBottom: Spacing.xl }} />
+            <ProgressBar showBrand step={4} total={5} style={{ marginBottom: Spacing.xl }} />
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(200).duration(500)}>
@@ -133,7 +143,7 @@ export default function FrequencyScreen() {
             entering={FadeInUp.delay(300).duration(500)}
             style={styles.pillsContainer}
           >
-            {DAYS.map(({ value, label }) => (
+            {availableDays.map(({ value, label }) => (
               <DayPill
                 key={value}
                 day={value}

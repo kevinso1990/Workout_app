@@ -7,9 +7,11 @@ import type {
   MuscleGroup,
 } from "@/lib/onboardingUtils";
 export type { FitnessLevel, FitnessGoal, Equipment, MuscleGroup } from "@/lib/onboardingUtils";
+import type { WeeklyCommitment } from "@shared/weeklySchedule";
 
 interface OnboardingState {
   workoutDaysPerWeek: number;
+  weeklyCommitments: WeeklyCommitment[];
   fitnessLevel: FitnessLevel | null;
   fitnessGoals: FitnessGoal[];
   equipment: Equipment | null;
@@ -19,6 +21,7 @@ interface OnboardingState {
 interface OnboardingContextType {
   state: OnboardingState;
   setWorkoutDays: (days: number) => void;
+  setWeeklyCommitments: (commitments: WeeklyCommitment[]) => void;
   setFitnessLevel: (level: FitnessLevel) => void;
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setEquipment: (equipment: Equipment) => void;
@@ -33,6 +36,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(
 
 const initialState: OnboardingState = {
   workoutDaysPerWeek: 3,
+  weeklyCommitments: [],
   fitnessLevel: null,
   fitnessGoals: [],
   equipment: null,
@@ -44,6 +48,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const setWorkoutDays = (days: number) => {
     setState((prev) => ({ ...prev, workoutDaysPerWeek: days }));
+  };
+
+  const setWeeklyCommitments = (commitments: WeeklyCommitment[]) => {
+    setState((prev) => ({ ...prev, weeklyCommitments: commitments }));
   };
 
   const setFitnessLevel = (level: FitnessLevel) => {
@@ -65,6 +73,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const getPreferences = (): UserPreferences => {
     return {
       workoutDaysPerWeek: state.workoutDaysPerWeek,
+      weeklyCommitments: state.weeklyCommitments,
       fitnessLevel: state.fitnessLevel,
       fitnessGoals: state.fitnessGoals,
       equipment: state.equipment,
@@ -81,6 +90,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         setWorkoutDays,
+        setWeeklyCommitments,
         setFitnessLevel,
         setFitnessGoals,
         setEquipment,

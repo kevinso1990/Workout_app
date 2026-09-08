@@ -275,6 +275,7 @@ export default function SplitSelectionScreen() {
         equipment: state.equipment,
         focusMuscles: state.focusMuscles,
         splitId: selectedSplit,
+        commitments: state.weeklyCommitments,
       });
 
       await saveWorkoutPlan(plan);

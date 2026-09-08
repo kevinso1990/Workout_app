@@ -66,7 +66,7 @@ export default function GoalsScreen() {
   const handleContinue = () => {
     if (state.fitnessGoals.length > 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      navigation.navigate("Frequency");
+      navigation.navigate("Commitments");
     }
   };
 
@@ -77,7 +77,7 @@ export default function GoalsScreen() {
         { flex: 1, backgroundColor: theme.backgroundRoot, ...screenHeaderSafeAreaStyle(insets.top) },
       ]}
     >
-      <ProgressBar showBrand step={2} total={4} style={{ marginBottom: Spacing.xl }} />
+      <ProgressBar showBrand step={2} total={5} style={{ marginBottom: Spacing.xl }} />
 
       <Animated.View entering={FadeInDown.duration(400)}>
         <OnboardingHeading
