@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { ActivityIcon } from "@/components/schedule/activityIcons";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 
@@ -12,19 +12,15 @@ import type { CommitmentSport, Weekday, WeeklyCommitment } from "@shared/weeklyS
 export const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 export const WEEKDAY_FALLBACK = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-export const COMMITMENT_SPORTS: {
-  id: CommitmentSport;
-  icon: keyof typeof Feather.glyphMap;
-  fallback: string;
-}[] = [
-  { id: "running", icon: "wind", fallback: "Laufen" },
-  { id: "football", icon: "circle", fallback: "Fußball" },
-  { id: "basketball", icon: "target", fallback: "Basketball" },
-  { id: "tennis", icon: "disc", fallback: "Tennis" },
-  { id: "cycling", icon: "navigation", fallback: "Radfahren" },
-  { id: "swimming", icon: "droplet", fallback: "Schwimmen" },
-  { id: "boxing", icon: "shield", fallback: "Kampfsport" },
-  { id: "custom", icon: "more-horizontal", fallback: "Anderes" },
+export const COMMITMENT_SPORTS: { id: CommitmentSport; fallback: string }[] = [
+  { id: "running", fallback: "Laufen" },
+  { id: "football", fallback: "Fußball" },
+  { id: "basketball", fallback: "Basketball" },
+  { id: "tennis", fallback: "Tennis" },
+  { id: "cycling", fallback: "Radfahren" },
+  { id: "swimming", fallback: "Schwimmen" },
+  { id: "boxing", fallback: "Kampfsport" },
+  { id: "custom", fallback: "Anderes" },
 ];
 
 export function useCommitmentLabels() {
@@ -122,7 +118,7 @@ export function CommitmentEditor({
                 { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
               ]}
             >
-              <Feather name={s.icon} size={16} color={theme.text} />
+              <ActivityIcon sport={s.id} size={17} color={theme.text} />
               <ThemedText style={styles.sportChipText}>
                 {sportLabel({ sport: s.id })}
               </ThemedText>

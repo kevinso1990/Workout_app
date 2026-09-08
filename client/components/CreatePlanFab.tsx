@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, Pressable, View, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { ActivityIcon } from "@/components/schedule/activityIcons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -125,7 +126,7 @@ export function CreatePlanFab() {
 
             <Pressable style={styles.sheetItem} onPress={goStrength} testID="button-add-strength">
               <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <Feather name="activity" size={20} color={Colors.light.chalk} />
+                <ActivityIcon size={20} color={Colors.light.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -139,7 +140,7 @@ export function CreatePlanFab() {
 
             <Pressable style={styles.sheetItem} onPress={goCardio} testID="button-add-cardio">
               <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <Feather name="zap" size={20} color={Colors.light.chalk} />
+                <ActivityIcon sport="running" size={20} color={Colors.light.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>

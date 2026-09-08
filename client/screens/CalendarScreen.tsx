@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { HybridCalendar } from "@/components/HybridCalendar";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
+import { ActivityIcon } from "@/components/schedule/activityIcons";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
@@ -59,10 +60,10 @@ function SessionRow({ session }: { session: WorkoutSession }) {
           { backgroundColor: Colors.light.ironElevated2 },
         ]}
       >
-        <Feather
-          name={cardio ? "zap" : "activity"}
-          size={18}
-          color={cardio ? "#D97706" : Colors.light.primary}
+        <ActivityIcon
+          sport={cardio ? "running" : undefined}
+          size={19}
+          color={Colors.light.chalk}
         />
       </View>
       <View style={styles.sessionBody}>
@@ -190,7 +191,7 @@ export default function CalendarScreen() {
       <ScrollView
         contentContainerStyle={{
           paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing.lg),
-          paddingBottom: tabBarHeight + 88,
+          paddingBottom: tabBarHeight + 128,
           paddingHorizontal: Spacing.lg,
         }}
         refreshControl={
@@ -255,9 +256,9 @@ export default function CalendarScreen() {
                   testID={`calendar-week-session-${session.id}`}
                 >
                   <View style={styles.sessionMark}>
-                    <Feather
-                      name={isCardioSession(session) ? "wind" : "activity"}
-                      size={14}
+                    <ActivityIcon
+                      sport={isCardioSession(session) ? "running" : undefined}
+                      size={17}
                       color={Colors.light.chalk}
                     />
                   </View>
@@ -302,13 +303,6 @@ export default function CalendarScreen() {
               </Pressable>
             </View>
 
-            <HybridCalendar
-              month={month}
-              summaries={summaries}
-              selectedDateKey={selectedDateKey}
-              onSelectDate={handleSelectDate}
-            />
-
             <View style={styles.statsRow}>
               <View style={styles.statCard}>
                 <ThemedText style={styles.statValue}>{monthStats.strength}</ThemedText>
@@ -329,6 +323,14 @@ export default function CalendarScreen() {
                 </ThemedText>
               </View>
             </View>
+
+            <HybridCalendar
+              month={month}
+              summaries={summaries}
+              selectedDateKey={selectedDateKey}
+              onSelectDate={handleSelectDate}
+            />
+
           </>
         )}
       </ScrollView>
@@ -479,7 +481,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     gap: Spacing.sm,
-    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   statCard: {
     flex: 1,

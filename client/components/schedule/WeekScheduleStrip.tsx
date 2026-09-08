@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { ActivityIcon } from "@/components/schedule/activityIcons";
 import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -8,7 +9,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { scheduleTrainingWeek, type WeeklyCommitment } from "@shared/weeklySchedule";
 import {
-  COMMITMENT_SPORTS,
   WEEKDAY_FALLBACK,
   useCommitmentLabels,
 } from "@/components/schedule/CommitmentEditor";
@@ -70,11 +70,6 @@ export function WeekScheduleStrip({
       <View style={styles.row}>
         {schedule.slots.map((slot) => {
           const isToday = slot.weekday === today;
-          const sportIcon =
-            slot.kind === "sport"
-              ? COMMITMENT_SPORTS.find((s) => s.id === slot.commitment!.sport)?.icon ?? "activity"
-              : null;
-
           return (
             <View key={slot.weekday} style={styles.dayCol}>
               <ThemedText
@@ -100,9 +95,13 @@ export function WeekScheduleStrip({
                 ]}
               >
                 {slot.kind === "gym" ? (
-                  <Feather name="activity" size={14} color={Colors.light.onChalk} />
+                  <ActivityIcon size={16} color={Colors.light.onChalk} />
                 ) : slot.kind === "sport" ? (
-                  <Feather name={sportIcon as never} size={14} color={theme.text} />
+                  <ActivityIcon
+                    sport={slot.commitment!.sport}
+                    size={16}
+                    color={theme.text}
+                  />
                 ) : (
                   <ThemedText style={[styles.restDash, { color: theme.textSecondary }]}>
                     –
@@ -111,7 +110,7 @@ export function WeekScheduleStrip({
               </View>
 
               <ThemedText
-                numberOfLines={1}
+                numberOfLines={2}
                 style={[styles.cellCaption, { color: theme.textSecondary }]}
               >
                 {slot.kind === "gym"
@@ -166,6 +165,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   restDash: { fontSize: 13 },
-  cellCaption: { fontSize: 9, textAlign: "center" },
+  cellCaption: { fontSize: 9, lineHeight: 11, textAlign: "center" },
   warning: { fontSize: 12, marginTop: Spacing.md },
 });
