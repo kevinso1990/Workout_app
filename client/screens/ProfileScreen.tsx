@@ -43,6 +43,8 @@ import {
 import { runDataSync } from "@/lib/dataSync";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { BrandMark } from "@/components/brand/BrandLogo";
+import { CommitmentEditor } from "@/components/schedule/CommitmentEditor";
+import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import * as WebBrowser from "expo-web-browser";
 import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from "@/lib/legalLinks";
 import { api } from "@/lib/api";
@@ -932,6 +934,13 @@ export default function ProfileScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
+  const handleChangeCommitments = async (next: WeeklyCommitment[]) => {
+    const current = preferences ?? { workoutDaysPerWeek: 3 };
+    const updated = { ...current, weeklyCommitments: next };
+    setPreferences(updated);
+    await setUserPreferences(updated);
+  };
+
   const handleSelectEquipment = async (value: Equipment) => {
     setEquipmentState(value);
     const current = preferences ?? {
@@ -967,6 +976,32 @@ export default function ProfileScreen() {
             workoutsLabel: t("profile.workoutsCompleted", { count: stats.workouts }),
           })}
         </ThemedText>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInDown.delay(175).duration(400)}
+        style={[styles.commitmentsCard, { backgroundColor: theme.backgroundDefault }]}
+      >
+        <View style={styles.commitmentsHeader}>
+          <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
+            <Feather name="calendar" size={20} color={Colors.light.primary} />
+          </View>
+          <View style={styles.reminderInfo}>
+            <ThemedText style={styles.reminderTitle}>
+              {t("profile.commitments.title", { defaultValue: "Sport außerhalb des Gyms" })}
+            </ThemedText>
+            <ThemedText style={[styles.reminderSubtitle, { color: theme.textSecondary }]}>
+              {t("profile.commitments.subtitle", {
+                defaultValue: "Feste Termine — dein Plan wird drumherum gelegt",
+              })}
+            </ThemedText>
+          </View>
+        </View>
+        <CommitmentEditor
+          commitments={preferences?.weeklyCommitments ?? []}
+          onChange={handleChangeCommitments}
+          testIDPrefix="profile-commitment"
+        />
       </Animated.View>
 
       <Animated.View
@@ -1184,6 +1219,17 @@ const styles = StyleSheet.create({
   settingsValue: {
     fontSize: 14,
     marginRight: Spacing.sm,
+  },
+  commitmentsCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.md,
+  },
+  commitmentsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
   },
   restTimerCard: {
     flexDirection: "row",

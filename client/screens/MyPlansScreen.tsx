@@ -42,6 +42,9 @@ import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { getApiUrl } from "@/lib/query-client";
 import { buildDailyBriefingPayload } from "@/lib/coachHelpers";
 import { isCoachTipRenderable } from "@/lib/coachTip";
+import { WeekScheduleStrip } from "@/components/schedule/WeekScheduleStrip";
+import { getUserPreferences } from "@/lib/storage";
+import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
@@ -424,6 +427,7 @@ export default function MyPlansScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
+  const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -503,6 +507,8 @@ export default function MyPlansScreen() {
     try {
       const loadedPlans = await getWorkoutPlans();
       setPlans(loadedPlans);
+      const prefs = await getUserPreferences();
+      setCommitments(prefs?.weeklyCommitments ?? []);
       void fetchCoachBrief(loadedPlans);
       const history = await getWorkoutHistory();
       const offer = await evaluatePlanAdaptationOffer(loadedPlans, history);
@@ -762,6 +768,15 @@ export default function MyPlansScreen() {
                 </View>
               </View>
             ) : null}
+
+            <WeekScheduleStrip
+              commitments={commitments}
+              sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
+              // "Profile" is a sibling TAB, not a RootStackParamList route —
+              // navigate resolves it in the tab navigator this screen actually
+              // belongs to. The cast is the typing gap, not a wrong route.
+              onPressEdit={() => navigation.navigate("Profile" as never)}
+            />
           </>
         }
       />
