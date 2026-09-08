@@ -1,10 +1,9 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { Feather } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { DaySessionSummary } from "@/lib/workoutCalendar";
 import { dateKeyFromIso } from "@/lib/workoutCalendar";
 
@@ -17,13 +16,24 @@ type HybridCalendarProps = {
 
 const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
+/**
+ * Only as many weeks as the month actually spans.
+ *
+ * The old grid always emitted 42 cells, so a month that fits in five rows still
+ * rendered a sixth row of greyed-out next-month numbers — an empty band under
+ * the calendar that made the screen look padded out with nothing.
+ */
 function buildMonthGrid(month: Date): { date: Date; inMonth: boolean }[] {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const startOffset = (first.getDay() + 6) % 7;
+  const startOffset = (first.getDay() + 6) % 7; // Monday-based week
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const weeks = Math.ceil((startOffset + daysInMonth) / 7);
+
   const gridStart = new Date(first);
   gridStart.setDate(first.getDate() - startOffset);
+
   const cells: { date: Date; inMonth: boolean }[] = [];
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < weeks * 7; i++) {
     const date = new Date(gridStart);
     date.setDate(gridStart.getDate() + i);
     cells.push({ date, inMonth: date.getMonth() === month.getMonth() });
@@ -31,6 +41,16 @@ function buildMonthGrid(month: Date): { date: Date; inMonth: boolean }[] {
   return cells;
 }
 
+/**
+ * Month grid for the training calendar.
+ *
+ * The encoding follows the Chalk & Iron rule that colour is not decoration: a
+ * day you trained is a chalk-filled tile (the same treatment as a primary
+ * action), a day with sport/cardio is an iron tile carrying a hairline marker,
+ * and both together get the filled tile plus the marker. The previous version
+ * used an amber dot, which reads as a plate colour and so implied a load
+ * intensity it never meant.
+ */
 export function HybridCalendar({
   month,
   summaries,
@@ -50,6 +70,7 @@ export function HybridCalendar({
           </ThemedText>
         ))}
       </View>
+
       <View style={styles.grid}>
         {cells.map(({ date, inMonth }) => {
           const dateKey = dateKeyFromIso(date.toISOString());
@@ -60,52 +81,57 @@ export function HybridCalendar({
           const hasCardio = (summary?.cardioCount ?? 0) > 0;
 
           return (
-            <Pressable
-              key={dateKey}
-              onPress={() => onSelectDate(dateKey)}
-              style={({ pressed }) => [
-                styles.cell,
-                !inMonth && styles.cellOutside,
-                isSelected && styles.cellSelected,
-                isToday && !isSelected && styles.cellToday,
-                pressed && styles.cellPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={dateKey}
-            >
-              <ThemedText
-                style={[
-                  styles.dayNum,
-                  !inMonth && styles.dayNumOutside,
-                  isSelected && styles.dayNumSelected,
+            <View key={dateKey} style={styles.cellSlot}>
+              <Pressable
+                onPress={() => onSelectDate(dateKey)}
+                style={({ pressed }) => [
+                  styles.cell,
+                  !inMonth && styles.cellOutside,
+                  hasStrength && styles.cellTrained,
+                  !hasStrength && hasCardio && styles.cellCardio,
+                  isToday && !isSelected && styles.cellToday,
+                  isSelected && styles.cellSelected,
+                  pressed && styles.cellPressed,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={dateKey}
+                testID={`calendar-day-${dateKey}`}
               >
-                {date.getDate()}
-              </ThemedText>
-              <View style={styles.dots}>
-                {hasStrength ? (
-                  <View style={[styles.dot, styles.dotStrength]}>
-                    <Feather name="activity" size={8} color={Colors.light.onChalk} />
-                  </View>
-                ) : null}
+                <ThemedText
+                  style={[
+                    styles.dayNum,
+                    !inMonth && styles.dayNumOutside,
+                    hasStrength && styles.dayNumOnChalk,
+                  ]}
+                >
+                  {date.getDate()}
+                </ThemedText>
+
                 {hasCardio ? (
-                  <View style={[styles.dot, styles.dotCardio]}>
-                    <Feather name="zap" size={8} color="#FFFFFF" />
-                  </View>
+                  <View
+                    style={[styles.cardioBar, hasStrength && styles.cardioBarOnChalk]}
+                  />
                 ) : null}
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           );
         })}
       </View>
+
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.dotStrength]} />
-          <ThemedText style={styles.legendText}>{t("calendar.legendStrength")}</ThemedText>
+          <View style={styles.legendSwatchTrained} />
+          <ThemedText style={styles.legendText}>
+            {t("calendar.legendStrength")}
+          </ThemedText>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.dotCardio]} />
-          <ThemedText style={styles.legendText}>{t("calendar.legendCardio")}</ThemedText>
+          <View style={styles.legendSwatchCardio}>
+            <View style={styles.cardioBar} />
+          </View>
+          <ThemedText style={styles.legendText}>
+            {t("calendar.legendCardio")}
+          </ThemedText>
         </View>
       </View>
     </View>
@@ -115,7 +141,7 @@ export function HybridCalendar({
 const styles = StyleSheet.create({
   wrap: {
     backgroundColor: Colors.light.backgroundDefault,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.md,
   },
   weekRow: {
@@ -125,85 +151,102 @@ const styles = StyleSheet.create({
   weekday: {
     flex: 1,
     textAlign: "center",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
-    opacity: 0.55,
+    color: Colors.light.chalkFaint,
     textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
-  cell: {
+  // The slot holds the 1/7 column width; the tile inside is inset so tiles read
+  // as separate pieces of material rather than one continuous block.
+  cellSlot: {
     width: `${100 / 7}%`,
     aspectRatio: 1,
+    padding: 2.5,
+  },
+  cell: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: BorderRadius.sm,
-    paddingVertical: 2,
+    backgroundColor: Colors.light.ironElevated2,
+    borderWidth: 1,
+    borderColor: "transparent",
+    gap: 3,
   },
   cellOutside: {
-    opacity: 0.35,
+    backgroundColor: "transparent",
   },
-  cellSelected: {
+  cellTrained: {
     backgroundColor: Colors.light.primary,
   },
+  cellCardio: {
+    borderColor: Colors.light.hairlineStrong,
+  },
   cellToday: {
-    borderWidth: 1,
-    borderColor: Colors.light.primary,
+    borderColor: Colors.light.chalkDim,
+  },
+  cellSelected: {
+    borderColor: Colors.light.chalk,
+    borderWidth: 2,
   },
   cellPressed: {
-    opacity: 0.85,
+    opacity: 0.75,
   },
   dayNum: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FontFamily.mono,
+    color: Colors.light.chalk,
   },
   dayNumOutside: {
-    fontWeight: "400",
+    color: Colors.light.chalkFaint,
   },
-  dayNumSelected: {
+  dayNumOnChalk: {
     color: Colors.light.onChalk,
   },
-  dots: {
-    flexDirection: "row",
-    gap: 3,
-    marginTop: 3,
-    minHeight: 10,
-    alignItems: "center",
+  cardioBar: {
+    width: 12,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: Colors.light.chalkDim,
   },
-  dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dotStrength: {
-    backgroundColor: Colors.light.primary,
-  },
-  dotCardio: {
-    backgroundColor: "#F59E0B",
+  cardioBarOnChalk: {
+    backgroundColor: Colors.light.onChalk,
   },
   legend: {
     flexDirection: "row",
     justifyContent: "center",
     gap: Spacing.lg,
     marginTop: Spacing.md,
-    paddingTop: Spacing.sm,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  legendSwatchTrained: {
+    width: 14,
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: Colors.light.primary,
+  },
+  legendSwatchCardio: {
+    width: 14,
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: Colors.light.ironElevated2,
+    borderWidth: 1,
+    borderColor: Colors.light.hairlineStrong,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 2,
   },
   legendText: {
     fontSize: 12,
-    opacity: 0.7,
+    color: Colors.light.chalkDim,
   },
 });

@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { HybridCalendar } from "@/components/HybridCalendar";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
-import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   getWorkoutHistory,
@@ -31,8 +31,12 @@ import {
   addMonths,
   summarizeSessionsByDate,
   isoFromDateKey,
+  dateKeyFromIso,
 } from "@/lib/workoutCalendar";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { WeekScheduleStrip } from "@/components/schedule/WeekScheduleStrip";
+import { getUserPreferences, getWorkoutPlans, type WorkoutPlan } from "@/lib/storage";
+import type { WeeklyCommitment } from "@shared/weeklySchedule";
 
 function formatMonthTitle(month: Date, locale: string): string {
   return month.toLocaleDateString(locale, { month: "long", year: "numeric" });
@@ -91,6 +95,9 @@ export default function CalendarScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+  const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);
+  const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [month, setMonth] = useState(() => new Date());
   const [history, setHistory] = useState<WorkoutSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,6 +116,14 @@ export default function CalendarScreen() {
   const loadHistory = useCallback(async () => {
     const data = await getWorkoutHistory();
     setHistory(data.filter((s) => s.completedAt));
+    // The week view shows what is COMING UP, which needs the plan and the
+    // athlete's fixed sport days — the month grid only ever knew the past.
+    const [prefs, loadedPlans] = await Promise.all([
+      getUserPreferences(),
+      getWorkoutPlans(),
+    ]);
+    setCommitments(prefs?.weeklyCommitments ?? []);
+    setPlans(loadedPlans);
   }, []);
 
   useFocusEffect(
@@ -136,16 +151,38 @@ export default function CalendarScreen() {
     });
   };
 
+  const weekSessions = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 7);
+    return history
+      .filter((s) => {
+        const d = new Date(s.completedAt);
+        return d >= monday && d < sunday;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+      );
+  }, [history]);
+
   const monthStats = useMemo(() => {
     let strength = 0;
     let cardio = 0;
+    let activeDays = 0;
     const prefix = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
     for (const [key, summary] of summaries) {
       if (!key.startsWith(prefix)) continue;
       strength += summary.strengthCount;
       cardio += summary.cardioCount;
+      // Days trained, not sessions: two sessions in one day is still one day
+      // of showing up, and that is the number worth looking at in a month view.
+      if (summary.strengthCount > 0 || summary.cardioCount > 0) activeDays += 1;
     }
-    return { strength, cardio };
+    return { strength, cardio, activeDays };
   }, [summaries, month]);
 
   return (
@@ -163,47 +200,137 @@ export default function CalendarScreen() {
         <ThemedText style={styles.heading}>{t("calendar.title")}</ThemedText>
         <ThemedText style={styles.subtitle}>{t("calendar.subtitle")}</ThemedText>
 
-        <View style={styles.monthNav}>
-          <Pressable
-            onPress={() => setMonth((m) => addMonths(m, -1))}
-            style={styles.navBtn}
-            accessibilityLabel={t("calendar.prevMonth")}
-          >
-            <Feather name="chevron-left" size={22} color={Colors.light.primary} />
-          </Pressable>
-          <ThemedText style={styles.monthLabel}>
-            {formatMonthTitle(month, i18n.language)}
-          </ThemedText>
-          <Pressable
-            onPress={() => setMonth((m) => addMonths(m, 1))}
-            style={styles.navBtn}
-            accessibilityLabel={t("calendar.nextMonth")}
-          >
-            <Feather name="chevron-right" size={22} color={Colors.light.primary} />
-          </Pressable>
+        <View style={styles.segmented}>
+          {(["week", "month"] as const).map((mode) => {
+            const active = viewMode === mode;
+            return (
+              <Pressable
+                key={mode}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setViewMode(mode);
+                }}
+                testID={`calendar-view-${mode}`}
+                style={[styles.segment, active && styles.segmentActive]}
+              >
+                <ThemedText
+                  style={[styles.segmentText, active && styles.segmentTextActive]}
+                >
+                  {mode === "week"
+                    ? t("calendar.viewWeek", { defaultValue: "Woche" })
+                    : t("calendar.viewMonth", { defaultValue: "Monat" })}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
         </View>
 
-        <HybridCalendar
-          month={month}
-          summaries={summaries}
-          selectedDateKey={selectedDateKey}
-          onSelectDate={handleSelectDate}
-        />
+        {viewMode === "week" ? (
+          <>
+            <WeekScheduleStrip
+              commitments={commitments}
+              sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
+            />
 
-        <View style={styles.statsRow}>
-          <View style={styles.statChip}>
-            <Feather name="activity" size={16} color={Colors.light.primary} />
-            <ThemedText style={styles.statText}>
-              {t("calendar.monthStrength", { count: monthStats.strength })}
+            <ThemedText style={styles.sectionLabel}>
+              {t("calendar.weekDone", { defaultValue: "Diese Woche absolviert" })}
             </ThemedText>
-          </View>
-          <View style={styles.statChip}>
-            <Feather name="zap" size={16} color="#D97706" />
-            <ThemedText style={styles.statText}>
-              {t("calendar.monthCardio", { count: monthStats.cardio })}
-            </ThemedText>
-          </View>
-        </View>
+
+            {weekSessions.length === 0 ? (
+              <View style={styles.emptyWeek}>
+                <ThemedText style={styles.emptyWeekText}>
+                  {t("calendar.weekEmpty", {
+                    defaultValue: "Noch nichts geloggt — der erste Satz zählt.",
+                  })}
+                </ThemedText>
+              </View>
+            ) : (
+              weekSessions.map((session) => (
+                <Pressable
+                  key={session.id}
+                  onPress={() =>
+                    handleSelectDate(dateKeyFromIso(session.completedAt))
+                  }
+                  style={styles.weekSessionRow}
+                  testID={`calendar-week-session-${session.id}`}
+                >
+                  <View style={styles.sessionMark}>
+                    <Feather
+                      name={isCardioSession(session) ? "wind" : "activity"}
+                      size={14}
+                      color={Colors.light.chalk}
+                    />
+                  </View>
+                  <View style={styles.sessionCopy}>
+                    <ThemedText style={styles.weekSessionTitle}>
+                      {sessionDisplayTitle(session)}
+                    </ThemedText>
+                    <ThemedText style={styles.weekSessionMeta}>
+                      {new Date(session.completedAt).toLocaleDateString(i18n.language, {
+                        weekday: "long",
+                      })}
+                    </ThemedText>
+                  </View>
+                  <Feather
+                    name="chevron-right"
+                    size={16}
+                    color={Colors.light.chalkFaint}
+                  />
+                </Pressable>
+              ))
+            )}
+          </>
+        ) : (
+          <>
+            <View style={styles.monthNav}>
+              <Pressable
+                onPress={() => setMonth((m) => addMonths(m, -1))}
+                style={styles.navBtn}
+                accessibilityLabel={t("calendar.prevMonth")}
+              >
+                <Feather name="chevron-left" size={20} color={Colors.light.chalk} />
+              </Pressable>
+              <ThemedText style={styles.monthLabel}>
+                {formatMonthTitle(month, i18n.language)}
+              </ThemedText>
+              <Pressable
+                onPress={() => setMonth((m) => addMonths(m, 1))}
+                style={styles.navBtn}
+                accessibilityLabel={t("calendar.nextMonth")}
+              >
+                <Feather name="chevron-right" size={20} color={Colors.light.chalk} />
+              </Pressable>
+            </View>
+
+            <HybridCalendar
+              month={month}
+              summaries={summaries}
+              selectedDateKey={selectedDateKey}
+              onSelectDate={handleSelectDate}
+            />
+
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <ThemedText style={styles.statValue}>{monthStats.strength}</ThemedText>
+                <ThemedText style={styles.statLabel}>
+                  {t("calendar.statStrength", { defaultValue: "Kraft" })}
+                </ThemedText>
+              </View>
+              <View style={styles.statCard}>
+                <ThemedText style={styles.statValue}>{monthStats.cardio}</ThemedText>
+                <ThemedText style={styles.statLabel}>
+                  {t("calendar.statCardio", { defaultValue: "Cardio" })}
+                </ThemedText>
+              </View>
+              <View style={styles.statCard}>
+                <ThemedText style={styles.statValue}>{monthStats.activeDays}</ThemedText>
+                <ThemedText style={styles.statLabel}>
+                  {t("calendar.statActiveDays", { defaultValue: "Aktive Tage" })}
+                </ThemedText>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <CreatePlanFab />
@@ -285,10 +412,93 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   monthLabel: { fontSize: 17, fontWeight: "600" },
+  segmented: {
+    flexDirection: "row",
+    backgroundColor: Colors.light.ironElevated,
+    borderRadius: BorderRadius.md,
+    padding: 3,
+    gap: 3,
+    marginBottom: Spacing.lg,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+  },
+  segmentActive: {
+    backgroundColor: Colors.light.primary,
+  },
+  segmentText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.light.chalkDim,
+  },
+  segmentTextActive: {
+    color: Colors.light.onChalk,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    color: Colors.light.chalkDim,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.sm,
+  },
+  emptyWeek: {
+    backgroundColor: Colors.light.backgroundDefault,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    alignItems: "center",
+  },
+  emptyWeekText: {
+    fontSize: 13,
+    color: Colors.light.chalkDim,
+    textAlign: "center",
+  },
+  weekSessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    backgroundColor: Colors.light.backgroundDefault,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  sessionMark: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.light.ironElevated2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sessionCopy: { flex: 1 },
+  weekSessionTitle: { fontSize: 15, fontWeight: "600" },
+  weekSessionMeta: { fontSize: 12, color: Colors.light.chalkDim, marginTop: 1 },
   statsRow: {
     flexDirection: "row",
     gap: Spacing.sm,
     marginTop: Spacing.lg,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.light.backgroundDefault,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    gap: 2,
+  },
+  statValue: {
+    fontSize: 22,
+    fontFamily: FontFamily.display,
+    color: Colors.light.chalk,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: Colors.light.chalkDim,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   statChip: {
     flex: 1,
