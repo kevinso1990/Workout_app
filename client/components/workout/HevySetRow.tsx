@@ -805,7 +805,11 @@ const styles = StyleSheet.create({
   headerLabel: {
     fontSize: 10,
     fontFamily: FontFamily.displaySemi,
-    color: HEVY.textMuted,
+    // These name the columns you read on every single set, so they carry the
+    // full ink colour. The recessed header band behind them already separates
+    // them from the rows — dimming the text as well made the whole grid look
+    // switched off.
+    color: CELL_TEXT,
     letterSpacing: 1.2,
     textAlign: "center",
   },
