@@ -2075,7 +2075,9 @@ export default function ActiveWorkoutScreen() {
                 key={exercise.id}
                 style={[
                   styles.exerciseSection,
-                  isCurrentExercise && styles.exerciseSectionActive,
+                  isCurrentExercise
+                    ? styles.exerciseSectionActive
+                    : styles.exerciseSectionIdle,
                 ]}
                 testID={`exercise-section-${exIdx}`}
                 onLayout={(e) => {
@@ -2430,8 +2432,16 @@ const styles = StyleSheet.create({
     backgroundColor: HEVY.surface,
   },
   exerciseSectionActive: {
-    borderColor: Colors.light.primary + "55",
-    borderWidth: 1,
+    // A 33%-alpha hairline was not enough to answer "which exercise am I on?"
+    // at a glance. The current card is now outlined in full chalk and sits on
+    // the raised control surface, while the others keep the plain card colour
+    // and recede — the difference has to be readable in peripheral vision.
+    borderColor: Colors.light.chalk,
+    borderWidth: 2,
+    backgroundColor: HEVY.control,
+  },
+  exerciseSectionIdle: {
+    opacity: 0.72,
   },
   loadingContainer: {
     flex: 1,

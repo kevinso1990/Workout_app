@@ -36,7 +36,10 @@ const LOG_CHECK_BORDER = C.hairlineStrong;
 // green tick — colour in this identity is reserved for load, not status.
 const DONE_FILL = C.chalk;
 const FIELD_ALERT_BG = "rgba(203, 58, 44, 0.30)"; // plate-heavy wash
-const ACTIVE_ROW_BG = "rgba(236,233,225,0.045)";
+// 0.045 was effectively invisible against the card, so "which set am I on?"
+// had no answer other than the editor appearing somewhere below. The left
+// spine cannot carry this — it is the plate colour and already encodes load.
+const ACTIVE_ROW_BG = "rgba(236,233,225,0.13)";
 
 type SetRating = "green" | "yellow" | "red" | null;
 
@@ -478,7 +481,13 @@ export function HevySetRow({
           {isWarmup ? (
             <Text style={styles.warmupBadge}>W</Text>
           ) : (
-            <Text style={[styles.setNum, rowMuted && styles.textMuted]}>
+            <Text
+              style={[
+                styles.setNum,
+                rowMuted && styles.textMuted,
+                isActive && !setData.completed && styles.setNumActive,
+              ]}
+            >
               {setIndex + 1}
             </Text>
           )}
@@ -803,6 +812,15 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.mono,
     color: CELL_TEXT,
     textAlign: "center",
+  },
+  setNumActive: {
+    color: C.onChalk,
+    backgroundColor: C.chalk,
+    borderRadius: 12,
+    overflow: "hidden",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    fontWeight: "700",
   },
   prevText: {
     fontSize: 13,
