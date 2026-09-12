@@ -772,10 +772,12 @@ export default function MyPlansScreen() {
             <WeekScheduleStrip
               commitments={commitments}
               sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
-              // "Profile" is a sibling TAB, not a RootStackParamList route —
-              // navigate resolves it in the tab navigator this screen actually
-              // belongs to. The cast is the typing gap, not a wrong route.
+              // "Profile" and "Calendar" are sibling TABS, not
+              // RootStackParamList routes — navigate resolves them in the tab
+              // navigator this screen actually belongs to. The casts are the
+              // typing gap, not wrong routes.
               onPressEdit={() => navigation.navigate("Profile" as never)}
+              onPress={() => navigation.navigate("Calendar" as never)}
             />
           </>
         }

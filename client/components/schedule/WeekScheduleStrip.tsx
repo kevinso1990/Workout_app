@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import { scheduleTrainingWeek, type WeeklyCommitment } from "@shared/weeklySchedule";
 import {
   WEEKDAY_FALLBACK,
@@ -16,6 +16,18 @@ import {
 /** JS getDay() is Sunday-based; the schedule is Monday-based. */
 function todayWeekday(): number {
   return (new Date().getDay() + 6) % 7;
+}
+
+/** Calendar dates for the current Monday-based week, indexed by weekday. */
+function datesOfCurrentWeek(): number[] {
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - todayWeekday());
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d.getDate();
+  });
 }
 
 /**
@@ -29,15 +41,19 @@ export function WeekScheduleStrip({
   commitments,
   sessionDayNames,
   onPressEdit,
+  onPress,
 }: {
   commitments: WeeklyCommitment[];
   sessionDayNames: string[];
   onPressEdit?: () => void;
+  /** Opens the full calendar. Omitted where the strip already sits in it. */
+  onPress?: () => void;
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const { dayLabel, sportLabel } = useCommitmentLabels();
   const today = todayWeekday();
+  const weekDates = datesOfCurrentWeek();
 
   const schedule = useMemo(
     () => scheduleTrainingWeek({ commitments, sessionDayNames }),
@@ -46,8 +62,15 @@ export function WeekScheduleStrip({
 
   if (sessionDayNames.length === 0 && commitments.length === 0) return null;
 
+  const Card = onPress ? Pressable : View;
+
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+    <Card
+      onPress={onPress}
+      testID={onPress ? "button-week-strip" : undefined}
+      accessibilityRole={onPress ? "button" : undefined}
+      style={[styles.card, { backgroundColor: theme.backgroundDefault }]}
+    >
       <View style={styles.header}>
         <ThemedText style={styles.title}>
           {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
@@ -80,6 +103,14 @@ export function WeekScheduleStrip({
                 ]}
               >
                 {dayLabel(slot.weekday)}
+              </ThemedText>
+              <ThemedText
+                style={[
+                  styles.dayDate,
+                  { color: isToday ? theme.text : theme.textSecondary },
+                ]}
+              >
+                {weekDates[slot.weekday]}
               </ThemedText>
 
               <View
@@ -132,7 +163,7 @@ export function WeekScheduleStrip({
           })}
         </ThemedText>
       ) : null}
-    </View>
+    </Card>
   );
 }
 
@@ -154,6 +185,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
   dayCol: { flex: 1, alignItems: "center", gap: 4 },
   dayLabel: { fontSize: 11, fontWeight: "600" },
+  dayDate: { fontSize: 12, fontFamily: FontFamily.mono, marginBottom: 1 },
   dayLabelToday: { fontWeight: "700" },
   cell: {
     width: "100%",
