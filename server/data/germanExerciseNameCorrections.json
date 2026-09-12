@@ -1,0 +1,77 @@
+{
+  "_comment": [
+    "Hand-reviewed corrections to the German exercise catalog, applied to the",
+    "production database on 2026-09-12.",
+    "",
+    "The German names live only in the DB — there is no seed file — so 1076",
+    "names were unversioned and could never be reviewed in a diff. That is why",
+    "the defects below survived. This file records every correction so it is at",
+    "least reviewable and re-appliable if the catalog is ever rebuilt.",
+    "",
+    "Keys are exercises.id. Verified with server/services/translationAudit.ts:",
+    "0 remaining issues across all 1076 rows."
+  ],
+
+  "_wrongEquipment": {
+    "_why": "These named the WRONG implement — an athlete following them picks up dumbbells for a barbell lift.",
+    "36": "Aufrechtes Rudern (Langhantel)",
+    "1216": "Überzüge mit gebeugten Armen (Langhantel)",
+    "1314": "Enger Langhantel-Curl"
+  },
+
+  "_ambiguousHantel": {
+    "_why": "German uses 'Hantel' for both Kurzhantel and Langhantel, so on its own it carries no information in a lifting app. Bench and position added back where the English carried them.",
+    "4": "Kurzhantel-Bankdrücken (Flachbank)",
+    "5": "Kurzhantel-Schrägbankdrücken",
+    "6": "Kurzhantel-Fliegende (Flachbank)",
+    "14": "Kurzhantel-Rudern",
+    "28": "Kurzhantel-Schulterdrücken",
+    "467": "Einarmiges Kurzhantel-Schulterdrücken",
+    "468": "Kurzhantel-Schulterdrücken (kniend)",
+    "469": "Kurzhantel-Drücken (halbkniend)",
+    "470": "Kurzhantel-Drücken (aufrecht kniend)",
+    "471": "Kurzhantel-Schulterdrücken (sitzend)",
+    "472": "Einarmiges Kurzhantel-Rudern",
+    "473": "Einarmiges Kurzhantel-Bodendrücken",
+    "1217": "Überzüge mit gebeugten Armen (Kurzhantel)",
+    "1274": "Wadenheben mit Kurzhantel",
+    "1552": "Liegendes Kurzhantel-Trizepsdrücken",
+    "1563": "Liegende Kurzhantel-Curls",
+    "1636": "Kurzhantel-Handgelenkcurls über Bank (Handflächen unten)",
+    "1639": "Kurzhantel-Handgelenkcurls über Bank (Handflächen oben)",
+    "1649": "Plié-Kniebeuge mit Kurzhantel"
+  },
+
+  "_untranslated": {
+    "_why": [
+      "244 names were identical to their English source. Most of those are CORRECT:",
+      "'Kettlebell Swing', 'Burpees', 'Clean and Jerk', 'Farmer's Walk', 'Zottman Curl'",
+      "and the like are the terms actually used in German gyms — translating them",
+      "would make the catalog worse, not better.",
+      "Only translated where German has a normal everyday word a German speaker",
+      "would expect to see. The remaining ~220 are deliberately left in English."
+    ],
+    "10": "Liegestütze",
+    "83": "Diamant-Liegestütze",
+    "315": "Pike-Liegestütze",
+    "316": "Liegestütze (weiter Griff)",
+    "317": "Liegestütze (Hände erhöht)",
+    "318": "Liegestütze (Füße erhöht)",
+    "319": "Pseudo-Planche-Liegestütze",
+    "1306": "Uhrzeiger-Liegestütze",
+    "1431": "Handstand-Liegestütze",
+    "21": "Klimmzüge (Untergriff)",
+    "1297": "Klimmzug (Untergriff)",
+    "327": "Australische Klimmzüge",
+    "51": "Ausfallschritte (gehend)",
+    "52": "Rückwärts-Ausfallschritte",
+    "289": "Überkreuz-Ausfallschritt",
+    "1693": "Vorgebeugtes Seitheben",
+    "1692": "Umgekehrte Crunches",
+    "1542": "Rückenstrecken am Boden",
+    "1430": "Beinbeuger-Dehnung",
+    "1633": "Überkopf-Dehnung",
+    "1963": "Handgelenk-Roller",
+    "9864": "Passives Hängen"
+  }
+}
