@@ -297,6 +297,8 @@ function StepperField({
           onChangeText={onChangeText}
           onEndEditing={onCommit}
           onBlur={onCommit}
+          placeholder="0"
+          placeholderTextColor={HEVY.textMuted}
           keyboardType={decimal ? "decimal-pad" : "number-pad"}
           selectTextOnFocus
           returnKeyType="done"
@@ -921,14 +923,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: FontFamily.displaySemi,
     letterSpacing: 1.2,
-    color: HEVY.textMuted,
+    // These label the field you are actively editing; the faintest value in
+    // the system made them look like a disabled caption.
+    color: HEVY.textSecondary,
     textAlign: "center",
   },
   stepControls: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: ROW_SEPARATOR,
+    // This group only ever appears for the ACTIVE set, so it should look live.
+    // A 0.08-alpha hairline read as a disabled control.
+    borderWidth: 1.5,
+    borderColor: C.chalkDim,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: HEVY.surface,
@@ -948,5 +954,9 @@ const styles = StyleSheet.create({
     color: CELL_TEXT,
     textAlign: "center",
     paddingVertical: 0,
+    // Recessed well between two raised buttons: the field was previously the
+    // same tone as the card and therefore darker than the +/- buttons flanking
+    // it, which read as "the buttons are the control, this gap is nothing".
+    backgroundColor: HEVY.canvas,
   },
 });
