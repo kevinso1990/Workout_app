@@ -10,10 +10,16 @@ export const HEVY = {
   textPrimary: "#ECE9E1", // chalk
   textSecondary: "#9BA09A", // chalk dim
   textMuted: "#686D69", // chalk faint
-  surface: "#212427", // iron, elevated card
-  canvas: "#191B1D", // iron ground (recessed vs. surface)
-  hairline: "rgba(236,233,225,0.08)",
-  separator: "rgba(236,233,225,0.12)",
+  // The iron ramp has four steps; this file was only using the bottom two, so
+  // card and ground sat ~5% apart and everything on the workout screen blurred
+  // into one dark band. Card now takes a real step up from the ground, and
+  // pressable surfaces get a step of their own above the card — a control that
+  // borrows the page ground (as the +/- buttons did) cannot read as a control.
+  surface: "#2A2E32", // iron elevated — card
+  canvas: "#191B1D", // iron ground — page
+  control: "#33383D", // iron elevated 2 — pressable surfaces on a card
+  hairline: "rgba(236,233,225,0.10)",
+  separator: "rgba(236,233,225,0.16)",
   pad: 16,
   padLg: 24,
   radiusCard: 14,

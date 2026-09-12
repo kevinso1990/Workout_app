@@ -753,9 +753,12 @@ const styles = StyleSheet.create({
     borderBottomColor: ROW_SEPARATOR,
   },
   rowMuted: {
-    // On the dark iron ground, 0.55 buried upcoming sets almost completely.
-    // Keep them clearly readable but still secondary to the active row.
-    opacity: 0.82,
+    // Upcoming sets are secondary to the active row, but they still have to be
+    // readable at arm's length in a gym: 0.55 buried them, and 0.82 still left
+    // the set number and the rep target grey-on-grey. The active row is already
+    // distinguished by its own tint and left spine, so this does not need to
+    // carry the hierarchy on its own.
+    opacity: 0.9,
   },
   rowCompleted: {
     opacity: 0.95,
@@ -852,7 +855,12 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   textMuted: {
-    color: HEVY.textMuted,
+    // Upcoming sets used chalkFaint, the weakest value in the system: roughly
+    // 2.3:1 against the card, i.e. below the readable threshold for text this
+    // size — which is what made the screen feel "too dark" even though the
+    // active row was fine. chalkDim keeps them clearly secondary while staying
+    // legible at arm's length.
+    color: HEVY.textSecondary,
   },
   checkBox: {
     width: 28,
@@ -912,7 +920,7 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: HEVY.canvas,
+    backgroundColor: HEVY.control,
   },
   stepInput: {
     flex: 1,
