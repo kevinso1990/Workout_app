@@ -2,7 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import MyPlansScreen from "@/screens/MyPlansScreen";
@@ -24,6 +24,48 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+/**
+ * Active-tab treatment.
+ *
+ * Active and inactive previously differed only in brightness — chalk against
+ * chalkDim — and on the blurred dark bar both simply read as "light grey", so
+ * you could not tell at a glance which tab you were on. The active tab now gets
+ * a positive marker (a chalk-tinted pill behind the glyph) and the inactive
+ * ones drop to chalkFaint, which widens the gap in both directions instead of
+ * relying on a shade difference alone.
+ */
+function TabBarIcon({
+  name,
+  color,
+  focused,
+}: {
+  name: keyof typeof Feather.glyphMap;
+  color: string;
+  focused: boolean;
+}) {
+  return (
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Feather name={name} size={20} color={color} />
+    </View>
+  );
+}
+
+function TabBarLabel({
+  label,
+  color,
+  focused,
+}: {
+  label: string;
+  color: string;
+  focused: boolean;
+}) {
+  return (
+    <Text style={[styles.tabLabel, focused && styles.tabLabelActive, { color }]}>
+      {label}
+    </Text>
+  );
+}
+
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -33,8 +75,9 @@ export default function MainTabNavigator() {
       <Tab.Navigator
         initialRouteName="MyPlans"
         screenOptions={{
-          tabBarActiveTintColor: Colors.light.primary,
-          tabBarInactiveTintColor: theme.textSecondary,
+          tabBarActiveTintColor: Colors.light.chalk,
+          tabBarInactiveTintColor: Colors.light.chalkFaint,
+          tabBarItemStyle: { paddingTop: 6 },
           tabBarStyle: {
             position: "absolute",
             backgroundColor: Platform.select({
@@ -84,8 +127,11 @@ export default function MainTabNavigator() {
             title: t("nav.plans"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="clipboard" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="clipboard" color={color} focused={focused} />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <TabBarLabel label={t("nav.plans")} color={color} focused={focused} />
             ),
           }}
         />
@@ -96,8 +142,11 @@ export default function MainTabNavigator() {
             title: t("nav.exercises"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="search" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="search" color={color} focused={focused} />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <TabBarLabel label={t("nav.exercises")} color={color} focused={focused} />
             ),
           }}
         />
@@ -108,8 +157,11 @@ export default function MainTabNavigator() {
             title: t("nav.calendar"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="calendar" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="calendar" color={color} focused={focused} />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <TabBarLabel label={t("nav.calendar")} color={color} focused={focused} />
             ),
           }}
         />
@@ -120,8 +172,11 @@ export default function MainTabNavigator() {
             title: t("nav.progress"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="trending-up" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="trending-up" color={color} focused={focused} />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <TabBarLabel label={t("nav.progress")} color={color} focused={focused} />
             ),
           }}
         />
@@ -132,8 +187,11 @@ export default function MainTabNavigator() {
             title: t("nav.profile"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="user" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="user" color={color} focused={focused} />
+            ),
+            tabBarLabel: ({ color, focused }) => (
+              <TabBarLabel label={t("nav.profile")} color={color} focused={focused} />
             ),
           }}
         />
@@ -145,5 +203,25 @@ export default function MainTabNavigator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  iconWrap: {
+    width: 44,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconWrapActive: {
+    // Chalk at low alpha over the blurred bar: reads as material, not as a
+    // coloured highlight, and keeps the glyph legible on top.
+    backgroundColor: "rgba(236,233,225,0.16)",
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  tabLabelActive: {
+    fontWeight: "700",
   },
 });
