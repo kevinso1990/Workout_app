@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   },
   highlightBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: Colors.light.hairlineStrong,
   },
   highlightIcon: {
     width: 36,

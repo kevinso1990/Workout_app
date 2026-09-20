@@ -14,7 +14,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 
 import { HEVY } from "@/constants/hevyLayout";
-import { Colors, FontFamily, plateColor, loadTier } from "@/constants/theme";
+import { Colors, FontFamily, BorderRadius, plateColor, loadTier } from "@/constants/theme";
 import type { SetData } from "@/lib/storage";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
@@ -709,7 +709,7 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
   };
 
   return (
-    <View style={styles.setBlock}>
+    <View style={[styles.setBlock, showEditor && styles.setBlockActive]}>
       <HevySetRow {...props} setData={displaySet} suppressBottomBorder={showEditor} />
       {showEditor ? (
         <HevySetEditor
@@ -739,6 +739,17 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
 const styles = StyleSheet.create({
   setBlock: {
     backgroundColor: HEVY.surface,
+  },
+  setBlockActive: {
+    // The row you are on and the kg/reps editor under it are one unit — the set
+    // being worked. Until now they were two loose pieces stacked on the same
+    // flat card, so nothing said they belonged together. A frame binds them.
+    borderWidth: 1.5,
+    borderColor: C.chalkDim,
+    borderRadius: BorderRadius.md,
+    overflow: "hidden",
+    marginHorizontal: 6,
+    marginVertical: 4,
   },
   row: {
     flexDirection: "row",

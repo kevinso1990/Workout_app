@@ -1486,7 +1486,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
     minHeight: 0,
   },
   statIcon: {
@@ -1521,7 +1521,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   chartHeader: {
     flexDirection: "row",
@@ -1587,7 +1587,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   muscleHeader: {
     flexDirection: "row",
@@ -1659,7 +1659,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   historyIcon: {
     width: 40,
@@ -1734,7 +1734,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   oneRMBadge: {
     paddingHorizontal: Spacing.sm,
@@ -1816,7 +1816,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   heatmapBody: {
     flexDirection: "row",
@@ -1911,7 +1911,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
     overflow: "hidden",
   },
   exerciseRow: {
@@ -1995,7 +1995,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   modalStatValue: {
     fontSize: 18,
@@ -2012,7 +2012,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   modalChartHeader: {
     flexDirection: "row",
@@ -2043,7 +2043,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
   },
   bestSessionIcon: {
     width: 40,
@@ -2119,7 +2119,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "#E8E8E8",
+    borderTopColor: Colors.light.hairlineStrong,
   },
   logAgainText: {
     fontSize: 12,

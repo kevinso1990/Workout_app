@@ -75,7 +75,12 @@ function walk(dir: string): string[] {
  * is how the "Start strength training" icon in the add-workout sheet became
  * invisible (chalk glyph on #EEF2FF) while passing the white-foreground check.
  */
-const LIGHT_BG = /backgroundColor:\s*["']#([0-9a-f]{6})["']/gi;
+// Borders count too: a near-white hairline draws a bright line across a dark
+// screen just as loudly as a pale fill does. The edit-plan screen shipped with
+// borderBottomColor "#E8E8E8" on every exercise row, and the first version of
+// this guard missed it by only looking at backgroundColor.
+const LIGHT_BG =
+  /(?:backgroundColor|borderColor|borderTopColor|borderBottomColor|borderLeftColor|borderRightColor):\s*["']#([0-9a-f]{6})["']/gi;
 /** Perceptual luminance; 0.75 clears amber (#F59E0B ≈ 0.65) and red (#EF4444 ≈ 0.47). */
 const LIGHT_THRESHOLD = 0.75;
 
@@ -86,12 +91,12 @@ function luminance(hex: string): number {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
-describe("no pale hardcoded backgrounds (light-theme leftovers)", () => {
+describe("no pale hardcoded surfaces or borders (light-theme leftovers)", () => {
   const files = SCAN_DIRS.flatMap((d) => walk(join(CLIENT_ROOT, d)));
 
   for (const file of files) {
     const rel = relative(CLIENT_ROOT, file).split("\\").join("/");
-    it(`${rel} has no near-white hardcoded surface`, () => {
+    it(`${rel} has no near-white hardcoded surface or border`, () => {
       const src = readFileSync(file, "utf-8");
       const offenders: string[] = [];
       for (const m of src.matchAll(LIGHT_BG)) {
@@ -100,7 +105,7 @@ describe("no pale hardcoded backgrounds (light-theme leftovers)", () => {
       expect(
         offenders,
         offenders.length
-          ? `${rel}: pale hardcoded background(s) ${offenders.join(", ")} in a committed-dark app. ` +
+          ? `${rel}: pale hardcoded surface/border colour(s) ${offenders.join(", ")} in a committed-dark app. ` +
             `Use a theme token (e.g. Colors.light.primary + "1A" over iron) instead.`
           : undefined,
       ).toEqual([]);

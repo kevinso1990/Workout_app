@@ -154,7 +154,7 @@ export default function EquipmentScreen() {
           <Pressable
             onPress={() => navigation.goBack()}
             testID="button-back"
-            style={[styles.backButton, { borderColor: "#E8E8E8" }]}
+            style={[styles.backButton, { borderColor: Colors.light.hairlineStrong }]}
           >
             <ThemedText style={styles.backText}>{t("onboarding.back")}</ThemedText>
           </Pressable>
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: Colors.light.hairlineStrong,
     gap: Spacing.md,
   },
   iconContainer: {

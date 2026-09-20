@@ -2652,7 +2652,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 0.5,
-    borderColor: "#E5E5EA",
+    borderColor: Colors.light.hairlineStrong,
   },
   setCompleteCheckbox: {
     borderWidth: 1,

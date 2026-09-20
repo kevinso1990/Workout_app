@@ -25,7 +25,8 @@ import { toast } from "@/lib/toast";
 import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
+import { HEVY } from "@/constants/hevyLayout";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
 import {
@@ -531,13 +532,16 @@ function ExerciseRow({
       {/* Info + sets stepper */}
       <View style={styles.exerciseInfo}>
         <Pressable onPress={() => isActive && onSetActive(null)}>
-          <ThemedText style={styles.exerciseName}>{localizeName(exercise.name)}</ThemedText>
+          <ThemedText numberOfLines={2} style={styles.exerciseName}>
+            {localizeName(exercise.name)}
+          </ThemedText>
           <ThemedText style={[styles.exerciseMeta, { color: theme.textSecondary }]}>
             {translateMuscleGroup(t, exercise.muscleGroup)} · {t("exercises.setsReps", { sets: exercise.sets, reps: exercise.reps })}
           </ThemedText>
         </Pressable>
+      </View>
 
-        <View style={styles.setsStepper}>
+      <View style={styles.setsStepper}>
           <Pressable
             onPress={() => {
               if (canDecrement) {
@@ -556,7 +560,7 @@ function ExerciseRow({
             <Feather name="minus" size={16} color={theme.text} />
           </Pressable>
           <ThemedText style={[styles.setsValue, { color: theme.text }]}>
-            {t("editPlan.setCount", { count: exercise.sets })}
+            {exercise.sets}
           </ThemedText>
           <Pressable
             onPress={() => {
@@ -576,7 +580,6 @@ function ExerciseRow({
             <Feather name="plus" size={16} color={theme.text} />
           </Pressable>
         </View>
-      </View>
 
       {/* Replace */}
       <Pressable
@@ -968,11 +971,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   scrollContent: { paddingHorizontal: Spacing.lg },
 
-  nameSection: { marginBottom: Spacing["2xl"] },
+  nameSection: { marginBottom: Spacing.xl },
   sectionLabel: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: FontFamily.displaySemi,
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
   },
@@ -992,15 +995,25 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xs,
     marginRight: Spacing.sm,
   },
-  dayBadgeText: { fontSize: 12, fontWeight: "600" },
+  dayBadgeText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.4 },
   dayName: {
     flex: 1,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: FontFamily.displaySemi,
   },
 
-  exerciseList: { borderRadius: BorderRadius.md, overflow: "hidden", borderWidth: 1 },
+  exerciseList: {
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+    // Fill alone was not enough separation from the near-black page: one step
+    // of the iron ramp is a small luminance jump. A defined edge reads as more
+    // contrast than extra brightness would, and leaves the top of the ramp free
+    // for the controls that sit ON this card.
+    backgroundColor: HEVY.surface,
+    borderWidth: 1,
+    borderColor: HEVY.separator,
+  },
   emptyDay: { padding: Spacing.lg, alignItems: "center" },
   emptyDayText: { fontSize: 14 },
 
@@ -1010,8 +1023,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E8E8E8",
-    minHeight: 60,
+    // Was #E8E8E8 — a near-white light-theme hairline drawing a bright line
+    // across every row on a dark screen.
+    borderBottomColor: HEVY.hairline,
+    minHeight: 56,
   },
   dragHandle: { padding: Spacing.xs, marginRight: Spacing.sm },
   moveControls: { marginRight: Spacing.sm, alignItems: "center", gap: 2 },
@@ -1023,22 +1038,22 @@ const styles = StyleSheet.create({
   setsStepper: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.sm,
-    gap: Spacing.sm,
+    gap: 6,
+    marginRight: Spacing.xs,
   },
   stepperBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: HEVY.control,
   },
   setsValue: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
-    minWidth: 52,
+    fontFamily: FontFamily.mono,
+    minWidth: 20,
     textAlign: "center",
   },
 
@@ -1056,7 +1071,7 @@ const styles = StyleSheet.create({
   addExerciseText: {
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: FontFamily.displaySemi,
   },
 
   saveButton: {
@@ -1072,7 +1087,7 @@ const styles = StyleSheet.create({
     color: Colors.light.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: FontFamily.displaySemi,
   },
 
   modalRoot: { flex: 1 },
