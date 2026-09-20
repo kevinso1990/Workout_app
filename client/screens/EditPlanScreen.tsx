@@ -22,6 +22,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/toast";
 
+import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
@@ -153,6 +154,7 @@ function AddExerciseModal({
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const localizeName = useLocalizeExerciseName();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
 
@@ -186,7 +188,7 @@ function AddExerciseModal({
             { borderBottomColor: theme.border, paddingTop: insets.top || Spacing.lg },
           ]}
         >
-          <ThemedText style={styles.modalTitle}>Add Exercise</ThemedText>
+          <ThemedText style={styles.modalTitle}>{t("editPlan.addExerciseTitle")}</ThemedText>
           <Pressable onPress={handleClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} testID="button-close-add-exercise-modal">
             <Feather name="x" size={22} color={theme.text} />
           </Pressable>
@@ -271,6 +273,7 @@ function ReplaceExerciseModal({
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const localizeName = useLocalizeExerciseName();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
 
@@ -303,13 +306,13 @@ function ReplaceExerciseModal({
   const sections = useMemo(() => {
     const result = [];
     if (suggestions.length > 0) {
-      result.push({ title: "Suggested Alternatives", data: suggestions, isSuggested: true });
+      result.push({ title: t("editPlan.suggested"), data: suggestions, isSuggested: true });
     }
     if (others.length > 0) {
-      result.push({ title: "All Exercises", data: others, isSuggested: false });
+      result.push({ title: t("editPlan.allExercises"), data: others, isSuggested: false });
     }
     return result;
-  }, [suggestions, others]);
+  }, [suggestions, others, t]);
 
   const handleClose = () => {
     setQuery("");
@@ -344,7 +347,7 @@ function ReplaceExerciseModal({
             <ThemedText style={styles.modalTitle}>Replace Exercise</ThemedText>
             {target != null && (
               <ThemedText style={[styles.replaceSubtitle, { color: theme.textSecondary }]} numberOfLines={1}>
-                Replacing: {target.exercise.name}
+                {t("editPlan.replacing", { name: localizeName(target.exercise.name) })}
               </ThemedText>
             )}
           </View>
@@ -476,6 +479,7 @@ function ExerciseRow({
 }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const localizeName = useLocalizeExerciseName();
   const isActive = activeIndex === index;
   const canDecrement = exercise.sets > MIN_SETS;
   const canIncrement = exercise.sets < MAX_SETS;
@@ -527,9 +531,9 @@ function ExerciseRow({
       {/* Info + sets stepper */}
       <View style={styles.exerciseInfo}>
         <Pressable onPress={() => isActive && onSetActive(null)}>
-          <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
+          <ThemedText style={styles.exerciseName}>{localizeName(exercise.name)}</ThemedText>
           <ThemedText style={[styles.exerciseMeta, { color: theme.textSecondary }]}>
-            {translateMuscleGroup(t, exercise.muscleGroup)} · {t("exercises.repsCount", { count: exercise.reps })}
+            {translateMuscleGroup(t, exercise.muscleGroup)} · {t("exercises.setsReps", { sets: exercise.sets, reps: exercise.reps })}
           </ThemedText>
         </Pressable>
 
@@ -552,7 +556,7 @@ function ExerciseRow({
             <Feather name="minus" size={16} color={theme.text} />
           </Pressable>
           <ThemedText style={[styles.setsValue, { color: theme.text }]}>
-            {exercise.sets} {exercise.sets === 1 ? "set" : "sets"}
+            {t("editPlan.setCount", { count: exercise.sets })}
           </ThemedText>
           <Pressable
             onPress={() => {
@@ -624,6 +628,7 @@ function DaySection({
   onExerciseSetsChange: (exIndex: number, delta: number) => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [activeExIndex, setActiveExIndex] = useState<number | null>(null);
 
   return (
@@ -634,7 +639,7 @@ function DaySection({
       <View style={styles.dayHeader}>
         <View style={[styles.dayBadge, { backgroundColor: Colors.light.primary + "15" }]}>
           <ThemedText style={[styles.dayBadgeText, { color: Colors.light.primary }]}>
-            Day {dayIndex + 1}
+            {t("editPlan.day", { n: dayIndex + 1 })}
           </ThemedText>
         </View>
         <ThemedText style={styles.dayName}>{day.dayName}</ThemedText>
@@ -689,7 +694,7 @@ function DaySection({
       >
         <Feather name="plus" size={16} color={Colors.light.primary} />
         <ThemedText style={[styles.addExerciseText, { color: Colors.light.primary }]}>
-          Add Exercise
+          {t("editPlan.addExercise")}
         </ThemedText>
       </Pressable>
     </Animated.View>
@@ -869,7 +874,7 @@ export default function EditPlanScreen() {
       >
         {/* Plan name */}
         <Animated.View entering={FadeInDown.duration(300)} style={styles.nameSection}>
-          <ThemedText style={styles.sectionLabel}>Plan Name</ThemedText>
+          <ThemedText style={styles.sectionLabel}>{t("editPlan.planName")}</ThemedText>
           <TextInput
             style={[
               styles.nameInput,
@@ -923,7 +928,7 @@ export default function EditPlanScreen() {
             ) : (
               <>
                 <Feather name="check" size={18} color={Colors.light.onChalk} />
-                <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
+                <ThemedText style={styles.saveButtonText}>{t("editPlan.saveChanges")}</ThemedText>
               </>
             )}
           </Pressable>

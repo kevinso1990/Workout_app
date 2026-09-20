@@ -808,7 +808,8 @@
       "compound": "Verbundübung",
       "isolation": "Isolationsübung",
       "genericExercise": "Übung"
-    }
+    },
+    "setsReps": "{{sets}} × {{reps}} Wdh."
   },
   "splits": {
     "fullBody": "Ganzkörper",
@@ -983,5 +984,17 @@
     "deleteFailed": "Löschen fehlgeschlagen. Bitte erneut versuchen.",
     "loadFailed": "Laden fehlgeschlagen. Prüfe deine Verbindung und zieh zum Aktualisieren.",
     "actionFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+  },
+  "editPlan": {
+    "planName": "Planname",
+    "addExercise": "Übung hinzufügen",
+    "saveChanges": "Änderungen speichern",
+    "replacing": "Ersetzt: {{name}}",
+    "addExerciseTitle": "Übung hinzufügen",
+    "day": "Tag {{n}}",
+    "suggested": "Passende Alternativen",
+    "allExercises": "Alle Übungen",
+    "setCount_one": "{{count}} Satz",
+    "setCount_other": "{{count}} Sätze"
   }
 }

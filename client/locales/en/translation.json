@@ -244,7 +244,8 @@
       "compound": "Compound",
       "isolation": "Isolation",
       "genericExercise": "Exercise"
-    }
+    },
+    "setsReps": "{{sets}} × {{reps}} reps"
   },
   "importWorkout": {
     "pasteLabel": "Or paste your plan text here",
@@ -983,5 +984,17 @@
     "deleteFailed": "Couldn't delete. Please try again.",
     "loadFailed": "Couldn't load. Check your connection and pull to refresh.",
     "actionFailed": "Something went wrong. Please try again."
+  },
+  "editPlan": {
+    "planName": "Plan name",
+    "addExercise": "Add exercise",
+    "saveChanges": "Save changes",
+    "replacing": "Replacing: {{name}}",
+    "addExerciseTitle": "Add exercise",
+    "day": "Day {{n}}",
+    "suggested": "Suggested alternatives",
+    "allExercises": "All exercises",
+    "setCount_one": "{{count}} set",
+    "setCount_other": "{{count}} sets"
   }
 }
