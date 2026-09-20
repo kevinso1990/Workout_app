@@ -20,8 +20,35 @@ let cachedNames: { name: string; lower: string }[] | null = null;
  * variations match regardless of wording, e.g. "one armed" / "one-arm" / "1 arm"
  * → "single-arm". Keeps surrounding words intact (used for matching, not display).
  */
+/**
+ * Gym shorthand, expanded before matching.
+ *
+ * Hand-written plans are full of abbreviations — "Single Leg KB RDL",
+ * "Alternate DB High Pulls" — and the catalog stores none of them, so these
+ * came back as "needs mapping" and the athlete had to assign them by hand.
+ * Expanding them first lets the normal matching layers do their job.
+ *
+ * Deliberately applied only as whole words: "db" inside "dumbbell" or a stray
+ * "kb" inside a longer token must not be rewritten.
+ */
+const SHORTHAND: [RegExp, string][] = [
+  [/\bRDLs?\b/gi, "Romanian Deadlift"],
+  [/\bSLDLs?\b/gi, "Stiff-Leg Deadlift"],
+  [/\bKBs?\b/g, "Kettlebell"],
+  [/\bDBs?\b/g, "Dumbbell"],
+  [/\bBBs?\b/g, "Barbell"],
+  [/\bOHPs?\b/gi, "Overhead Press"],
+  [/\bBWs?\b/g, "Bodyweight"],
+  [/\balternate\b/gi, "alternating"],
+  [/\balt\.?\b/gi, "alternating"],
+];
+
+export function expandShorthand(s: string): string {
+  return SHORTHAND.reduce((acc, [re, full]) => acc.replace(re, full), s);
+}
+
 function canonicalizeQualifiers(s: string): string {
-  return s
+  return expandShorthand(s)
     .replace(/\bone[-\s]?armed\b/gi, "single-arm")
     .replace(/\bone[-\s]?arm\b/gi, "single-arm")
     .replace(/\b1[-\s]?arm\b/gi, "single-arm")
@@ -128,6 +155,15 @@ const EXERCISE_ALIASES: Record<string, string> = {
   langhantelrudern: "Barbell Row",
   rudern: "Barbell Row",
   kurzhantelrudern: "Dumbbell Row",
+  // "Rudern sitzend" fuzzy-matched to a single-arm KETTLEBELL row, which is a
+  // different exercise on different equipment. In a German plan this phrase
+  // means the seated cable row, so it is pinned rather than left to scoring.
+  rudernsitzend: "Seated Cable Row",
+  sitzendesrudern: "Seated Cable Row",
+  sitzendeskabelrudern: "Seated Cable Row",
+  kabelrudern: "Seated Cable Row",
+  kabelzugrudern: "Seated Cable Row",
+  engesrudern: "Seated Cable Row",
   bizepscurl: "Dumbbell Curl",
   bizepscurls: "Dumbbell Curl",
   armbeuger: "Dumbbell Curl",
