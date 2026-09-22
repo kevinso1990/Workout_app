@@ -113,7 +113,15 @@
     "descLowerB": "Unterkörper-Variation",
     "descPush": "Brust, Schultern und Trizeps",
     "descPull": "Rücken und Bizeps",
-    "descLegs": "Quadrizeps, Hamstrings und Waden"
+    "descLegs": "Quadrizeps, Hamstrings und Waden",
+    "weekStrip": {
+      "title": "Deine Woche",
+      "edit": "Termine",
+      "unplaced": "Kein freier Tag mehr für: {{names}}"
+    },
+    "coach": {
+      "title": "Coach"
+    }
   },
   "createPlan": {
     "back": "Zurück",
@@ -586,7 +594,11 @@
     "cloudRestoredTitle": "Wiederhergestellt",
     "cloudRestoredMessage": "{{historyCount}} Trainings und {{planCount}} Pläne geladen. Die App wird neu geladen.",
     "cloudNotFoundTitle": "Kein Backup gefunden",
-    "cloudNotFoundMessage": "Für diesen Code wurden keine Daten gefunden."
+    "cloudNotFoundMessage": "Für diesen Code wurden keine Daten gefunden.",
+    "commitments": {
+      "title": "Sport außerhalb des Gyms",
+      "subtitle": "Feste Termine — dein Plan wird drumherum gelegt"
+    }
   },
   "onboarding": {
     "welcome": "Lass uns deinen perfekten Trainingsplan erstellen",
@@ -733,7 +745,33 @@
     "goalMuscleDesc": "Muskelmasse aufbauen & Körperzusammensetzung verbessern",
     "beginnerTip": "Starte mit leichteren Gewichten und konzentriere dich auf die richtige Technik. Du kannst das Gewicht jederzeit in der nächsten Einheit steigern.",
     "exercisesPerSession": "~{{count}} Übungen",
-    "approxSessionTime": "~{{min}} Min/Einheit"
+    "approxSessionTime": "~{{min}} Min/Einheit",
+    "commitments": {
+      "title": "Trainierst du außerhalb des Gyms?",
+      "subtitle": "Tippe die Tage an, an denen du Sport hast. Dein Plan wird drumherum gelegt.",
+      "skip": "Nein, nur Gym",
+      "freeDays_one": "{{count}} Tag bleibt fürs Gym",
+      "freeDays_other": "{{count}} Tage bleiben fürs Gym",
+      "weekday": {
+        "mon": "Mo",
+        "tue": "Di",
+        "wed": "Mi",
+        "thu": "Do",
+        "fri": "Fr",
+        "sat": "Sa",
+        "sun": "So"
+      },
+      "sport": {
+        "running": "Laufen",
+        "football": "Fußball",
+        "basketball": "Basketball",
+        "tennis": "Tennis",
+        "cycling": "Radfahren",
+        "swimming": "Schwimmen",
+        "boxing": "Kampfsport",
+        "custom": "Anderes"
+      }
+    }
   },
   "exercisesScreen": {
     "searchPlaceholder": "Über 800 Übungen durchsuchen...",
@@ -930,7 +968,14 @@
       "swimming": "Schwimmen",
       "boxing": "Boxen",
       "custom": "Eigene"
-    }
+    },
+    "viewWeek": "Woche",
+    "viewMonth": "Monat",
+    "weekDone": "Diese Woche absolviert",
+    "weekEmpty": "Noch nichts geloggt — der erste Satz zählt.",
+    "statStrength": "Kraft",
+    "statCardio": "Cardio",
+    "statActiveDays": "Aktive Tage"
   },
   "logCardio": {
     "title": "Sport / Cardio loggen",

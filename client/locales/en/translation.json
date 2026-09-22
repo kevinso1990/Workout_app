@@ -113,7 +113,15 @@
     "descLowerB": "Lower body variation",
     "descPush": "Chest, shoulders and triceps",
     "descPull": "Back and biceps",
-    "descLegs": "Quads, hamstrings and calves"
+    "descLegs": "Quads, hamstrings and calves",
+    "weekStrip": {
+      "title": "Your week",
+      "edit": "Commitments",
+      "unplaced": "No free day left for: {{names}}"
+    },
+    "coach": {
+      "title": "Coach"
+    }
   },
   "createPlan": {
     "back": "Back",
@@ -667,7 +675,11 @@
     "cloudRestoredTitle": "Restored",
     "cloudRestoredMessage": "Loaded {{historyCount}} workouts and {{planCount}} plans. The app will reload.",
     "cloudNotFoundTitle": "No backup found",
-    "cloudNotFoundMessage": "No data was found for this backup code."
+    "cloudNotFoundMessage": "No data was found for this backup code.",
+    "commitments": {
+      "title": "Sport outside the gym",
+      "subtitle": "Fixed commitments — your plan is built around them"
+    }
   },
   "onboarding": {
     "welcome": "Let's build your perfect workout plan",
@@ -814,7 +826,33 @@
     "beginnerTip": "Start with lighter weights and focus on learning correct form. You can always increase the weight next session.",
     "exercisesPerSession": "~{{count}} exercises",
     "approxSessionTime": "~{{min}} min/session",
-    "notifOptional": "Workout reminders & weekly summaries"
+    "notifOptional": "Workout reminders & weekly summaries",
+    "commitments": {
+      "title": "Do you train outside the gym?",
+      "subtitle": "Tap the days you have sport. Your plan is placed around them.",
+      "skip": "No, gym only",
+      "freeDays_one": "{{count}} day left for the gym",
+      "freeDays_other": "{{count}} days left for the gym",
+      "weekday": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "sport": {
+        "running": "Running",
+        "football": "Football",
+        "basketball": "Basketball",
+        "tennis": "Tennis",
+        "cycling": "Cycling",
+        "swimming": "Swimming",
+        "boxing": "Combat sport",
+        "custom": "Other"
+      }
+    }
   },
   "splits": {
     "fullBody": "Full Body",
@@ -930,7 +968,14 @@
       "swimming": "Swimming",
       "boxing": "Boxing",
       "custom": "Custom"
-    }
+    },
+    "viewWeek": "Week",
+    "viewMonth": "Month",
+    "weekDone": "Completed this week",
+    "weekEmpty": "Nothing logged yet — the first set counts.",
+    "statStrength": "Strength",
+    "statCardio": "Cardio",
+    "statActiveDays": "Active days"
   },
   "logCardio": {
     "title": "Log cardio / sport",
