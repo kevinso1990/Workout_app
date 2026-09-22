@@ -809,7 +809,12 @@
       "isolation": "Isolationsübung",
       "genericExercise": "Übung"
     },
-    "setsReps": "{{sets}} × {{reps}} Wdh."
+    "setsReps": "{{sets}} × {{reps}} Wdh.",
+    "addOwnImage": "Eigenes Bild wählen",
+    "replaceOwnImage": "Eigenes Bild ersetzen",
+    "removeOwnImage": "Eigenes Bild entfernen",
+    "ownImageHint": "Bleibt nur auf diesem Gerät",
+    "ownImageFailed": "Bild konnte nicht gespeichert werden"
   },
   "splits": {
     "fullBody": "Ganzkörper",

@@ -17,7 +17,15 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import * as ImagePicker from "expo-image-picker";
+
+import { toast } from "@/lib/toast";
 import { ThemedText } from "@/components/ThemedText";
+import {
+  getCustomExerciseImageSync,
+  setCustomExerciseImage,
+  removeCustomExerciseImage,
+} from "@/lib/customExerciseImages";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { getExerciseMedia as getStaticExerciseMedia } from "@/lib/exerciseMedia/provider";
@@ -47,6 +55,30 @@ export default function ExerciseDetailModal({
 }: Props) {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  // Bumped after a pick/remove so the hero re-reads the image index.
+  const [customImageTick, setCustomImageTick] = useState(0);
+  const hasCustomImage = getCustomExerciseImageSync(exerciseName) != null;
+
+  const pickOwnImage = useCallback(async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    const saved = await setCustomExerciseImage(exerciseName, result.assets[0].uri);
+    if (!saved) {
+      toast.error(t("exercises.ownImageFailed"));
+      return;
+    }
+    setCustomImageTick((n) => n + 1);
+  }, [exerciseName, t]);
+
+  const clearOwnImage = useCallback(async () => {
+    await removeCustomExerciseImage(exerciseName);
+    setCustomImageTick((n) => n + 1);
+  }, [exerciseName]);
   const insets = useSafeAreaInsets();
   const [instructions, setInstructions] = useState<string[]>([]);
 
@@ -131,12 +163,41 @@ export default function ExerciseDetailModal({
           </View>
 
           <ExerciseDbHeroGif
+            key={`hero-${customImageTick}`}
             exerciseName={exerciseName}
             muscleGroup={muscleGroup}
             height={Math.min(EXERCISE_HERO_GIF_HEIGHT, 280)}
             style={styles.mediaContainer}
             onDetailLoaded={handleDetailLoaded}
           />
+
+          <View style={styles.ownImageRow}>
+            <Pressable
+              onPress={pickOwnImage}
+              style={styles.ownImageBtn}
+              testID="button-pick-own-exercise-image"
+            >
+              <Feather name="image" size={14} color={Colors.light.chalkDim} />
+              <ThemedText style={styles.ownImageText}>
+                {t(hasCustomImage ? "exercises.replaceOwnImage" : "exercises.addOwnImage")}
+              </ThemedText>
+            </Pressable>
+            {hasCustomImage ? (
+              <Pressable
+                onPress={clearOwnImage}
+                style={styles.ownImageBtn}
+                testID="button-remove-own-exercise-image"
+              >
+                <ThemedText style={styles.ownImageText}>
+                  {t("exercises.removeOwnImage")}
+                </ThemedText>
+              </Pressable>
+            ) : (
+              <ThemedText style={styles.ownImageHint}>
+                {t("exercises.ownImageHint")}
+              </ThemedText>
+            )}
+          </View>
 
           <View style={styles.cuesSection}>
             <View style={styles.cuesHeader}>
@@ -248,6 +309,28 @@ const styles = StyleSheet.create({
   },
   mediaContainer: {
     marginBottom: Spacing.xl,
+  },
+  ownImageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  ownImageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+  },
+  ownImageText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.light.chalkDim,
+  },
+  ownImageHint: {
+    fontSize: 12,
+    color: Colors.light.chalkFaint,
   },
   cuesSection: {
     gap: Spacing.sm,

@@ -10,6 +10,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { fetchExerciseGif } from "@/services/exerciseApi";
 import { getExerciseImageUrl } from "@/lib/exerciseImages";
+import { getCustomExerciseImageSync } from "@/lib/customExerciseImages";
 import { catalogImageUrl } from "@/lib/exerciseNameCatalog";
 import { Colors } from "@/constants/theme";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
@@ -38,7 +39,12 @@ export function ExerciseDbThumb({
   // Static GitHub-CDN still image (no API key needed). Used as a reliable
   // fallback when the RapidAPI GIF is missing, unconfigured, or fails to load.
   const staticUrl = useMemo(
-    () => catalogImageUrl(exerciseName) ?? getExerciseImageUrl(exerciseName),
+    // An image the athlete supplied for this exercise outranks every catalog
+    // source: they added it precisely because the catalog had nothing useful.
+    () =>
+      getCustomExerciseImageSync(exerciseName) ??
+      catalogImageUrl(exerciseName) ??
+      getExerciseImageUrl(exerciseName),
     [exerciseName],
   );
 
@@ -56,7 +62,12 @@ export function ExerciseDbThumb({
       setFetchDone(true);
       // If neither the animated GIF nor a static fallback exists, stop the
       // skeleton immediately so we don't spin forever.
-      if (!url && !catalogImageUrl(exerciseName) && !getExerciseImageUrl(exerciseName))
+      if (
+        !url &&
+        !getCustomExerciseImageSync(exerciseName) &&
+        !catalogImageUrl(exerciseName) &&
+        !getExerciseImageUrl(exerciseName)
+      )
         setImageReady(true);
     })();
 

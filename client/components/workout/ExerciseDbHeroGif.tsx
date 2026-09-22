@@ -15,6 +15,7 @@ import {
 } from "@/lib/rapidApiConfig";
 import { fetchExerciseDetail } from "@/services/exerciseApi";
 import { getExerciseImageFrames } from "@/lib/exerciseImages";
+import { getCustomExerciseImageSync } from "@/lib/customExerciseImages";
 import { catalogImageUrl } from "@/lib/exerciseNameCatalog";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { ExerciseGifSkeleton } from "@/components/workout/ExerciseGifSkeleton";
@@ -107,12 +108,15 @@ export function ExerciseDbHeroGif({
   dark = false,
   onDetailLoaded,
 }: ExerciseDbHeroGifProps) {
-  const frames = useMemo(
-    () => (catalogImageUrl(exerciseName)
-    ? [catalogImageUrl(exerciseName)!, catalogImageUrl(exerciseName)!.replace(/\/0\.jpg$/, "/1.jpg")]
-    : getExerciseImageFrames(exerciseName)),
-    [exerciseName],
-  );
+  const frames = useMemo(() => {
+    // A user-supplied image is a single still, so it becomes the only frame —
+    // there is no start/end pair to alternate between.
+    const custom = getCustomExerciseImageSync(exerciseName);
+    if (custom) return [custom];
+    const catalog = catalogImageUrl(exerciseName);
+    if (catalog) return [catalog, catalog.replace(/\/0\.jpg$/, "/1.jpg")];
+    return getExerciseImageFrames(exerciseName);
+  }, [exerciseName]);
   const hasFrames = frames.length > 0;
 
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);

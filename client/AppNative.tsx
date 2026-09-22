@@ -44,6 +44,7 @@ import {
 } from "@/navigation/ActiveWorkoutRecovery";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { initDataSync } from "@/lib/dataSync";
+import { loadCustomExerciseImages } from "@/lib/customExerciseImages";
 import { hydrateExerciseNameCatalog } from "@/lib/exerciseNameCatalog";
 import { registerWebServiceWorker } from "@/lib/installWebGlobalErrorHandlers";
 
@@ -89,6 +90,9 @@ export default function AppNative() {
 
   useEffect(() => {
     void hydrateExerciseNameCatalog();
+    // Load the custom-image index once so the synchronous lookup used on
+    // render paths has data from the first frame.
+    void loadCustomExerciseImages();
   }, []);
 
   useEffect(() => {

@@ -245,7 +245,12 @@
       "isolation": "Isolation",
       "genericExercise": "Exercise"
     },
-    "setsReps": "{{sets}} × {{reps}} reps"
+    "setsReps": "{{sets}} × {{reps}} reps",
+    "addOwnImage": "Choose your own image",
+    "replaceOwnImage": "Replace your image",
+    "removeOwnImage": "Remove your image",
+    "ownImageHint": "Stays on this device only",
+    "ownImageFailed": "Could not save the image"
   },
   "importWorkout": {
     "pasteLabel": "Or paste your plan text here",
