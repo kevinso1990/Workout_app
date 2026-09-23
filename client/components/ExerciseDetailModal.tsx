@@ -166,7 +166,7 @@ export default function ExerciseDetailModal({
             key={`hero-${customImageTick}`}
             exerciseName={exerciseName}
             muscleGroup={muscleGroup}
-            height={Math.min(EXERCISE_HERO_GIF_HEIGHT, 280)}
+            height={Math.min(EXERCISE_HERO_GIF_HEIGHT, 200)}
             style={styles.mediaContainer}
             onDetailLoaded={handleDetailLoaded}
           />

@@ -101,7 +101,7 @@ function FlipFrames({
  * Instructions are still fetched from ExerciseDB regardless so the modal can
  * show coaching cues.
  */
-export function ExerciseDbHeroGif({
+function ExerciseDbHeroGifBase({
   exerciseName,
   height = EXERCISE_HERO_GIF_HEIGHT,
   style,
@@ -246,3 +246,11 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.65)",
   },
 });
+
+/**
+ * Memoised: one instance per exercise on the workout screen, each owning image
+ * state and a fetch. The screen re-renders on every logged set — and during a
+ * press-and-hold on the weight stepper, many times a second — so re-rendering
+ * every exercise's media with it is pure waste.
+ */
+export const ExerciseDbHeroGif = React.memo(ExerciseDbHeroGifBase);

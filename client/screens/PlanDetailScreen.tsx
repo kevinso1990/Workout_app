@@ -156,6 +156,21 @@ export default function PlanDetailScreen() {
         >
           <Feather name="chevron-left" size={28} color={HEVY.textPrimary} />
         </Pressable>
+
+        {/* Editing was only reachable from the plan LIST, via the "..." menu —
+            three taps, and none of them from the screen where you are actually
+            looking at the plan you want to change. */}
+        <Pressable
+          onPress={() => navigation.navigate("EditPlan", { planId: plan.id })}
+          style={styles.editBtn}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t("plans.edit")}
+          testID="button-edit-plan-from-detail"
+        >
+          <Feather name="edit-2" size={18} color={HEVY.textPrimary} />
+        </Pressable>
+
         <ThemedText style={styles.planName}>{plan.name}</ThemedText>
         <ThemedText style={styles.planInfo}>
           {t("planDetail.daysPerWeekCount", { count: plan.daysPerWeek })} ·{" "}
@@ -225,6 +240,12 @@ const styles = StyleSheet.create({
   },
   screenHeader: {
     backgroundColor: HEVY.surface,
+  },
+  editBtn: {
+    position: "absolute",
+    right: Spacing.lg,
+    top: 0,
+    padding: Spacing.xs,
   },
   backBtn: {
     alignSelf: "flex-start",
