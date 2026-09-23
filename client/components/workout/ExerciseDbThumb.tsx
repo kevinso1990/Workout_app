@@ -24,7 +24,7 @@ type ExerciseDbThumbProps = {
 };
 
 /** Small animated ExerciseDB GIF for list rows (with skeleton while loading). */
-export function ExerciseDbThumb({
+function ExerciseDbThumbBase({
   exerciseName,
   style,
   onPress,
@@ -155,3 +155,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.ironElevated2,
   },
 });
+
+/**
+ * Memoised because it is rendered once per card in a long list and each
+ * instance owns an image fetch; re-rendering it on an unrelated parent update
+ * is pure cost.
+ */
+export const ExerciseDbThumb = React.memo(ExerciseDbThumbBase);

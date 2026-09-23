@@ -241,7 +241,7 @@ function FilterChip({
 }
 
 
-function ExerciseCard({
+function ExerciseCardBase({
   exercise,
   index,
   onLongPress,
@@ -334,6 +334,15 @@ function ExerciseCard({
     </Animated.View>
   );
 }
+
+/**
+ * Memoised: the list re-renders on every keystroke in the search field and on
+ * every filter tap, and without this each of the ~12 visible cards re-rendered
+ * with its image. The props are primitives plus stable callbacks, so a shallow
+ * compare is exactly right here.
+ */
+const ExerciseCard = React.memo(ExerciseCardBase);
+
 
 function CreateExerciseModal({
   visible,
@@ -987,12 +996,17 @@ export default function ExercisesScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const deleteCustomExercise = async (id: string) => {
-    const updated = customExercises.filter((ex) => ex.id !== id);
-    setCustomExercises(updated);
-    await AsyncStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(updated));
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-  };
+  // Stable identity: renderItem depends on this, and a fresh function each
+  // render would defeat the card's memoisation entirely.
+  const deleteCustomExercise = useCallback(
+    async (id: string) => {
+      const updated = customExercises.filter((ex) => ex.id !== id);
+      setCustomExercises(updated);
+      await AsyncStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(updated));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    },
+    [customExercises],
+  );
 
   const allExercises = useMemo(() => {
     const catalog = catalogExercises.length > 0 ? catalogExercises : EXERCISE_LIBRARY;
@@ -1037,20 +1051,17 @@ export default function ExercisesScreen() {
     setSelectedFilter(filter);
   };
 
-  const renderItem = ({
-    item,
-    index,
-  }: {
-    item: ExerciseItem;
-    index: number;
-  }) => (
-    <ExerciseCard
-      exercise={item}
-      index={index}
-      onLongPress={item.isCustom ? () => deleteCustomExercise(item.id) : undefined}
-      onPress={() => setSelectedExercise(item)}
-      onDetailPress={() => setDetailExercise(item)}
-    />
+  const renderItem = useCallback(
+    ({ item, index }: { item: ExerciseItem; index: number }) => (
+      <ExerciseCard
+        exercise={item}
+        index={index}
+        onLongPress={item.isCustom ? () => deleteCustomExercise(item.id) : undefined}
+        onPress={() => setSelectedExercise(item)}
+        onDetailPress={() => setDetailExercise(item)}
+      />
+    ),
+    [deleteCustomExercise],
   );
 
   return (
