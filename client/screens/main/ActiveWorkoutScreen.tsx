@@ -2362,7 +2362,7 @@ export default function ActiveWorkoutScreen() {
                 style={[
                   styles.skipButton,
                   styles.skipButtonFlex,
-                  { borderColor: theme.border },
+                  { borderColor: Colors.light.controlOutline },
                 ]}
                 testID="button-skip-finish"
                 accessible
@@ -2985,6 +2985,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
+    // Transparent on the near-black ground, with a divider-weight outline,
+    // this read as grey text floating on the page rather than a button.
+    backgroundColor: HEVY.surface,
   },
   skipButtonText: {
     fontSize: 16,

@@ -29,6 +29,15 @@ const onChalk = "#191B1D"; // iron text sitting on a chalk-filled surface
 // Hairlines — chalk at low alpha over iron.
 const hairline = "rgba(236,233,225,0.09)";
 const hairlineStrong = "rgba(236,233,225,0.17)";
+/**
+ * Outline for interactive controls (secondary buttons, pickers).
+ *
+ * Divider weight and button weight are not the same job: at 0.17 a secondary
+ * button drawn transparent on the near-black ground did not read as a control
+ * at all — it looked like grey text floating on the page. Dividers keep the
+ * quieter value; anything you can press uses this.
+ */
+const controlOutline = "rgba(236,233,225,0.38)";
 
 // Plate colours — LOAD intensity only. Do not use for decoration.
 const plateLight = "#2FA35F"; // green  — warm-up / isolation
@@ -55,6 +64,7 @@ const palette = {
   backgroundSecondary: ironElevated2,
   backgroundTertiary: ironElevated3,
   border: hairlineStrong,
+  controlOutline,
   success: plateLight,
   error: plateHeavy,
 

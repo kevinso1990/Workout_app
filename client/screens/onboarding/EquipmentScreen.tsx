@@ -12,6 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { HEVY } from "@/constants/hevyLayout";
 import { useOnboarding, Equipment } from "@/context/OnboardingContext";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
 import { screenHeaderSafeAreaStyle } from "@/lib/paddingTopUnderHeader";
@@ -240,6 +241,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+    backgroundColor: HEVY.surface,
   },
   backText: {
     fontSize: 17,

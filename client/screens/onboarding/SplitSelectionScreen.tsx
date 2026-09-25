@@ -623,6 +623,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+    backgroundColor: HEVY.surface,
   },
   backButtonText: {
     fontSize: 17,
