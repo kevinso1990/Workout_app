@@ -121,7 +121,11 @@
     },
     "coach": {
       "title": "Coach"
-    }
+    },
+    "refinedByAi": "Your plan was refined by the AI",
+    "refinementOffer": "The AI built an improved version of “{{planName}}”. Your current plan stays as it is until you accept.",
+    "refinementApply": "Apply",
+    "refinementKeep": "Keep mine"
   },
   "createPlan": {
     "back": "Back",

@@ -31,7 +31,11 @@ import {
   getUserPreferences,
 } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
-import { generateWorkoutPlan } from "@/lib/planGeneration";
+import {
+  createPlanInstantly,
+  refinePlanInBackground,
+} from "@/lib/planRefinement";
+import { toast } from "@/lib/toast";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { hapticError, hapticLight, hapticSuccess } from "@/lib/safeHaptics";
 
@@ -120,15 +124,22 @@ export default function CreatePlanScreen() {
     setIsLoading(true);
     try {
       const prefs = await getUserPreferences();
-      const { plan } = await generateWorkoutPlan({
+      // Template-first — the plan exists the moment the button is tapped, and
+      // the AI refines it afterwards if it is reachable.
+      const input = {
         frequency: daysPerWeek,
         experience: prefs?.fitnessLevel ?? "beginner",
         goal: prefs?.fitnessGoals?.[0] ?? "build_muscle",
         equipment: prefs?.equipment ?? null,
         focusMuscles: prefs?.focusMuscles,
         planName: planName.trim(),
-      });
+      } as const;
+
+      const plan = createPlanInstantly(input);
       await saveWorkoutPlan(plan);
+      void refinePlanInBackground(plan.id, input, plan.lastModified, () => {
+        toast.success(t("plans.refinedByAi"));
+      });
       scheduleDataSync();
       hapticSuccess();
       if (navigation.canGoBack()) {

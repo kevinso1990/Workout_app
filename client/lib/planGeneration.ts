@@ -12,7 +12,6 @@ import {
 } from "@/lib/onboardingUtils";
 import { mapNativeEquipmentToApi } from "@/lib/equipmentApiMap";
 import { nativeRequest } from "@/lib/nativeApi";
-import { setPlanGenerationFallbackNotice } from "@/lib/planGenerationFallback";
 import {
   describeCommitmentsForPrompt,
   type WeeklyCommitment,
@@ -107,19 +106,7 @@ function mergeApiPlansIntoWorkoutPlan(
   };
 }
 
-function classifyGenerationError(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (msg.includes("429") || msg.toLowerCase().includes("rate")) return "rate_limit";
-  if (msg.includes("AbortError") || msg.toLowerCase().includes("timeout")) {
-    return "timeout";
-  }
-  if (msg.includes("Failed to fetch") || msg.toLowerCase().includes("network")) {
-    return "network";
-  }
-  return "server";
-}
-
-async function fetchAiGeneratedPlan(
+export async function fetchAiGeneratedPlan(
   input: GenerateWorkoutPlanInput,
 ): Promise<WorkoutPlan | null> {
   const commitmentsText = describeCommitmentsForPrompt(input.commitments ?? []);
@@ -178,7 +165,12 @@ async function fetchAiGeneratedPlan(
   });
 }
 
-function buildLocalFallbackPlan(input: GenerateWorkoutPlanInput): WorkoutPlan {
+/**
+ * The deterministic plan, built from the same answers the AI would get. Named
+ * "local" rather than "fallback" because template-first makes this the plan the
+ * user actually starts with, not a consolation prize for a failed request.
+ */
+export function buildLocalPlan(input: GenerateWorkoutPlanInput): WorkoutPlan {
   if (input.splitId) {
     return buildOnboardingPlan(
       input.splitId,
@@ -208,18 +200,15 @@ export async function generateWorkoutPlan(
     if (fromApi) {
       return { plan: fromApi, source: "ai" };
     }
-    await setPlanGenerationFallbackNotice("empty_response");
   } catch (err) {
-    const reason = classifyGenerationError(err);
     console.warn(
       "[planGeneration] API generation failed, using local template:",
       err instanceof Error ? err.message : err,
     );
-    await setPlanGenerationFallbackNotice(reason);
   }
 
   return {
-    plan: buildLocalFallbackPlan(input),
+    plan: buildLocalPlan(input),
     source: "template",
   };
 }

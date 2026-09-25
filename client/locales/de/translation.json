@@ -121,7 +121,11 @@
     },
     "coach": {
       "title": "Coach"
-    }
+    },
+    "refinedByAi": "Dein Plan wurde von der KI verfeinert",
+    "refinementOffer": "Die KI hat eine verbesserte Version von „{{planName}}“ erstellt. Dein aktueller Plan bleibt unverändert, bis du zustimmst.",
+    "refinementApply": "Übernehmen",
+    "refinementKeep": "Behalten"
   },
   "createPlan": {
     "back": "Zurück",

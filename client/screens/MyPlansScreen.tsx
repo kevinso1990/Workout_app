@@ -51,8 +51,11 @@ import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
 import { PlanAdaptationBanner } from "@/components/PlanAdaptationBanner";
-import { PlanGenerationFallbackBanner } from "@/components/PlanGenerationFallbackBanner";
-import { peekPlanGenerationFallbackNotice } from "@/lib/planGenerationFallback";
+import { PlanRefinementBanner } from "@/components/PlanRefinementBanner";
+import {
+  peekPendingRefinement,
+  type PendingRefinement,
+} from "@/lib/planRefinement";
 import type { PerformanceSignal } from "@/lib/planAdaptation";
 import {
   evaluateSplitRefreshOffer,
@@ -445,7 +448,8 @@ export default function MyPlansScreen() {
   const [adaptPlan, setAdaptPlan] = useState<WorkoutPlan | null>(null);
   const [adaptSignals, setAdaptSignals] = useState<PerformanceSignal[]>([]);
   const [splitRefreshOffer, setSplitRefreshOffer] = useState<SplitRefreshOffer | null>(null);
-  const [showGenFallback, setShowGenFallback] = useState(false);
+  const [pendingRefinement, setPendingRefinement] =
+    useState<PendingRefinement | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem("importBannerDismissed").then((v) => {
@@ -533,8 +537,7 @@ export default function MyPlansScreen() {
         setSplitRefreshOffer(splitOffer);
       }
 
-      const fallback = await peekPlanGenerationFallbackNotice();
-      setShowGenFallback(!!fallback);
+      setPendingRefinement(await peekPendingRefinement());
     } catch (error) {
       console.error("Error loading plans:", error);
       // Without this, a load failure looks identical to "you have no plans yet".
@@ -718,9 +721,13 @@ export default function MyPlansScreen() {
                 > actionable coaching offer > daily tip. Stacking three banners
                 pushed the real primary action (starting a workout) off screen.
                 Dismissing one surfaces the next. */}
-            {showGenFallback ? (
-              <PlanGenerationFallbackBanner
-                onDismiss={() => setShowGenFallback(false)}
+            {pendingRefinement ? (
+              <PlanRefinementBanner
+                pending={pendingRefinement}
+                onResolved={() => {
+                  setPendingRefinement(null);
+                  loadPlans();
+                }}
               />
             ) : adaptPlan ? (
               <PlanAdaptationBanner

@@ -36,7 +36,11 @@ import {
   saveWorkoutPlan,
 } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
-import { generateWorkoutPlan } from "@/lib/planGeneration";
+import {
+  createPlanInstantly,
+  refinePlanInBackground,
+} from "@/lib/planRefinement";
+import { toast } from "@/lib/toast";
 import {
   getRecommendedSplit,
   SPLIT_OPTIONS,
@@ -271,7 +275,11 @@ export default function SplitSelectionScreen() {
     try {
       await setUserPreferences(getPreferences());
 
-      const { plan } = await generateWorkoutPlan({
+      // Template-first: the deterministic generator already answers these
+      // inputs well, so the plan is built locally and instantly instead of
+      // holding the last onboarding screen open for up to 75s waiting on a
+      // model. The AI then improves it in the background.
+      const input = {
         frequency: state.workoutDaysPerWeek,
         experience: state.fitnessLevel ?? "beginner",
         goal: state.fitnessGoals[0] ?? "build_muscle",
@@ -279,9 +287,16 @@ export default function SplitSelectionScreen() {
         focusMuscles: state.focusMuscles,
         splitId: selectedSplit,
         commitments: state.weeklyCommitments,
-      });
+      } as const;
 
+      const plan = createPlanInstantly(input);
       await saveWorkoutPlan(plan);
+
+      // Detached on purpose: onboarding finishes now, and the refinement lands
+      // later (or never) without anyone waiting on it.
+      void refinePlanInBackground(plan.id, input, plan.lastModified, () => {
+        toast.success(t("plans.refinedByAi"));
+      });
       hapticSuccess();
       await finishToMain();
     } catch (error) {
