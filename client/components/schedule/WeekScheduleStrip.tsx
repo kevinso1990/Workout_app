@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo} from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { scheduleTrainingWeek, type WeeklyCommitment } from "@shared/weeklySchedule";
 import {
   WEEKDAY_FALLBACK,
@@ -50,6 +51,7 @@ export function WeekScheduleStrip({
   onPress?: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const { dayLabel, sportLabel } = useCommitmentLabels();
   const today = todayWeekday();
@@ -118,15 +120,15 @@ export function WeekScheduleStrip({
                   styles.cell,
                   { borderColor: theme.border },
                   slot.kind === "gym" && {
-                    backgroundColor: Colors.light.primary,
-                    borderColor: Colors.light.primary,
+                    backgroundColor: theme.primary,
+                    borderColor: theme.primary,
                   },
                   slot.kind === "sport" && { backgroundColor: theme.backgroundSecondary },
-                  isToday && { borderColor: Colors.light.chalk, borderWidth: 2 },
+                  isToday && { borderColor: theme.chalk, borderWidth: 2 },
                 ]}
               >
                 {slot.kind === "gym" ? (
-                  <ActivityIcon size={16} color={Colors.light.onChalk} />
+                  <ActivityIcon size={16} color={theme.onChalk} />
                 ) : slot.kind === "sport" ? (
                   <ActivityIcon
                     sport={slot.commitment!.sport}
@@ -167,7 +169,7 @@ export function WeekScheduleStrip({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   card: {
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,

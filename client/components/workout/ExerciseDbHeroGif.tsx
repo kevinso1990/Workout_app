@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState} from "react";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import {
   Dimensions,
   StyleSheet,
@@ -54,6 +56,8 @@ function FlipFrames({
   exerciseName: string;
   onReady: () => void;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [idx, setIdx] = useState(0);
   const [lastFrame, setLastFrame] = useState(frames.length - 1);
 
@@ -108,6 +112,8 @@ function ExerciseDbHeroGifBase({
   dark = false,
   onDetailLoaded,
 }: ExerciseDbHeroGifProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const frames = useMemo(() => {
     // A user-supplied image is a single still, so it becomes the only frame —
     // there is no start/end pair to alternate between.
@@ -212,12 +218,12 @@ function ExerciseDbHeroGifBase({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   frame: {
     width: "100%",
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: Colors.dark.ironElevated2,
+    backgroundColor: c.ironElevated2,
   },
   frameDark: {
     backgroundColor: "#121212",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -108,7 +108,7 @@ export default function RootStackNavigator({
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: HEVY.canvas,
+          backgroundColor: theme.iron,
         }}
       >
         <BrandLogo height={56} testID="brand-logo-bootstrap" />

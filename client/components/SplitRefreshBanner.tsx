@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import type { WorkoutPlan } from "@/lib/storage";
 import type { SplitRefreshOffer } from "@/lib/splitRefreshEvaluation";
@@ -44,6 +45,7 @@ Suggest specific changes to day structure, exercise selection, or weekly frequen
 
 export function SplitRefreshBanner({ offer, onApplied, onDismiss }: Props) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<PlanModifyResponse | null>(null);
@@ -87,12 +89,12 @@ export function SplitRefreshBanner({ offer, onApplied, onDismiss }: Props) {
         style={[
           styles.banner,
           {
-            backgroundColor: Colors.light.primary + "10",
-            borderColor: Colors.light.primary + "35",
+            backgroundColor: theme.primary + "10",
+            borderColor: theme.primary + "35",
           },
         ]}
       >
-        <Feather name="refresh-cw" size={20} color={Colors.light.primary} />
+        <Feather name="refresh-cw" size={20} color={theme.primary} />
         <View style={styles.bannerText}>
           <ThemedText style={styles.bannerTitle}>
             {t("plans.splitRefresh.title")}
@@ -111,10 +113,10 @@ export function SplitRefreshBanner({ offer, onApplied, onDismiss }: Props) {
         <Pressable
           onPress={handleReview}
           disabled={loading}
-          style={[styles.cta, { backgroundColor: Colors.light.primary }]}
+          style={[styles.cta, { backgroundColor: theme.primary }]}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.light.onChalk} size="small" />
+            <ActivityIndicator color={theme.onChalk} size="small" />
           ) : (
             <ThemedText style={styles.ctaText}>
               {t("plans.splitRefresh.review")}
@@ -168,7 +170,7 @@ export function SplitRefreshBanner({ offer, onApplied, onDismiss }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   banner: {
     flexDirection: "row",
     alignItems: "center",
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
     alignItems: "center",
   },
-  ctaText: { color: Colors.light.onChalk, fontWeight: "600", fontSize: 13 },
+  ctaText: { color: c.onChalk, fontWeight: "600", fontSize: 13 },
   dismiss: { padding: 4 },
   error: { fontSize: 12, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   modalBackdrop: {
@@ -214,9 +216,9 @@ const styles = StyleSheet.create({
   },
   modalBtn: { padding: Spacing.md },
   modalBtnPrimary: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.lg,
   },
-  modalBtnPrimaryText: { color: Colors.light.onChalk, fontWeight: "600" },
+  modalBtnPrimaryText: { color: c.onChalk, fontWeight: "600" },
 });

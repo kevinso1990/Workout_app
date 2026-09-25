@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import type { DaySessionSummary } from "@/lib/workoutCalendar";
 import { dateKeyFromIso } from "@/lib/workoutCalendar";
 
@@ -57,6 +59,8 @@ export function HybridCalendar({
   selectedDateKey,
   onSelectDate,
 }: HybridCalendarProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const todayKey = dateKeyFromIso(new Date().toISOString());
   const cells = buildMonthGrid(month);
@@ -138,9 +142,9 @@ export function HybridCalendar({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: {
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
   },
@@ -153,7 +157,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 10,
     fontWeight: "600",
-    color: Colors.light.chalkFaint,
+    color: c.chalkFaint,
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
@@ -173,7 +177,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.ironElevated2,
+    backgroundColor: c.ironElevated2,
     borderWidth: 1,
     borderColor: "transparent",
     gap: 3,
@@ -182,16 +186,16 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   cellTrained: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
   },
   cellCardio: {
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   cellToday: {
-    borderColor: Colors.light.chalkDim,
+    borderColor: c.chalkDim,
   },
   cellSelected: {
-    borderColor: Colors.light.chalk,
+    borderColor: c.chalk,
     borderWidth: 2,
   },
   cellPressed: {
@@ -200,22 +204,22 @@ const styles = StyleSheet.create({
   dayNum: {
     fontSize: 14,
     fontFamily: FontFamily.mono,
-    color: Colors.light.chalk,
+    color: c.chalk,
   },
   dayNumOutside: {
-    color: Colors.light.chalkFaint,
+    color: c.chalkFaint,
   },
   dayNumOnChalk: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
   },
   cardioBar: {
     width: 12,
     height: 2,
     borderRadius: 1,
-    backgroundColor: Colors.light.chalkDim,
+    backgroundColor: c.chalkDim,
   },
   cardioBarOnChalk: {
-    backgroundColor: Colors.light.onChalk,
+    backgroundColor: c.onChalk,
   },
   legend: {
     flexDirection: "row",
@@ -232,21 +236,21 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 4,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
   },
   legendSwatchCardio: {
     width: 14,
     height: 14,
     borderRadius: 4,
-    backgroundColor: Colors.light.ironElevated2,
+    backgroundColor: c.ironElevated2,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
     alignItems: "center",
     justifyContent: "flex-end",
     paddingBottom: 2,
   },
   legendText: {
     fontSize: 12,
-    color: Colors.light.chalkDim,
+    color: c.chalkDim,
   },
 });

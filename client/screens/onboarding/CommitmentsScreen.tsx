@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
@@ -38,6 +39,7 @@ export default function CommitmentsScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation = useNavigation<NavigationProp>();
   const { state, setWeeklyCommitments } = useOnboarding();
 
@@ -104,7 +106,7 @@ export default function CommitmentsScreen() {
             <ThemedText style={styles.backText}>{t("onboarding.back")}</ThemedText>
           </Pressable>
           <Pressable onPress={goNext} testID="button-continue" style={styles.continueWrapper}>
-            <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
+            <View style={[styles.continueButton, { backgroundColor: theme.primary }]}>
               <ThemedText style={styles.continueText}>{t("onboarding.next")}</ThemedText>
             </View>
           </Pressable>
@@ -114,7 +116,7 @@ export default function CommitmentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: { paddingHorizontal: Spacing.xl },
   scroll: { flex: 1 },
   editorWrap: { marginTop: Spacing.lg },
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     justifyContent: "center",
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   backText: { fontSize: 16, fontWeight: "600" },
   continueWrapper: { flex: 1 },
@@ -138,5 +140,5 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: "center",
   },
-  continueText: { fontSize: 16, fontWeight: "700", color: Colors.light.onChalk },
+  continueText: { fontSize: 16, fontWeight: "700", color: c.onChalk },
 });

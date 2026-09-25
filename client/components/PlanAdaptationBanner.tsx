@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import type { WorkoutPlan } from "@/lib/storage";
 import {
@@ -53,6 +54,7 @@ async function logOutcomesForSignals(
 
 export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Props) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<PlanModifyResponse | null>(null);
@@ -104,12 +106,12 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
         style={[
           styles.banner,
           {
-            backgroundColor: Colors.light.primary + "12",
-            borderColor: Colors.light.primary + "40",
+            backgroundColor: theme.primary + "12",
+            borderColor: theme.primary + "40",
           },
         ]}
       >
-        <Feather name="cpu" size={20} color={Colors.light.primary} />
+        <Feather name="cpu" size={20} color={theme.primary} />
         <View style={styles.bannerText}>
           <ThemedText style={styles.bannerTitle}>
             {t("planAdaptation.title")}
@@ -121,10 +123,10 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
         <Pressable
           onPress={handleAdapt}
           disabled={loading}
-          style={[styles.cta, { backgroundColor: Colors.light.primary }]}
+          style={[styles.cta, { backgroundColor: theme.primary }]}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.light.onChalk} size="small" />
+            <ActivityIndicator color={theme.onChalk} size="small" />
           ) : (
             <ThemedText style={styles.ctaText}>{t("planAdaptation.cta")}</ThemedText>
           )}
@@ -176,7 +178,7 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   banner: {
     flexDirection: "row",
     alignItems: "center",
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
     alignItems: "center",
   },
-  ctaText: { color: Colors.light.onChalk, fontWeight: "600", fontSize: 13 },
+  ctaText: { color: c.onChalk, fontWeight: "600", fontSize: 13 },
   dismiss: { padding: 4 },
   error: { fontSize: 12, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   modalBackdrop: {
@@ -222,9 +224,9 @@ const styles = StyleSheet.create({
   },
   modalBtn: { padding: Spacing.md },
   modalBtnPrimary: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.lg,
   },
-  modalBtnPrimaryText: { color: Colors.light.onChalk, fontWeight: "600" },
+  modalBtnPrimaryText: { color: c.onChalk, fontWeight: "600" },
 });

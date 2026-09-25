@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   saveWorkoutPlan,
@@ -48,6 +49,7 @@ function DayPill({
   onPress: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -71,7 +73,7 @@ function DayPill({
       testID={`button-day-${day}`}
     >
       {selected ? (
-        <View style={[styles.dayPill, { backgroundColor: Colors.light.primary }]}>
+        <View style={[styles.dayPill, { backgroundColor: theme.primary }]}>
           <ThemedText style={styles.dayPillTextSelected}>{day}</ThemedText>
         </View>
       ) : (
@@ -91,6 +93,7 @@ export default function CreatePlanScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -216,7 +219,7 @@ export default function CreatePlanScreen() {
           <Feather
             name="info"
             size={16}
-            color={Colors.light.primary}
+            color={theme.primary}
             style={styles.previewIcon}
           />
           <ThemedText
@@ -264,9 +267,9 @@ export default function CreatePlanScreen() {
           ]}
           testID="button-create-plan"
         >
-          <View style={[styles.button, { backgroundColor: Colors.light.primary }]}>
+          <View style={[styles.button, { backgroundColor: theme.primary }]}>
             {isLoading ? (
-              <ActivityIndicator color={Colors.light.onChalk} />
+              <ActivityIndicator color={theme.onChalk} />
             ) : (
               <ThemedText style={styles.buttonText}>
                 {t("plans.createPlan")}
@@ -279,7 +282,7 @@ export default function CreatePlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -324,7 +327,7 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_600SemiBold",
   },
   dayPillTextSelected: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 18,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

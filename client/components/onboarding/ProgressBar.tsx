@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 
 interface ProgressBarProps {
   step: number;
@@ -14,6 +15,7 @@ interface ProgressBarProps {
 
 export function ProgressBar({ step, total, style, showBrand = false }: ProgressBarProps) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={style}>
       {showBrand ? (
@@ -32,7 +34,7 @@ export function ProgressBar({ step, total, style, showBrand = false }: ProgressB
             styles.progressDot,
             {
               backgroundColor:
-                index < step ? Colors.light.primary : theme.border,
+                index < step ? theme.primary : theme.border,
             },
           ]}
         />
@@ -42,7 +44,7 @@ export function ProgressBar({ step, total, style, showBrand = false }: ProgressB
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   brandRow: {
     alignItems: "center",
     marginBottom: Spacing.lg,

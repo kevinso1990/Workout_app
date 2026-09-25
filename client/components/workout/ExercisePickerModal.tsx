@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState} from "react";
 import {
   View,
   StyleSheet,
@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { getApiUrl } from "@/lib/query-client";
 import { nativeRequest } from "@/lib/nativeApi";
 import { toast } from "@/lib/toast";
@@ -61,6 +62,7 @@ export function ExercisePickerModal({
 }: ExercisePickerModalProps) {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
@@ -291,7 +293,7 @@ export function ExercisePickerModal({
               {pendingCustomName}
             </ThemedText>
             {creating ? (
-              <ActivityIndicator color={Colors.light.primary} style={{ marginTop: Spacing.xl }} />
+              <ActivityIndicator color={theme.primary} style={{ marginTop: Spacing.xl }} />
             ) : (
               <>
                 <View style={styles.muscleGrid}>
@@ -392,13 +394,13 @@ export function ExercisePickerModal({
                   }}
                   style={({ pressed }) => [
                     styles.createRow,
-                    { borderColor: Colors.light.primary },
-                    pressed && { backgroundColor: Colors.light.primary + "10" },
+                    { borderColor: theme.primary },
+                    pressed && { backgroundColor: theme.primary + "10" },
                   ]}
                   testID="row-create-custom-exercise"
                 >
-                  <Feather name="plus-circle" size={18} color={Colors.light.primary} />
-                  <ThemedText style={[styles.createRowText, { color: Colors.light.primary }]} numberOfLines={1}>
+                  <Feather name="plus-circle" size={18} color={theme.primary} />
+                  <ThemedText style={[styles.createRowText, { color: theme.primary }]} numberOfLines={1}>
                     {t("activeWorkout.picker.createCustom", { name: trimmedQuery })}
                   </ThemedText>
                 </Pressable>
@@ -411,7 +413,7 @@ export function ExercisePickerModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   modalRoot: {
     flex: 1,
   },

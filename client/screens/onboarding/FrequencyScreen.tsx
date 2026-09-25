@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo} from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
 import { screenHeaderSafeAreaStyle } from "@/lib/paddingTopUnderHeader";
@@ -46,6 +47,7 @@ function DayPill({
   onPress: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -69,7 +71,7 @@ function DayPill({
       testID={`button-day-${day}`}
     >
       {selected ? (
-        <View style={[styles.dayPill, { backgroundColor: Colors.light.primary }]}>
+        <View style={[styles.dayPill, { backgroundColor: theme.primary }]}>
           <ThemedText style={styles.dayPillNumberSelected}>{day}</ThemedText>
           <ThemedText style={styles.dayPillLabelSelected}>{label}</ThemedText>
         </View>
@@ -89,6 +91,7 @@ export default function FrequencyScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const { state, setWorkoutDays } = useOnboarding();
@@ -198,7 +201,7 @@ export default function FrequencyScreen() {
             style={[animatedButtonStyle, styles.nextButtonContainer]}
             testID="button-next"
           >
-            <View style={[styles.button, { backgroundColor: Colors.light.primary }]}>
+            <View style={[styles.button, { backgroundColor: theme.primary }]}>
               <ThemedText style={styles.buttonText}>{t("onboarding.next")}</ThemedText>
             </View>
           </AnimatedPressable>
@@ -208,7 +211,7 @@ export default function FrequencyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -249,7 +252,7 @@ const styles = StyleSheet.create({
     fontFamily: "Oswald_700Bold",
   },
   dayPillNumberSelected: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 18,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
@@ -283,7 +286,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   backButtonText: {
     fontSize: 17,
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",

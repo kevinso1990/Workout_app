@@ -3286,7 +3286,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     gap: Spacing.xs,
   },
   shareCardDate: {
-    color: Colors.dark.chalkDim,
+    color: c.chalkDim,
     fontSize: 12,
   },
   shareCardContent: {

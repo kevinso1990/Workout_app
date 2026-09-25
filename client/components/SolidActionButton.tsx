@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
 } from "react-native";
 
 import { BorderRadius, Colors, Spacing } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 
 type SolidActionButtonProps = {
   onPress?: () => void;
@@ -26,6 +28,8 @@ export function SolidActionButton({
   style,
   testID,
 }: SolidActionButtonProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable
       onPress={onPress}
@@ -35,8 +39,8 @@ export function SolidActionButton({
         styles.button,
         {
           backgroundColor: disabled
-            ? Colors.light.border
-            : Colors.light.primary,
+            ? theme.border
+            : theme.primary,
           opacity: pressed && !disabled ? 0.92 : 1,
         },
         style,
@@ -54,10 +58,12 @@ export function SolidActionButtonText({
   children: React.ReactNode;
   style?: StyleProp<TextStyle>;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return <Text style={[styles.text, style]}>{children}</Text>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   button: {
     flexDirection: "row",
     alignItems: "center",
@@ -66,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   text: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

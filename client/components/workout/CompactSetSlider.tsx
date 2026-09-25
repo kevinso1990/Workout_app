@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo} from "react";
 import { InteractionManager, View, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 
@@ -7,6 +7,8 @@ import { PlatformRangeSlider } from "@/components/PlatformRangeSlider";
 import { ThemedText } from "@/components/ThemedText";
 import { HEVY } from "@/constants/hevyLayout";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 
 type CompactSetSliderProps = {
   label: string;
@@ -48,6 +50,8 @@ export const CompactSetSlider = React.memo(function CompactSetSlider({
   testID,
   large = false,
 }: CompactSetSliderProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const mountedRef = useRef(true);
   const draggingRef = useRef(false);
   const committedRef = useRef(snap(value, step));
@@ -133,16 +137,16 @@ export const CompactSetSlider = React.memo(function CompactSetSlider({
         onSlidingStart={handleStart}
         onValueChange={handleChange}
         onSlidingComplete={handleComplete}
-        minimumTrackTintColor={Colors.light.primary}
-        maximumTrackTintColor={HEVY.separator}
-        thumbTintColor={Colors.light.primary}
+        minimumTrackTintColor={theme.primary}
+        maximumTrackTintColor={theme.hairlineStrong}
+        thumbTintColor={theme.primary}
         testID={testID}
       />
     </View>
   );
 });
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: {
     flex: 1,
     minWidth: 0,
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
   },
   slider: {
     width: "100%",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -7,12 +7,14 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { PRO_PRICE_DISPLAY } from "@/lib/subscriptionConfig";
 
 export function SubscriptionCard() {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const {
     isEnabled,
@@ -65,8 +67,8 @@ export function SubscriptionCard() {
       style={[styles.card, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.header}>
-        <View style={[styles.icon, { backgroundColor: Colors.light.primary + "15" }]}>
-          <Feather name="star" size={20} color={Colors.light.primary} />
+        <View style={[styles.icon, { backgroundColor: theme.primary + "15" }]}>
+          <Feather name="star" size={20} color={theme.primary} />
         </View>
         <View style={styles.headerText}>
           <ThemedText style={styles.title}>{t("subscription.title")}</ThemedText>
@@ -82,11 +84,11 @@ export function SubscriptionCard() {
         <Pressable
           onPress={handlePurchase}
           disabled={busy != null}
-          style={[styles.primaryBtn, { backgroundColor: Colors.light.primary }]}
+          style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
           testID="button-subscribe-pro"
         >
           {busy === "purchase" ? (
-            <ActivityIndicator color={Colors.light.onChalk} />
+            <ActivityIndicator color={theme.onChalk} />
           ) : (
             <ThemedText style={styles.primaryBtnText}>
               {t("subscription.subscribe")}
@@ -102,7 +104,7 @@ export function SubscriptionCard() {
         testID="button-restore-purchases"
       >
         {busy === "restore" ? (
-          <ActivityIndicator color={Colors.light.primary} />
+          <ActivityIndicator color={theme.primary} />
         ) : (
           <ThemedText style={[styles.restoreText, { color: theme.textSecondary }]}>
             {t("subscription.restore")}
@@ -113,7 +115,7 @@ export function SubscriptionCard() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   card: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryBtnText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontWeight: "700",
     fontSize: 15,
   },

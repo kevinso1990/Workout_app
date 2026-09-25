@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -28,6 +28,7 @@ import {
   Colors,
   Typography,
 } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
   getOnboardingComplete,
@@ -62,6 +63,7 @@ const SECTIONS: { title: string; body: string }[] = [
 export default function DisclaimerScreen() {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [submitting, setSubmitting] = useState(false);
@@ -87,10 +89,10 @@ export default function DisclaimerScreen() {
   }, [navigation, submitting]);
 
   const cardBg = isDark ? theme.backgroundSecondary : theme.backgroundDefault;
-  const accentBar = Colors.light.primary;
+  const accentBar = theme.primary;
 
   return (
-    <View style={[styles.root, { backgroundColor: HEVY.canvas }]}>
+    <View style={[styles.root, { backgroundColor: theme.iron }]}>
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -188,11 +190,11 @@ export default function DisclaimerScreen() {
             style={[
               styles.cta,
               submitting && styles.ctaDisabled,
-              { backgroundColor: Colors.light.primary },
+              { backgroundColor: theme.primary },
             ]}
           >
             {submitting ? (
-              <ActivityIndicator color={Colors.light.buttonText} />
+              <ActivityIndicator color={theme.buttonText} />
             ) : (
               <ThemedText style={styles.ctaText}>
                 Ich habe verstanden und akzeptiere
@@ -205,7 +207,7 @@ export default function DisclaimerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   root: {
     flex: 1,
   },
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   ctaText: {
-    color: Colors.light.buttonText,
+    color: c.buttonText,
     fontFamily: Typography.h3.fontFamily,
     fontWeight: "700",
     fontSize: 16,

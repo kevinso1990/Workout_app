@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
 import * as Haptics from "expo-haptics";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import type { CommitmentSport, Weekday, WeeklyCommitment } from "@shared/weeklySchedule";
 
 export const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -54,6 +55,7 @@ export function CommitmentEditor({
   testIDPrefix?: string;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { dayLabel, sportLabel } = useCommitmentLabels();
   const [pickerDay, setPickerDay] = useState<Weekday | null>(null);
 
@@ -94,11 +96,11 @@ export function CommitmentEditor({
               style={[
                 styles.dayPill,
                 { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
-                c && { backgroundColor: Colors.light.primary, borderColor: Colors.light.primary },
-                isPicking && { borderColor: Colors.light.primary, borderWidth: 2 },
+                c && { backgroundColor: theme.primary, borderColor: theme.primary },
+                isPicking && { borderColor: theme.primary, borderWidth: 2 },
               ]}
             >
-              <ThemedText style={[styles.dayPillText, c && { color: Colors.light.onChalk }]}>
+              <ThemedText style={[styles.dayPillText, c && { color: theme.onChalk }]}>
                 {dayLabel(d)}
               </ThemedText>
             </Pressable>
@@ -145,7 +147,7 @@ export function CommitmentEditor({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   weekRow: { flexDirection: "row", justifyContent: "space-between", gap: 6 },
   dayPill: {
     flex: 1,

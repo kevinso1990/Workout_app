@@ -46,8 +46,6 @@ const SPORTS: CardioSportType[] = [
 // calendar's cardio markers) — using it here instead of the muted slate
 // primary gives the screen energy and a distinct feel.
 const CARDIO_ACCENT = "#D97706";
-const CARDIO_SOFT = Colors.dark.ironElevated2;
-const CARDIO_ACCENT_DARK = Colors.dark.chalk;
 
 const SPORT_EMOJI: Record<CardioSportType, string> = {
   running: "🏃",
@@ -337,7 +335,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: CARDIO_SOFT,
+    backgroundColor: c.ironElevated2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -366,12 +364,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderColor: c.hairline,
   },
   chipActive: {
-    backgroundColor: CARDIO_SOFT,
+    backgroundColor: c.ironElevated2,
     borderColor: CARDIO_ACCENT,
   },
   chipEmoji: { fontSize: 16 },
   chipText: { fontSize: 14, fontWeight: "600", color: c.chalkDim },
-  chipTextActive: { color: CARDIO_ACCENT_DARK, fontWeight: "700" },
+  chipTextActive: { color: c.chalk, fontWeight: "700" },
   card: {
     backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.lg,

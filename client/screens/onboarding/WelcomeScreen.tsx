@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -18,6 +18,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { HEVY } from "@/constants/hevyLayout";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
 import { screenHeaderSafeAreaStyle } from "@/lib/paddingTopUnderHeader";
 
@@ -26,6 +27,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
@@ -40,7 +42,7 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: HEVY.canvas }]}>
+    <View style={[styles.container, { backgroundColor: theme.iron }]}>
       <View
         style={[
           styles.content,
@@ -85,7 +87,7 @@ export default function WelcomeScreen() {
             style={animatedButtonStyle}
             testID="button-get-started"
           >
-            <View style={[styles.button, { backgroundColor: Colors.light.primary }]}>
+            <View style={[styles.button, { backgroundColor: theme.primary }]}>
               <ThemedText style={styles.buttonText}>
                 {t("onboarding.getStarted")}
               </ThemedText>
@@ -97,7 +99,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -139,7 +141,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",

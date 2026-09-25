@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable, Dimensions } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 import { Feather } from "@expo/vector-icons";
@@ -7,6 +7,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import {
   buildHybridPeriodReport,
   formatDurationHuman,
@@ -80,6 +81,7 @@ function MetricTile({
   color: string;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={[styles.metricTile, { backgroundColor: theme.backgroundDefault }]}>
       <View style={[styles.metricIcon, { backgroundColor: color + "18" }]}>
@@ -96,6 +98,7 @@ function MetricTile({
 export function HybridProgressPanel({ history, period, onPeriodChange }: Props) {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const report = buildHybridPeriodReport(history, period, t, new Date(), i18n.language);
 
   return (
@@ -137,7 +140,7 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
           icon="activity"
           label={t("progress.hybrid.strengthSessions")}
           value={t("progress.hybrid.countStrength", { count: report.strengthCount })}
-          color={Colors.light.primary}
+          color={theme.primary}
         />
         <MetricTile
           icon="zap"
@@ -218,7 +221,7 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
                   ? "#EF4444"
                   : point.avgRpe >= 7
                     ? "#F59E0B"
-                    : Colors.light.primary;
+                    : theme.primary;
               return (
                 <View key={point.label} style={styles.rpeCol}>
                   <ThemedText style={[styles.rpeValue, { color: tone }]}>
@@ -259,7 +262,7 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
               ]}
             >
               <View style={styles.highlightIcon}>
-                <Feather name={h.icon} size={18} color={Colors.light.primary} />
+                <Feather name={h.icon} size={18} color={theme.primary} />
               </View>
               <View style={styles.highlightCopy}>
                 <ThemedText style={styles.highlightTitle}>{h.title}</ThemedText>
@@ -284,7 +287,7 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   headerRow: {
     marginBottom: Spacing.md,
   },
@@ -309,14 +312,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm - 2,
   },
   segmentActive: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
   },
   segmentText: {
     fontSize: 13,
     fontWeight: "600",
   },
   segmentTextActive: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
   },
   metricGrid: {
     flexDirection: "row",
@@ -453,13 +456,13 @@ const styles = StyleSheet.create({
   },
   highlightBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.light.hairlineStrong,
+    borderBottomColor: c.hairlineStrong,
   },
   highlightIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.light.ironElevated2,
+    backgroundColor: c.ironElevated2,
     alignItems: "center",
     justifyContent: "center",
   },

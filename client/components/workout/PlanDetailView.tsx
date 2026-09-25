@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Text, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
@@ -9,11 +9,10 @@ import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { HEVY } from "@/constants/hevyLayout";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import type { Exercise, WorkoutDay } from "@/lib/storage";
 
-const TITLE_COLOR = Colors.dark.chalk;
-const META_COLOR = Colors.dark.chalkDim;
-const HAIRLINE = Colors.dark.hairline;
 
 type PlanDetailViewProps = {
   days: WorkoutDay[];
@@ -37,6 +36,8 @@ function PlanExerciseRow({
   isLast: boolean;
   onExercisePress?: (exercise: Exercise) => void;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const localizeName = useLocalizeExerciseName();
   return (
@@ -57,11 +58,11 @@ function PlanExerciseRow({
         <View
           style={[
             styles.muscleTag,
-            { backgroundColor: Colors.light.ironElevated2 },
+            { backgroundColor: theme.ironElevated2 },
           ]}
         >
           <Text
-            style={[styles.muscleTagText, { color: Colors.light.chalkDim }]}
+            style={[styles.muscleTagText, { color: theme.chalkDim }]}
             numberOfLines={1}
           >
             {translateMuscleGroup(t, exercise.muscleGroup)}
@@ -91,6 +92,8 @@ function DayCard({
   onExercisePress?: (exercise: Exercise) => void;
   onStartDay?: (dayIndex: number) => void;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const letter = dayLetter(dayIndex);
   const canStart = typeof onStartDay === "function";
@@ -113,7 +116,7 @@ function DayCard({
       </View>
       {canStart ? (
         <View style={styles.startBtn}>
-          <Feather name="play" size={14} color={Colors.light.onChalk} />
+          <Feather name="play" size={14} color={theme.onChalk} />
           <Text style={styles.startBtnText}>{t("plans.start")}</Text>
         </View>
       ) : (
@@ -168,6 +171,8 @@ export function PlanDetailView({
   onExercisePress,
   onStartDay,
 }: PlanDetailViewProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.root}>
       {days.map((day, dayIndex) => (
@@ -183,19 +188,19 @@ export function PlanDetailView({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   root: {
     paddingHorizontal: HEVY.pad,
     paddingTop: 8,
     paddingBottom: 4,
   },
   card: {
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderRadius: 18,
     marginBottom: 16,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HAIRLINE,
+    borderColor: c.hairline,
     // Soft elevation so each day reads as its own block.
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -210,10 +215,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: HAIRLINE,
+    borderBottomColor: c.hairline,
   },
   cardHeaderPressed: {
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   startBtn: {
     flexDirection: "row",
@@ -221,31 +226,31 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     paddingHorizontal: 14,
     flexShrink: 0,
   },
   startBtnText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 13,
     fontWeight: "700",
   },
   exerciseCountMeta: {
     fontSize: 12,
     fontWeight: "500",
-    color: META_COLOR,
+    color: c.chalkDim,
     marginTop: 2,
   },
   dayBadge: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   dayBadgeText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 18,
     lineHeight: 22,
     fontWeight: "800",
@@ -260,19 +265,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1.2,
     textTransform: "uppercase",
-    color: Colors.light.primary,
+    color: c.primary,
     marginBottom: 1,
   },
   dayName: {
     fontSize: 17,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
-    color: TITLE_COLOR,
+    color: c.chalk,
   },
   exerciseCount: {
     fontSize: 12,
     fontWeight: "500",
-    color: META_COLOR,
+    color: c.chalkDim,
     flexShrink: 0,
   },
   cardBody: {
@@ -282,9 +287,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: HAIRLINE,
+    borderBottomColor: c.hairline,
   },
   exerciseRowLast: {
     borderBottomWidth: 0,
@@ -294,7 +299,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     marginRight: 12,
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   exerciseBody: {
     flex: 1,
@@ -304,13 +309,13 @@ const styles = StyleSheet.create({
   exerciseTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: TITLE_COLOR,
+    color: c.chalk,
     marginBottom: 2,
     lineHeight: 19,
   },
   exerciseMeta: {
     fontSize: 12,
-    color: META_COLOR,
+    color: c.chalkDim,
     lineHeight: 16,
   },
   muscleTag: {
@@ -331,12 +336,12 @@ const styles = StyleSheet.create({
   setsLine: {
     fontSize: 13,
     fontWeight: "600",
-    color: TITLE_COLOR,
+    color: c.chalk,
     lineHeight: 16,
   },
   rirLine: {
     fontSize: 12,
-    color: META_COLOR,
+    color: c.chalkDim,
     marginTop: 2,
   },
 });

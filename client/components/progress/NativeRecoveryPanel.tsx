@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo} from "react";
 import { View, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -7,6 +7,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import { fetchRecoveryStatus, type RecoveryStatusRow } from "@/lib/recoveryApi";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
@@ -20,10 +21,13 @@ function levelFromPercent(percent: number): RecoveryLevel {
   return "fatigued";
 }
 
-function levelColor(level: RecoveryLevel): string {
-  if (level === "ready") return Colors.light.success;
+// Takes the palette rather than reading it, because this is a plain helper and
+// hooks may only be called from components. The middle value is a literal amber
+// on purpose: "recovering" is a warning state with no palette token of its own.
+function levelColor(level: RecoveryLevel, c: Palette): string {
+  if (level === "ready") return c.success;
   if (level === "recovering") return "#F59E0B";
-  return Colors.light.error;
+  return c.error;
 }
 
 function hasServerFatigueData(rows: RecoveryStatusRow[]): boolean {
@@ -42,6 +46,7 @@ type Props = {
 
 export function NativeRecoveryPanel({ index = 7 }: Props) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -107,7 +112,7 @@ export function NativeRecoveryPanel({ index = 7 }: Props) {
         >
           {loading ? (
             <View style={styles.centered}>
-              <ActivityIndicator color={Colors.light.primary} />
+              <ActivityIndicator color={theme.primary} />
             </View>
           ) : !hasData ? (
             <ThemedText style={[styles.placeholder, { color: theme.textSecondary }]}>
@@ -123,12 +128,12 @@ export function NativeRecoveryPanel({ index = 7 }: Props) {
                   style={[
                     styles.nudge,
                     {
-                      backgroundColor: Colors.light.primary + "12",
-                      borderColor: Colors.light.primary + "35",
+                      backgroundColor: theme.primary + "12",
+                      borderColor: theme.primary + "35",
                     },
                   ]}
                 >
-                  <Feather name="refresh-cw" size={14} color={Colors.light.primary} />
+                  <Feather name="refresh-cw" size={14} color={theme.primary} />
                   <ThemedText style={[styles.nudgeText, { color: theme.text }]}>
                     {t("recovery.syncNudge")}
                   </ThemedText>
@@ -138,7 +143,7 @@ export function NativeRecoveryPanel({ index = 7 }: Props) {
               <View style={styles.list}>
                 {(trained.length > 0 ? trained : rows).map((row) => {
                   const level = levelFromPercent(row.recovery_percent);
-                  const color = levelColor(level);
+                  const color = levelColor(level, theme);
                   return (
                     <View key={row.muscle_group} style={styles.row}>
                       <View style={styles.rowTop}>
@@ -182,7 +187,7 @@ export function NativeRecoveryPanel({ index = 7 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",

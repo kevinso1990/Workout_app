@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState} from "react";
 import {
   View,
   ScrollView,
@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import { HEVY } from "@/constants/hevyLayout";
 import type { ImportedExercise, ImportedWorkoutPlan } from "@/hooks/useWorkoutImport";
 import {
@@ -56,6 +58,8 @@ function PrimarySaveButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable
       onPress={onPress}
@@ -63,13 +67,13 @@ function PrimarySaveButton({
       style={({ pressed }) => [
         styles.primarySaveBtn,
         {
-          backgroundColor: Colors.light.primary,
+          backgroundColor: theme.primary,
           opacity: disabled ? 0.45 : pressed ? 0.92 : 1,
         },
       ]}
       testID="button-import-save-plan"
     >
-      <Feather name="check" size={20} color={Colors.light.onChalk} />
+      <Feather name="check" size={20} color={theme.onChalk} />
       <ThemedText style={styles.primarySaveBtnText}>{label}</ThemedText>
     </Pressable>
   );
@@ -89,6 +93,8 @@ export function ImportPlanReviewPanel({
   onCancel,
   introHint,
 }: ImportPlanReviewPanelProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [inlinePick, setInlinePick] = useState<InlinePick>(null);
@@ -170,7 +176,7 @@ export function ImportPlanReviewPanel({
           value={planName}
           onChangeText={onPlanNameChange}
           placeholder={t("importWorkout.review.planName")}
-          placeholderTextColor={HEVY.textMuted}
+          placeholderTextColor={theme.chalkFaint}
           returnKeyType="done"
         />
 
@@ -203,27 +209,27 @@ export function ImportPlanReviewPanel({
                         style={[
                           styles.unmappedBanner,
                           {
-                            backgroundColor: Colors.light.primary + "0A",
-                            borderColor: Colors.light.primary + "28",
+                            backgroundColor: theme.primary + "0A",
+                            borderColor: theme.primary + "28",
                           },
                         ]}
                       >
                         <View
                           style={[
                             styles.unmappedIconWrap,
-                            { backgroundColor: Colors.light.primary + "18" },
+                            { backgroundColor: theme.primary + "18" },
                           ]}
                         >
                           <Feather
                             name="info"
                             size={13}
-                            color={Colors.light.primary}
+                            color={theme.primary}
                           />
                         </View>
                         <ThemedText
                           style={[
                             styles.unmappedLabel,
-                            { color: Colors.light.primary },
+                            { color: theme.primary },
                           ]}
                         >
                           {t("importWorkout.review.unknownExercise")}
@@ -252,7 +258,7 @@ export function ImportPlanReviewPanel({
                             })
                           }
                           placeholder={t("importWorkout.review.exercise")}
-                          placeholderTextColor={HEVY.textMuted}
+                          placeholderTextColor={theme.chalkFaint}
                         />
                       </View>
                       <Pressable
@@ -261,7 +267,7 @@ export function ImportPlanReviewPanel({
                         style={styles.deleteBtn}
                         accessibilityLabel={t("importWorkout.review.deleteExercise")}
                       >
-                        <Feather name="trash-2" size={18} color={HEVY.textMuted} />
+                        <Feather name="trash-2" size={18} color={theme.chalkFaint} />
                       </Pressable>
                     </View>
 
@@ -306,7 +312,7 @@ export function ImportPlanReviewPanel({
                           autoCorrect={false}
                           value={repsInputValue(ex)}
                           placeholder="8-12"
-                          placeholderTextColor={HEVY.textMuted}
+                          placeholderTextColor={theme.chalkFaint}
                           onChangeText={(text) => {
                             onUpdateExercise(dayIdx, exIdx, {
                               reps: parseRepsInput(text),
@@ -323,7 +329,7 @@ export function ImportPlanReviewPanel({
                           keyboardType="decimal-pad"
                           value={ex.weight !== null ? String(ex.weight) : ""}
                           placeholder="—"
-                          placeholderTextColor={HEVY.textMuted}
+                          placeholderTextColor={theme.chalkFaint}
                           onChangeText={(text) => {
                             const trimmed = text.replace(",", ".").trim();
                             if (!trimmed) {
@@ -346,12 +352,12 @@ export function ImportPlanReviewPanel({
                         onPress={() => openInlinePicker(dayIdx, exIdx, ex)}
                         style={[
                           styles.assignChip,
-                          { borderColor: Colors.light.primary },
+                          { borderColor: theme.primary },
                         ]}
                       >
-                        <Feather name="search" size={14} color={Colors.light.primary} />
+                        <Feather name="search" size={14} color={theme.primary} />
                         <ThemedText
-                          style={[styles.assignChipText, { color: Colors.light.primary }]}
+                          style={[styles.assignChipText, { color: theme.primary }]}
                         >
                           {t("importWorkout.review.assignFromCatalog")}
                         </ThemedText>
@@ -362,13 +368,13 @@ export function ImportPlanReviewPanel({
                   {pickerOpen ? (
                     <View style={styles.inlinePicker}>
                       <View style={styles.inlineSearch}>
-                        <Feather name="search" size={16} color={HEVY.textMuted} />
+                        <Feather name="search" size={16} color={theme.chalkFaint} />
                         <TextInput
                           style={styles.inlineSearchInput}
                           value={inlineQuery}
                           onChangeText={setInlineQuery}
                           placeholder={t("importWorkout.review.searchPlaceholder")}
-                          placeholderTextColor={HEVY.textMuted}
+                          placeholderTextColor={theme.chalkFaint}
                           autoFocus={true}
                           autoCorrect={false}
                           returnKeyType="search"
@@ -380,7 +386,7 @@ export function ImportPlanReviewPanel({
                           }}
                           hitSlop={8}
                         >
-                          <Feather name="x" size={18} color={HEVY.textMuted} />
+                          <Feather name="x" size={18} color={theme.chalkFaint} />
                         </Pressable>
                       </View>
                       {catalogLoading ? (
@@ -401,7 +407,7 @@ export function ImportPlanReviewPanel({
                                 styles.inlineRow,
                                 {
                                   backgroundColor: pressed
-                                    ? Colors.light.primary + "14"
+                                    ? theme.primary + "14"
                                     : "transparent",
                                 },
                               ]}
@@ -431,8 +437,8 @@ export function ImportPlanReviewPanel({
               onPress={() => onAddExercise(dayIdx)}
               style={styles.addRowBtn}
             >
-              <Feather name="plus" size={16} color={Colors.light.primary} />
-              <ThemedText style={[styles.addRowText, { color: Colors.light.primary }]}>
+              <Feather name="plus" size={16} color={theme.primary} />
+              <ThemedText style={[styles.addRowText, { color: theme.primary }]}>
                 {t("importWorkout.review.addExercise")}
               </ThemedText>
             </Pressable>
@@ -459,8 +465,8 @@ export function ImportPlanReviewPanel({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: HEVY.canvas },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: c.iron },
   scroll: {
     paddingHorizontal: HEVY.pad,
     gap: HEVY.pad,
@@ -470,14 +476,14 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     marginBottom: Spacing.xs,
   },
   subtitle: {
     fontSize: 15,
     lineHeight: 22,
     marginBottom: Spacing.sm,
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
   },
   sectionLabel: {
     fontSize: 12,
@@ -485,19 +491,19 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: Spacing.sm,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   planNameInput: {
     height: Spacing.inputHeight,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.hairline,
+    borderColor: c.hairline,
     borderRadius: BorderRadius.md,
     paddingHorizontal: HEVY.pad,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    backgroundColor: HEVY.surface,
-    color: HEVY.textPrimary,
+    backgroundColor: c.ironElevated2,
+    color: c.chalk,
   },
   dayBlock: {
     marginTop: HEVY.padLg,
@@ -509,19 +515,19 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: Spacing.xs,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   exerciseCard: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.hairline,
+    borderColor: c.hairline,
     borderRadius: BorderRadius.md,
     padding: HEVY.pad,
     gap: HEVY.pad,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   exerciseCardUnmapped: {
-    borderColor: Colors.light.primary + "55",
-    backgroundColor: Colors.light.primary + "08",
+    borderColor: c.primary + "55",
+    backgroundColor: c.primary + "08",
   },
   unmappedBanner: {
     flexDirection: "row",
@@ -557,11 +563,11 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 4,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   nameInput: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.hairline,
+    borderColor: c.hairline,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
@@ -569,8 +575,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
     minHeight: 44,
-    color: HEVY.textPrimary,
-    backgroundColor: HEVY.canvas,
+    color: c.chalk,
+    backgroundColor: c.iron,
   },
   deleteBtn: {
     width: 44,
@@ -582,7 +588,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: "italic",
     lineHeight: 16,
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
   },
   metricsRow: {
     flexDirection: "row",
@@ -591,7 +597,7 @@ const styles = StyleSheet.create({
   metricCell: { flex: 1, minWidth: 0 },
   metricInput: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.hairline,
+    borderColor: c.hairline,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
@@ -600,8 +606,8 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_600SemiBold",
     minHeight: 44,
     textAlign: "center",
-    color: HEVY.textPrimary,
-    backgroundColor: HEVY.canvas,
+    color: c.chalk,
+    backgroundColor: c.iron,
   },
   assignChip: {
     flexDirection: "row",
@@ -621,28 +627,28 @@ const styles = StyleSheet.create({
   inlinePicker: {
     marginTop: Spacing.xs,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.light.primary + "40",
+    borderColor: c.primary + "40",
     borderRadius: BorderRadius.md,
     padding: HEVY.pad,
     gap: HEVY.pad,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   inlineSearch: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.hairline,
+    borderColor: c.hairline,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
     minHeight: 44,
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   inlineSearchInput: {
     flex: 1,
     fontSize: 15,
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
-    color: HEVY.textPrimary,
+    color: c.chalk,
   },
   inlineRow: {
     paddingVertical: Spacing.sm,
@@ -653,14 +659,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
   },
-  inlineRowSub: { fontSize: 12, marginTop: 2, color: HEVY.textSecondary },
+  inlineRowSub: { fontSize: 12, marginTop: 2, color: c.chalkDim },
   inlineEmpty: {
     textAlign: "center",
     padding: Spacing.md,
     fontSize: 14,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   addRowBtn: {
     flexDirection: "row",
@@ -669,11 +675,11 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: Spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.hairline,
+    borderColor: c.hairline,
     borderRadius: BorderRadius.md,
     borderStyle: "dashed",
     minHeight: 48,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   addRowText: {
     fontSize: 14,
@@ -687,7 +693,7 @@ const styles = StyleSheet.create({
   cancelLinkText: {
     fontSize: 14,
     fontWeight: "500",
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   footer: {
     position: "absolute",
@@ -696,9 +702,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: HEVY.pad,
     paddingTop: HEVY.pad,
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: HEVY.hairline,
+    borderTopColor: c.hairline,
   },
   primarySaveBtn: {
     flexDirection: "row",
@@ -709,7 +715,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   primarySaveBtnText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",

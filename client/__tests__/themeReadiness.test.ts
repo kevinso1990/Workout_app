@@ -25,11 +25,13 @@ const CLIENT_ROOT = join(__dirname, "..");
 const SCAN_DIRS = ["screens", "components", "navigation"];
 
 /**
- * Ratchet. Lower these as screens are converted; never raise them.
- * A raise means new dark-only colour was added to the app.
+ * The conversion is finished: every colour in screens/, components/ and
+ * navigation/ now comes from the active palette. These stay at zero, so this
+ * is no longer a ratchet but a rule — any new dark-only colour fails the build
+ * and has to be read from useTheme() instead.
  */
-const MAX_STATIC_REFS = 258;
-const MAX_FILES_WITH_STATIC_REFS = 33;
+const MAX_STATIC_REFS = 0;
+const MAX_FILES_WITH_STATIC_REFS = 0;
 
 function walk(dir: string): string[] {
   const out: string[] = [];
@@ -41,7 +43,29 @@ function walk(dir: string): string[] {
   return out;
 }
 
-const STATIC_COLOUR = /\b(?:Colors\.light|Colors\.dark|HEVY)\.[a-zA-Z]/g;
+/**
+ * HEVY holds spacing (pad, padLg, radiusCard) alongside colour. Spacing is not
+ * theme-dependent and must never be redirected at the palette — doing so broke
+ * the build the first time this conversion was attempted. Counting it here
+ * would inflate the burn-down with work that must not be done, and set a floor
+ * the number could never legitimately reach. So only HEVY's colour keys count.
+ * `Colors.light`/`Colors.dark` are colour-only, so any key there counts.
+ */
+const HEVY_COLOUR_KEYS = [
+  "textPrimary",
+  "textSecondary",
+  "textMuted",
+  "surface",
+  "canvas",
+  "control",
+  "hairline",
+  "separator",
+] as const;
+
+const STATIC_COLOUR = new RegExp(
+  `\\b(?:Colors\\.(?:light|dark)\\.[a-zA-Z]|HEVY\\.(?:${HEVY_COLOUR_KEYS.join("|")})\\b)`,
+  "g",
+);
 
 function scan() {
   const files = SCAN_DIRS.flatMap((d) => walk(join(CLIENT_ROOT, d)));

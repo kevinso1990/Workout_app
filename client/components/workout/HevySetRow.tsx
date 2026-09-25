@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -15,6 +15,8 @@ import { useTranslation } from "react-i18next";
 
 import { HEVY } from "@/constants/hevyLayout";
 import { Colors, FontFamily, BorderRadius, plateColor, loadTier } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import type { SetData } from "@/lib/storage";
 import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
@@ -125,6 +127,8 @@ type FieldAlertCellProps = {
 };
 
 function FieldAlertCell({ children, alertRef, style }: FieldAlertCellProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { translateX, backgroundColor, trigger } = useFieldAlertAnimation();
 
   useEffect(() => {
@@ -187,6 +191,8 @@ export function HevySetGridHeader({
   isBodyweight: boolean;
   isHold?: boolean;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={[styles.row, styles.headerRow]}>
       <View style={styles.colSet}>
@@ -278,6 +284,8 @@ function StepperField({
   onStep: (dir: 1 | -1) => void;
   testID?: string;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const hold = useHoldToRepeat(onStep);
   return (
     <View style={styles.stepField}>
@@ -298,7 +306,7 @@ function StepperField({
           onEndEditing={onCommit}
           onBlur={onCommit}
           placeholder="0"
-          placeholderTextColor={HEVY.textMuted}
+          placeholderTextColor={theme.chalkFaint}
           keyboardType={decimal ? "decimal-pad" : "number-pad"}
           selectTextOnFocus
           returnKeyType="done"
@@ -344,6 +352,8 @@ function HevySetEditor({
   onStepReps: (dir: 1 | -1) => void;
   setIndex: number;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.editorPanel}>
       {!isBodyweight ? (
@@ -383,6 +393,8 @@ export function HevySetRow({
   onUpdate,
   onComplete,
 }: HevySetRowProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const isWarmup = setData.setType === "warmup";
   const weightAlertRef = useRef<(() => void) | null>(null);
   const repsAlertRef = useRef<(() => void) | null>(null);
@@ -593,6 +605,8 @@ export type HevySetRowWithPrefillProps = HevySetRowProps & {
 /** Active set: a tap-to-type + stepper editor under the row. Local draft while
  *  typing so keystrokes aren't reformatted mid-entry; commit on blur / stepper. */
 export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const {
     isActive,
     setData,
@@ -736,9 +750,9 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   setBlock: {
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   setBlockActive: {
     // The row you are on and the kg/reps editor under it are one unit — the set
@@ -756,7 +770,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: HEVY.pad,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderBottomWidth: 0.5,
     borderBottomColor: ROW_SEPARATOR,
     minHeight: 36,
@@ -768,7 +782,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   headerRow: {
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
     paddingVertical: 5,
     minHeight: 28,
     borderBottomWidth: 0.5,
@@ -842,7 +856,7 @@ const styles = StyleSheet.create({
   prevText: {
     fontSize: 13,
     fontFamily: FontFamily.body,
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
   },
   warmupBadge: {
     fontSize: 13,
@@ -895,7 +909,7 @@ const styles = StyleSheet.create({
     // size — which is what made the screen feel "too dark" even though the
     // active row was fine. chalkDim keeps them clearly secondary while staying
     // legible at arm's length.
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
   },
   checkBox: {
     width: 28,
@@ -904,7 +918,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   checkBoxIdle: {
     borderColor: LOG_CHECK_BORDER,
@@ -926,7 +940,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: HEVY.pad,
     paddingTop: 4,
     paddingBottom: 10,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderBottomWidth: 0.5,
     borderBottomColor: ROW_SEPARATOR,
   },
@@ -940,7 +954,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     // These label the field you are actively editing; the faintest value in
     // the system made them look like a disabled caption.
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
     textAlign: "center",
   },
   stepControls: {
@@ -952,14 +966,14 @@ const styles = StyleSheet.create({
     borderColor: C.chalkDim,
     borderRadius: 10,
     overflow: "hidden",
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   stepBtn: {
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: HEVY.control,
+    backgroundColor: c.ironElevated3,
   },
   stepInput: {
     flex: 1,
@@ -972,6 +986,6 @@ const styles = StyleSheet.create({
     // Recessed well between two raised buttons: the field was previously the
     // same tone as the card and therefore darker than the +/- buttons flanking
     // it, which read as "the buttons are the control, this gap is nothing".
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState} from "react";
 import {
   Pressable,
   StyleSheet,
@@ -13,6 +13,8 @@ import { getExerciseImageUrl } from "@/lib/exerciseImages";
 import { getCustomExerciseImageSync } from "@/lib/customExerciseImages";
 import { catalogImageUrl } from "@/lib/exerciseNameCatalog";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import { ExerciseGifImage } from "@/components/workout/ExerciseGifImage";
 import { ExerciseGifSkeleton } from "@/components/workout/ExerciseGifSkeleton";
 
@@ -30,6 +32,8 @@ function ExerciseDbThumbBase({
   onPress,
   testID,
 }: ExerciseDbThumbProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [imageReady, setImageReady] = useState(false);
   const [fetchDone, setFetchDone] = useState(false);
@@ -110,7 +114,7 @@ function ExerciseDbThumbBase({
         // newly-added moves like Dead Hang) — show a neutral dumbbell glyph so
         // the tile looks intentional instead of blank or leaking a config hint.
         <View style={styles.placeholderWrap}>
-          <MaterialCommunityIcons name="dumbbell" size={22} color={Colors.dark.chalkFaint} />
+          <MaterialCommunityIcons name="dumbbell" size={22} color={theme.chalkFaint} />
         </View>
       ) : null}
     </>
@@ -136,10 +140,10 @@ function ExerciseDbThumbBase({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   frame: {
     overflow: "hidden",
-    backgroundColor: Colors.dark.ironElevated2,
+    backgroundColor: c.ironElevated2,
   },
   image: {
     width: "100%",
@@ -152,7 +156,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.dark.ironElevated2,
+    backgroundColor: c.ironElevated2,
   },
 });
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -13,6 +13,7 @@ import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 
 export type MainTabParamList = {
   MyPlans: undefined;
@@ -43,6 +44,8 @@ function TabBarIcon({
   color: string;
   focused: boolean;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
       <Feather name={name} size={20} color={color} />
@@ -59,6 +62,8 @@ function TabBarLabel({
   color: string;
   focused: boolean;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Text style={[styles.tabLabel, focused && styles.tabLabelActive, { color }]}>
       {label}
@@ -68,6 +73,7 @@ function TabBarLabel({
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
 
   return (
@@ -75,8 +81,8 @@ export default function MainTabNavigator() {
       <Tab.Navigator
         initialRouteName="MyPlans"
         screenOptions={{
-          tabBarActiveTintColor: Colors.light.chalk,
-          tabBarInactiveTintColor: Colors.light.chalkFaint,
+          tabBarActiveTintColor: theme.chalk,
+          tabBarInactiveTintColor: theme.chalkFaint,
           tabBarItemStyle: { paddingTop: 6 },
           tabBarStyle: {
             position: "absolute",
@@ -200,7 +206,7 @@ export default function MainTabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },

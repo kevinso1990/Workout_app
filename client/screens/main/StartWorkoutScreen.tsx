@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo} from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/toast";
 import {
@@ -23,6 +23,8 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import { HEVY, hevyHeaderInsets, hevyHairline } from "@/constants/hevyLayout";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getWorkoutPlans, WorkoutPlan, WorkoutDay, getWorkoutHistory, WorkoutSession } from "@/lib/storage";
@@ -49,6 +51,8 @@ function DayCard({
   index: number;
   dayLastPerformedLabel: string | null;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const scale = useSharedValue(1);
 
@@ -85,7 +89,7 @@ function DayCard({
             </ThemedText>
           </View>
           <View style={styles.playBtn}>
-            <Feather name="play" size={18} color={Colors.light.onChalk} />
+            <Feather name="play" size={18} color={theme.onChalk} />
           </View>
         </View>
       </AnimatedPressable>
@@ -94,6 +98,8 @@ function DayCard({
 }
 
 export default function StartWorkoutScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -189,7 +195,7 @@ export default function StartWorkoutScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </ThemedView>
     );
   }
@@ -197,7 +203,7 @@ export default function StartWorkoutScreen() {
   if (!plan) {
     return (
       <ThemedView style={styles.emptyContainer}>
-        <Feather name="calendar" size={48} color={HEVY.textMuted} />
+        <Feather name="calendar" size={48} color={theme.chalkFaint} />
         <ThemedText style={styles.emptyText}>{t("plans.planNotFound")}</ThemedText>
       </ThemedView>
     );
@@ -213,7 +219,7 @@ export default function StartWorkoutScreen() {
           accessibilityRole="button"
           accessibilityLabel={t("common.back")}
         >
-          <Feather name="chevron-left" size={28} color={HEVY.textPrimary} />
+          <Feather name="chevron-left" size={28} color={theme.chalk} />
         </Pressable>
         <ThemedText style={styles.planTitle}>{plan.name}</ThemedText>
         {planLastPerformedLabel ? (
@@ -251,30 +257,30 @@ export default function StartWorkoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: HEVY.pad,
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   emptyText: {
     fontSize: 16,
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
   },
   screenHeader: {
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   backBtn: {
     alignSelf: "flex-start",
@@ -285,7 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     letterSpacing: -0.5,
     lineHeight: 34,
   },
@@ -294,13 +300,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
     lineHeight: 20,
   },
   sectionHint: {
     marginTop: HEVY.pad,
     fontSize: 15,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
     lineHeight: 21,
   },
   scrollView: {
@@ -314,7 +320,7 @@ const styles = StyleSheet.create({
     gap: HEVY.pad,
   },
   dayCard: {
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderRadius: BorderRadius.md,
     padding: HEVY.pad,
   },
@@ -335,7 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
-    color: Colors.light.primary,
+    color: c.primary,
   },
   dayInfo: {
     flex: 1,
@@ -345,24 +351,24 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     marginBottom: 2,
   },
   dayMeta: {
     fontSize: 13,
     fontWeight: "500",
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
     marginBottom: 2,
   },
   dayExerciseCount: {
     fontSize: 13,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   playBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: HEVY.pad,

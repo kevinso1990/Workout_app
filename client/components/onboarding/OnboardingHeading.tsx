@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";
@@ -20,6 +21,7 @@ export function OnboardingHeading({
   centered = false,
 }: OnboardingHeadingProps) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={[styles.wrap, centered && styles.wrapCentered, style]}>
       <Text style={[styles.title, centered && styles.titleCentered]}>{title}</Text>
@@ -38,7 +40,7 @@ export function OnboardingHeading({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: {
     marginBottom: Spacing.xl,
   },
@@ -48,7 +50,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.dark.chalk,
+    color: c.chalk,
     letterSpacing: -0.5,
     lineHeight: 30,
     paddingTop: 16,
