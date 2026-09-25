@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState} from "react";
 import { Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import {
   View,
   StyleSheet,
@@ -71,6 +72,7 @@ type LogCardioRoute = RouteProp<RootStackParamList, "LogCardio">;
 export default function LogCardioScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -149,7 +151,7 @@ export default function LogCardioScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.screen, { backgroundColor: HEVY.canvas }]}
+      style={[styles.screen, { backgroundColor: theme.iron }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -302,7 +304,7 @@ export default function LogCardioScreen() {
           {
             paddingBottom: insets.bottom + Spacing.md,
             borderTopColor: theme.border,
-            backgroundColor: HEVY.canvas,
+            backgroundColor: theme.iron,
           },
         ]}
       >
@@ -312,7 +314,7 @@ export default function LogCardioScreen() {
           disabled={saving}
           testID="button-save-cardio"
         >
-          <Feather name="check" size={18} color={Colors.light.onChalk} />
+          <Feather name="check" size={18} color={theme.onChalk} />
           <ThemedText style={styles.saveBtnText}>
             {saving ? t("logCardio.saving") : t("logCardio.save")}
           </ThemedText>
@@ -322,7 +324,7 @@ export default function LogCardioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { flex: 1 },
   scroll: { flex: 1 },
   heroRow: {
@@ -359,19 +361,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderWidth: 1,
-    borderColor: Colors.light.hairline,
+    borderColor: c.hairline,
   },
   chipActive: {
     backgroundColor: CARDIO_SOFT,
     borderColor: CARDIO_ACCENT,
   },
   chipEmoji: { fontSize: 16 },
-  chipText: { fontSize: 14, fontWeight: "600", color: Colors.light.chalkDim },
+  chipText: { fontSize: 14, fontWeight: "600", color: c.chalkDim },
   chipTextActive: { color: CARDIO_ACCENT_DARK, fontWeight: "700" },
   card: {
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginTop: Spacing.md,
@@ -454,5 +456,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  saveBtnText: { color: Colors.light.onChalk, fontWeight: "700", fontSize: 16 },
+  saveBtnText: { color: c.onChalk, fontWeight: "700", fontSize: 16 },
 });

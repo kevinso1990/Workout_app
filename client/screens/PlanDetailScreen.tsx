@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -22,6 +22,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { PlanDetailView } from "@/components/workout/PlanDetailView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { HEVY, hevyHeaderInsets, hevyHairline } from "@/constants/hevyLayout";
 import {
   WorkoutPlan,
@@ -36,6 +37,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "PlanDetail">;
 export default function PlanDetailScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -119,7 +121,7 @@ export default function PlanDetailScreen() {
           { backgroundColor: theme.backgroundRoot },
         ]}
       >
-        <ActivityIndicator color={Colors.light.primary} />
+        <ActivityIndicator color={theme.primary} />
       </View>
     );
   }
@@ -154,7 +156,7 @@ export default function PlanDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel={t("common.back")}
         >
-          <Feather name="chevron-left" size={28} color={HEVY.textPrimary} />
+          <Feather name="chevron-left" size={28} color={theme.chalk} />
         </Pressable>
 
         {/* Editing was only reachable from the plan LIST, via the "..." menu —
@@ -168,7 +170,7 @@ export default function PlanDetailScreen() {
           accessibilityLabel={t("plans.edit")}
           testID="button-edit-plan-from-detail"
         >
-          <Feather name="edit-2" size={18} color={HEVY.textPrimary} />
+          <Feather name="edit-2" size={18} color={theme.chalk} />
         </Pressable>
 
         <ThemedText style={styles.planName}>{plan.name}</ThemedText>
@@ -204,17 +206,17 @@ export default function PlanDetailScreen() {
             disabled={isDeleting}
             style={[
               styles.deleteButton,
-              { borderColor: Colors.light.error },
+              { borderColor: theme.error },
             ]}
             testID="button-delete-plan"
           >
             {isDeleting ? (
-              <ActivityIndicator color={Colors.light.error} />
+              <ActivityIndicator color={theme.error} />
             ) : (
               <>
-                <Feather name="trash-2" size={18} color={Colors.light.error} />
+                <Feather name="trash-2" size={18} color={theme.error} />
                 <ThemedText
-                  style={[styles.deleteButtonText, { color: Colors.light.error }]}
+                  style={[styles.deleteButtonText, { color: theme.error }]}
                 >
                   {t("plans.deletePlan")}
                 </ThemedText>
@@ -227,19 +229,19 @@ export default function PlanDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: HEVY.canvas,
+    backgroundColor: c.iron,
   },
   screenHeader: {
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   editBtn: {
     position: "absolute",
@@ -262,14 +264,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     letterSpacing: -0.5,
     lineHeight: 34,
     marginBottom: 6,
   },
   planInfo: {
     fontSize: 15,
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
     lineHeight: 21,
   },
   deleteSection: {

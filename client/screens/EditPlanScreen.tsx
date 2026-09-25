@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState} from "react";
 import {
   View,
   StyleSheet,
@@ -26,6 +26,7 @@ import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
@@ -154,6 +155,7 @@ function AddExerciseModal({
   onAdd: (ex: LibraryExercise) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const localizeName = useLocalizeExerciseName();
   const insets = useSafeAreaInsets();
@@ -247,7 +249,7 @@ function AddExerciseModal({
                   </ThemedText>
                 </View>
               </View>
-              <Feather name="plus" size={20} color={Colors.light.primary} />
+              <Feather name="plus" size={20} color={theme.primary} />
             </Pressable>
           )}
         />
@@ -273,6 +275,7 @@ function ReplaceExerciseModal({
   onReplace: (ex: LibraryExercise) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const localizeName = useLocalizeExerciseName();
   const insets = useSafeAreaInsets();
@@ -389,7 +392,7 @@ function ReplaceExerciseModal({
                 styles.sectionHeaderRow,
                 {
                   backgroundColor: section.isSuggested
-                    ? Colors.light.primary + "12"
+                    ? theme.primary + "12"
                     : theme.backgroundRoot,
                   borderBottomColor: theme.border,
                 },
@@ -397,8 +400,8 @@ function ReplaceExerciseModal({
             >
               {section.isSuggested ? (
                 <View style={styles.suggestedLabelRow}>
-                  <Feather name="zap" size={13} color={Colors.light.primary} />
-                  <ThemedText style={[styles.sectionHeaderText, { color: Colors.light.primary }]}>
+                  <Feather name="zap" size={13} color={theme.primary} />
+                  <ThemedText style={[styles.sectionHeaderText, { color: theme.primary }]}>
                     {section.title}
                   </ThemedText>
                 </View>
@@ -418,7 +421,7 @@ function ReplaceExerciseModal({
                   backgroundColor: pressed
                     ? theme.backgroundSecondary
                     : section.isSuggested
-                    ? Colors.light.primary + "08"
+                    ? theme.primary + "08"
                     : theme.backgroundDefault,
                   borderBottomColor: theme.border,
                 },
@@ -439,9 +442,9 @@ function ReplaceExerciseModal({
                 </View>
               </View>
               {section.isSuggested ? (
-                <View style={[styles.swapBadge, { backgroundColor: Colors.light.primary + "20" }]}>
-                  <Feather name="repeat" size={14} color={Colors.light.primary} />
-                  <ThemedText style={[styles.swapBadgeText, { color: Colors.light.primary }]}>{t("exercises.swapBadge")}</ThemedText>
+                <View style={[styles.swapBadge, { backgroundColor: theme.primary + "20" }]}>
+                  <Feather name="repeat" size={14} color={theme.primary} />
+                  <ThemedText style={[styles.swapBadgeText, { color: theme.primary }]}>{t("exercises.swapBadge")}</ThemedText>
                 </View>
               ) : (
                 <Feather name="repeat" size={18} color={theme.textSecondary} />
@@ -479,6 +482,7 @@ function ExerciseRow({
   onSetsChange: (delta: number) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const localizeName = useLocalizeExerciseName();
   const isActive = activeIndex === index;
@@ -490,8 +494,8 @@ function ExerciseRow({
       style={[
         styles.exerciseRow,
         {
-          backgroundColor: isActive ? Colors.light.primary + "0D" : theme.backgroundDefault,
-          borderColor: isActive ? Colors.light.primary + "40" : theme.border,
+          backgroundColor: isActive ? theme.primary + "0D" : theme.backgroundDefault,
+          borderColor: isActive ? theme.primary + "40" : theme.border,
         },
       ]}
     >
@@ -504,7 +508,7 @@ function ExerciseRow({
             style={{ opacity: index === 0 ? 0.3 : 1 }}
             testID={`button-move-up-${index}`}
           >
-            <Feather name="chevron-up" size={20} color={Colors.light.primary} />
+            <Feather name="chevron-up" size={20} color={theme.primary} />
           </Pressable>
           <Pressable
             onPress={() => { if (index < total - 1) { onMoveDown(); } }}
@@ -512,7 +516,7 @@ function ExerciseRow({
             style={{ opacity: index === total - 1 ? 0.3 : 1 }}
             testID={`button-move-down-${index}`}
           >
-            <Feather name="chevron-down" size={20} color={Colors.light.primary} />
+            <Feather name="chevron-down" size={20} color={theme.primary} />
           </Pressable>
         </View>
       ) : (
@@ -591,7 +595,7 @@ function ExerciseRow({
         style={styles.actionIcon}
         testID={`button-replace-exercise-${index}`}
       >
-        <Feather name="repeat" size={17} color={Colors.light.primary} />
+        <Feather name="repeat" size={17} color={theme.primary} />
       </Pressable>
 
       {/* Delete */}
@@ -604,7 +608,7 @@ function ExerciseRow({
         style={styles.actionIcon}
         testID={`button-delete-exercise-${index}`}
       >
-        <Feather name="trash-2" size={17} color={Colors.light.error} />
+        <Feather name="trash-2" size={17} color={theme.error} />
       </Pressable>
     </View>
   );
@@ -631,6 +635,7 @@ function DaySection({
   onExerciseSetsChange: (exIndex: number, delta: number) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [activeExIndex, setActiveExIndex] = useState<number | null>(null);
 
@@ -640,8 +645,8 @@ function DaySection({
       style={[styles.daySection, { backgroundColor: theme.backgroundRoot }]}
     >
       <View style={styles.dayHeader}>
-        <View style={[styles.dayBadge, { backgroundColor: Colors.light.primary + "15" }]}>
-          <ThemedText style={[styles.dayBadgeText, { color: Colors.light.primary }]}>
+        <View style={[styles.dayBadge, { backgroundColor: theme.primary + "15" }]}>
+          <ThemedText style={[styles.dayBadgeText, { color: theme.primary }]}>
             {t("editPlan.day", { n: dayIndex + 1 })}
           </ThemedText>
         </View>
@@ -692,11 +697,11 @@ function DaySection({
           setActiveExIndex(null);
           onAddExercise();
         }}
-        style={[styles.addExerciseButton, { borderColor: Colors.light.primary }]}
+        style={[styles.addExerciseButton, { borderColor: theme.primary }]}
         testID={`button-add-exercise-day-${dayIndex}`}
       >
-        <Feather name="plus" size={16} color={Colors.light.primary} />
-        <ThemedText style={[styles.addExerciseText, { color: Colors.light.primary }]}>
+        <Feather name="plus" size={16} color={theme.primary} />
+        <ThemedText style={[styles.addExerciseText, { color: theme.primary }]}>
           {t("editPlan.addExercise")}
         </ThemedText>
       </Pressable>
@@ -709,6 +714,7 @@ export default function EditPlanScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<Props["route"]>();
@@ -849,7 +855,7 @@ export default function EditPlanScreen() {
   if (isLoading) {
     return (
       <View style={[styles.center, { backgroundColor: theme.backgroundRoot }]}>
-        <ActivityIndicator color={Colors.light.primary} />
+        <ActivityIndicator color={theme.primary} />
       </View>
     );
   }
@@ -920,17 +926,17 @@ export default function EditPlanScreen() {
             style={({ pressed }) => [
               styles.saveButton,
               {
-                backgroundColor: Colors.light.primary,
+                backgroundColor: theme.primary,
                 opacity: pressed || !planName.trim() ? 0.7 : 1,
               },
             ]}
             testID="button-save-plan"
           >
             {isSaving ? (
-              <ActivityIndicator color={Colors.light.onChalk} />
+              <ActivityIndicator color={theme.onChalk} />
             ) : (
               <>
-                <Feather name="check" size={18} color={Colors.light.onChalk} />
+                <Feather name="check" size={18} color={theme.onChalk} />
                 <ThemedText style={styles.saveButtonText}>{t("editPlan.saveChanges")}</ThemedText>
               </>
             )}
@@ -966,7 +972,7 @@ export default function EditPlanScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   scrollContent: { paddingHorizontal: Spacing.lg },
@@ -1010,9 +1016,9 @@ const styles = StyleSheet.create({
     // of the iron ramp is a small luminance jump. A defined edge reads as more
     // contrast than extra brightness would, and leaves the top of the ramp free
     // for the controls that sit ON this card.
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderWidth: 1,
-    borderColor: HEVY.separator,
+    borderColor: c.hairlineStrong,
   },
   emptyDay: { padding: Spacing.lg, alignItems: "center" },
   emptyDayText: { fontSize: 14 },
@@ -1025,7 +1031,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     // Was #E8E8E8 — a near-white light-theme hairline drawing a bright line
     // across every row on a dark screen.
-    borderBottomColor: HEVY.hairline,
+    borderBottomColor: c.hairline,
     minHeight: 56,
   },
   dragHandle: { padding: Spacing.xs, marginRight: Spacing.sm },
@@ -1047,7 +1053,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: HEVY.control,
+    backgroundColor: c.ironElevated3,
   },
   setsValue: {
     fontSize: 15,
@@ -1084,7 +1090,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   saveButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: FontFamily.displaySemi,

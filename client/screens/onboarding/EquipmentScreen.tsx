@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -12,6 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import { useOnboarding, Equipment } from "@/context/OnboardingContext";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
@@ -59,6 +60,7 @@ export default function EquipmentScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation = useNavigation<NavigationProp>();
   const { state, setEquipment } = useOnboarding();
 
@@ -104,7 +106,7 @@ export default function EquipmentScreen() {
                 style={[
                   styles.optionCard,
                   { backgroundColor: theme.backgroundDefault },
-                  isSelected && { borderColor: Colors.light.primary, borderWidth: 2 },
+                  isSelected && { borderColor: theme.primary, borderWidth: 2 },
                 ]}
               >
                 <View
@@ -112,7 +114,7 @@ export default function EquipmentScreen() {
                     styles.iconContainer,
                     {
                       backgroundColor: isSelected
-                        ? Colors.light.primary + "20"
+                        ? theme.primary + "20"
                         : theme.backgroundSecondary,
                     },
                   ]}
@@ -121,13 +123,13 @@ export default function EquipmentScreen() {
                     <MaterialCommunityIcons
                       name={option.mciIcon}
                       size={22}
-                      color={isSelected ? Colors.light.primary : theme.textSecondary}
+                      color={isSelected ? theme.primary : theme.textSecondary}
                     />
                   ) : (
                     <Feather
                       name={option.icon}
                       size={22}
-                      color={isSelected ? Colors.light.primary : theme.textSecondary}
+                      color={isSelected ? theme.primary : theme.textSecondary}
                     />
                   )}
                 </View>
@@ -142,7 +144,7 @@ export default function EquipmentScreen() {
                   </ThemedText>
                 </View>
                 {isSelected ? (
-                  <Feather name="check-circle" size={24} color={Colors.light.primary} />
+                  <Feather name="check-circle" size={24} color={theme.primary} />
                 ) : null}
               </Pressable>
             </Animated.View>
@@ -155,7 +157,7 @@ export default function EquipmentScreen() {
           <Pressable
             onPress={() => navigation.goBack()}
             testID="button-back"
-            style={[styles.backButton, { borderColor: Colors.light.hairlineStrong }]}
+            style={[styles.backButton, { borderColor: theme.hairlineStrong }]}
           >
             <ThemedText style={styles.backText}>{t("onboarding.back")}</ThemedText>
           </Pressable>
@@ -165,9 +167,9 @@ export default function EquipmentScreen() {
             disabled={!state.equipment}
             style={[styles.continueWrapper, { opacity: state.equipment ? 1 : 0.5 }]}
           >
-            <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
+            <View style={[styles.continueButton, { backgroundColor: theme.primary }]}>
               <ThemedText style={styles.continueText}>{t("onboarding.next")}</ThemedText>
-              <Feather name="arrow-right" size={20} color={Colors.light.onChalk} />
+              <Feather name="arrow-right" size={20} color={theme.onChalk} />
             </View>
           </Pressable>
         </View>
@@ -176,7 +178,7 @@ export default function EquipmentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
     gap: Spacing.md,
   },
   iconContainer: {
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   backText: {
     fontSize: 17,
@@ -260,7 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   continueText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",

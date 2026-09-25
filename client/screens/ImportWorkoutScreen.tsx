@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback} from "react";
 import {
   View,
   ScrollView,
@@ -37,6 +37,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
@@ -90,6 +91,7 @@ function ScanningView({
   subtitle: string;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const frameH = useSharedValue(240);
   const scan = useSharedValue(0);
@@ -143,18 +145,18 @@ function ScanningView({
           <Image source={{ uri: imageUri }} style={styles.scanImage} resizeMode="cover" />
         ) : (
           <View style={[styles.scanPlaceholder, { backgroundColor: theme.backgroundRoot }]}>
-            <Feather name="file-text" size={44} color={Colors.light.primary} />
+            <Feather name="file-text" size={44} color={theme.primary} />
             <ThemedText style={[styles.scanPlaceholderText, { color: theme.textSecondary }]}>
               {t("importWorkout.analyzingDocument")}
             </ThemedText>
           </View>
         )}
         <Animated.View style={laserStyle} pointerEvents="none">
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.light.primary }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.primary }]} />
         </Animated.View>
       </View>
 
-      <ActivityIndicator size="small" color={Colors.light.primary} style={{ marginTop: Spacing.lg }} />
+      <ActivityIndicator size="small" color={theme.primary} style={{ marginTop: Spacing.lg }} />
     </View>
   );
 }
@@ -168,6 +170,8 @@ function GradientButton({
   icon: keyof typeof Feather.glyphMap;
   onPress: () => void;
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -178,8 +182,8 @@ function GradientButton({
       onPress={onPress}
       style={animatedStyle}
     >
-      <View style={[styles.gradientButton, { backgroundColor: Colors.light.primary }]}>
-        <Feather name={icon} size={18} color={Colors.light.onChalk} />
+      <View style={[styles.gradientButton, { backgroundColor: theme.primary }]}>
+        <Feather name={icon} size={18} color={theme.onChalk} />
         <ThemedText style={styles.gradientButtonText}>{label}</ThemedText>
       </View>
     </AnimatedPressable>
@@ -198,6 +202,7 @@ function OutlineButton({
   small?: boolean;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -213,7 +218,7 @@ function OutlineButton({
         small && styles.outlineButtonSmall,
       ]}
     >
-      <Feather name={icon} size={small ? 15 : 18} color={Colors.light.primary} />
+      <Feather name={icon} size={small ? 15 : 18} color={theme.primary} />
       <ThemedText style={[styles.outlineButtonText, small && styles.outlineButtonTextSmall]}>
         {label}
       </ThemedText>
@@ -241,6 +246,7 @@ function CatalogPickModal({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -276,7 +282,7 @@ function CatalogPickModal({
         </View>
         {loading ? (
           <View style={catalogModalStyles.center}>
-            <ActivityIndicator size="large" color={Colors.light.primary} />
+            <ActivityIndicator size="large" color={theme.primary} />
           </View>
         ) : (
           <FlatList
@@ -357,6 +363,7 @@ export default function ImportWorkoutScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { pickImage, pickFile, analyzeImages, analyzeFile, analyzePlainText, saveImportedPlan } = useWorkoutImport();
 
@@ -666,8 +673,8 @@ export default function ImportWorkoutScreen() {
           ]}
         >
           <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.landingInner}>
-            <View style={[styles.iconCircle, { backgroundColor: Colors.light.primary + "15" }]}>
-              <Feather name="camera" size={48} color={Colors.light.primary} />
+            <View style={[styles.iconCircle, { backgroundColor: theme.primary + "15" }]}>
+              <Feather name="camera" size={48} color={theme.primary} />
             </View>
             <ThemedText style={styles.landingTitle}>{t("importWorkout.landingTitle")}</ThemedText>
             <ThemedText style={[styles.landingSubtitle, { color: theme.textSecondary }]}>
@@ -684,15 +691,15 @@ export default function ImportWorkoutScreen() {
           {error ? (
             <Animated.View
               entering={FadeInDown.duration(300)}
-              style={[styles.errorBox, { backgroundColor: Colors.light.error + "15", borderColor: Colors.light.error + "40", marginBottom: Spacing.md }]}
+              style={[styles.errorBox, { backgroundColor: theme.error + "15", borderColor: theme.error + "40", marginBottom: Spacing.md }]}
             >
-              <Feather name="alert-circle" size={16} color={Colors.light.error} />
+              <Feather name="alert-circle" size={16} color={theme.error} />
               <View style={{ flex: 1 }}>
-                <ThemedText style={[styles.errorText, { color: Colors.light.error }]}>{error}</ThemedText>
+                <ThemedText style={[styles.errorText, { color: theme.error }]}>{error}</ThemedText>
                 {errorNeedsSettings ? (
                   <Pressable onPress={openAppSettings} style={styles.settingsLink}>
-                    <Feather name="settings" size={13} color={Colors.light.primary} />
-                    <ThemedText style={[styles.settingsLinkText, { color: Colors.light.primary }]}>
+                    <Feather name="settings" size={13} color={theme.primary} />
+                    <ThemedText style={[styles.settingsLinkText, { color: theme.primary }]}>
                       {t("importWorkout.openSettings")}
                     </ThemedText>
                   </Pressable>
@@ -724,7 +731,7 @@ export default function ImportWorkoutScreen() {
               onPress={handleAnalyzePastedText}
               disabled={pastedText.trim().length < 20}
             >
-              <Feather name="cpu" size={18} color={Colors.light.onChalk} />
+              <Feather name="cpu" size={18} color={theme.onChalk} />
               <ThemedText style={styles.pasteAnalyzeText}>{t("importWorkout.analyzePaste")}</ThemedText>
             </Pressable>
           </Animated.View>
@@ -761,8 +768,8 @@ export default function ImportWorkoutScreen() {
     return (
       <View style={[styles.container, styles.centeredContent, { backgroundColor: theme.backgroundRoot }]}>
         <Animated.View entering={FadeIn.duration(400)} style={styles.successInner}>
-          <Animated.View style={[styles.checkCircle, { backgroundColor: Colors.light.success + "20" }, checkAnimatedStyle]}>
-            <Feather name="check-circle" size={64} color={Colors.light.success} />
+          <Animated.View style={[styles.checkCircle, { backgroundColor: theme.success + "20" }, checkAnimatedStyle]}>
+            <Feather name="check-circle" size={64} color={theme.success} />
           </Animated.View>
           <ThemedText style={styles.successTitle}>{t("importWorkout.importSuccessTitle")}</ThemedText>
           <ThemedText style={[styles.successSubtitle, { color: theme.textSecondary }]}>
@@ -826,15 +833,15 @@ export default function ImportWorkoutScreen() {
           {error ? (
             <Animated.View
               entering={FadeInDown.duration(300)}
-              style={[styles.errorBox, { backgroundColor: Colors.light.error + "15", borderColor: Colors.light.error + "40" }]}
+              style={[styles.errorBox, { backgroundColor: theme.error + "15", borderColor: theme.error + "40" }]}
             >
-              <Feather name="alert-circle" size={16} color={Colors.light.error} />
+              <Feather name="alert-circle" size={16} color={theme.error} />
               <View style={{ flex: 1 }}>
-                <ThemedText style={[styles.errorText, { color: Colors.light.error }]}>{error}</ThemedText>
+                <ThemedText style={[styles.errorText, { color: theme.error }]}>{error}</ThemedText>
                 {errorNeedsSettings ? (
                   <Pressable onPress={openAppSettings} style={styles.settingsLink}>
-                    <Feather name="settings" size={13} color={Colors.light.primary} />
-                    <ThemedText style={[styles.settingsLinkText, { color: Colors.light.primary }]}>
+                    <Feather name="settings" size={13} color={theme.primary} />
+                    <ThemedText style={[styles.settingsLinkText, { color: theme.primary }]}>
                       {t("importWorkout.openSettings")}
                     </ThemedText>
                   </Pressable>
@@ -887,12 +894,12 @@ export default function ImportWorkoutScreen() {
               bottom: 120,
               padding: Spacing.md,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.light.error + "15",
+              backgroundColor: theme.error + "15",
               borderWidth: 1,
-              borderColor: Colors.light.error + "40",
+              borderColor: theme.error + "40",
             }}
           >
-            <ThemedText style={{ color: Colors.light.error, fontSize: 14 }}>{error}</ThemedText>
+            <ThemedText style={{ color: theme.error, fontSize: 14 }}>{error}</ThemedText>
           </View>
         ) : null}
         <CatalogPickModal
@@ -961,7 +968,7 @@ export default function ImportWorkoutScreen() {
   return null;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -1029,13 +1036,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     borderRadius: BorderRadius.md,
     paddingVertical: 14,
     marginTop: Spacing.xs,
   },
   pasteAnalyzeText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontWeight: "700",
     fontSize: 15,
   },
@@ -1129,9 +1136,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   validationRowNeedsMap: {
-    borderColor: Colors.light.error,
+    borderColor: c.error,
     borderWidth: 1.5,
-    backgroundColor: Colors.light.error + "08",
+    backgroundColor: c.error + "08",
   },
   validationExerciseName: {
     fontSize: 16,
@@ -1235,7 +1242,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.error,
+    backgroundColor: c.error,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1379,7 +1386,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing["2xl"],
   },
   gradientButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
@@ -1402,7 +1409,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    color: Colors.light.primary,
+    color: c.primary,
   },
   outlineButtonTextSmall: {
     fontSize: 14,

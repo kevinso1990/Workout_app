@@ -4,7 +4,7 @@
  * Shows: title · animated GIF (ExerciseDB) · muscle badge · numbered instructions.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo} from "react";
 import {
   Modal,
   View,
@@ -28,6 +28,7 @@ import {
 } from "@/lib/customExerciseImages";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { getExerciseMedia as getStaticExerciseMedia } from "@/lib/exerciseMedia/provider";
 import { getMuscleGroupMeta } from "@/lib/exerciseImages";
 import { translateMuscleGroup, translateExerciseCategory } from "@/lib/exerciseTaxonomy";
@@ -54,6 +55,7 @@ export default function ExerciseDetailModal({
   onClose,
 }: Props) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   // Bumped after a pick/remove so the hero re-reads the image index.
   const [customImageTick, setCustomImageTick] = useState(0);
@@ -144,8 +146,8 @@ export default function ExerciseDetailModal({
                   </ThemedText>
                 </View>
                 {staticMedia.category !== "Exercise" ? (
-                  <View style={[styles.badge, { backgroundColor: Colors.light.primary + "15" }]}>
-                    <ThemedText style={[styles.badgeText, { color: Colors.light.primary }]}>
+                  <View style={[styles.badge, { backgroundColor: theme.primary + "15" }]}>
+                    <ThemedText style={[styles.badgeText, { color: theme.primary }]}>
                       {translateExerciseCategory(t, staticMedia.category)}
                     </ThemedText>
                   </View>
@@ -177,7 +179,7 @@ export default function ExerciseDetailModal({
               style={styles.ownImageBtn}
               testID="button-pick-own-exercise-image"
             >
-              <Feather name="image" size={14} color={Colors.light.chalkDim} />
+              <Feather name="image" size={14} color={theme.chalkDim} />
               <ThemedText style={styles.ownImageText}>
                 {t(hasCustomImage ? "exercises.replaceOwnImage" : "exercises.addOwnImage")}
               </ThemedText>
@@ -201,8 +203,8 @@ export default function ExerciseDetailModal({
 
           <View style={styles.cuesSection}>
             <View style={styles.cuesHeader}>
-              <Feather name="check-circle" size={15} color={Colors.light.primary} />
-              <ThemedText style={[styles.cuesTitle, { color: Colors.light.primary }]}>
+              <Feather name="check-circle" size={15} color={theme.primary} />
+              <ThemedText style={[styles.cuesTitle, { color: theme.primary }]}>
                 {t("exercises.howToPerform")}
               </ThemedText>
             </View>
@@ -210,8 +212,8 @@ export default function ExerciseDetailModal({
             {instructions.length > 0 ? (
               instructions.map((cue, i) => (
                 <View key={`${i}-${cue.slice(0, 20)}`} style={styles.cueRow}>
-                  <View style={[styles.cueNumber, { backgroundColor: Colors.light.primary + "15" }]}>
-                    <ThemedText style={[styles.cueNumberText, { color: Colors.light.primary }]}>
+                  <View style={[styles.cueNumber, { backgroundColor: theme.primary + "15" }]}>
+                    <ThemedText style={[styles.cueNumberText, { color: theme.primary }]}>
                       {i + 1}
                     </ThemedText>
                   </View>
@@ -234,7 +236,7 @@ export default function ExerciseDetailModal({
 
 const SHEET_MAX_HEIGHT = "85%";
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -326,11 +328,11 @@ const styles = StyleSheet.create({
   ownImageText: {
     fontSize: 13,
     fontWeight: "600",
-    color: Colors.light.chalkDim,
+    color: c.chalkDim,
   },
   ownImageHint: {
     fontSize: 12,
-    color: Colors.light.chalkFaint,
+    color: c.chalkFaint,
   },
   cuesSection: {
     gap: Spacing.sm,

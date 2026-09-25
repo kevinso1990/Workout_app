@@ -28,8 +28,8 @@ const SCAN_DIRS = ["screens", "components", "navigation"];
  * Ratchet. Lower these as screens are converted; never raise them.
  * A raise means new dark-only colour was added to the app.
  */
-const MAX_STATIC_REFS = 465;
-const MAX_FILES_WITH_STATIC_REFS = 43;
+const MAX_STATIC_REFS = 258;
+const MAX_FILES_WITH_STATIC_REFS = 33;
 
 function walk(dir: string): string[] {
   const out: string[] = [];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo} from "react";
 import {
   View,
   ScrollView,
@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { toast } from "@/lib/toast";
@@ -62,6 +63,7 @@ export default function GoalPlanScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -155,10 +157,10 @@ export default function GoalPlanScreen() {
     return (
       <View style={[styles.container, styles.center, { backgroundColor: theme.backgroundRoot }]}>
         <Animated.View entering={FadeIn.duration(320)} style={styles.loadingInner}>
-          <View style={[styles.iconCircle, { backgroundColor: Colors.light.primary + "15" }]}>
-            <Feather name="target" size={44} color={Colors.light.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: theme.primary + "15" }]}>
+            <Feather name="target" size={44} color={theme.primary} />
           </View>
-          <ActivityIndicator size="large" color={Colors.light.primary} />
+          <ActivityIndicator size="large" color={theme.primary} />
           <ThemedText style={[styles.loadingText, { color: theme.textSecondary }]}>
             {loadingText}
           </ThemedText>
@@ -190,8 +192,8 @@ export default function GoalPlanScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.headerBlock}>
-          <View style={[styles.iconCircle, { backgroundColor: Colors.light.primary + "15" }]}>
-            <Feather name="target" size={40} color={Colors.light.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: theme.primary + "15" }]}>
+            <Feather name="target" size={40} color={theme.primary} />
           </View>
           <ThemedText style={styles.title}>{t("goalPlan.title")}</ThemedText>
           <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
@@ -254,15 +256,15 @@ export default function GoalPlanScreen() {
                   style={[
                     styles.freqChip,
                     {
-                      borderColor: active ? Colors.light.primary : theme.border,
-                      backgroundColor: active ? Colors.light.primary + "15" : theme.backgroundDefault,
+                      borderColor: active ? theme.primary : theme.border,
+                      backgroundColor: active ? theme.primary + "15" : theme.backgroundDefault,
                     },
                   ]}
                 >
                   <ThemedText
                     style={[
                       styles.freqChipText,
-                      { color: active ? Colors.light.primary : theme.text },
+                      { color: active ? theme.primary : theme.text },
                     ]}
                   >
                     {n}
@@ -280,7 +282,7 @@ export default function GoalPlanScreen() {
             style={[styles.generateBtn, !canGenerate && { opacity: 0.5 }]}
             testID="button-generate-goal-plan"
           >
-            <Feather name="cpu" size={18} color={Colors.light.onChalk} />
+            <Feather name="cpu" size={18} color={theme.onChalk} />
             <ThemedText style={styles.generateBtnText}>{t("goalPlan.generate")}</ThemedText>
           </Pressable>
         </Animated.View>
@@ -289,7 +291,7 @@ export default function GoalPlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: { flex: 1 },
   center: { alignItems: "center", justifyContent: "center" },
   content: {
@@ -386,11 +388,11 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     height: Spacing.buttonHeight,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     marginTop: Spacing.sm,
   },
   generateBtnText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "700",
     fontFamily: "Montserrat_700Bold",

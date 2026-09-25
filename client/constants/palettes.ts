@@ -20,8 +20,8 @@ const chalkFaint = "#686D69";
 const onChalk = "#191B1D"; // iron text sitting on a chalk-filled surface
 
 // Hairlines — chalk at low alpha over iron.
-const hairline = "rgba(236,233,225,0.09)";
-const hairlineStrong = "rgba(236,233,225,0.17)";
+const hairline = "rgba(236,233,225,0.10)";
+const hairlineStrong = "rgba(236,233,225,0.16)";
 /**
  * Outline for interactive controls (secondary buttons, pickers).
  *

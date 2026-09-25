@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import { Platform, StyleSheet, Pressable, View, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 
 import { hapticMedium } from "@/lib/safeHaptics";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -26,6 +27,7 @@ export function CreatePlanFab() {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation();
@@ -98,8 +100,8 @@ export function CreatePlanFab() {
           accessibilityRole="button"
           accessibilityLabel={t("addWorkout.fabLabel")}
         >
-          <View style={[styles.fab, { backgroundColor: Colors.light.primary }]}>
-            <Feather name="plus" size={24} color={Colors.light.onChalk} />
+          <View style={[styles.fab, { backgroundColor: theme.primary }]}>
+            <Feather name="plus" size={24} color={theme.onChalk} />
           </View>
         </AnimatedPressable>
       </View>
@@ -125,8 +127,8 @@ export function CreatePlanFab() {
             <ThemedText style={styles.sheetTitle}>{t("addWorkout.title")}</ThemedText>
 
             <Pressable style={styles.sheetItem} onPress={goStrength} testID="button-add-strength">
-              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <ActivityIcon size={20} color={Colors.light.chalk} />
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <ActivityIcon size={20} color={theme.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -139,8 +141,8 @@ export function CreatePlanFab() {
             </Pressable>
 
             <Pressable style={styles.sheetItem} onPress={goCardio} testID="button-add-cardio">
-              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <ActivityIcon sport="running" size={20} color={Colors.light.chalk} />
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <ActivityIcon sport="running" size={20} color={theme.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -153,8 +155,8 @@ export function CreatePlanFab() {
             </Pressable>
 
             <Pressable style={styles.sheetItem} onPress={goGoalPlan} testID="button-add-goal-plan">
-              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <Feather name="target" size={20} color={Colors.light.chalk} />
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <Feather name="target" size={20} color={theme.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -167,8 +169,8 @@ export function CreatePlanFab() {
             </Pressable>
 
             <Pressable style={styles.sheetItem} onPress={goImport} testID="button-add-import">
-              <View style={[styles.sheetIcon, { backgroundColor: Colors.light.primary + "1A" }]}>
-                <Feather name="file-text" size={20} color={Colors.light.chalk} />
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <Feather name="file-text" size={20} color={theme.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
@@ -193,7 +195,7 @@ export function CreatePlanFab() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     position: "absolute",
     right: Spacing.xl,

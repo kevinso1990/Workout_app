@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback} from "react";
 import {
   View,
   Text,
@@ -60,6 +60,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
   getWorkoutPlans,
@@ -200,6 +201,7 @@ function PlateCalculatorModal({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const calculation = calculatePlates(weight);
   const perSide =
@@ -217,7 +219,7 @@ function PlateCalculatorModal({
           style={[styles.plateModalContent, { backgroundColor: theme.backgroundDefault }]}
         >
           <View style={styles.plateHeader}>
-            <Feather name="disc" size={24} color={Colors.light.primary} />
+            <Feather name="disc" size={24} color={theme.primary} />
             <ThemedText style={styles.plateTitle}>{t("activeWorkout.plateCalc.title")}</ThemedText>
           </View>
 
@@ -245,7 +247,7 @@ function PlateCalculatorModal({
                       style={[
                         styles.plateChip,
                         {
-                          backgroundColor: Colors.light.primary,
+                          backgroundColor: theme.primary,
                           width: 30 + plate * 1.2,
                         },
                       ]}
@@ -323,6 +325,7 @@ function RestTimerBar({
   onAdjust: (delta: number) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const progress =
     totalSeconds > 0 ? Math.min(Math.max(timeLeft / totalSeconds, 0), 1) : 0;
@@ -337,12 +340,12 @@ function RestTimerBar({
         <View
           style={[
             styles.restBarFill,
-            { width: `${progress * 100}%`, backgroundColor: Colors.light.primary },
+            { width: `${progress * 100}%`, backgroundColor: theme.primary },
           ]}
         />
       </View>
       <View style={styles.restBarRow}>
-        <Feather name="clock" size={16} color={Colors.light.primary} />
+        <Feather name="clock" size={16} color={theme.primary} />
         <ThemedText style={styles.restBarTime}>{formatTime(timeLeft)}</ThemedText>
         <View style={styles.restBarSpacer} />
         <Pressable
@@ -365,12 +368,12 @@ function RestTimerBar({
         </Pressable>
         <Pressable
           onPress={onSkip}
-          style={[styles.restBarSkip, { backgroundColor: Colors.light.primary }]}
+          style={[styles.restBarSkip, { backgroundColor: theme.primary }]}
           hitSlop={6}
           accessibilityLabel={t("activeWorkout.skipRest")}
           testID="button-rest-skip"
         >
-          <Feather name="skip-forward" size={16} color={Colors.light.onChalk} />
+          <Feather name="skip-forward" size={16} color={theme.onChalk} />
         </Pressable>
       </View>
     </Animated.View>
@@ -387,6 +390,7 @@ function PRCelebration({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
 
   if (!visible || !pr) return null;
@@ -398,8 +402,8 @@ function PRCelebration({
           entering={ZoomIn.springify().damping(12)}
           style={[styles.prModalContent, { backgroundColor: theme.backgroundDefault }]}
         >
-          <View style={[styles.prBadge, { backgroundColor: Colors.light.primary }]}>
-            <Feather name="award" size={40} color={Colors.light.onChalk} />
+          <View style={[styles.prBadge, { backgroundColor: theme.primary }]}>
+            <Feather name="award" size={40} color={theme.onChalk} />
           </View>
 
           <View style={styles.prColumn}>
@@ -466,7 +470,7 @@ function PRCelebration({
             </View>
 
             <Pressable onPress={onClose} style={styles.prButtonWrap}>
-              <View style={[styles.prButton, { backgroundColor: Colors.light.primary }]}>
+              <View style={[styles.prButton, { backgroundColor: theme.primary }]}>
                 <ThemedText style={styles.prButtonText}>{t("activeWorkout.pr.cta")}</ThemedText>
               </View>
             </Pressable>
@@ -498,6 +502,7 @@ function WorkoutSummary({
 }) {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
 
   const handleShare = () => {
@@ -572,7 +577,7 @@ function WorkoutSummary({
               <Feather
                 name="check-circle"
                 size={32}
-                color={Colors.light.primary}
+                color={theme.primary}
               />
             </View>
 
@@ -651,11 +656,11 @@ function WorkoutSummary({
             onPress={handleShare}
             style={styles.shareButton}
           >
-            <Feather name="share-2" size={20} color={Colors.light.primary} />
+            <Feather name="share-2" size={20} color={theme.primary} />
             <ThemedText
               style={[
                 styles.shareButtonText,
-                { color: Colors.light.primary },
+                { color: theme.primary },
               ]}
             >
               {t("postWorkout.shareWorkout")}
@@ -671,7 +676,7 @@ function WorkoutSummary({
           ]}
         >
           <Pressable onPress={onClose}>
-            <View style={[styles.summaryButton, { backgroundColor: Colors.light.primary }]}>
+            <View style={[styles.summaryButton, { backgroundColor: theme.primary }]}>
               <ThemedText style={styles.summaryButtonText}>{t("postWorkout.done")}</ThemedText>
             </View>
           </Pressable>
@@ -691,6 +696,7 @@ function QuickAdjustButton({
   type: "increase" | "decrease";
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
     <Pressable
@@ -703,10 +709,10 @@ function QuickAdjustButton({
         {
           backgroundColor:
             type === "increase"
-              ? Colors.light.primary + "15"
+              ? theme.primary + "15"
               : theme.backgroundSecondary,
           borderColor:
-            type === "increase" ? Colors.light.primary : theme.border,
+            type === "increase" ? theme.primary : theme.border,
         },
       ]}
     >
@@ -716,7 +722,7 @@ function QuickAdjustButton({
           {
             color:
               type === "increase"
-                ? Colors.light.primary
+                ? theme.primary
                 : theme.textSecondary,
           },
         ]}
@@ -735,6 +741,7 @@ export default function ActiveWorkoutScreen() {
       : insets.top,
   );
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -1886,12 +1893,12 @@ export default function ActiveWorkoutScreen() {
                 <Feather
                   name="clock"
                   size={12}
-                  color={Colors.light.primary}
+                  color={theme.primary}
                 />
                 <ThemedText
                   style={[
                     styles.timerBadgeText,
-                    { color: Colors.light.primary },
+                    { color: theme.primary },
                   ]}
                 >
                   {formatTime(elapsedTime)}
@@ -1904,7 +1911,7 @@ export default function ActiveWorkoutScreen() {
                 <Feather
                   name="clock"
                   size={15}
-                  color={restTimerEnabled ? Colors.light.primary : theme.textSecondary}
+                  color={restTimerEnabled ? theme.primary : theme.textSecondary}
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
                 />
@@ -1945,7 +1952,7 @@ export default function ActiveWorkoutScreen() {
                 ]}
               >
                 <View
-                  style={[styles.progressGradient, { backgroundColor: Colors.light.primary }]}
+                  style={[styles.progressGradient, { backgroundColor: theme.primary }]}
                 />
               </Animated.View>
             </View>
@@ -1988,10 +1995,10 @@ export default function ActiveWorkoutScreen() {
                     styles.exerciseChip,
                     {
                       borderColor: isCurrent
-                        ? Colors.light.primary
+                        ? theme.primary
                         : theme.border,
                       backgroundColor: isDone
-                        ? Colors.light.primary + "18"
+                        ? theme.primary + "18"
                         : theme.backgroundRoot,
                     },
                     isCurrent && styles.exerciseChipActive,
@@ -2010,7 +2017,7 @@ export default function ActiveWorkoutScreen() {
                       styles.exerciseChipLabel,
                       {
                         color: isCurrent
-                          ? Colors.light.primary
+                          ? theme.primary
                           : theme.text,
                         fontWeight: isCurrent ? "700" : "600",
                       },
@@ -2045,14 +2052,14 @@ export default function ActiveWorkoutScreen() {
               style={[
                 styles.coachHintBanner,
                 {
-                  borderColor: Colors.light.primary + "33",
-                  backgroundColor: Colors.light.primary + "10",
+                  borderColor: theme.primary + "33",
+                  backgroundColor: theme.primary + "10",
                   marginHorizontal: Spacing.lg,
                   marginBottom: Spacing.md,
                 },
               ]}
             >
-              <Feather name="zap" size={14} color={Colors.light.primary} />
+              <Feather name="zap" size={14} color={theme.primary} />
               <ThemedText style={[styles.coachHintText, { color: theme.text }]}>
                 {nextSetCoachMessage}
               </ThemedText>
@@ -2094,7 +2101,7 @@ export default function ActiveWorkoutScreen() {
                         <ThemedText
                           style={[
                             styles.metaMuscleLabel,
-                            { color: HEVY.textSecondary },
+                            { color: theme.chalkDim },
                           ]}
                           numberOfLines={1}
                         >
@@ -2202,7 +2209,7 @@ export default function ActiveWorkoutScreen() {
                 <View
                   style={[
                     styles.setsContainer,
-                    { backgroundColor: HEVY.surface, overflow: "hidden" },
+                    { backgroundColor: theme.ironElevated2, overflow: "hidden" },
                   ]}
                 >
                   <HevySetGridHeader isBodyweight={isBodyweight} isHold={isHold} />
@@ -2328,8 +2335,8 @@ export default function ActiveWorkoutScreen() {
               style={animatedButtonStyle}
               testID="button-finish"
             >
-              <View style={[styles.finishButton, { backgroundColor: Colors.light.primary }]}>
-                <Feather name="check" size={20} color={Colors.light.onChalk} />
+              <View style={[styles.finishButton, { backgroundColor: theme.primary }]}>
+                <Feather name="check" size={20} color={theme.onChalk} />
                 <ThemedText style={styles.finishButtonText}>
                   {t("activeWorkout.finishWorkout")}
                 </ThemedText>
@@ -2362,7 +2369,7 @@ export default function ActiveWorkoutScreen() {
                 style={[
                   styles.skipButton,
                   styles.skipButtonFlex,
-                  { borderColor: Colors.light.controlOutline },
+                  { borderColor: theme.controlOutline },
                 ]}
                 testID="button-skip-finish"
                 accessible
@@ -2407,7 +2414,7 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -2428,17 +2435,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.separator,
-    backgroundColor: HEVY.surface,
+    borderColor: c.hairlineStrong,
+    backgroundColor: c.ironElevated2,
   },
   exerciseSectionActive: {
     // A 33%-alpha hairline was not enough to answer "which exercise am I on?"
     // at a glance. The current card is now outlined in full chalk and sits on
     // the raised control surface, while the others keep the plain card colour
     // and recede — the difference has to be readable in peripheral vision.
-    borderColor: Colors.light.chalk,
+    borderColor: c.chalk,
     borderWidth: 2,
-    backgroundColor: HEVY.control,
+    backgroundColor: c.ironElevated3,
   },
   exerciseSectionIdle: {
     opacity: 0.72,
@@ -2652,7 +2659,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 0.5,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   setCompleteCheckbox: {
     borderWidth: 1,
@@ -2973,7 +2980,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   finishButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -2987,7 +2994,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     // Transparent on the near-black ground, with a divider-weight outline,
     // this read as grey text floating on the page rather than a button.
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   skipButtonText: {
     fontSize: 16,
@@ -3173,7 +3180,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   prButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -3255,7 +3262,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
   },
   summaryButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -3341,7 +3348,7 @@ const styles = StyleSheet.create({
   shareCardPRText: {
     fontSize: 13,
     fontWeight: "600",
-    color: Colors.light.plateMedium,
+    color: c.plateMedium,
     flexShrink: 1,
   },
   shareActions: {
@@ -3356,7 +3363,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.light.primary,
+    borderColor: c.primary,
   },
   shareButtonText: {
     fontSize: 15,
@@ -3425,7 +3432,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   plateChipText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -3529,7 +3536,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.primary + "20",
+    backgroundColor: c.primary + "20",
     alignItems: "center",
     justifyContent: "center",
   },

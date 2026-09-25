@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo} from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
@@ -26,6 +26,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { HEVY } from "@/constants/hevyLayout";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
 import { screenHeaderSafeAreaStyle } from "@/lib/paddingTopUnderHeader";
 import { useOnboarding } from "@/context/OnboardingContext";
@@ -92,6 +93,7 @@ function SplitCard({
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -124,7 +126,7 @@ function SplitCard({
           styles.splitCard,
           {
             backgroundColor: theme.backgroundDefault,
-            borderColor: selected ? Colors.light.primary : recommended ? Colors.light.primary + "55" : theme.border,
+            borderColor: selected ? theme.primary : recommended ? theme.primary + "55" : theme.border,
             borderWidth: selected ? 2 : recommended ? 1.5 : 1,
             opacity: disabled ? 0.4 : 1,
           },
@@ -134,8 +136,8 @@ function SplitCard({
         {/* Recommended badge — shown even when not yet selected */}
         {recommended ? (
           <View style={styles.recommendedBadgeWrap}>
-            <View style={[styles.recommendedBadge, { backgroundColor: Colors.light.primary }]}>
-              <Feather name="star" size={10} color={Colors.light.onChalk} />
+            <View style={[styles.recommendedBadge, { backgroundColor: theme.primary }]}>
+              <Feather name="star" size={10} color={theme.onChalk} />
               <ThemedText style={styles.recommendedBadgeText}>
                 {t("onboarding.recommended", { defaultValue: "Recommended" })}
               </ThemedText>
@@ -148,7 +150,7 @@ function SplitCard({
             styles.splitIcon,
             {
               backgroundColor: selected
-                ? Colors.light.primary + "15"
+                ? theme.primary + "15"
                 : theme.backgroundSecondary,
             },
           ]}
@@ -156,7 +158,7 @@ function SplitCard({
           <Feather
             name={split.icon as any}
             size={24}
-            color={selected ? Colors.light.primary : theme.textSecondary}
+            color={selected ? theme.primary : theme.textSecondary}
           />
         </View>
         <View style={styles.splitInfo}>
@@ -176,7 +178,7 @@ function SplitCard({
                   styles.dayChip,
                   {
                     backgroundColor: selected
-                      ? Colors.light.primary + "20"
+                      ? theme.primary + "20"
                       : theme.backgroundSecondary,
                   },
                 ]}
@@ -186,7 +188,7 @@ function SplitCard({
                     styles.dayChipText,
                     {
                       color: selected
-                        ? Colors.light.primary
+                        ? theme.primary
                         : theme.textSecondary,
                     },
                   ]}
@@ -201,7 +203,7 @@ function SplitCard({
           style={[
             styles.radioOuter,
             {
-              borderColor: selected ? Colors.light.primary : theme.border,
+              borderColor: selected ? theme.primary : theme.border,
             },
           ]}
         >
@@ -209,7 +211,7 @@ function SplitCard({
             <View
               style={[
                 styles.radioInner,
-                { backgroundColor: Colors.light.primary },
+                { backgroundColor: theme.primary },
               ]}
             />
           ) : null}
@@ -223,6 +225,7 @@ export default function SplitSelectionScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation =
     useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const { state, getPreferences } = useOnboarding();
@@ -313,7 +316,7 @@ export default function SplitSelectionScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: HEVY.canvas }]}>
+    <View style={[styles.container, { backgroundColor: theme.iron }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -385,13 +388,13 @@ export default function SplitSelectionScreen() {
                     <View
                       style={[
                         styles.previewDayNumber,
-                        { backgroundColor: Colors.light.primary + "15" },
+                        { backgroundColor: theme.primary + "15" },
                       ]}
                     >
                       <ThemedText
                         style={[
                           styles.previewDayNumberText,
-                          { color: Colors.light.primary },
+                          { color: theme.primary },
                         ]}
                       >
                         {i + 1}
@@ -448,12 +451,12 @@ export default function SplitSelectionScreen() {
           ]}
           testID="button-continue"
         >
-          <View style={[styles.continueButton, { backgroundColor: Colors.light.primary }]}>
+          <View style={[styles.continueButton, { backgroundColor: theme.primary }]}>
             {isLoading ? (
               // Generating can take a few seconds — say what's happening so the
               // wait doesn't read as "stuck".
               <View style={styles.loadingRow}>
-                <ActivityIndicator color={Colors.light.onChalk} />
+                <ActivityIndicator color={theme.onChalk} />
                 <ThemedText style={styles.buttonText}>
                   {t("onboarding.splitCreatingPlan")}
                 </ThemedText>
@@ -468,7 +471,7 @@ export default function SplitSelectionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -516,7 +519,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: BorderRadius.sm,
   },
   recommendedBadgeText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 11,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
@@ -623,7 +626,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
   },
   backButtonText: {
     fontSize: 17,
@@ -640,7 +643,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
