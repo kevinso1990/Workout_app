@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef} from "react";
 import {
   View,
   StyleSheet,
@@ -27,6 +27,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getWorkoutHistory, WorkoutSession } from "@/lib/storage";
@@ -215,6 +216,7 @@ function FilterChip({
   onPress: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
     <Pressable
@@ -223,7 +225,7 @@ function FilterChip({
         styles.filterChip,
         {
           backgroundColor: selected
-            ? Colors.light.primary
+            ? theme.primary
             : theme.backgroundDefault,
         },
       ]}
@@ -231,7 +233,7 @@ function FilterChip({
       <ThemedText
         style={[
           styles.filterChipText,
-          { color: selected ? Colors.light.onChalk : theme.text },
+          { color: selected ? theme.onChalk : theme.text },
         ]}
       >
         {label}
@@ -255,6 +257,7 @@ function ExerciseCardBase({
   onDetailPress?: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const scale = useSharedValue(1);
 
@@ -306,13 +309,13 @@ function ExerciseCardBase({
         <View
           style={[
             styles.muscleTag,
-            { backgroundColor: Colors.light.ironElevated2 },
+            { backgroundColor: theme.ironElevated2 },
           ]}
         >
           <ThemedText
             style={[
               styles.muscleTagText,
-              { color: Colors.light.chalkDim },
+              { color: theme.chalkDim },
             ]}
           >
             {translateMuscleGroup(t, exercise.muscleGroup)}
@@ -324,8 +327,8 @@ function ExerciseCardBase({
           {translateEquipment(t, exercise.equipment)}
         </ThemedText>
         {exercise.isCustom ? (
-          <View style={[styles.customBadge, { backgroundColor: Colors.light.primary + "20" }]}>
-            <ThemedText style={[styles.customBadgeText, { color: Colors.light.primary }]}>
+          <View style={[styles.customBadge, { backgroundColor: theme.primary + "20" }]}>
+            <ThemedText style={[styles.customBadgeText, { color: theme.primary }]}>
               {t("exercisesScreen.createModal.customBadge")}
             </ThemedText>
           </View>
@@ -354,6 +357,7 @@ function CreateExerciseModal({
   onSave: (exercise: Omit<ExerciseItem, "id">) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
@@ -408,14 +412,14 @@ function CreateExerciseModal({
                     style={[
                       styles.optionChip,
                       {
-                        backgroundColor: muscleGroup === group ? Colors.light.primary : theme.backgroundSecondary,
+                        backgroundColor: muscleGroup === group ? theme.primary : theme.backgroundSecondary,
                       },
                     ]}
                   >
                     <ThemedText
                       style={[
                         styles.optionChipText,
-                        { color: muscleGroup === group ? Colors.light.onChalk : theme.text },
+                        { color: muscleGroup === group ? theme.onChalk : theme.text },
                       ]}
                     >
                       {translateMuscleGroup(t, group)}
@@ -437,14 +441,14 @@ function CreateExerciseModal({
                     style={[
                       styles.optionChip,
                       {
-                        backgroundColor: equipment === equip ? Colors.light.primary : theme.backgroundSecondary,
+                        backgroundColor: equipment === equip ? theme.primary : theme.backgroundSecondary,
                       },
                     ]}
                   >
                     <ThemedText
                       style={[
                         styles.optionChipText,
-                        { color: equipment === equip ? Colors.light.onChalk : theme.text },
+                        { color: equipment === equip ? theme.onChalk : theme.text },
                       ]}
                     >
                       {translateEquipment(t, equip)}
@@ -479,6 +483,7 @@ function APISearchModal({
   onSelect: (exercise: Omit<ExerciseItem, "id">) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
@@ -585,7 +590,7 @@ function APISearchModal({
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={Colors.light.primary} />
+              <ActivityIndicator size="large" color={theme.primary} />
               <ThemedText style={{ marginTop: Spacing.md, color: theme.textSecondary }}>
                 Loading exercise database...
               </ThemedText>
@@ -605,7 +610,7 @@ function APISearchModal({
                       {item.primaryMuscles.join(", ")} • {item.equipment || "Bodyweight"}
                     </ThemedText>
                   </View>
-                  <Feather name="plus-circle" size={24} color={Colors.light.primary} />
+                  <Feather name="plus-circle" size={24} color={theme.primary} />
                 </Pressable>
               )}
               showsVerticalScrollIndicator={false}
@@ -640,6 +645,7 @@ function ExerciseProgressModal({
   history: WorkoutSession[];
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -763,28 +769,28 @@ function ExerciseProgressModal({
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.statsGrid}>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
-                  <Feather name="calendar" size={20} color={Colors.light.primary} />
+                  <Feather name="calendar" size={20} color={theme.primary} />
                   <ThemedText style={styles.statValue}>{stats.totalSessions}</ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
                     {t("exercisesScreen.progressModal.sessions")}
                   </ThemedText>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
-                  <Feather name="layers" size={20} color={Colors.light.primary} />
+                  <Feather name="layers" size={20} color={theme.primary} />
                   <ThemedText style={styles.statValue}>{stats.totalSets}</ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
                     {t("exercisesScreen.progressModal.totalSets")}
                   </ThemedText>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
-                  <Feather name="repeat" size={20} color={Colors.light.primary} />
+                  <Feather name="repeat" size={20} color={theme.primary} />
                   <ThemedText style={styles.statValue}>{stats.totalReps}</ThemedText>
                   <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
                     {t("exercisesScreen.progressModal.totalReps")}
                   </ThemedText>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
-                  <Feather name="bar-chart-2" size={20} color={Colors.light.primary} />
+                  <Feather name="bar-chart-2" size={20} color={theme.primary} />
                   <ThemedText style={styles.statValue}>
                     {stats.totalVolume >= 1000
                       ? `${(stats.totalVolume / 1000).toFixed(1)}t`
@@ -797,10 +803,10 @@ function ExerciseProgressModal({
               </View>
 
               {stats.bestSet ? (
-                <View style={[styles.prCard, { backgroundColor: Colors.light.primary + "15" }]}>
+                <View style={[styles.prCard, { backgroundColor: theme.primary + "15" }]}>
                   <View style={styles.prHeader}>
-                    <Feather name="award" size={24} color={Colors.light.primary} />
-                    <ThemedText style={[styles.prTitle, { color: Colors.light.primary }]}>
+                    <Feather name="award" size={24} color={theme.primary} />
+                    <ThemedText style={[styles.prTitle, { color: theme.primary }]}>
                       {t("exercisesScreen.progressModal.personalRecord")}
                     </ThemedText>
                   </View>
@@ -820,18 +826,18 @@ function ExerciseProgressModal({
                     <View
                       style={[
                         styles.trendBadge,
-                        { backgroundColor: stats.volumeTrend > 0 ? Colors.light.plateLight + "20" : Colors.light.plateHeavy + "20" },
+                        { backgroundColor: stats.volumeTrend > 0 ? theme.plateLight + "20" : theme.plateHeavy + "20" },
                       ]}
                     >
                       <Feather
                         name={stats.volumeTrend > 0 ? "trending-up" : "trending-down"}
                         size={14}
-                        color={stats.volumeTrend > 0 ? Colors.light.plateLight : Colors.light.plateHeavy}
+                        color={stats.volumeTrend > 0 ? theme.plateLight : theme.plateHeavy}
                       />
                       <ThemedText
                         style={[
                           styles.trendText,
-                          { color: stats.volumeTrend > 0 ? Colors.light.plateLight : Colors.light.plateHeavy },
+                          { color: stats.volumeTrend > 0 ? theme.plateLight : theme.plateHeavy },
                         ]}
                       >
                         {stats.volumeTrend > 0 ? "+" : ""}
@@ -850,7 +856,7 @@ function ExerciseProgressModal({
                             styles.bar,
                             {
                               height: `${(session.volume / maxVolume) * 100}%`,
-                              backgroundColor: Colors.light.primary,
+                              backgroundColor: theme.primary,
                             },
                           ]}
                         />
@@ -885,7 +891,7 @@ function ExerciseProgressModal({
                           {t("exercisesScreen.progressModal.sets", { count: session.sets })}
                         </ThemedText>
                       </View>
-                      <ThemedText style={[styles.historyVolume, { color: Colors.light.primary }]}>
+                      <ThemedText style={[styles.historyVolume, { color: theme.primary }]}>
                         {session.volume}kg
                       </ThemedText>
                     </View>
@@ -914,6 +920,7 @@ export default function ExercisesScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
@@ -1119,10 +1126,10 @@ export default function ExercisesScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowCreateModal(true);
                 }}
-                style={[styles.actionButton, { backgroundColor: Colors.light.primary }]}
+                style={[styles.actionButton, { backgroundColor: theme.primary }]}
                 testID="button-create-exercise"
               >
-                <Feather name="plus" size={18} color={Colors.light.onChalk} />
+                <Feather name="plus" size={18} color={theme.onChalk} />
                 <ThemedText style={styles.actionButtonText}>{t("exercisesScreen.createAction")}</ThemedText>
               </Pressable>
               <Pressable
@@ -1133,8 +1140,8 @@ export default function ExercisesScreen() {
                 style={[styles.actionButton, { backgroundColor: theme.backgroundDefault }]}
                 testID="button-search-database"
               >
-                <Feather name="database" size={18} color={Colors.light.primary} />
-                <ThemedText style={[styles.actionButtonText, { color: Colors.light.primary }]}>
+                <Feather name="database" size={18} color={theme.primary} />
+                <ThemedText style={[styles.actionButtonText, { color: theme.primary }]}>
                   {t("exercisesScreen.browseAction")}
                 </ThemedText>
               </Pressable>
@@ -1186,7 +1193,7 @@ export default function ExercisesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -1214,7 +1221,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   actionButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 14,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -1263,7 +1270,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: c.border,
   },
   exerciseIcon: {
     width: 56,
@@ -1354,14 +1361,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   saveButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.md,
     alignItems: "center",
     marginTop: Spacing.lg,
   },
   saveButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -1565,14 +1572,14 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.sm,
-    backgroundColor: Colors.light.backgroundSecondary,
+    backgroundColor: c.backgroundSecondary,
   },
   progressModalImage: {
     width: "100%",
     height: 150,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.lg,
-    backgroundColor: Colors.light.backgroundSecondary,
+    backgroundColor: c.backgroundSecondary,
   },
   progressModalImagePlaceholder: {
     width: "100%",

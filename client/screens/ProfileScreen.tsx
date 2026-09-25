@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo} from "react";
 import { View, StyleSheet, Pressable, Alert, Modal, TextInput, ScrollView, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -20,6 +20,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useThemeContext, ThemeMode } from "@/context/ThemeContext";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   UserPreferences,
@@ -60,6 +61,7 @@ function BodyStatsCard({
   onAddNew: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
 
   const formatDate = (dateString: string) => {
@@ -85,10 +87,10 @@ function BodyStatsCard({
         </View>
         <Pressable
           onPress={onAddNew}
-          style={[styles.addMeasurementBtn, { backgroundColor: Colors.light.primary + "15" }]}
+          style={[styles.addMeasurementBtn, { backgroundColor: theme.primary + "15" }]}
         >
-          <Feather name="plus" size={16} color={Colors.light.primary} />
-          <ThemedText style={[styles.addMeasurementText, { color: Colors.light.primary }]}>
+          <Feather name="plus" size={16} color={theme.primary} />
+          <ThemedText style={[styles.addMeasurementText, { color: theme.primary }]}>
             {latestMeasurement ? t("profile.bodyStatsUpdate") : t("profile.bodyStatsAdd")}
           </ThemedText>
         </Pressable>
@@ -171,6 +173,7 @@ function AddMeasurementModal({
   onSave: (measurement: BodyMeasurement) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [weight, setWeight] = useState("");
@@ -261,7 +264,7 @@ function AddMeasurementModal({
           </ScrollView>
 
           <Pressable onPress={handleSave}>
-            <View style={[styles.measurementSaveButton, { backgroundColor: Colors.light.primary }]}>
+            <View style={[styles.measurementSaveButton, { backgroundColor: theme.primary }]}>
               <ThemedText style={styles.measurementSaveText}>{t("profile.saveMeasurement")}</ThemedText>
             </View>
           </Pressable>
@@ -282,6 +285,7 @@ const THEME_OPTIONS: Array<{
 
 function ThemeToggleCard() {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { mode, setMode } = useThemeContext();
   const { t } = useTranslation();
 
@@ -292,9 +296,9 @@ function ThemeToggleCard() {
     >
       <View style={styles.themeCardHeader}>
         <View
-          style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}
+          style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}
         >
-          <Feather name="monitor" size={20} color={Colors.light.primary} />
+          <Feather name="monitor" size={20} color={theme.primary} />
         </View>
         <ThemedText style={styles.themeCardTitle}>{t("profile.appearance")}</ThemedText>
       </View>
@@ -312,9 +316,9 @@ function ThemeToggleCard() {
                 styles.themeSegment,
                 {
                   backgroundColor: isActive
-                    ? Colors.light.primary + "15"
+                    ? theme.primary + "15"
                     : theme.backgroundSecondary,
-                  borderColor: isActive ? Colors.light.primary : theme.border,
+                  borderColor: isActive ? theme.primary : theme.border,
                 },
               ]}
               testID={`button-theme-${value}`}
@@ -322,12 +326,12 @@ function ThemeToggleCard() {
               <Feather
                 name={icon}
                 size={18}
-                color={isActive ? Colors.light.primary : theme.textSecondary}
+                color={isActive ? theme.primary : theme.textSecondary}
               />
               <ThemedText
                 style={[
                   styles.themeSegmentLabel,
-                  { color: isActive ? Colors.light.primary : theme.textSecondary },
+                  { color: isActive ? theme.primary : theme.textSecondary },
                 ]}
               >
                 {t(labelKey)}
@@ -342,6 +346,7 @@ function ThemeToggleCard() {
 
 function LanguageToggleCard() {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
 
   const options = [
@@ -356,9 +361,9 @@ function LanguageToggleCard() {
     >
       <View style={styles.themeCardHeader}>
         <View
-          style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}
+          style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}
         >
-          <Feather name="globe" size={20} color={Colors.light.primary} />
+          <Feather name="globe" size={20} color={theme.primary} />
         </View>
         <ThemedText style={styles.themeCardTitle}>{t("profile.language")}</ThemedText>
       </View>
@@ -376,9 +381,9 @@ function LanguageToggleCard() {
                 styles.themeSegment,
                 {
                   backgroundColor: isActive
-                    ? Colors.light.primary + "15"
+                    ? theme.primary + "15"
                     : theme.backgroundSecondary,
-                  borderColor: isActive ? Colors.light.primary : theme.border,
+                  borderColor: isActive ? theme.primary : theme.border,
                 },
               ]}
               testID={`button-language-${code}`}
@@ -386,7 +391,7 @@ function LanguageToggleCard() {
               <ThemedText
                 style={[
                   styles.themeSegmentLabel,
-                  { color: isActive ? Colors.light.primary : theme.textSecondary },
+                  { color: isActive ? theme.primary : theme.textSecondary },
                 ]}
               >
                 {label}
@@ -413,6 +418,7 @@ function FitnessLevelCard({
   onSelect: (level: FitnessLevel) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
 
   return (
@@ -421,8 +427,8 @@ function FitnessLevelCard({
       style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.prefsCardHeader}>
-        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
-          <Feather name="trending-up" size={20} color={Colors.light.primary} />
+        <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
+          <Feather name="trending-up" size={20} color={theme.primary} />
         </View>
         <ThemedText style={styles.prefsCardTitle}>{t("profile.fitnessLevel")}</ThemedText>
       </View>
@@ -439,8 +445,8 @@ function FitnessLevelCard({
               style={[
                 styles.fitnessLevelOption,
                 {
-                  backgroundColor: isActive ? Colors.light.primary + "15" : theme.backgroundSecondary,
-                  borderColor: isActive ? Colors.light.primary : theme.border,
+                  backgroundColor: isActive ? theme.primary + "15" : theme.backgroundSecondary,
+                  borderColor: isActive ? theme.primary : theme.border,
                 },
               ]}
               testID={`button-fitness-level-${id}`}
@@ -448,12 +454,12 @@ function FitnessLevelCard({
               <Feather
                 name={icon}
                 size={16}
-                color={isActive ? Colors.light.primary : theme.textSecondary}
+                color={isActive ? theme.primary : theme.textSecondary}
               />
               <ThemedText
                 style={[
                   styles.fitnessLevelLabel,
-                  { color: isActive ? Colors.light.primary : theme.textSecondary },
+                  { color: isActive ? theme.primary : theme.textSecondary },
                 ]}
               >
                 {t(labelKey)}
@@ -491,6 +497,7 @@ function EquipmentCard({
   onSelect: (equipment: Equipment) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
 
   return (
@@ -499,15 +506,15 @@ function EquipmentCard({
       style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.prefsCardHeader}>
-        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
-          <Feather name="tool" size={20} color={Colors.light.primary} />
+        <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
+          <Feather name="tool" size={20} color={theme.primary} />
         </View>
         <ThemedText style={styles.prefsCardTitle}>{t("profile.equipment")}</ThemedText>
       </View>
       <View style={styles.equipmentOptions}>
         {EQUIPMENT_OPTIONS.map(({ id, labelKey, icon, mciIcon }) => {
           const isActive = equipment === id;
-          const iconColor = isActive ? Colors.light.primary : theme.textSecondary;
+          const iconColor = isActive ? theme.primary : theme.textSecondary;
           return (
             <Pressable
               key={id}
@@ -518,8 +525,8 @@ function EquipmentCard({
               style={[
                 styles.equipmentOption,
                 {
-                  backgroundColor: isActive ? Colors.light.primary + "15" : theme.backgroundSecondary,
-                  borderColor: isActive ? Colors.light.primary : theme.border,
+                  backgroundColor: isActive ? theme.primary + "15" : theme.backgroundSecondary,
+                  borderColor: isActive ? theme.primary : theme.border,
                 },
               ]}
               testID={`button-equipment-${id}`}
@@ -532,7 +539,7 @@ function EquipmentCard({
               <ThemedText
                 style={[
                   styles.fitnessLevelLabel,
-                  { color: isActive ? Colors.light.primary : theme.textSecondary },
+                  { color: isActive ? theme.primary : theme.textSecondary },
                 ]}
               >
                 {t(labelKey)}
@@ -547,6 +554,7 @@ function EquipmentCard({
 
 function CloudBackupCard() {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [backupId, setBackupId] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -603,8 +611,8 @@ function CloudBackupCard() {
       style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.prefsCardHeader}>
-        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
-          <Feather name="cloud" size={20} color={Colors.light.primary} />
+        <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
+          <Feather name="cloud" size={20} color={theme.primary} />
         </View>
         <ThemedText style={styles.prefsCardTitle}>{t("profile.cloudBackupTitle")}</ThemedText>
       </View>
@@ -692,14 +700,14 @@ function CloudBackupCard() {
                 style={[
                   styles.cloudButton,
                   {
-                    backgroundColor: Colors.light.primary,
-                    borderColor: Colors.light.primary,
+                    backgroundColor: theme.primary,
+                    borderColor: theme.primary,
                     opacity: busy || !codeInput.trim() ? 0.5 : 1,
                   },
                 ]}
                 testID="button-restore-confirm"
               >
-                <ThemedText style={[styles.cloudButtonText, { color: Colors.light.onChalk }]}>
+                <ThemedText style={[styles.cloudButtonText, { color: theme.onChalk }]}>
                   {t("profile.cloudLoad")}
                 </ThemedText>
               </Pressable>
@@ -727,6 +735,7 @@ function SettingsItem({
   index: number;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -759,7 +768,7 @@ function SettingsItem({
             styles.settingsIcon,
             {
               backgroundColor: isDestructive
-                ? Colors.light.error + "20"
+                ? theme.error + "20"
                 : theme.backgroundSecondary,
             },
           ]}
@@ -767,13 +776,13 @@ function SettingsItem({
           <Feather
             name={icon}
             size={20}
-            color={isDestructive ? Colors.light.error : theme.textSecondary}
+            color={isDestructive ? theme.error : theme.textSecondary}
           />
         </View>
         <ThemedText
           style={[
             styles.settingsLabel,
-            { color: isDestructive ? Colors.light.error : theme.text },
+            { color: isDestructive ? theme.error : theme.text },
           ]}
         >
           {label}
@@ -798,6 +807,7 @@ export default function ProfileScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const navigation = useNavigation();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
@@ -983,8 +993,8 @@ export default function ProfileScreen() {
         style={[styles.commitmentsCard, { backgroundColor: theme.backgroundDefault }]}
       >
         <View style={styles.commitmentsHeader}>
-          <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
-            <Feather name="calendar" size={20} color={Colors.light.primary} />
+          <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
+            <Feather name="calendar" size={20} color={theme.primary} />
           </View>
           <View style={styles.reminderInfo}>
             <ThemedText style={styles.reminderTitle}>
@@ -1019,8 +1029,8 @@ export default function ProfileScreen() {
         entering={FadeInDown.delay(150).duration(400)}
         style={[styles.restTimerCard, { backgroundColor: theme.backgroundDefault }]}
       >
-        <View style={[styles.settingsIcon, { backgroundColor: Colors.light.primary + "15" }]}>
-          <Feather name="clock" size={20} color={Colors.light.primary} />
+        <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
+          <Feather name="clock" size={20} color={theme.primary} />
         </View>
         <View style={styles.reminderInfo}>
           <ThemedText style={styles.reminderTitle}>{t("profile.restTimer")}</ThemedText>
@@ -1036,7 +1046,7 @@ export default function ProfileScreen() {
           // "On" must not be chalk: the primary colour is near-white, so a
           // chalk track under the white thumb read as a blank white pill with
           // no discernible state. Green is what a switch is expected to do.
-          trackColor={{ false: theme.border, true: Colors.light.success }}
+          trackColor={{ false: theme.border, true: theme.success }}
           thumbColor="#fff"
           ios_backgroundColor={theme.border}
           testID="switch-rest-timer"
@@ -1158,7 +1168,7 @@ const CARD_ELEVATION = {
   elevation: 2,
 } as const;
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -1404,7 +1414,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.light.hairline,
+    borderColor: c.hairline,
   },
   bodyStatsHeader: {
     flexDirection: "row",
@@ -1510,7 +1520,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   measurementSaveText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "600",
   },

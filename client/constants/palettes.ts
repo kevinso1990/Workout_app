@@ -155,3 +155,6 @@ export const Palettes = {
   dark: palette,
   light: lightPalette,
 };
+
+/** Either palette. Stylesheet factories take this. */
+export type Palette = typeof Palettes.dark;

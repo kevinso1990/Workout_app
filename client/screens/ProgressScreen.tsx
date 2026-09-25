@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -35,6 +35,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { hapticLight } from "@/lib/safeHaptics";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
@@ -67,7 +68,11 @@ interface ExerciseProgressData {
 // Must match the muscle_group values used by the backend exercise seed
 // and the local WorkoutPlan exercise data.
 const MUSCLE_GROUPS = [
-  { name: "Chest", color: Colors.light.primary },
+  // Chart category colours are deliberately theme-independent — they identify
+  // a muscle group, not a surface. This one used the action colour, which is
+  // near-white and would vanish on a light background; #E74C3C is the value
+  // the app already uses for Chest in MUSCLE_GROUP_META.
+  { name: "Chest", color: "#E74C3C" },
   { name: "Back", color: "#3B82F6" },
   { name: "Shoulders", color: "#8B5CF6" },
   { name: "Biceps", color: "#10B981" },
@@ -93,6 +98,7 @@ function StatCard({
   index: number;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
     <Animated.View
@@ -131,6 +137,7 @@ function VolumeChart({
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const maxVolume = Math.max(...data.map((d) => d.volume), 1);
 
   return (
@@ -141,7 +148,7 @@ function VolumeChart({
       <View style={styles.chartHeader}>
         <ThemedText style={styles.chartTitle}>{t("progress.weeklyVolume")}</ThemedText>
         <View style={styles.chartLegend}>
-          <View style={[styles.legendDot, { backgroundColor: Colors.light.primary }]} />
+          <View style={[styles.legendDot, { backgroundColor: theme.primary }]} />
           <ThemedText style={[styles.legendText, { color: theme.textSecondary }]}>
             {t("progress.totalKgLifted")}
           </ThemedText>
@@ -161,7 +168,7 @@ function VolumeChart({
                   <View
                     style={[
                       styles.barFill,
-                      { height: `${heightPercent}%`, backgroundColor: Colors.light.primary },
+                      { height: `${heightPercent}%`, backgroundColor: theme.primary },
                     ]}
                   />
                 </Animated.View>
@@ -191,6 +198,7 @@ function MuscleBalance({
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const totalSets = data.reduce((acc, m) => acc + m.sets, 0);
   const maxSets = Math.max(...data.map((d) => d.sets), 1);
 
@@ -261,6 +269,7 @@ function OneRMChart({
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [selectedLift, setSelectedLift] = useState(0);
   const selectedData = data[selectedLift];
   const max1RM = selectedData?.history.length > 0 
@@ -412,14 +421,15 @@ function MuscleHeatmap({
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const maxSets = Math.max(...data.map(d => d.sets), 1);
 
   const getIntensityColor = (sets: number) => {
     const intensity = sets / maxSets;
     if (intensity === 0) return theme.border;
-    if (intensity < 0.33) return Colors.light.primary + "40";
-    if (intensity < 0.66) return Colors.light.primary + "80";
-    return Colors.light.primary;
+    if (intensity < 0.33) return theme.primary + "40";
+    if (intensity < 0.66) return theme.primary + "80";
+    return theme.primary;
   };
 
   return (
@@ -523,6 +533,7 @@ function WorkoutHistoryItem({
   index: number;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const scale = useSharedValue(1);
   const cardio = isCardioSession(session);
@@ -590,14 +601,14 @@ function WorkoutHistoryItem({
             {
               backgroundColor: cardio
                 ? "#FEF3C7"
-                : Colors.light.success + "20",
+                : theme.success + "20",
             },
           ]}
         >
           <Feather
             name={cardio ? "zap" : "check-circle"}
             size={20}
-            color={cardio ? "#D97706" : Colors.light.success}
+            color={cardio ? "#D97706" : theme.success}
           />
         </View>
         <View style={styles.historyInfo}>
@@ -701,6 +712,7 @@ function ExerciseProgressRow({
   onPress: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
 
   const formatLastUsed = (dateString: string) => {
@@ -731,7 +743,7 @@ function ExerciseProgressRow({
         </ThemedText>
       </View>
       <View style={styles.exerciseRowRight}>
-        <ThemedText style={[styles.exerciseRowWeight, { color: Colors.light.primary }]}>
+        <ThemedText style={[styles.exerciseRowWeight, { color: theme.primary }]}>
           {exercise.bestSession.maxWeight}kg
         </ThemedText>
         <ThemedText style={[styles.exerciseRowWeightLabel, { color: theme.textSecondary }]}>
@@ -753,6 +765,7 @@ function ExerciseDetailModal({
   onClose: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
 
   if (!exercise) return null;
@@ -797,7 +810,7 @@ function ExerciseDetailModal({
           {/* Summary stat chips */}
           <View style={styles.modalStatsRow}>
             <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText style={[styles.modalStatValue, { color: Colors.light.primary }]}>
+              <ThemedText style={[styles.modalStatValue, { color: theme.primary }]}>
                 {exercise.totalSessions}
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
@@ -830,7 +843,7 @@ function ExerciseDetailModal({
                   <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.maxWeight")}</ThemedText>
                   <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
                 </View>
-                <SvgLineChart data={weightData} color={Colors.light.primary} chartId="weight" />
+                <SvgLineChart data={weightData} color={theme.primary} chartId="weight" />
                 <View style={styles.modalChartFooter}>
                   <ThemedText style={[styles.modalChartDateLabel, { color: theme.textSecondary }]}>
                     {formatDate(exercise.sessions[0].date)}
@@ -870,7 +883,7 @@ function ExerciseDetailModal({
               <View style={styles.singleSessionStatsRow}>
                 <View style={styles.singleSessionStat}>
                   <View style={styles.singleSessionValueRow}>
-                    <ThemedText style={[styles.singleSessionValue, { color: Colors.light.primary }]}>
+                    <ThemedText style={[styles.singleSessionValue, { color: theme.primary }]}>
                       {exercise.sessions[0].maxWeight}kg
                     </ThemedText>
                     <View style={styles.pbBadge}>
@@ -911,8 +924,8 @@ function ExerciseDetailModal({
 
           {/* Best session card with Personal Best badge */}
           <View style={[styles.modalBestSession, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.bestSessionIcon, { backgroundColor: Colors.light.primary + "15" }]}>
-              <Feather name="award" size={20} color={Colors.light.primary} />
+            <View style={[styles.bestSessionIcon, { backgroundColor: theme.primary + "15" }]}>
+              <Feather name="award" size={20} color={theme.primary} />
             </View>
             <View style={styles.bestSessionInfo}>
               <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.bestSession")}</ThemedText>
@@ -946,6 +959,7 @@ function ExerciseProgressSection({
   index: number;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [selectedExercise, setSelectedExercise] = useState<ExerciseProgressData | null>(null);
 
@@ -986,6 +1000,7 @@ function ExerciseProgressSection({
 function EmptyState() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -1010,11 +1025,11 @@ function EmptyState() {
         }}
         style={({ pressed }) => [
           styles.emptyCta,
-          { backgroundColor: Colors.light.primary, opacity: pressed ? 0.85 : 1 },
+          { backgroundColor: theme.primary, opacity: pressed ? 0.85 : 1 },
         ]}
         testID="button-progress-empty-start"
       >
-        <Feather name="play" size={18} color={Colors.light.onChalk} />
+        <Feather name="play" size={18} color={theme.onChalk} />
         <ThemedText style={styles.emptyCtaText}>
           {t("progress.startFirstWorkout")}
         </ThemedText>
@@ -1028,6 +1043,7 @@ export default function ProgressScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [history, setHistory] = useState<WorkoutSession[]>([]);
   const [hybridPeriod, setHybridPeriod] = useState<ProgressPeriod>("month");
@@ -1202,7 +1218,7 @@ export default function ProgressScreen() {
 
   const getOneRMData = useMemo(() => {
     const liftColors: Record<string, string> = {
-      "Barbell Bench Press": Colors.light.primary,
+      "Barbell Bench Press": theme.primary,
       "Barbell Back Squat": "#8B5CF6",
       "Barbell Deadlift": "#10B981",
       "Barbell Overhead Press": "#3B82F6",
@@ -1243,7 +1259,7 @@ export default function ProgressScreen() {
       return {
         exercise: liftName,
         history: liftHistory,
-        color: liftColors[liftName] || Colors.light.primary,
+        color: liftColors[liftName] || theme.primary,
       };
     });
   }, [history]);
@@ -1367,7 +1383,7 @@ export default function ProgressScreen() {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          tintColor={Colors.light.primary}
+          tintColor={theme.primary}
         />
       }
     >
@@ -1396,7 +1412,7 @@ export default function ProgressScreen() {
               icon="activity"
               label={t("progress.totalWorkouts")}
               value={history.length.toString()}
-              color={Colors.light.primary}
+              color={theme.primary}
               index={0}
             />
             <StatCard
@@ -1413,7 +1429,7 @@ export default function ProgressScreen() {
               icon="calendar"
               label={t("progress.thisWeek")}
               value={getThisWeekCount().toString()}
-              color={Colors.light.success}
+              color={theme.success}
               index={2}
             />
             <StatCard
@@ -1460,7 +1476,7 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -1486,7 +1502,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
     minHeight: 0,
   },
   statIcon: {
@@ -1521,7 +1537,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   chartHeader: {
     flexDirection: "row",
@@ -1587,7 +1603,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   muscleHeader: {
     flexDirection: "row",
@@ -1659,7 +1675,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   historyIcon: {
     width: 40,
@@ -1725,7 +1741,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   emptyCtaText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -1734,7 +1750,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   oneRMBadge: {
     paddingHorizontal: Spacing.sm,
@@ -1816,7 +1832,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   heatmapBody: {
     flexDirection: "row",
@@ -1911,7 +1927,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
     overflow: "hidden",
   },
   exerciseRow: {
@@ -1960,7 +1976,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: Colors.light.border,
+    backgroundColor: c.border,
   },
   modalHeader: {
     flexDirection: "row",
@@ -1995,7 +2011,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   modalStatValue: {
     fontSize: 18,
@@ -2012,7 +2028,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   modalChartHeader: {
     flexDirection: "row",
@@ -2043,7 +2059,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   bestSessionIcon: {
     width: 40,
@@ -2078,13 +2094,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.primary + "20",
+    backgroundColor: c.primary + "20",
   },
   pbBadgeText: {
     fontSize: 10,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
-    color: Colors.light.primary,
+    color: c.primary,
   },
   singleSessionStatsRow: {
     flexDirection: "row",
@@ -2119,7 +2135,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.hairlineStrong,
+    borderTopColor: c.hairlineStrong,
   },
   logAgainText: {
     fontSize: 12,

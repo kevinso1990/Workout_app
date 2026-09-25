@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo } from "react";
+import React, { useCallback, useState, useEffect, useMemo} from "react";
 import {
   View,
   StyleSheet,
@@ -27,6 +27,7 @@ import { toast } from "@/lib/toast";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -80,6 +81,8 @@ function PlanCard({
 }) {
   const { t } = useTranslation();
   const localizeName = useLocalizeExerciseName();
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
   const exerciseLine = useMemo(
     () =>
@@ -105,7 +108,7 @@ function PlanCard({
           accessibilityRole="button"
           accessibilityLabel={t("plans.planOptions")}
         >
-          <Feather name="more-horizontal" size={22} color={HEVY.textMuted} />
+          <Feather name="more-horizontal" size={22} color={theme.chalkFaint} />
         </Pressable>
 
         <AnimatedPressable
@@ -159,6 +162,7 @@ function PlanActionSheet({
   onDelete: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -219,12 +223,12 @@ function PlanActionSheet({
               <Feather
                 name={item.icon}
                 size={20}
-                color={item.destructive ? Colors.light.error : theme.text}
+                color={item.destructive ? theme.error : theme.text}
               />
               <ThemedText
                 style={[
                   styles.sheetItemText,
-                  { color: item.destructive ? Colors.light.error : theme.text },
+                  { color: item.destructive ? theme.error : theme.text },
                 ]}
               >
                 {item.label}
@@ -257,6 +261,7 @@ function RenamePlanModal({
   onSubmit: (name: string) => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [name, setName] = useState("");
 
@@ -314,14 +319,14 @@ function RenamePlanModal({
               style={[
                 styles.renameBtn,
                 {
-                  backgroundColor: Colors.light.primary,
-                  borderColor: Colors.light.primary,
+                  backgroundColor: theme.primary,
+                  borderColor: theme.primary,
                   opacity: trimmed ? 1 : 0.5,
                 },
               ]}
               testID="button-rename-save"
             >
-              <ThemedText style={[styles.renameBtnText, { color: Colors.light.onChalk }]}>
+              <ThemedText style={[styles.renameBtnText, { color: theme.onChalk }]}>
                 {t("plans.menu.save")}
               </ThemedText>
             </Pressable>
@@ -340,6 +345,7 @@ function EmptyState({
   onImportPress: () => void;
 }) {
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const importScale = useSharedValue(1);
   const createScale = useSharedValue(1);
@@ -358,12 +364,12 @@ function EmptyState({
         style={[
           styles.emptyIconBadge,
           {
-            backgroundColor: Colors.light.primary + "12",
-            borderColor: Colors.light.primary + "30",
+            backgroundColor: theme.primary + "12",
+            borderColor: theme.primary + "30",
           },
         ]}
       >
-        <Feather name="layers" size={28} color={Colors.light.primary} />
+        <Feather name="layers" size={28} color={theme.primary} />
       </View>
 
       <ThemedText style={styles.emptyTitle}>
@@ -384,11 +390,11 @@ function EmptyState({
         style={[
           createAnimatedStyle,
           styles.emptyPrimaryBtn,
-          { backgroundColor: Colors.light.primary },
+          { backgroundColor: theme.primary },
         ]}
         testID="button-create-first-plan"
       >
-        <Feather name="zap" size={20} color={Colors.light.onChalk} />
+        <Feather name="zap" size={20} color={theme.onChalk} />
         <ThemedText style={styles.emptyPrimaryBtnText}>
           {t("plans.emptyState.generatePrimary")}
         </ThemedText>
@@ -405,11 +411,11 @@ function EmptyState({
         style={[
           importAnimatedStyle,
           styles.emptySecondaryBtn,
-          { borderColor: HEVY.separator },
+          { borderColor: theme.hairlineStrong },
         ]}
         testID="button-import-plan-empty"
       >
-        <Feather name="camera" size={18} color={HEVY.textPrimary} />
+        <Feather name="camera" size={18} color={theme.chalk} />
         <ThemedText style={styles.emptySecondaryBtnText}>
           {t("plans.emptyState.importSecondary")}
         </ThemedText>
@@ -423,6 +429,7 @@ export default function MyPlansScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -641,7 +648,7 @@ export default function MyPlansScreen() {
   const showImportBanner = !bannerDismissed && plans.length === 0;
 
   return (
-    <View style={[styles.screen, { backgroundColor: HEVY.canvas }]}>
+    <View style={[styles.screen, { backgroundColor: theme.iron }]}>
       {showImportBanner ? (
         <View
           onLayout={(e) => setBannerHeight(e.nativeEvent.layout.height)}
@@ -650,7 +657,7 @@ export default function MyPlansScreen() {
             {
               top: listPaddingTop + 8,
               backgroundColor: theme.backgroundDefault,
-              borderColor: HEVY.separator,
+              borderColor: theme.hairlineStrong,
             },
           ]}
         >
@@ -669,7 +676,7 @@ export default function MyPlansScreen() {
           </View>
           <Pressable
             onPress={handleImportPlan}
-            style={[styles.importBannerButton, { backgroundColor: Colors.light.primary }]}
+            style={[styles.importBannerButton, { backgroundColor: theme.primary }]}
           >
             <ThemedText style={styles.importBannerButtonText}>
               {t("plans.importBanner.cta", { defaultValue: "Import" })}
@@ -743,18 +750,18 @@ export default function MyPlansScreen() {
                 style={[
                   styles.coachCard,
                   {
-                    backgroundColor: HEVY.surface,
-                    borderColor: HEVY.separator,
+                    backgroundColor: theme.ironElevated2,
+                    borderColor: theme.hairlineStrong,
                   },
                 ]}
               >
                 <View
                   style={[
                     styles.coachIconWrap,
-                    { backgroundColor: Colors.light.primary + "14" },
+                    { backgroundColor: theme.primary + "14" },
                   ]}
                 >
-                  <Feather name="zap" size={18} color={Colors.light.primary} />
+                  <Feather name="zap" size={18} color={theme.primary} />
                 </View>
                 <View style={styles.coachCardTextCol}>
                   <ThemedText style={styles.coachCardTitle}>
@@ -818,7 +825,7 @@ export default function MyPlansScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -827,14 +834,14 @@ const styles = StyleSheet.create({
     gap: HEVY.pad,
   },
   planCard: {
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: HEVY.separator,
+    borderColor: c.hairlineStrong,
     // Slim brand-amber accent down the leading edge + soft depth so the cards
     // read as raised and a touch sportier than a flat outlined box.
     borderLeftWidth: 3,
-    borderLeftColor: Colors.light.primary,
+    borderLeftColor: c.primary,
     padding: 22,
     minHeight: 132,
     justifyContent: "center",
@@ -850,14 +857,14 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     marginBottom: 4,
     paddingRight: 36,
   },
   planMeta: {
     fontSize: 13,
     fontWeight: "500",
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   menuBtn: {
     position: "absolute",
@@ -873,7 +880,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 13,
     fontWeight: "400",
-    color: HEVY.textSecondary,
+    color: c.chalkDim,
     lineHeight: 18,
   },
   coachCard: {
@@ -899,7 +906,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     marginBottom: Spacing.xs,
   },
   coachCardBody: {
@@ -931,7 +938,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
     textAlign: "center",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     letterSpacing: -0.3,
   },
   emptyText: {
@@ -952,7 +959,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   emptyPrimaryBtnText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
@@ -967,14 +974,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    backgroundColor: HEVY.surface,
+    backgroundColor: c.ironElevated2,
     gap: Spacing.sm,
   },
   emptySecondaryBtnText: {
     fontSize: 15,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
     flexShrink: 1,
   },
   importTopBanner: {
@@ -999,12 +1006,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
-    color: HEVY.textPrimary,
+    color: c.chalk,
   },
   importBannerSubtitle: {
     fontSize: 12,
     marginTop: 2,
-    color: HEVY.textMuted,
+    color: c.chalkFaint,
   },
   importBannerButton: {
     paddingHorizontal: 14,
@@ -1013,7 +1020,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   importBannerButtonText: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
     fontSize: 13,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState} from "react";
 import {
   View,
   StyleSheet,
@@ -21,6 +21,8 @@ import { HybridCalendar } from "@/components/HybridCalendar";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   getWorkoutHistory,
@@ -45,6 +47,8 @@ function formatMonthTitle(month: Date, locale: string): string {
 
 function SessionRow({ session }: { session: WorkoutSession }) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const cardio = isCardioSession(session);
   const title = sessionDisplayTitle(session);
   const time = new Date(session.completedAt).toLocaleTimeString(undefined, {
@@ -57,13 +61,13 @@ function SessionRow({ session }: { session: WorkoutSession }) {
       <View
         style={[
           styles.sessionIcon,
-          { backgroundColor: Colors.light.ironElevated2 },
+          { backgroundColor: theme.ironElevated2 },
         ]}
       >
         <ActivityIcon
           sport={cardio ? "running" : undefined}
           size={19}
-          color={Colors.light.chalk}
+          color={theme.chalk}
         />
       </View>
       <View style={styles.sessionBody}>
@@ -89,6 +93,8 @@ function SessionRow({ session }: { session: WorkoutSession }) {
 }
 
 export default function CalendarScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -259,7 +265,7 @@ export default function CalendarScreen() {
                     <ActivityIcon
                       sport={isCardioSession(session) ? "running" : undefined}
                       size={17}
-                      color={Colors.light.chalk}
+                      color={theme.chalk}
                     />
                   </View>
                   <View style={styles.sessionCopy}>
@@ -275,7 +281,7 @@ export default function CalendarScreen() {
                   <Feather
                     name="chevron-right"
                     size={16}
-                    color={Colors.light.chalkFaint}
+                    color={theme.chalkFaint}
                   />
                 </Pressable>
               ))
@@ -289,7 +295,7 @@ export default function CalendarScreen() {
                 style={styles.navBtn}
                 accessibilityLabel={t("calendar.prevMonth")}
               >
-                <Feather name="chevron-left" size={20} color={Colors.light.chalk} />
+                <Feather name="chevron-left" size={20} color={theme.chalk} />
               </Pressable>
               <ThemedText style={styles.monthLabel}>
                 {formatMonthTitle(month, i18n.language)}
@@ -299,7 +305,7 @@ export default function CalendarScreen() {
                 style={styles.navBtn}
                 accessibilityLabel={t("calendar.nextMonth")}
               >
-                <Feather name="chevron-right" size={20} color={Colors.light.chalk} />
+                <Feather name="chevron-right" size={20} color={theme.chalk} />
               </Pressable>
             </View>
 
@@ -371,7 +377,7 @@ export default function CalendarScreen() {
               style={styles.primaryBtn}
               onPress={() => openLogCardio(selectedDateKey ?? undefined)}
             >
-              <Feather name="plus" size={18} color={Colors.light.onChalk} />
+              <Feather name="plus" size={18} color={theme.onChalk} />
               <ThemedText style={styles.primaryBtnText}>
                 {t("calendar.logCardioForDay")}
               </ThemedText>
@@ -395,8 +401,8 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.light.backgroundRoot },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.backgroundRoot },
   heading: { fontSize: 28, lineHeight: 34, fontWeight: "700", marginBottom: 4 },
   subtitle: { fontSize: 14, opacity: 0.65, marginBottom: Spacing.lg },
   monthNav: {
@@ -409,14 +415,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     alignItems: "center",
     justifyContent: "center",
   },
   monthLabel: { fontSize: 17, fontWeight: "600" },
   segmented: {
     flexDirection: "row",
-    backgroundColor: Colors.light.ironElevated,
+    backgroundColor: c.ironElevated,
     borderRadius: BorderRadius.md,
     padding: 3,
     gap: 3,
@@ -429,40 +435,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   segmentActive: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
   },
   segmentText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.light.chalkDim,
+    color: c.chalkDim,
   },
   segmentTextActive: {
-    color: Colors.light.onChalk,
+    color: c.onChalk,
   },
   sectionLabel: {
     fontSize: 12,
-    color: Colors.light.chalkDim,
+    color: c.chalkDim,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginTop: Spacing.xl,
     marginBottom: Spacing.sm,
   },
   emptyWeek: {
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.md,
     padding: Spacing.lg,
     alignItems: "center",
   },
   emptyWeekText: {
     fontSize: 13,
-    color: Colors.light.chalkDim,
+    color: c.chalkDim,
     textAlign: "center",
   },
   weekSessionRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
@@ -471,13 +477,13 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.ironElevated2,
+    backgroundColor: c.ironElevated2,
     alignItems: "center",
     justifyContent: "center",
   },
   sessionCopy: { flex: 1 },
   weekSessionTitle: { fontSize: 15, fontWeight: "600" },
-  weekSessionMeta: { fontSize: 12, color: Colors.light.chalkDim, marginTop: 1 },
+  weekSessionMeta: { fontSize: 12, color: c.chalkDim, marginTop: 1 },
   statsRow: {
     flexDirection: "row",
     gap: Spacing.sm,
@@ -485,7 +491,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.md,
     paddingVertical: Spacing.md,
     alignItems: "center",
@@ -494,11 +500,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontFamily: FontFamily.display,
-    color: Colors.light.chalk,
+    color: c.chalk,
   },
   statLabel: {
     fontSize: 11,
-    color: Colors.light.chalkDim,
+    color: c.chalkDim,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -507,7 +513,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
   },
@@ -518,7 +524,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: Colors.light.backgroundDefault,
+    backgroundColor: c.backgroundDefault,
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
@@ -528,7 +534,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.light.chalkFaint,
+    backgroundColor: c.chalkFaint,
     alignSelf: "center",
     marginBottom: Spacing.md,
   },
@@ -540,7 +546,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.light.hairline,
+    borderBottomColor: c.hairline,
   },
   sessionIcon: {
     width: 40,
@@ -557,16 +563,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: c.primary,
     borderRadius: BorderRadius.sm,
     paddingVertical: 14,
     marginTop: Spacing.lg,
   },
-  primaryBtnText: { color: Colors.light.onChalk, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: c.onChalk, fontWeight: "700", fontSize: 15 },
   secondaryBtn: {
     alignItems: "center",
     paddingVertical: 14,
     marginTop: Spacing.sm,
   },
-  secondaryBtnText: { color: Colors.light.primary, fontWeight: "600" },
+  secondaryBtnText: { color: c.primary, fontWeight: "600" },
 });
