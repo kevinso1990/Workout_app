@@ -14,81 +14,9 @@ import { Platform } from "react-native";
  * reads its colours from here via useTheme(), so restyling happens centrally.
  */
 
-// Iron — structural greys, warm-neutral (a hint of green-grey, not pure).
-const iron = "#191B1D";
-const ironElevated = "#212427";
-const ironElevated2 = "#2A2E32";
-const ironElevated3 = "#33383D";
+export { Colors, Palettes } from "@/constants/palettes";
+import { Colors, plateLight, plateMedium, plateHeavy } from "@/constants/palettes";
 
-// Chalk — warm off-white ink, and the colour of the primary action.
-const chalk = "#ECE9E1";
-const chalkDim = "#9BA09A";
-const chalkFaint = "#686D69";
-const onChalk = "#191B1D"; // iron text sitting on a chalk-filled surface
-
-// Hairlines — chalk at low alpha over iron.
-const hairline = "rgba(236,233,225,0.09)";
-const hairlineStrong = "rgba(236,233,225,0.17)";
-/**
- * Outline for interactive controls (secondary buttons, pickers).
- *
- * Divider weight and button weight are not the same job: at 0.17 a secondary
- * button drawn transparent on the near-black ground did not read as a control
- * at all — it looked like grey text floating on the page. Dividers keep the
- * quieter value; anything you can press uses this.
- */
-const controlOutline = "rgba(236,233,225,0.38)";
-
-// Plate colours — LOAD intensity only. Do not use for decoration.
-const plateLight = "#2FA35F"; // green  — warm-up / isolation
-const plateMedium = "#E8B10E"; // yellow — working sets
-const plateHeavy = "#CB3A2C"; // red    — top set / PR zone
-const plateInfo = "#2E77BE"; // blue   — informational links / neutral accent
-
-/** The primary action colour is chalk itself. */
-const primaryColor = chalk;
-/** Completed-set indicator fills with chalk (was a bright orange tick). */
-export const setCompleteAccent = chalk;
-
-const palette = {
-  text: chalk,
-  textSecondary: chalkDim,
-  buttonText: onChalk,
-  tabIconDefault: chalkFaint,
-  tabIconSelected: chalk,
-  link: plateInfo,
-  primary: primaryColor,
-  setCompleteAccent,
-  backgroundRoot: iron,
-  backgroundDefault: ironElevated,
-  backgroundSecondary: ironElevated2,
-  backgroundTertiary: ironElevated3,
-  border: hairlineStrong,
-  controlOutline,
-  success: plateLight,
-  error: plateHeavy,
-
-  // --- Chalk & Iron additions (new semantic tokens) ---
-  iron,
-  ironElevated,
-  ironElevated2,
-  ironElevated3,
-  chalk,
-  chalkDim,
-  chalkFaint,
-  onChalk,
-  hairline,
-  hairlineStrong,
-  plateLight,
-  plateMedium,
-  plateHeavy,
-  plateInfo,
-};
-
-export const Colors = {
-  light: palette,
-  dark: palette,
-};
 
 /** Maps a load tier to its plate colour. Use for spines, dots, tier chips. */
 export type LoadTier = "light" | "medium" | "heavy";
