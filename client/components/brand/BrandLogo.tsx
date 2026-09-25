@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Text, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { Colors, FontFamily } from "@/constants/theme";
+import { FontFamily } from "@/constants/theme";
+import type { Palette } from "@/constants/palettes";
+import { useTheme } from "@/hooks/useTheme";
 
 export type BrandLogoProps = {
   /** Max height in dp — drives the wordmark's cap height. */
@@ -13,12 +15,13 @@ export type BrandLogoProps = {
   testID?: string;
 };
 
-const C = Colors.dark;
-
 /**
- * Brand wordmark — "Chalk & Iron" logotype. A condensed Oswald lockup in chalk
- * that reads as intentional on the dark iron ground (the old clipboard PNG was
- * built for light backgrounds and floated like a placeholder icon on dark).
+ * Brand wordmark — "Chalk & Iron" logotype, a condensed Oswald lockup.
+ *
+ * The colour follows the theme rather than being fixed to chalk. Chalk is
+ * near-white, so a hard-coded wordmark washed out to near-invisible against the
+ * light palette's paper ground — the app's own name was the least legible thing
+ * on the screen.
  */
 export function BrandLogo({
   height = 38,
@@ -27,6 +30,8 @@ export function BrandLogo({
   accessibilityLabel = "Track Your Lift",
   testID = "brand-logo",
 }: BrandLogoProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   // Cap height ≈ 0.66 of the box; Oswald is tall so this fills the slot well.
   // At small (header) sizes this always fits on one line. At large hero sizes
   // (onboarding uses height=140 → ~92pt) "TRACKYOURLIFT" is wider than any
@@ -82,6 +87,8 @@ export function BrandMark({
   accessibilityLabel = "Track Your Lift",
   testID = "brand-mark",
 }: BrandMarkProps) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const fontSize = Math.round(size * 0.34);
   return (
     <View
@@ -111,7 +118,7 @@ export function BrandMark({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: {
     justifyContent: "center",
     width: "100%",
@@ -119,13 +126,13 @@ const styles = StyleSheet.create({
   markBox: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.ironElevated2,
+    backgroundColor: c.ironElevated2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: C.hairlineStrong,
+    borderColor: c.hairlineStrong,
   },
   markMonogram: {
     fontFamily: FontFamily.display,
-    color: C.chalk,
+    color: c.chalk,
     textTransform: "uppercase",
   },
   centered: {
@@ -133,7 +140,7 @@ const styles = StyleSheet.create({
   },
   mark: {
     fontFamily: FontFamily.display,
-    color: C.chalk,
+    color: c.chalk,
     textTransform: "uppercase",
   },
   markCentered: {
@@ -142,6 +149,6 @@ const styles = StyleSheet.create({
   },
   dim: {
     fontFamily: FontFamily.display,
-    color: C.chalkDim,
+    color: c.chalkDim,
   },
 });

@@ -62,8 +62,18 @@ const HEVY_COLOUR_KEYS = [
   "separator",
 ] as const;
 
+/**
+ * The trailing `(?!\.)` alternative catches whole-palette aliasing —
+ * `const C = Colors.dark;` followed by `C.chalk` everywhere. That pattern has
+ * no `Colors.dark.<key>` anywhere in the file, so a property-only pattern
+ * reports the file as fully converted while every colour in it is still
+ * hard-wired to dark. This is not hypothetical: it is how the brand wordmark
+ * stayed chalk-on-paper and rendered nearly invisible in light mode, in a file
+ * this guard had already passed.
+ */
 const STATIC_COLOUR = new RegExp(
-  `\\b(?:Colors\\.(?:light|dark)\\.[a-zA-Z]|HEVY\\.(?:${HEVY_COLOUR_KEYS.join("|")})\\b)`,
+  "\\b(?:Colors\\.(?:light|dark)(?:\\.[a-zA-Z]|(?![.a-zA-Z]))" +
+    `|HEVY\\.(?:${HEVY_COLOUR_KEYS.join("|")})\\b)`,
   "g",
 );
 
@@ -79,6 +89,30 @@ function scan() {
   perFile.sort((a, b) => b.count - a.count);
   return { total, perFile, scanned: files.length };
 }
+
+describe("the detector itself", () => {
+  // A guard that has never been seen to fail is not evidence of anything. These
+  // cases pin both directions: what must be caught, and — just as important —
+  // what must NOT be, since counting HEVY's spacing keys as unconverted colour
+  // is the mistake that made this burn-down unreachable in the first place.
+  const cases: [string, boolean, string][] = [
+    ["const C = Colors.dark;", true, "whole-palette alias"],
+    ["color: Colors.light.chalk,", true, "direct property"],
+    ["backgroundColor: HEVY.surface,", true, "HEVY colour"],
+    ["paddingHorizontal: HEVY.pad,", false, "HEVY spacing is not colour"],
+    ["borderRadius: HEVY.radiusCard,", false, "HEVY spacing is not colour"],
+    ["const x = Colors.darkness;", false, "unrelated identifier"],
+    ["color: c.chalk,", false, "already converted"],
+    ["color: theme.chalk,", false, "already converted"],
+  ];
+
+  for (const [src, shouldMatch, why] of cases) {
+    it(`${shouldMatch ? "flags" : "ignores"} ${why}`, () => {
+      const re = new RegExp(STATIC_COLOUR.source);
+      expect(re.test(src), src).toBe(shouldMatch);
+    });
+  }
+});
 
 describe("light-mode conversion burn-down", () => {
   const { total, perFile, scanned } = scan();

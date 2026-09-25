@@ -1919,7 +1919,12 @@ export default function ActiveWorkoutScreen() {
                   value={restTimerEnabled}
                   onValueChange={persistRestTimerPreference}
                   trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
-                  thumbColor={theme.chalk}
+                  // The thumb is white in BOTH themes, like every iOS switch.
+                  // It used to be chalk, which reads as white only because the
+                  // dark palette defines chalk that way — under the light
+                  // palette the same token is near-black, so the thumb turned
+                  // into a dark blob on a green track.
+                  thumbColor="#fff"
                   ios_backgroundColor={theme.ironElevated3}
                   style={styles.headerRestSwitch}
                   testID="switch-rest-timer-header"

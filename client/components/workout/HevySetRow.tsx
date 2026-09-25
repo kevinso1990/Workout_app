@@ -29,14 +29,16 @@ import {
 // couldn't hit 32/33. Exact/half-kg weights are still enterable by typing.
 const WEIGHT_STEP_KG = 1;
 
-// Chalk & Iron: committed dark, so the static dark palette is used directly.
-const C = Colors.dark;
-const ROW_SEPARATOR = C.hairline;
-const CELL_TEXT = C.chalk;
-const LOG_CHECK_BORDER = C.hairlineStrong;
-// Completing a set fills the box with chalk (the primary "done" mark), not a
-// green tick — colour in this identity is reserved for load, not status.
-const DONE_FILL = C.chalk;
+/**
+ * Foreground for anything drawn ON a plate colour.
+ *
+ * Plate colours are deliberately identical in both palettes — they encode load
+ * intensity, not surface — so a foreground read from the palette inverts
+ * against a background that did not, and the contrast collapses. This is the
+ * dark ink from the iron ramp, pinned as a literal.
+ */
+const PLATE_INK = "#191B1D";
+
 const FIELD_ALERT_BG = "rgba(203, 58, 44, 0.30)"; // plate-heavy wash
 // 0.045 was effectively invisible against the card, so "which set am I on?"
 // had no answer other than the editor appearing somewhere below. The left
@@ -298,7 +300,7 @@ function StepperField({
           style={styles.stepBtn}
           testID={testID ? `${testID}-minus` : undefined}
         >
-          <Feather name="minus" size={18} color={CELL_TEXT} />
+          <Feather name="minus" size={18} color={theme.chalk} />
         </Pressable>
         <TextInput
           value={value}
@@ -320,7 +322,7 @@ function StepperField({
           style={styles.stepBtn}
           testID={testID ? `${testID}-plus` : undefined}
         >
-          <Feather name="plus" size={18} color={CELL_TEXT} />
+          <Feather name="plus" size={18} color={theme.chalk} />
         </Pressable>
       </View>
     </View>
@@ -439,10 +441,10 @@ export function HevySetRow({
   // Plate spine: the row's left edge is coloured by load. Warm-ups read as the
   // light plate; sets with no weight yet stay neutral until a weight is entered.
   const spineColor = isWarmup
-    ? C.plateLight
+    ? theme.plateLight
     : weightNum > 0
       ? plateColor(loadTier(weightNum))
-      : C.hairlineStrong;
+      : theme.hairlineStrong;
 
   const handleCheck = () => {
     // Tapping a completed set un-checks it and reactivates it for editing —
@@ -511,7 +513,10 @@ export function HevySetRow({
       <View style={styles.colPrev}>
         {isPR ? (
           <View style={styles.prBadge}>
-            <Feather name="award" size={11} color={C.iron} />
+            {/* Fixed ink, not theme.iron: the badge behind it is a plate
+                colour and does not change with the theme, so a foreground
+                that does would invert to near-white on amber in light mode. */}
+            <Feather name="award" size={11} color={PLATE_INK} />
             <Text style={styles.prBadgeText}>PR</Text>
           </View>
         ) : (
@@ -584,10 +589,10 @@ export function HevySetRow({
             size={setData.completed ? 16 : 14}
             color={
               setData.completed
-                ? C.iron
+                ? theme.iron
                 : isActive
-                  ? C.chalkDim
-                  : C.chalkFaint
+                  ? theme.chalkDim
+                  : theme.chalkFaint
             }
             style={!setData.completed ? styles.checkIconIdle : undefined}
           />
@@ -759,7 +764,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     // being worked. Until now they were two loose pieces stacked on the same
     // flat card, so nothing said they belonged together. A frame binds them.
     borderWidth: 1.5,
-    borderColor: C.chalkDim,
+    borderColor: c.chalkDim,
     borderRadius: BorderRadius.md,
     overflow: "hidden",
     marginHorizontal: 6,
@@ -772,7 +777,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: HEVY.pad,
     backgroundColor: c.ironElevated2,
     borderBottomWidth: 0.5,
-    borderBottomColor: ROW_SEPARATOR,
+    borderBottomColor: c.hairline,
     minHeight: 36,
   },
   rowActive: {
@@ -786,7 +791,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: 5,
     minHeight: 28,
     borderBottomWidth: 0.5,
-    borderBottomColor: ROW_SEPARATOR,
+    borderBottomColor: c.hairline,
   },
   rowMuted: {
     // Upcoming sets are secondary to the active row, but they still have to be
@@ -834,19 +839,19 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     // full ink colour. The recessed header band behind them already separates
     // them from the rows — dimming the text as well made the whole grid look
     // switched off.
-    color: CELL_TEXT,
+    color: c.chalk,
     letterSpacing: 1.2,
     textAlign: "center",
   },
   setNum: {
     fontSize: 15,
     fontFamily: FontFamily.mono,
-    color: CELL_TEXT,
+    color: c.chalk,
     textAlign: "center",
   },
   setNumActive: {
-    color: C.onChalk,
-    backgroundColor: C.chalk,
+    color: c.onChalk,
+    backgroundColor: c.chalk,
     borderRadius: 12,
     overflow: "hidden",
     paddingHorizontal: 7,
@@ -861,7 +866,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   warmupBadge: {
     fontSize: 13,
     fontFamily: FontFamily.display,
-    color: C.plateMedium,
+    color: c.plateMedium,
     letterSpacing: 0.5,
     textAlign: "center",
   },
@@ -870,7 +875,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     gap: 3,
     alignSelf: "flex-start",
-    backgroundColor: C.plateMedium,
+    backgroundColor: c.plateMedium,
     borderRadius: 5,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -878,7 +883,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   prBadgeText: {
     fontSize: 10,
     fontFamily: FontFamily.display,
-    color: C.iron,
+    // See PLATE_INK — the badge background is theme-independent.
+    color: PLATE_INK,
     letterSpacing: 0.4,
   },
   cellPress: {
@@ -889,12 +895,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   cellValue: {
     fontSize: 16,
     fontFamily: FontFamily.mono,
-    color: CELL_TEXT,
+    color: c.chalk,
     textAlign: "center",
     width: "100%",
   },
   cellValueAlert: {
-    color: C.plateHeavy,
+    color: c.plateHeavy,
   },
   alertCellWrap: {
     width: "100%",
@@ -921,15 +927,15 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     backgroundColor: c.ironElevated2,
   },
   checkBoxIdle: {
-    borderColor: LOG_CHECK_BORDER,
+    borderColor: c.hairlineStrong,
   },
   checkBoxReady: {
-    borderColor: LOG_CHECK_BORDER,
+    borderColor: c.hairlineStrong,
     backgroundColor: "rgba(236,233,225,0.06)",
   },
   checkBoxDone: {
-    borderColor: DONE_FILL,
-    backgroundColor: DONE_FILL,
+    borderColor: c.chalk,
+    backgroundColor: c.chalk,
   },
   checkIconIdle: {
     opacity: 0.5,
@@ -942,7 +948,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: c.ironElevated2,
     borderBottomWidth: 0.5,
-    borderBottomColor: ROW_SEPARATOR,
+    borderBottomColor: c.hairline,
   },
   stepField: {
     flex: 1,
@@ -963,7 +969,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     // This group only ever appears for the ACTIVE set, so it should look live.
     // A 0.08-alpha hairline read as a disabled control.
     borderWidth: 1.5,
-    borderColor: C.chalkDim,
+    borderColor: c.chalkDim,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: c.ironElevated2,
@@ -980,7 +986,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     height: 40,
     fontSize: 18,
     fontFamily: FontFamily.mono,
-    color: CELL_TEXT,
+    color: c.chalk,
     textAlign: "center",
     paddingVertical: 0,
     // Recessed well between two raised buttons: the field was previously the

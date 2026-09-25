@@ -1056,6 +1056,8 @@ export default function ProfileScreen() {
 
       <LanguageToggleCard />
 
+      <ThemeToggleCard />
+
       <FitnessLevelCard
         fitnessLevel={fitnessLevel}
         onSelect={handleSelectFitnessLevel}

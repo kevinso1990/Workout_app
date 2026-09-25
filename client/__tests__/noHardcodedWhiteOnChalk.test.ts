@@ -30,6 +30,7 @@ const SCAN_DIRS = ["screens", "components"];
 const ALLOWED: Record<string, string[]> = {
   "screens/main/ActiveWorkoutScreen.tsx": [
     "trash icon on swipeDeleteAction (#EF4444)",
+    "rest-timer Switch thumbColor (not a surface foreground)",
   ],
   "screens/ProgressScreen.tsx": [
     "lift chip label on lift.color when selected",
