@@ -5,6 +5,13 @@
 
 import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 
+import {
+  backupGenerateContent,
+  backupModel,
+  isBackupConfigured,
+  partsAreTextOnly,
+} from "./aiBackup";
+
 export type GeminiGenerateOptions = {
   /** When true, enables `google_search` grounding via the REST API. */
   grounding?: boolean;
@@ -112,7 +119,7 @@ export function isRetryableGeminiError(message: string): boolean {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function geminiGenerateContent(
+async function generateWithGeminiOnly(
   parts: Part[],
   options?: GeminiGenerateOptions,
 ): Promise<string> {
@@ -178,4 +185,106 @@ export async function geminiGenerateContent(
   }
 
   throw new Error(`All Gemini models failed — ${errors.join(" | ")}`);
+}
+
+
+/** Delay before the backup joins in. See generateContent below. */
+function hedgeDelayMs(): number {
+  return Math.max(
+    0,
+    parseInt(process.env.AI_HEDGE_MS || "8000", 10) || 8_000,
+  );
+}
+
+/**
+ * Generate text, with a second provider hedged behind the first.
+ *
+ * The problem this solves is specifically LATENCY, not errors. Gemini's free
+ * tier answers these prompts in 40-70s while the app gives up at 75s, so the
+ * plan the user actually asked for arrives after they have already been handed
+ * a template. A conventional fallback — try A, and on failure try B — cannot
+ * fix that: by the time A has failed slowly, the budget is gone.
+ *
+ * So the backup is not sequential. Gemini starts; if it has not answered within
+ * AI_HEDGE_MS, the backup starts alongside it and the first usable answer wins.
+ * The delay is what keeps this cheap: when Gemini is healthy it returns well
+ * inside the window and the backup is never called at all, which matters when
+ * both providers are on free quotas.
+ *
+ * Hedging is skipped, and the behaviour is exactly as before, when:
+ *  - no backup key is configured (the feature is opt-in),
+ *  - the prompt carries non-text parts — import sends PDFs and images inline,
+ *    and a text-only endpoint would answer confidently having never seen the
+ *    attachment, which is worse than being slow,
+ *  - grounding is requested, since the backup has no web search and would be
+ *    answering a different question.
+ */
+export async function geminiGenerateContent(
+  parts: Part[],
+  options?: GeminiGenerateOptions,
+): Promise<string> {
+  const partsAsRecords = parts as unknown as Array<Record<string, unknown>>;
+  const canHedge =
+    isBackupConfigured() &&
+    options?.grounding !== true &&
+    partsAreTextOnly(partsAsRecords);
+
+  if (!canHedge) return generateWithGeminiOnly(parts, options);
+
+  const controller = new AbortController();
+  let settled = false;
+
+  let primaryFailed!: () => void;
+  const primaryDone = new Promise<void>((r) => {
+    primaryFailed = r;
+  });
+
+  const primary = generateWithGeminiOnly(parts, options).catch((e) => {
+    // Release the backup immediately instead of idling out the rest of the
+    // delay. The delay exists to avoid spending quota on a primary that is
+    // merely slow; a primary that has already failed — an exhausted quota
+    // fails in about a second — is not worth waiting on at all.
+    primaryFailed();
+    throw e;
+  });
+
+  const backup = (async () => {
+    await Promise.race([sleep(hedgeDelayMs()), primaryDone]);
+    // Gemini already answered inside the window — do not spend backup quota.
+    if (settled) throw new Error("not needed");
+    console.info(
+      `[AI] Gemini unfinished after ${hedgeDelayMs()}ms or already failed — hedging with ${backupModel()}`,
+    );
+    return backupGenerateContent(
+      partsAsRecords,
+      { responseSchema: options?.responseSchema },
+      controller.signal,
+    );
+  })();
+
+  // Attaching a handler to each promise keeps the LOSER's eventual rejection
+  // from surfacing as an unhandled rejection once the race is decided.
+  primary.catch(() => {});
+  backup.catch(() => {});
+
+  const tagged = [
+    primary.then((text) => ({ who: "gemini", text })),
+    backup.then((text) => ({ who: backupModel(), text })),
+  ];
+
+  try {
+    const winner = await Promise.any(tagged);
+    settled = true;
+    controller.abort();
+    console.info(`[AI] ${winner.who} answered first`);
+    return winner.text;
+  } catch (err) {
+    settled = true;
+    controller.abort();
+    const reasons =
+      err instanceof AggregateError
+        ? err.errors.map((e) => (e instanceof Error ? e.message : String(e)))
+        : [err instanceof Error ? err.message : String(err)];
+    throw new Error(`All AI providers failed — ${reasons.join(" | ")}`);
+  }
 }
