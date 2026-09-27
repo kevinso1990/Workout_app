@@ -4,6 +4,16 @@ import {
   type CardioSportType,
   type WorkoutSession,
 } from "@/lib/storage";
+import {
+  SERIES_AMBER,
+  SERIES_BLUE,
+  SERIES_BRICK,
+  SERIES_GREEN,
+  SERIES_IRON,
+  SERIES_PLUM,
+  SERIES_TEAL,
+  SERIES_VIOLET,
+} from "@/constants/chartColors";
 
 export type ProgressPeriod = "week" | "month" | "year";
 
@@ -42,15 +52,19 @@ export type HybridPeriodReport = {
   filteredSessions: WorkoutSession[];
 };
 
+// Muted, on-system series colours — see constants/chartColors. Strength takes
+// the iron because it is what this app is about; the other sports are context
+// around it. These were stock Tailwind brights, which is why a week of nothing
+// but lifting rendered as a large indigo ring.
 const SPORT_COLORS: Record<string, string> = {
-  strength: "#6366F1",
-  running: "#3B82F6",
-  football: "#10B981",
-  tennis: "#F59E0B",
-  cycling: "#EC4899",
-  swimming: "#06B6D4",
-  boxing: "#EF4444",
-  custom: "#8B5CF6",
+  strength: SERIES_IRON,
+  running: SERIES_BLUE,
+  football: SERIES_GREEN,
+  tennis: SERIES_AMBER,
+  cycling: SERIES_PLUM,
+  swimming: SERIES_TEAL,
+  boxing: SERIES_BRICK,
+  custom: SERIES_VIOLET,
 };
 
 const STRENGTH_COLOR = SPORT_COLORS.strength;

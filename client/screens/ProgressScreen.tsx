@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useMemo} from "react";
+import { SERIES_BLUE } from "@/constants/chartColors";
+import { getMuscleGroupMeta } from "@/lib/exerciseImages";
 import {
   View,
   StyleSheet,
@@ -65,22 +67,23 @@ interface ExerciseProgressData {
   totalSessions: number;
 }
 
-// Must match the muscle_group values used by the backend exercise seed
-// and the local WorkoutPlan exercise data.
+// Must match the muscle_group values used by the backend exercise seed and the
+// local WorkoutPlan exercise data.
+//
+// The colours come from MUSCLE_GROUP_META rather than being written out again
+// here. They were duplicated, and the two copies had drifted: biceps was orange
+// on an exercise badge and green in this chart, back was two different blues.
+// One muscle, one colour.
 const MUSCLE_GROUPS = [
-  // Chart category colours are deliberately theme-independent — they identify
-  // a muscle group, not a surface. This one used the action colour, which is
-  // near-white and would vanish on a light background; #E74C3C is the value
-  // the app already uses for Chest in MUSCLE_GROUP_META.
-  { name: "Chest", color: "#E74C3C" },
-  { name: "Back", color: "#3B82F6" },
-  { name: "Shoulders", color: "#8B5CF6" },
-  { name: "Biceps", color: "#10B981" },
-  { name: "Triceps", color: "#F59E0B" },
-  { name: "Legs", color: "#EC4899" },
-  { name: "Core", color: "#6366F1" },
-  { name: "Traps", color: "#14B8A6" },
-];
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Biceps",
+  "Triceps",
+  "Legs",
+  "Core",
+  "Traps",
+].map((name) => ({ name, color: getMuscleGroupMeta(name).color }));
 
 function StatCard({
   icon,
@@ -826,7 +829,7 @@ function ExerciseDetailModal({
               </ThemedText>
             </View>
             <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText style={[styles.modalStatValue, { color: "#8B5CF6" }]}>
+              <ThemedText style={[styles.modalStatValue, { color: SERIES_BLUE }]}>
                 {exercise.bestSession.estimated1RM}kg
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
@@ -860,7 +863,7 @@ function ExerciseDetailModal({
                   <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.estimated1RM")}</ThemedText>
                   <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
                 </View>
-                <SvgLineChart data={ormData} color="#8B5CF6" chartId="orm" />
+                <SvgLineChart data={ormData} color={SERIES_BLUE} chartId="orm" />
                 <View style={styles.modalChartFooter}>
                   <ThemedText style={[styles.modalChartDateLabel, { color: theme.textSecondary }]}>
                     {formatDate(exercise.sessions[0].date)}
@@ -905,7 +908,7 @@ function ExerciseDetailModal({
                 </View>
                 <View style={[styles.singleSessionDivider, { backgroundColor: theme.border }]} />
                 <View style={styles.singleSessionStat}>
-                  <ThemedText style={[styles.singleSessionValue, { color: "#8B5CF6" }]}>
+                  <ThemedText style={[styles.singleSessionValue, { color: SERIES_BLUE }]}>
                     {exercise.sessions[0].estimated1RM}kg
                   </ThemedText>
                   <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
@@ -1219,7 +1222,7 @@ export default function ProgressScreen() {
   const getOneRMData = useMemo(() => {
     const liftColors: Record<string, string> = {
       "Barbell Bench Press": theme.primary,
-      "Barbell Back Squat": "#8B5CF6",
+      "Barbell Back Squat": SERIES_BLUE,
       "Barbell Deadlift": "#10B981",
       "Barbell Overhead Press": "#3B82F6",
       "Barbell Bent-Over Row": "#F59E0B",

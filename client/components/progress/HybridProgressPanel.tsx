@@ -1,4 +1,9 @@
 import React, { useMemo } from "react";
+import {
+  SERIES_AMBER,
+  SERIES_BLUE,
+  SERIES_GREEN,
+} from "@/constants/chartColors";
 import { View, StyleSheet, Pressable, Dimensions } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 import { Feather } from "@expo/vector-icons";
@@ -146,13 +151,13 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
           icon="zap"
           label={t("progress.hybrid.cardioSessions")}
           value={t("progress.hybrid.countCardio", { count: report.cardioCount })}
-          color="#F59E0B"
+          color={SERIES_AMBER}
         />
         <MetricTile
           icon="clock"
           label={t("progress.hybrid.totalDuration")}
           value={formatDurationHuman(report.totalDurationMinutes, t)}
-          color="#10B981"
+          color={SERIES_GREEN}
         />
         <MetricTile
           icon="map-pin"
@@ -162,7 +167,7 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
               ? t("progress.hybrid.distanceKm", { km: report.totalDistanceKm })
               : "—"
           }
-          color="#3B82F6"
+          color={SERIES_BLUE}
         />
       </View>
 
@@ -216,12 +221,16 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
           <View style={styles.rpeChart}>
             {report.rpeTrend.map((point) => {
               const heightPct = (point.avgRpe / 10) * 100;
+              // RPE IS load intensity, so it takes the plate ramp — the one
+              // thing plate colours exist for. It previously used stock hexes
+              // for the top two bands and the action colour for the lowest,
+              // which made an easy session read as a primary action.
               const tone =
                 point.avgRpe >= 8.5
-                  ? "#EF4444"
+                  ? theme.plateHeavy
                   : point.avgRpe >= 7
-                    ? "#F59E0B"
-                    : theme.primary;
+                    ? theme.plateMedium
+                    : theme.plateLight;
               return (
                 <View key={point.label} style={styles.rpeCol}>
                   <ThemedText style={[styles.rpeValue, { color: tone }]}>
