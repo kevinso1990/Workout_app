@@ -71,7 +71,7 @@ export function WeekScheduleStrip({
       onPress={onPress}
       testID={onPress ? "button-week-strip" : undefined}
       accessibilityRole={onPress ? "button" : undefined}
-      style={[styles.card, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.card, { backgroundColor: theme.ironElevated2 }]}
     >
       <View style={styles.header}>
         <ThemedText style={styles.title}>

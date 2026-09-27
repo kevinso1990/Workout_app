@@ -89,45 +89,81 @@ const palette = {
 // The token NAMES stay dark-flavoured ("chalk", "onChalk") because 600+ call
 // sites use them. Read them semantically: `chalk` is the ink, `onChalk` is
 // what sits on a primary-filled surface.
-const paper = "#F4F2ED"; // ground
-const paperRaised = "#FFFFFF"; // card
-const paperRaised2 = "#EFEDE7";
-const paperRaised3 = "#E6E3DC";
+// Elevation in light mode does NOT mirror the dark ramp.
+//
+// In dark, every step away from the ground adds light: 0x19 -> 0x21 -> 0x2A ->
+// 0x33, an even staircase. Translating that literally fails, because the light
+// ground is already bright and elevation cannot keep adding light past white.
+// The first attempt did exactly that and produced a zigzag: the page sat at
+// 244, one card token jumped to 255 and the other fell to 239 — BELOW the page.
+// So cards rendered white on some screens and darker-than-background on others,
+// depending on which token the screen happened to use, and the whole theme read
+// as muddy beige-on-beige.
+//
+// The invariant that actually carries over is contrast against the PARENT
+// surface, not the direction of travel. So: the page is clearly grey, cards
+// take the white, and a control drawn on a card defines itself by stepping back
+// toward the ground — the way a key is defined against the face of a keyboard.
+//
+// The steps are also wider than the dark ramp's. Near-white surfaces compress
+// perceptually, so a difference that reads clearly at 0x19 vanishes at 0xF4.
+// One more thing the dark palette hides: `ironElevated2` carries TWO roles.
+// It is the card surface (HEVY.surface) and it is `backgroundSecondary`, which
+// every screen uses for inset controls — text inputs, filter chips, search
+// fields, placeholders. In dark a single step lighter serves both, so nothing
+// gives. In light the two roles pull apart: a card has to reach white, while a
+// control drawn on that card has to step down to be visible at all. Pointing
+// both at one value is what produced cards of three different shades on one
+// screen, and a close button that vanished into the sheet behind it.
+//
+// So light splits them. Every card role resolves to `card`, every inset role to
+// `inset`, and the two can no longer disagree.
+const paper = "#E6E2DB"; // ground — page. Deliberately grey so white cards lift off it.
+const card = "#FFFFFF"; // every card surface, whichever token a screen reaches for
+const inset = "#EFECE5"; // a control ON a card: input, chip, stepper, icon button
+const insetDeep = "#E1DDD5"; // a control inside an inset, or a pressed state
 
-const inkStrong = "#191B1D";
-const inkDim = "#5C615E";
-const inkFaint = "#8A8F8B";
+const inkStrong = "#17191B";
+const inkDim = "#52575A";
+const inkFaint = "#797E80";
 
-const hairlineLight = "rgba(25,27,29,0.10)";
-const hairlineStrongLight = "rgba(25,27,29,0.18)";
-const controlOutlineLight = "rgba(25,27,29,0.38)";
+// Heavier than the dark hairlines on purpose: an outline at 0.10 disappeared
+// against near-white fills, leaving cards with no edge at all once the fills
+// themselves were only a few units apart.
+const hairlineLight = "rgba(23,25,27,0.12)";
+const hairlineStrongLight = "rgba(23,25,27,0.22)";
+const controlOutlineLight = "rgba(23,25,27,0.42)";
+
+// What sits on a primary-filled (near-black) surface. The grey ground was being
+// reused here, which put a dull grey on black instead of a clean highlight.
+const onInk = "#FBFAF8";
 
 const lightPalette = {
   text: inkStrong,
   textSecondary: inkDim,
-  buttonText: paper,
+  buttonText: onInk,
   tabIconDefault: inkFaint,
   tabIconSelected: inkStrong,
   link: plateInfo,
   primary: inkStrong,
   setCompleteAccent: inkStrong,
   backgroundRoot: paper,
-  backgroundDefault: paperRaised,
-  backgroundSecondary: paperRaised2,
-  backgroundTertiary: paperRaised3,
+  backgroundDefault: card,
+  backgroundSecondary: inset,
+  backgroundTertiary: insetDeep,
   border: hairlineStrongLight,
   controlOutline: controlOutlineLight,
   success: plateLight,
   error: plateHeavy,
 
   iron: paper,
-  ironElevated: paperRaised,
-  ironElevated2: paperRaised2,
-  ironElevated3: paperRaised3,
+  ironElevated: card,
+  ironElevated2: card,
+  ironElevated3: inset,
   chalk: inkStrong,
   chalkDim: inkDim,
   chalkFaint: inkFaint,
-  onChalk: paper,
+  onChalk: onInk,
   hairline: hairlineLight,
   hairlineStrong: hairlineStrongLight,
   plateLight,
