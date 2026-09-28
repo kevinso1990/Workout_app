@@ -228,6 +228,7 @@ function AddExerciseModal({
         </View>
 
         <FlatList
+          keyboardDismissMode="on-drag"
           data={filtered}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
@@ -398,6 +399,7 @@ function ReplaceExerciseModal({
 
         {/* Section list: Suggested + All */}
         <SectionList
+          keyboardDismissMode="on-drag"
           sections={sections}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
@@ -888,6 +890,7 @@ export default function EditPlanScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
+        keyboardDismissMode="on-drag"
         contentContainerStyle={[
           styles.scrollContent,
           {

@@ -714,6 +714,8 @@ export default function MyPlansScreen() {
       ) : null}
 
       <FlatList
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         data={plans}
         keyExtractor={(p) => p.id}
         renderItem={renderPlan}

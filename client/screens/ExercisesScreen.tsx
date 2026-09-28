@@ -386,7 +386,9 @@ function CreateExerciseModal({
             </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
             <View style={styles.formGroup}>
               <ThemedText style={[styles.formLabel, { color: theme.textSecondary }]}>
                 {t("exercisesScreen.createModal.nameLabel")}
@@ -604,6 +606,8 @@ function APISearchModal({
             </View>
           ) : (
             <FlatList
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               data={results}
               keyExtractor={(item, index) => `${item.name}-${index}`}
               renderItem={({ item }) => (
@@ -773,7 +777,9 @@ function ExerciseProgressModal({
           )}
 
           {stats ? (
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
               <View style={styles.statsGrid}>
                 <View style={[styles.statCard, { backgroundColor: theme.backgroundSecondary }]}>
                   <Feather name="calendar" size={20} color={theme.primary} />
@@ -1139,11 +1145,6 @@ export default function ExercisesScreen() {
                 onChangeText={setSearchQuery}
                 testID="input-search-exercises"
               />
-              {searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")}>
-                  <Feather name="x" size={20} color={theme.textSecondary} />
-                </Pressable>
-              ) : null}
             </View>
             <FlatList
               horizontal

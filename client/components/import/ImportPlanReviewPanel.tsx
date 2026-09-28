@@ -147,6 +147,7 @@ export function ImportPlanReviewPanel({
   return (
     <View style={styles.root}>
       <ScrollView
+        keyboardDismissMode="on-drag"
         contentContainerStyle={[
           styles.scroll,
           {
@@ -402,6 +403,7 @@ export function ImportPlanReviewPanel({
                         <ThemedText style={styles.inlineEmpty}>…</ThemedText>
                       ) : (
                         <FlatList
+                          keyboardDismissMode="on-drag"
                           data={inlineSuggestions}
                           keyExtractor={(item) => String(item.id)}
                           keyboardShouldPersistTaps="handled"

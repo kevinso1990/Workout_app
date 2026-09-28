@@ -338,6 +338,7 @@ export function ExercisePickerModal({
           </View>
         ) : (
           <FlatList
+            keyboardDismissMode="on-drag"
             data={results}
             keyExtractor={(item) => String(item.id)}
             keyboardShouldPersistTaps="handled"

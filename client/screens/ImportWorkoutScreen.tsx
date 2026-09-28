@@ -289,6 +289,7 @@ function CatalogPickModal({
           </View>
         ) : (
           <FlatList
+            keyboardDismissMode="on-drag"
             data={filtered}
             keyExtractor={(item) => String(item.id)}
             keyboardShouldPersistTaps="handled"
@@ -669,6 +670,7 @@ export default function ImportWorkoutScreen() {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <ScrollView
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             styles.centeredContent,
@@ -748,6 +750,8 @@ export default function ImportWorkoutScreen() {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentContainerStyle={[
             styles.scanScrollContent,
             { paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing.lg), paddingBottom: insets.bottom + Spacing.xl },
@@ -807,6 +811,8 @@ export default function ImportWorkoutScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentContainerStyle={[
             styles.scrollContent,
             { paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing.xl), paddingBottom: insets.bottom + Spacing["2xl"] },

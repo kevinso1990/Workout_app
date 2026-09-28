@@ -181,6 +181,7 @@ export default function GoalPlanScreen() {
           the generation success/error toasts actually render on top of it. */}
       <NativeToastHost />
       <ScrollView
+        keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,

@@ -211,7 +211,9 @@ function AddMeasurementModal({
             </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
             <View style={styles.measurementInputRow}>
               <View style={styles.measurementInputGroup}>
                 <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.weightKg")}</ThemedText>
