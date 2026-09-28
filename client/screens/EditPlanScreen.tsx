@@ -209,6 +209,9 @@ function AddExerciseModal({
         <View style={[styles.searchRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+            autoCapitalize="none"
             style={[styles.searchInput, { color: theme.text }]}
             placeholder={t("importWorkout.review.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}
@@ -375,6 +378,9 @@ function ReplaceExerciseModal({
         <View style={[styles.searchRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+            autoCapitalize="none"
             style={[styles.searchInput, { color: theme.text }]}
             placeholder={t("importWorkout.review.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}
@@ -896,6 +902,8 @@ export default function EditPlanScreen() {
         <Animated.View entering={FadeInDown.duration(300)} style={styles.nameSection}>
           <ThemedText style={styles.sectionLabel}>{t("editPlan.planName")}</ThemedText>
           <TextInput
+            returnKeyType="done"
+            clearButtonMode="while-editing"
             style={[
               styles.nameInput,
               {

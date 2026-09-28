@@ -303,6 +303,7 @@ function StepperField({
           <Feather name="minus" size={18} color={theme.chalk} />
         </Pressable>
         <TextInput
+          clearButtonMode="while-editing"
           value={value}
           onChangeText={onChangeText}
           onEndEditing={onCommit}

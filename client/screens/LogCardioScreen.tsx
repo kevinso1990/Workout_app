@@ -203,6 +203,8 @@ export default function LogCardioScreen() {
             <View style={[styles.inputWrap, { borderColor: theme.border }]}>
               <Feather name="edit-3" size={16} color={CARDIO_ACCENT} />
               <TextInput
+                returnKeyType="done"
+                clearButtonMode="while-editing"
                 value={customLabel}
                 onChangeText={setCustomLabel}
                 placeholder={t("logCardio.customNamePlaceholder")}
@@ -222,6 +224,7 @@ export default function LogCardioScreen() {
               <View style={[styles.inputWrap, { borderColor: theme.border }]}>
                 <Feather name="clock" size={16} color={CARDIO_ACCENT} />
                 <TextInput
+                  selectTextOnFocus
                   value={duration}
                   onChangeText={setDuration}
                   keyboardType="number-pad"
@@ -247,6 +250,8 @@ export default function LogCardioScreen() {
               <View style={[styles.inputWrap, { borderColor: theme.border }]}>
                 <Feather name="map-pin" size={16} color={CARDIO_ACCENT} />
                 <TextInput
+                  returnKeyType="done"
+                  clearButtonMode="while-editing"
                   value={distance}
                   onChangeText={setDistance}
                   keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"}

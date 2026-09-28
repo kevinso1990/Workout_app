@@ -392,6 +392,8 @@ function CreateExerciseModal({
                 {t("exercisesScreen.createModal.nameLabel")}
               </ThemedText>
               <TextInput
+                returnKeyType="done"
+                clearButtonMode="while-editing"
                 style={[styles.textInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                 value={name}
                 onChangeText={setName}
@@ -576,6 +578,10 @@ function APISearchModal({
           <View style={[styles.apiSearchContainer, { backgroundColor: theme.backgroundSecondary }]}>
             <Feather name="search" size={20} color={theme.textSecondary} />
             <TextInput
+              clearButtonMode="while-editing"
+              returnKeyType="search"
+              autoCorrect={false}
+              autoCapitalize="none"
               style={[styles.apiSearchInput, { color: theme.text }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -1122,6 +1128,10 @@ export default function ExercisesScreen() {
             >
               <Feather name="search" size={20} color={theme.textSecondary} />
               <TextInput
+                clearButtonMode="while-editing"
+                returnKeyType="search"
+                autoCorrect={false}
+                autoCapitalize="none"
                 style={[styles.searchInput, { color: theme.text }]}
                 placeholder={t("planBuilder.searchPlaceholder")}
                 placeholderTextColor={theme.textSecondary}

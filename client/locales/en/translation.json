@@ -125,7 +125,8 @@
     "refinedByAi": "Your plan was refined by the AI",
     "refinementOffer": "The AI built an improved version of “{{planName}}”. Your current plan stays as it is until you accept.",
     "refinementApply": "Apply",
-    "refinementKeep": "Keep mine"
+    "refinementKeep": "Keep mine",
+    "duplicate": "Duplicate"
   },
   "createPlan": {
     "back": "Back",
@@ -569,7 +570,8 @@
       "highlightPeakRpe": "Peak effort: RPE {{rpe}} · {{sport}}",
       "highlightPeakRpeSub": "Watch for overreaching",
       "emptyPeriod": "No workouts logged in this period yet."
-    }
+    },
+    "noBodyWeightYet": "No body weight recorded yet."
   },
   "history": {
     "title": "History",
@@ -581,7 +583,8 @@
     "repsLabel": "reps",
     "est1RM": "1RM",
     "showAllPRs": "Show {{count}} more PRs",
-    "showFewerPRs": "Show fewer PRs"
+    "showFewerPRs": "Show fewer PRs",
+    "noWorkoutsHint": "Start your first workout to see your history here."
   },
   "sessionDetail": {
     "volume": "Volume",

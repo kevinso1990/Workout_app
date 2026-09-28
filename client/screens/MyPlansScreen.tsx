@@ -52,6 +52,7 @@ import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
 import { PlanAdaptationBanner } from "@/components/PlanAdaptationBanner";
 import { PlanRefinementBanner } from "@/components/PlanRefinementBanner";
+import { SwipeRowActions } from "@/components/SwipeRowActions";
 import {
   peekPendingRefinement,
   type PendingRefinement,
@@ -290,6 +291,8 @@ function RenamePlanModal({
             {t("plans.menu.renameTitle")}
           </ThemedText>
           <TextInput
+            returnKeyType="done"
+            clearButtonMode="while-editing"
             style={[
               styles.renameInput,
               {
@@ -635,14 +638,33 @@ export default function MyPlansScreen() {
 
   const renderPlan = useCallback(
     ({ item, index }: { item: WorkoutPlan; index: number }) => (
-      <PlanCard
-        plan={item}
-        index={index}
-        onViewPlan={() => handleViewPlan(item)}
-        onOpenMenu={() => setMenuPlan(item)}
-      />
+      // Swipe is the shortcut, not the only route: the "..." menu stays for
+      // discoverability, and both paths call the same handlers so the delete
+      // confirmation cannot drift apart between them.
+      <SwipeRowActions
+        actions={[
+          {
+            icon: "copy",
+            label: t("plans.duplicate"),
+            onPress: () => void handleDuplicate(item),
+          },
+          {
+            icon: "trash-2",
+            label: t("plans.delete"),
+            destructive: true,
+            onPress: () => void handleDeletePlan(item),
+          },
+        ]}
+      >
+        <PlanCard
+          plan={item}
+          index={index}
+          onViewPlan={() => handleViewPlan(item)}
+          onOpenMenu={() => setMenuPlan(item)}
+        />
+      </SwipeRowActions>
     ),
-    [],
+    [t, handleDuplicate, handleDeletePlan, handleViewPlan],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they

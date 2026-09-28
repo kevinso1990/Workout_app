@@ -175,6 +175,8 @@ export default function CreatePlanScreen() {
       >
         <ThemedText style={styles.label}>{t("planBuilder.newPlan")}</ThemedText>
         <TextInput
+          returnKeyType="done"
+          clearButtonMode="while-editing"
           style={[
             styles.input,
             {

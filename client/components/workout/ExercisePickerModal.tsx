@@ -207,6 +207,9 @@ export function ExercisePickerModal({
         >
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+            autoCapitalize="none"
             style={[styles.searchInput, { color: theme.text }]}
             placeholder={t("activeWorkout.picker.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}

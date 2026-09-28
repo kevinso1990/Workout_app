@@ -272,6 +272,9 @@ function CatalogPickModal({
         <View style={[catalogModalStyles.searchWrap, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+            autoCapitalize="none"
             style={[catalogModalStyles.searchInput, { color: theme.text }]}
             placeholder={t("importWorkout.review.searchPlaceholder")}
             placeholderTextColor={theme.textSecondary}

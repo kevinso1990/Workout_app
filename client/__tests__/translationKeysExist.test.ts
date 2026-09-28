@@ -61,6 +61,10 @@ function hasKey(locale: Json, key: string): boolean {
 const T_WITH_DEFAULT =
   /\bt\(\s*["'`]([a-zA-Z0-9_.]+)["'`]\s*,\s*\{(?:[^{}]|\{[^{}]*\})*?defaultValue/gs;
 
+// Any t("a.b") call at all. Requiring a dot keeps this from matching helpers
+// that happen to be named `t` and take a plain word.
+const T_ANY = /\bt\(\s*["'`]([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)["'`]/g;
+
 describe("every translation key that hides behind a defaultValue really exists", () => {
   const de = loadLocale("de");
   const en = loadLocale("en");
@@ -86,6 +90,37 @@ describe("every translation key that hides behind a defaultValue really exists",
       expect(hasKey(en, key), `${key} missing from en/translation.json`).toBe(true);
     });
   }
+});
+
+describe("every translation key used in code exists at all", () => {
+  // The defaultValue check above only covers keys that HAVE a fallback. A key
+  // without one renders the raw dotted path on screen — which is how
+  // "plans.duplicate" shipped as literal text on a swipe action, in a codebase
+  // that already had a translation guard. The narrower guard could not see it
+  // because it only looked at calls with a defaultValue.
+  const de = loadLocale("de");
+  const en = loadLocale("en");
+  const files = walk(CLIENT_ROOT);
+
+  const keys = new Set<string>();
+  for (const file of files) {
+    const src = readFileSync(file, "utf-8");
+    for (const m of src.matchAll(T_ANY)) keys.add(m[1]);
+  }
+
+  it("finds a meaningful number of keys", () => {
+    expect(keys.size).toBeGreaterThan(50);
+  });
+
+  it("has no key that would render as its own raw path", () => {
+    const missingDe = [...keys].filter((k) => !hasKey(de, k)).sort();
+    const missingEn = [...keys].filter((k) => !hasKey(en, k)).sort();
+    expect(
+      { missingDe, missingEn },
+      "these keys are called in code but absent from the locale files, so the " +
+        "dotted key itself is what the user sees",
+    ).toEqual({ missingDe: [], missingEn: [] });
+  });
 });
 
 describe("the two locale files describe the same app", () => {

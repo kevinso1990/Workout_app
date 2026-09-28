@@ -216,6 +216,7 @@ function AddMeasurementModal({
               <View style={styles.measurementInputGroup}>
                 <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.weightKg")}</ThemedText>
                 <TextInput
+                  selectTextOnFocus
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={weight}
                   onChangeText={setWeight}
@@ -227,6 +228,7 @@ function AddMeasurementModal({
               <View style={styles.measurementInputGroup}>
                 <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.bodyFatPercent")}</ThemedText>
                 <TextInput
+                  selectTextOnFocus
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={bodyFat}
                   onChangeText={setBodyFat}
@@ -241,6 +243,7 @@ function AddMeasurementModal({
               <View style={styles.measurementInputGroup}>
                 <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.chestCm")}</ThemedText>
                 <TextInput
+                  selectTextOnFocus
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={chest}
                   onChangeText={setChest}
@@ -252,6 +255,7 @@ function AddMeasurementModal({
               <View style={styles.measurementInputGroup}>
                 <ThemedText style={[styles.measurementInputLabel, { color: theme.textSecondary }]}>{t("profile.waistCm")}</ThemedText>
                 <TextInput
+                  selectTextOnFocus
                   style={[styles.measurementInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
                   value={waist}
                   onChangeText={setWaist}
@@ -670,6 +674,8 @@ function CloudBackupCard() {
               {t("profile.cloudRestoreHint")}
             </ThemedText>
             <TextInput
+              returnKeyType="done"
+              clearButtonMode="while-editing"
               style={[
                 styles.cloudInput,
                 { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.border },

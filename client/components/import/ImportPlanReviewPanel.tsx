@@ -172,6 +172,7 @@ export function ImportPlanReviewPanel({
           {t("importWorkout.review.planName")}
         </ThemedText>
         <TextInput
+          clearButtonMode="while-editing"
           style={styles.planNameInput}
           value={planName}
           onChangeText={onPlanNameChange}
@@ -243,6 +244,8 @@ export function ImportPlanReviewPanel({
                           {t("importWorkout.review.exercise")}
                         </ThemedText>
                         <TextInput
+                          returnKeyType="done"
+                          clearButtonMode="while-editing"
                           style={styles.nameInput}
                           value={ex.name}
                           onChangeText={(text) =>
@@ -287,6 +290,7 @@ export function ImportPlanReviewPanel({
                           {t("importWorkout.review.sets")}
                         </ThemedText>
                         <TextInput
+                          selectTextOnFocus
                           style={styles.metricInput}
                           keyboardType="number-pad"
                           value={String(ex.sets)}
@@ -306,6 +310,8 @@ export function ImportPlanReviewPanel({
                           {t("importWorkout.review.reps")}
                         </ThemedText>
                         <TextInput
+                          returnKeyType="done"
+                          clearButtonMode="while-editing"
                           style={styles.metricInput}
                           keyboardType="default"
                           autoCapitalize="none"
@@ -325,6 +331,7 @@ export function ImportPlanReviewPanel({
                           {t("importWorkout.review.weight")}
                         </ThemedText>
                         <TextInput
+                          selectTextOnFocus
                           style={styles.metricInput}
                           keyboardType="decimal-pad"
                           value={ex.weight !== null ? String(ex.weight) : ""}
@@ -370,6 +377,8 @@ export function ImportPlanReviewPanel({
                       <View style={styles.inlineSearch}>
                         <Feather name="search" size={16} color={theme.chalkFaint} />
                         <TextInput
+                          clearButtonMode="while-editing"
+                          autoCapitalize="none"
                           style={styles.inlineSearchInput}
                           value={inlineQuery}
                           onChangeText={setInlineQuery}

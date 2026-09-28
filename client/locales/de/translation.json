@@ -125,7 +125,8 @@
     "refinedByAi": "Dein Plan wurde von der KI verfeinert",
     "refinementOffer": "Die KI hat eine verbesserte Version von „{{planName}}“ erstellt. Dein aktueller Plan bleibt unverändert, bis du zustimmst.",
     "refinementApply": "Übernehmen",
-    "refinementKeep": "Behalten"
+    "refinementKeep": "Behalten",
+    "duplicate": "Duplizieren"
   },
   "createPlan": {
     "back": "Zurück",
@@ -488,7 +489,8 @@
       "highlightPeakRpe": "Peak-Belastung: RPE {{rpe}} · {{sport}}",
       "highlightPeakRpeSub": "Auf Overreaching achten",
       "emptyPeriod": "In diesem Zeitraum noch keine Trainings geloggt."
-    }
+    },
+    "noBodyWeightYet": "Noch kein Körpergewicht erfasst."
   },
   "history": {
     "title": "Verlauf",
@@ -500,7 +502,8 @@
     "est1RM": "1RM",
     "repsLabel": "Wdh.",
     "showAllPRs": "{{count}} weitere Rekorde anzeigen",
-    "showFewerPRs": "Weniger Rekorde anzeigen"
+    "showFewerPRs": "Weniger Rekorde anzeigen",
+    "noWorkoutsHint": "Starte dein erstes Training, um deinen Verlauf hier zu sehen."
   },
   "sessionDetail": {
     "volume": "Volumen",
