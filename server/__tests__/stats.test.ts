@@ -208,15 +208,24 @@ describe("getExerciseBest() — /api/stats/exercise-best/:id", () => {
   });
 
   it("estimated1rm = maxWeight when reps = 1", async () => {
-    // Insert a 1-rep max set directly
+    // Insert a 1-rep max set directly.
+    //
+    // The timestamp format has to match what the rest of this file writes.
+    // datetime('now') yields "YYYY-MM-DD HH:MM:SS" while logSession() writes
+    // "YYYY-MM-DDTHH:MM:SS", and started_at is ordered as TEXT — where a space
+    // (0x20) sorts before "T" (0x54). Mixing the two put this row ahead of
+    // sessions that happened earlier, which broke the chronological-ordering
+    // test further down whenever the clock made the two forms disagree.
+    // Production writes ISO throughout, so the fixture does too.
+    const nowIso = new Date().toISOString().slice(0, 19);
     const sessionRow = db
       .prepare(
-        "INSERT INTO sessions (plan_id, user_id, started_at, finished_at) VALUES (?, ?, datetime('now'), datetime('now'))",
+        "INSERT INTO sessions (plan_id, user_id, started_at, finished_at) VALUES (?, ?, ?, ?)",
       )
-      .run(planId, statsUserId);
+      .run(planId, statsUserId, nowIso, nowIso);
     db.prepare(
-      "INSERT INTO sets (session_id, exercise_id, set_number, weight, reps, logged_at) VALUES (?, ?, 1, 100, 1, datetime('now'))"
-    ).run(sessionRow.lastInsertRowid, exerciseId);
+      "INSERT INTO sets (session_id, exercise_id, set_number, weight, reps, logged_at) VALUES (?, ?, 1, 100, 1, ?)"
+    ).run(sessionRow.lastInsertRowid, exerciseId, nowIso);
 
     const res = await request(app)
       .get(`/api/stats/exercise-best/${exerciseId}`)

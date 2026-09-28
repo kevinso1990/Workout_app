@@ -34,6 +34,7 @@ import { getWorkoutHistory, WorkoutSession } from "@/lib/storage";
 import { prewarmExerciseMedia } from "@/services/exerciseMedia";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { getApiUrl } from "@/lib/query-client";
+import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import { translateMuscleGroup, translateEquipment, isMobilityExercise } from "@/lib/exerciseTaxonomy";
@@ -930,47 +931,13 @@ export default function ExercisesScreen() {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseItem | null>(null);
   const [detailExercise, setDetailExercise] = useState<ExerciseItem | null>(null);
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>([]);
-  const [catalogExercises, setCatalogExercises] = useState<ExerciseItem[]>([]);
+  const { catalog: catalogExercises } = useExerciseCatalog();
 
   useEffect(() => {
     loadCustomExercises();
     loadWorkoutHistory();
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const url = new URL("/api/exercises/catalog", getApiUrl()).toString();
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("catalog http");
-        const rows = (await res.json()) as {
-          id: number;
-          name: string;
-          name_de?: string | null;
-          muscle_group: string;
-          equipment: string;
-          is_custom: number;
-        }[];
-        if (cancelled) return;
-        setCatalogExercises(
-          rows.map((r) => ({
-            id: String(r.id),
-            name: r.name,
-            nameDe: r.name_de ?? undefined,
-            muscleGroup: r.muscle_group,
-            equipment: r.equipment ? r.equipment.charAt(0).toUpperCase() + r.equipment.slice(1) : "",
-            isCustom: r.is_custom === 1,
-          })),
-        );
-      } catch {
-        if (!cancelled) setCatalogExercises([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const loadWorkoutHistory = async () => {
     try {
@@ -1016,7 +983,8 @@ export default function ExercisesScreen() {
   );
 
   const allExercises = useMemo(() => {
-    const catalog = catalogExercises.length > 0 ? catalogExercises : EXERCISE_LIBRARY;
+    const catalog: ExerciseItem[] =
+      catalogExercises.length > 0 ? catalogExercises : EXERCISE_LIBRARY;
     const customNames = new Set(customExercises.map((c) => c.name.toLowerCase()));
     const dedupedCatalog = catalog.filter((c) => !customNames.has(c.name.toLowerCase()));
     return [...customExercises, ...dedupedCatalog];

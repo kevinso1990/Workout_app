@@ -38,6 +38,7 @@ import {
   saveWorkoutPlan,
 } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
+import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const MIN_SETS = 1;
@@ -46,6 +47,12 @@ const MAX_SETS = 10;
 type Props = NativeStackScreenProps<RootStackParamList, "EditPlan">;
 
 // ─── Exercise library ─────────────────────────────────────────────────────────
+//
+// Fallback only. The real source is the server catalog via useExerciseCatalog,
+// which is cached locally so it survives being offline. This list is what the
+// picker falls back to when a device has never once reached the server — it
+// used to be the ONLY source here, which is why exercises added to the catalog
+// could not be selected in this screen at all.─
 interface LibraryExercise {
   id: string;
   name: string;
@@ -160,14 +167,16 @@ function AddExerciseModal({
   const localizeName = useLocalizeExerciseName();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
+  const { catalog } = useExerciseCatalog();
+  const library = catalog.length > 0 ? catalog : EXERCISE_LIBRARY;
 
   const filtered = query.trim()
-    ? EXERCISE_LIBRARY.filter(
+    ? library.filter(
         (e) =>
           e.name.toLowerCase().includes(query.toLowerCase()) ||
           e.muscleGroup.toLowerCase().includes(query.toLowerCase())
       )
-    : EXERCISE_LIBRARY;
+    : library;
 
   const handleClose = () => {
     setQuery("");
@@ -280,16 +289,18 @@ function ReplaceExerciseModal({
   const localizeName = useLocalizeExerciseName();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
+  const { catalog } = useExerciseCatalog();
+  const library = catalog.length > 0 ? catalog : EXERCISE_LIBRARY;
 
   const { suggestions, others } = useMemo(() => {
-    if (!target) return { suggestions: [], others: EXERCISE_LIBRARY };
+    if (!target) return { suggestions: [], others: library };
 
     const targetMuscle = target.exercise.muscleGroup.toLowerCase();
     const targetName = target.exercise.name.toLowerCase();
 
     const q = query.trim().toLowerCase();
 
-    const filtered = EXERCISE_LIBRARY.filter((e) => {
+    const filtered = library.filter((e) => {
       if (e.name.toLowerCase() === targetName) return false;
       if (!q) return true;
       return (
@@ -305,7 +316,7 @@ function ReplaceExerciseModal({
       (e) => !(e.muscleGroup.toLowerCase() === targetMuscle && !existingNames.has(e.name))
     );
     return { suggestions: sugg, others: rest };
-  }, [target, existingNames, query]);
+  }, [target, existingNames, query, library]);
 
   const sections = useMemo(() => {
     const result = [];

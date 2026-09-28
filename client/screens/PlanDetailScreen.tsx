@@ -164,8 +164,13 @@ export default function PlanDetailScreen() {
             looking at the plan you want to change. */}
         <Pressable
           onPress={() => navigation.navigate("EditPlan", { planId: plan.id })}
-          style={styles.editBtn}
-          hitSlop={12}
+          // `top` has to come from the inset here. The style below positions
+          // this absolutely, and an absolute `top: 0` measures from the header's
+          // border edge — ABOVE its paddingTop of insets.top + 24 — so the
+          // button rendered inside the status bar / notch, where it is drawn
+          // but cannot be tapped. That is why editing a plan "did nothing".
+          style={[styles.editBtn, { top: insets.top + 24 }]}
+          hitSlop={16}
           accessibilityRole="button"
           accessibilityLabel={t("plans.edit")}
           testID="button-edit-plan-from-detail"
@@ -246,8 +251,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   editBtn: {
     position: "absolute",
     right: Spacing.lg,
-    top: 0,
-    padding: Spacing.xs,
+    // `top` is supplied inline from the safe-area inset — see the call site.
+    padding: Spacing.sm,
   },
   backBtn: {
     alignSelf: "flex-start",
