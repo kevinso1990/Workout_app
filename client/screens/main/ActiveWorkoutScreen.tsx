@@ -104,6 +104,7 @@ import {
   type ActiveWorkoutDraft,
 } from "@/lib/activeWorkoutPersistence";
 import { scheduleSessionSync } from "@/lib/dataSync";
+import { useKeepAwake } from "expo-keep-awake";
 import {
   notchSafeTopPadding,
   HEADER_SAFE_MARGIN_TOP,
@@ -975,9 +976,15 @@ export default function ActiveWorkoutScreen() {
     setShowExerciseDetail(false);
   }, [currentExerciseIndex, currentExerciseName]);
 
-  // Web fallback for expo-keep-awake: hold a screen Wake Lock for the whole
-  // active workout so the phone doesn't dim/lock mid-session or during rest.
-  // (Native keep-awake is handled by the platform/Expo build.)
+  // Hold the screen awake for the whole session. Expo does NOT do this on its
+  // own — the comment that used to sit here claimed the platform handled it,
+  // and nothing did, so on a phone the screen dimmed and locked between sets
+  // and had to be unlocked again for every single entry. The hook releases on
+  // unmount, so leaving the workout hands the screen back to the system.
+  useKeepAwake();
+
+  // Web needs its own path anyway: a browser wake lock is dropped whenever the
+  // tab is hidden, so it has to be re-acquired when the tab becomes visible.
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const nav = typeof navigator !== "undefined" ? (navigator as any) : null;
