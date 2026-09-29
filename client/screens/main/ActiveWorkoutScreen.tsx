@@ -2382,59 +2382,84 @@ export default function ActiveWorkoutScreen() {
                   workout you had just completed was a control telling you that
                   you were quitting early. Once everything is logged, finishing
                   IS the action, and it is filled to say so. */}
-              <Pressable
-                onPress={handleFinishWorkout}
-                style={[
-                  styles.skipButton,
-                  styles.skipButtonFlex,
-                  workoutComplete
-                    ? { borderColor: theme.chalk, backgroundColor: theme.chalk }
-                    : { borderColor: theme.controlOutline },
-                ]}
-                testID="button-skip-finish"
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel={
-                  workoutComplete
-                    ? t("activeWorkout.finishWorkout")
-                    : t("activeWorkout.finishEarly")
-                }
-              >
-                <ThemedText
+              {/* The wide filled slot always shows what to do NEXT. It used to
+                  hold "Früh beenden": the rarest and most consequential action
+                  in the session got the most width, dead centre, right where
+                  the thumb rests, while advancing — the thing you do between
+                  every exercise — was a bare chevron at the edge. Ending early
+                  is an escape hatch and is now sized like one. */}
+              {workoutComplete ? (
+                <Pressable
+                  onPress={handleFinishWorkout}
                   style={[
-                    styles.skipButtonText,
-                    { color: workoutComplete ? theme.onChalk : theme.text },
+                    styles.skipButton,
+                    styles.skipButtonFlex,
+                    { borderColor: theme.chalk, backgroundColor: theme.chalk },
                   ]}
+                  testID="button-skip-finish"
+                  accessibilityRole="button"
+                  accessibilityLabel={t("activeWorkout.finishWorkout")}
                 >
-                  {workoutComplete
-                    ? t("activeWorkout.finishWorkout")
-                    : t("activeWorkout.finishEarly")}
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  if (currentExerciseIndex < day.exercises.length - 1) {
-                    jumpToExercise(currentExerciseIndex + 1);
-                  }
-                }}
-                disabled={currentExerciseIndex >= day.exercises.length - 1}
-                style={[
-                  styles.bottomNavBtn,
-                  {
-                    borderColor: theme.chalk,
-                    backgroundColor: theme.chalk,
-                    opacity:
-                      currentExerciseIndex >= day.exercises.length - 1
-                        ? 0.35
-                        : 1,
-                  },
-                ]}
-                testID="button-next-exercise"
-                accessibilityRole="button"
-                accessibilityLabel={t("activeWorkout.nextExercise")}
-              >
-                <Feather name="chevron-right" size={22} color={theme.iron} />
-              </Pressable>
+                  <ThemedText
+                    style={[styles.skipButtonText, { color: theme.onChalk }]}
+                  >
+                    {t("activeWorkout.finishWorkout")}
+                  </ThemedText>
+                </Pressable>
+              ) : (
+                <>
+                  <Pressable
+                    onPress={() => {
+                      if (currentExerciseIndex < day.exercises.length - 1) {
+                        jumpToExercise(currentExerciseIndex + 1);
+                      }
+                    }}
+                    disabled={currentExerciseIndex >= day.exercises.length - 1}
+                    style={[
+                      styles.skipButton,
+                      styles.skipButtonFlex,
+                      styles.primaryNextBtn,
+                      {
+                        borderColor: theme.chalk,
+                        backgroundColor: theme.chalk,
+                        opacity:
+                          currentExerciseIndex >= day.exercises.length - 1
+                            ? 0.35
+                            : 1,
+                      },
+                    ]}
+                    testID="button-next-exercise"
+                    accessibilityRole="button"
+                    accessibilityLabel={t("activeWorkout.nextExercise")}
+                  >
+                    <ThemedText
+                      style={[styles.skipButtonText, { color: theme.onChalk }]}
+                    >
+                      {t("activeWorkout.nextExercise")}
+                    </ThemedText>
+                    <Feather name="chevron-right" size={18} color={theme.iron} />
+                  </Pressable>
+                  <Pressable
+                    onPress={handleFinishWorkout}
+                    style={[
+                      styles.finishEarlyBtn,
+                      { borderColor: theme.controlOutline },
+                    ]}
+                    testID="button-skip-finish"
+                    accessibilityRole="button"
+                    accessibilityLabel={t("activeWorkout.finishEarly")}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.finishEarlyText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      {t("activeWorkout.finish")}
+                    </ThemedText>
+                  </Pressable>
+                </>
+              )}
             </View>
           )}
         </View>
@@ -3013,6 +3038,22 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
+  },
+  primaryNextBtn: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+  },
+  finishEarlyBtn: {
+    minHeight: 52,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  finishEarlyText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   skipButton: {
     alignItems: "center",
