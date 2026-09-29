@@ -117,6 +117,15 @@ function PlanCard({
 
         <AnimatedPressable
           onPress={onViewPlan}
+          // Press and hold opens the same menu the "..." does. On iOS a long
+          // press on a card is expected to reveal its actions, and it gives
+          // the menu a third route alongside the button and the swipe — all
+          // three call the same handler.
+          onLongPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onOpenMenu();
+          }}
+          delayLongPress={350}
           onPressIn={() => {
             scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
           }}
@@ -447,6 +456,7 @@ export default function MyPlansScreen() {
   const [bannerHeight, setBannerHeight] = useState(70);
   const [coachBrief, setCoachBrief] = useState<string | null>(null);
   const [menuPlan, setMenuPlan] = useState<WorkoutPlan | null>(null);
+  const [coachExpanded, setCoachExpanded] = useState(false);
   const [renameTarget, setRenameTarget] = useState<WorkoutPlan | null>(null);
   const [adaptPlan, setAdaptPlan] = useState<WorkoutPlan | null>(null);
   const [adaptSignals, setAdaptSignals] = useState<PerformanceSignal[]>([]);
@@ -777,34 +787,48 @@ export default function MyPlansScreen() {
                 onDismiss={() => setSplitRefreshOffer(null)}
               />
             ) : coachBrief ? (
-              <View
+              // Tinted rather than another card surface: this is a note, not a
+              // thing you own, and drawn on the same surface as the plans it
+              // read as a fourth plan. It is also capped to two lines — at full
+              // length it pushed the actual plans off the first screen, which
+              // is the one thing this list exists to show. Tap to read the rest.
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setCoachExpanded((v) => !v);
+                }}
                 style={[
                   styles.coachCard,
                   {
-                    backgroundColor: theme.ironElevated2,
-                    borderColor: theme.hairlineStrong,
+                    backgroundColor: theme.primary + "1A",
+                    borderColor: theme.primary + "4D",
                   },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={t("plans.coach.title", { defaultValue: "Coach" })}
+                testID="card-coach-brief"
               >
-                <View
-                  style={[
-                    styles.coachIconWrap,
-                    { backgroundColor: theme.primary + "14" },
-                  ]}
-                >
-                  <Feather name="zap" size={18} color={theme.primary} />
-                </View>
+                <Feather name="zap" size={14} color={theme.primary} />
                 <View style={styles.coachCardTextCol}>
                   <ThemedText style={styles.coachCardTitle}>
                     {t("plans.coach.title", { defaultValue: "Coach" })}
                   </ThemedText>
                   <ThemedText
-                    style={[styles.coachCardBody, { color: theme.textSecondary }]}
+                    style={[styles.coachCardBody, { color: theme.text }]}
+                    numberOfLines={coachExpanded ? undefined : 2}
                   >
                     {coachBrief}
                   </ThemedText>
                 </View>
-              </View>
+                {/* Truncating advice without showing there is more to read
+                    just loses it. The chevron is the only hint that the card
+                    does anything when tapped. */}
+                <Feather
+                  name={coachExpanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={theme.primary}
+                />
+              </Pressable>
             ) : null}
 
             <WeekScheduleStrip
@@ -917,32 +941,28 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   coachCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: HEVY.pad,
-    borderRadius: HEVY.radiusCard,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: HEVY.pad,
-    gap: Spacing.md,
-  },
-  coachIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+    gap: Spacing.sm,
   },
   coachCardTextCol: {
     flex: 1,
   },
   coachCardTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "700",
     fontFamily: "Oswald_700Bold",
-    color: c.chalk,
-    marginBottom: Spacing.xs,
+    color: c.primary,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 1,
   },
   coachCardBody: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   emptyContainer: {
     flex: 1,

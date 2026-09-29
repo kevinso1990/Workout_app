@@ -47,6 +47,7 @@ import { initDataSync } from "@/lib/dataSync";
 import { loadCustomExerciseImages } from "@/lib/customExerciseImages";
 import { hydrateExerciseNameCatalog } from "@/lib/exerciseNameCatalog";
 import { registerWebServiceWorker } from "@/lib/installWebGlobalErrorHandlers";
+import { ReducedMotionConfig, ReduceMotion } from "react-native-reanimated";
 
 // Provider ordering rationale (outside-in):
 //   GestureHandlerRootView  -> required at the very top of the tree by
@@ -116,6 +117,13 @@ export default function AppNative() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* Honour iOS "Reduce Motion". The app runs 93 entering animations and
+          57 springs, and every one of them played regardless of the system
+          setting — for a user who turns that on because motion makes them
+          unwell, ignoring it is not a rough edge. Set at the root so it covers
+          layout animations and springs everywhere, rather than being
+          remembered at 150 call sites. */}
+      <ReducedMotionConfig mode={ReduceMotion.System} />
       <GlobalErrorBridge>
         <SafeAreaProvider>
           <ThemeProvider>
