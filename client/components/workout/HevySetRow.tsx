@@ -592,10 +592,12 @@ export function HevySetRow({
               setData.completed
                 ? theme.iron
                 : isActive
-                  ? theme.chalkDim
+                  ? theme.chalk
                   : theme.chalkFaint
             }
-            style={!setData.completed ? styles.checkIconIdle : undefined}
+            style={
+              !setData.completed && !isActive ? styles.checkIconIdle : undefined
+            }
           />
         </Pressable>
       </View>
@@ -931,8 +933,14 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderColor: c.hairlineStrong,
   },
   checkBoxReady: {
-    borderColor: c.hairlineStrong,
-    backgroundColor: "rgba(236,233,225,0.06)",
+    // controlOutline, not hairlineStrong. The palette draws that distinction
+    // deliberately — divider weight and button weight are not the same job —
+    // and this is the single most-tapped control in the app, sitting on the
+    // active row. At divider weight it read as a faint empty square rather
+    // than the thing you are meant to press next.
+    borderColor: c.controlOutline,
+    borderWidth: 1.5,
+    backgroundColor: "rgba(236,233,225,0.10)",
   },
   checkBoxDone: {
     borderColor: c.chalk,

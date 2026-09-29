@@ -2376,22 +2376,39 @@ export default function ActiveWorkoutScreen() {
               >
                 <Feather name="chevron-left" size={22} color={theme.text} />
               </Pressable>
+              {/* The label and the emphasis both follow progress. This button
+                  said "Früh beenden" at every point in the session, including
+                  the moment every set was done — so the only way to finish a
+                  workout you had just completed was a control telling you that
+                  you were quitting early. Once everything is logged, finishing
+                  IS the action, and it is filled to say so. */}
               <Pressable
                 onPress={handleFinishWorkout}
                 style={[
                   styles.skipButton,
                   styles.skipButtonFlex,
-                  { borderColor: theme.controlOutline },
+                  workoutComplete
+                    ? { borderColor: theme.chalk, backgroundColor: theme.chalk }
+                    : { borderColor: theme.controlOutline },
                 ]}
                 testID="button-skip-finish"
                 accessible
                 accessibilityRole="button"
-                accessibilityLabel={t("activeWorkout.finishEarly")}
+                accessibilityLabel={
+                  workoutComplete
+                    ? t("activeWorkout.finishWorkout")
+                    : t("activeWorkout.finishEarly")
+                }
               >
                 <ThemedText
-                  style={[styles.skipButtonText, { color: theme.text }]}
+                  style={[
+                    styles.skipButtonText,
+                    { color: workoutComplete ? theme.onChalk : theme.text },
+                  ]}
                 >
-                  {t("activeWorkout.finishEarly")}
+                  {workoutComplete
+                    ? t("activeWorkout.finishWorkout")
+                    : t("activeWorkout.finishEarly")}
                 </ThemedText>
               </Pressable>
               <Pressable
