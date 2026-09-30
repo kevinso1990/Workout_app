@@ -39,6 +39,10 @@ const SHORTHAND: [RegExp, string][] = [
   [/\bBBs?\b/g, "Barbell"],
   [/\bOHPs?\b/gi, "Overhead Press"],
   [/\bBWs?\b/g, "Bodyweight"],
+  // Case-sensitive like the equipment abbreviations above: lowercase "sl" and
+  // "sa" occur inside ordinary words, uppercase standalone tokens do not.
+  [/\bSL\b/g, "Single-Leg"],
+  [/\bSA\b/g, "Single-Arm"],
   [/\balternate\b/gi, "alternating"],
   [/\balt\.?\b/gi, "alternating"],
 ];
@@ -239,6 +243,50 @@ function matchByTokenOverlap(inputLower: string): string | null {
   return best && best.score >= 0.5 ? best.name : null;
 }
 
+
+/**
+ * Match a candidate that contains everything the input asked for, preferring
+ * the one that adds the least.
+ *
+ * The other two layers both miss this case. Token overlap requires every
+ * CATALOG token to appear in the input, so "Close-Grip Bench Press" cannot
+ * reach "Close-Grip Barbell Bench Press" — the input never says barbell.
+ * Substring containment then picks whatever holds the query verbatim, and
+ * "Smith Machine Close-Grip Bench Press" does while the barbell one does not,
+ * because "Barbell" sits in the middle and breaks the run of characters. So
+ * the user asked for a close-grip bench press and was confidently handed a
+ * Smith machine.
+ *
+ * Ranking by fewest added tokens picks the barbell variant, which is the
+ * ordinary reading. Ties go to the shorter name for the same reason.
+ */
+function matchByInputSubset(inputLower: string): string | null {
+  const inputTokens = inputLower.split(/\s+/).filter((t) => t.length > 2);
+  // One token is too little to be sure: "press" alone should not resolve to
+  // whichever press happens to have the fewest extra words.
+  if (inputTokens.length < 2) return null;
+
+  let best: { name: string; extra: number; len: number } | null = null;
+  for (const row of loadCatalog()) {
+    const catTokens = row.lower.split(/\s+/).filter((t) => t.length > 2);
+    const allAsked = inputTokens.every((it) =>
+      catTokens.some((ct) => ct === it || (it.length >= 5 && ct.includes(it))),
+    );
+    if (!allAsked) continue;
+    const extra = catTokens.length - inputTokens.length;
+    // More than two added words is a different exercise, not a qualified one.
+    if (extra < 0 || extra > 2) continue;
+    if (
+      !best ||
+      extra < best.extra ||
+      (extra === best.extra && row.lower.length < best.len)
+    ) {
+      best = { name: row.name, extra, len: row.lower.length };
+    }
+  }
+  return best ? best.name : null;
+}
+
 function muscleGroupForName(canonical: string): string {
   const row = db
     .prepare("SELECT muscle_group FROM exercises WHERE name = ? COLLATE NOCASE LIMIT 1")
@@ -321,6 +369,43 @@ function levenshtein(a: string, b: string): number {
  * Maps a free-text exercise name from OCR/LLM output to a single canonical DB name
  * to avoid duplicate or inconsistent exercise labels in the client.
  */
+
+/**
+ * Qualifiers whose loss changes which exercise you are actually doing.
+ *
+ * The fuzzy layers match on overall similarity, so a qualifier can simply fall
+ * out: "SL RDL" matched "Romanian Deadlift" — losing the single-leg entirely —
+ * and reported it as a confident match. A wrong answer given confidently is
+ * worse here than asking, because the user never sees that a decision was made.
+ *
+ * Only material qualifiers are listed. Words like "seated" are routinely absent
+ * from catalog names without changing the movement, and guarding those would
+ * bury the user in questions that do not matter.
+ */
+const MATERIAL_QUALIFIERS = [
+  "single-leg",
+  "single-arm",
+  "incline",
+  "decline",
+  "deficit",
+  "paused",
+  "reverse",
+  "close-grip",
+  "wide-grip",
+  "bulgarian",
+];
+
+/**
+ * False when the input carries a material qualifier the candidate lacks.
+ * Applied only to the fuzzy layers — an exact hit or a hand-curated alias is
+ * trusted, for the same reason the equipment check exempts them.
+ */
+export function qualifiersOk(searchName: string, canonical: string): boolean {
+  const from = canonicalizeQualifiers(searchName).toLowerCase();
+  const to = canonicalizeQualifiers(canonical).toLowerCase();
+  return !MATERIAL_QUALIFIERS.some((q) => from.includes(q) && !to.includes(q));
+}
+
 export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
   const originalName = raw.trim();
   if (!originalName || isLikelyNonExerciseName(originalName)) {
@@ -342,7 +427,8 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
   // isn't itself in the matched canonical name.
   const stated = statedEquipment(originalName);
   const equipmentOk = (canonical: string): boolean =>
-    !stated || equipmentForName(canonical) === stated;
+    (!stated || equipmentForName(canonical) === stated) &&
+    qualifiersOk(searchName, canonical);
 
   for (const row of catalog) {
     if (row.lower === lower) {
@@ -366,6 +452,18 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
       muscleGroup: muscleGroupForName(aliasTarget),
       needsUserMapping: false,
       catalogExerciseId: catalogIdForName(aliasTarget),
+    };
+  }
+
+  const subsetMatch = matchByInputSubset(lower);
+  if (subsetMatch && equipmentOk(subsetMatch) && qualifiersOk(searchName, subsetMatch)) {
+    return {
+      canonicalName: subsetMatch,
+      originalName,
+      matchQuality: "fuzzy",
+      muscleGroup: muscleGroupForName(subsetMatch),
+      needsUserMapping: false,
+      catalogExerciseId: catalogIdForName(subsetMatch),
     };
   }
 
