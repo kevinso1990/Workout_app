@@ -14,8 +14,8 @@
       "icon": "./assets/images/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Used to photograph your workout plan for import",
-        "NSPhotoLibraryUsageDescription": "Used to select a photo of your workout plan"
+        "NSCameraUsageDescription": "So you can photograph a workout plan and import it.",
+        "NSPhotoLibraryUsageDescription": "So you can import a workout plan from your photos, or give an exercise your own picture."
       }
     },
     "android": {
@@ -54,8 +54,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Used to select a photo of your workout plan",
-          "cameraPermission": "Used to photograph your workout plan for import"
+          "photosPermission": "So you can import a workout plan from your photos, or give an exercise your own picture.",
+          "cameraPermission": "So you can photograph a workout plan and import it."
         }
       ],
       [
@@ -78,6 +78,10 @@
         "projectId": "f2fe52cd-fa6a-4cb1-89b5-da49ecaf31cf"
       }
     },
-    "owner": "ks15"
+    "owner": "ks15",
+    "locales": {
+      "de": "./ios-locales/de.json",
+      "en": "./ios-locales/en.json"
+    }
   }
 }
