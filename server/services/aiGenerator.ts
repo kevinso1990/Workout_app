@@ -27,6 +27,18 @@ EXERCISE RULES:
 - reps: integer or null if not visible.
 - weight: number or null.
 
+NAME CLEANUP — move descriptive asides into "notes", keep "name" matchable:
+- A trailing parenthetical, or text after "oder"/"ODER"/"or"/"/", belongs in "name" only if it
+  changes WHICH exercise this is (e.g. "Incline Dumbbell Press", "Close-Grip Bench Press",
+  "Single-Leg RDL" — keep these whole, qualifier and all).
+- It belongs in "notes" instead if it is coaching guidance, a body-position hint, or an
+  equipment choice between otherwise-identical options:
+  "Dips (Beine locker hängend/gebeugt)" -> name: "Dips", notes: "Beine locker hängend/gebeugt"
+  "Rudern Sitzend (Kabelzug oder Maschine)" -> name: "Rudern Sitzend", notes: "Kabelzug oder Maschine"
+  "Inverted Rows (Barbell im Rack / Ringe)" -> name: "Inverted Rows", notes: "Barbell im Rack / Ringe"
+- When genuinely unsure which case applies, leave the aside in "name" — losing a qualifier that
+  changes the exercise is worse than an overly long name.
+
 MULTI-DAY:
 - Preserve day grouping (GK A, GK B, GK C as separate days).
 - Do NOT duplicate identical exercise lists across days unless the source explicitly repeats them.

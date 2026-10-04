@@ -216,13 +216,25 @@ function loadCatalogByLengthDesc(): { name: string; lower: string }[] {
   return [...loadCatalog()].sort((a, b) => b.lower.length - a.lower.length);
 }
 
-/** Match when all significant tokens of a catalog name appear in the input. */
+/** Match when all significant tokens of a catalog name appear in the input.
+ *
+ * Catalog tokens split on hyphens as well as spaces. The catalog's `lower`
+ * field is sometimes a German alias (loadCatalog unions in
+ * exercise_translations), and German compounds hyphenate rather than space —
+ * "Überkreuz-Reverse-Ausfallschritt" split on whitespace alone is ONE token.
+ * A single long token is satisfied by containment ("reverse" sits inside it),
+ * so "allPresent" passed trivially off one coincidental substring, scoring
+ * 1 catalog token / 2 input tokens = 0.5 — exactly the acceptance threshold.
+ * That is how "Reverse Butterfly" (a rear-delt exercise) confidently matched
+ * "Crossover Reverse Lunge" (a leg exercise): splitting the compound into
+ * "überkreuz" / "reverse" / "ausfallschritt" needs all three satisfied, which
+ * "reverse butterfly" cannot do. */
 function matchByTokenOverlap(inputLower: string): string | null {
   const inputTokens = inputLower.split(/\s+/).filter((t) => t.length > 1);
   let best: { name: string; score: number } | null = null;
 
   for (const row of loadCatalogByLengthDesc()) {
-    const catTokens = row.lower.split(/\s+/).filter((t) => t.length > 1);
+    const catTokens = row.lower.split(/[\s-]+/).filter((t) => t.length > 1);
     if (catTokens.length === 0) continue;
 
     const allPresent = catTokens.every((ct) =>
