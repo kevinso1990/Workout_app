@@ -235,7 +235,12 @@
       "documentRead": "Im Dokument: „{{name}}“",
       "saveToPlans": "Plan in „Meine Pläne“ speichern",
       "cancel": "Import abbrechen",
-      "manualIntro": "Füge Übungen aus dem Katalog hinzu und speichere den Plan unter Meine Pläne."
+      "manualIntro": "Füge Übungen aus dem Katalog hinzu und speichere den Plan unter Meine Pläne.",
+      "avoidFoundTitle": "Vermeiden-Liste gefunden",
+      "avoidFoundBody": "Diese Quelle nennt {{count}} Übung(en), die vermieden werden sollen: {{list}}",
+      "avoidIgnore": "Ignorieren",
+      "avoidSave": "Zum Profil hinzufügen",
+      "avoidSaved": "Zur Vermeiden-Liste im Profil hinzugefügt"
     }
   },
   "aiCoach": {
@@ -605,7 +610,8 @@
     "commitments": {
       "title": "Sport außerhalb des Gyms",
       "subtitle": "Feste Termine — dein Plan wird drumherum gelegt"
-    }
+    },
+    "avoidExercises": "Übungen vermeiden"
   },
   "onboarding": {
     "welcome": "Lass uns deinen perfekten Trainingsplan erstellen",
@@ -778,6 +784,13 @@
         "boxing": "Kampfsport",
         "custom": "Anderes"
       }
+    },
+    "avoidExercises": {
+      "title": "Übungen, die du vermeiden möchtest?",
+      "subtitle": "Zum Beispiel von deiner Physiotherapie, oder weil eine Übung dir schon einmal wehgetan hat. Dein Plan wird sie nie enthalten.",
+      "placeholder": "z. B. Good Mornings",
+      "skip": "Keine Einschränkungen",
+      "removeA11y": "{{name}} entfernen"
     }
   },
   "exercisesScreen": {
@@ -1040,7 +1053,8 @@
     "saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
     "deleteFailed": "Löschen fehlgeschlagen. Bitte erneut versuchen.",
     "loadFailed": "Laden fehlgeschlagen. Prüfe deine Verbindung und zieh zum Aktualisieren.",
-    "actionFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    "actionFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    "add": "Hinzufügen"
   },
   "editPlan": {
     "planName": "Planname",

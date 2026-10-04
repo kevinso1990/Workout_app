@@ -6,6 +6,7 @@ import EquipmentScreen from "@/screens/onboarding/EquipmentScreen";
 import GoalsScreen from "@/screens/onboarding/GoalsScreen";
 import FrequencyScreen from "@/screens/onboarding/FrequencyScreen";
 import CommitmentsScreen from "@/screens/onboarding/CommitmentsScreen";
+import AvoidExercisesScreen from "@/screens/onboarding/AvoidExercisesScreen";
 import FitnessLevelScreen from "@/screens/onboarding/FitnessLevelScreen";
 import SplitSelectionScreen from "@/screens/onboarding/SplitSelectionScreen";
 import { OnboardingProvider } from "@/context/OnboardingContext";
@@ -15,6 +16,7 @@ export type OnboardingStackParamList = {
   Equipment: undefined;
   Goals: undefined;
   Commitments: undefined;
+  AvoidExercises: undefined;
   Frequency: undefined;
   FitnessLevel: undefined;
   SplitSelection: undefined;
@@ -37,6 +39,7 @@ export default function OnboardingStackNavigator() {
         <Stack.Screen name="Equipment" component={EquipmentScreen} />
         <Stack.Screen name="Goals" component={GoalsScreen} />
         <Stack.Screen name="Commitments" component={CommitmentsScreen} />
+        <Stack.Screen name="AvoidExercises" component={AvoidExercisesScreen} />
         <Stack.Screen name="Frequency" component={FrequencyScreen} />
         <Stack.Screen name="FitnessLevel" component={FitnessLevelScreen} />
         <Stack.Screen name="SplitSelection" component={SplitSelectionScreen} />

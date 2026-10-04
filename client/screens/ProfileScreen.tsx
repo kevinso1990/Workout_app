@@ -45,6 +45,7 @@ import { runDataSync } from "@/lib/dataSync";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { BrandMark } from "@/components/brand/BrandLogo";
 import { CommitmentEditor } from "@/components/schedule/CommitmentEditor";
+import { AvoidExerciseEditor } from "@/components/AvoidExerciseEditor";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import * as WebBrowser from "expo-web-browser";
 import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from "@/lib/legalLinks";
@@ -494,6 +495,35 @@ const EQUIPMENT_OPTIONS: {
   },
   { id: "bodyweight", labelKey: "profile.equipmentBodyweight", icon: "user" },
 ];
+
+function AvoidExercisesCard({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (names: string[]) => void;
+}) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { t } = useTranslation();
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(195).duration(400)}
+      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+    >
+      <View style={styles.prefsCardHeader}>
+        <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
+          <Feather name="slash" size={18} color={theme.primary} />
+        </View>
+        <ThemedText style={styles.prefsCardTitle}>
+          {t("profile.avoidExercises", { defaultValue: "Übungen vermeiden" })}
+        </ThemedText>
+      </View>
+      <AvoidExerciseEditor value={value} onChange={onChange} />
+    </Animated.View>
+  );
+}
 
 function EquipmentCard({
   equipment,
@@ -959,6 +989,13 @@ export default function ProfileScreen() {
     await setUserPreferences(updated);
   };
 
+  const handleChangeAvoidExercises = async (names: string[]) => {
+    const current = preferences ?? { workoutDaysPerWeek: 3 };
+    const updated = { ...current, avoidExercises: names };
+    setPreferences(updated);
+    await setUserPreferences(updated);
+  };
+
   const handleSelectEquipment = async (value: Equipment) => {
     setEquipmentState(value);
     const current = preferences ?? {
@@ -1072,6 +1109,11 @@ export default function ProfileScreen() {
       />
 
       <EquipmentCard equipment={equipment} onSelect={handleSelectEquipment} />
+
+      <AvoidExercisesCard
+        value={preferences?.avoidExercises ?? []}
+        onChange={handleChangeAvoidExercises}
+      />
 
       <CloudBackupCard />
 

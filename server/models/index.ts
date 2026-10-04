@@ -421,6 +421,8 @@ export interface AutoGeneratePlansBody {
    * unlocks mobility/stretching movements that the structured path filters out.
    */
   goalText?: string;
+  /** Exercise names to exclude — typed by the user or lifted from an imported plan. */
+  avoidExercises?: string[];
 }
 
 export interface AcceptRecommendationsBody {

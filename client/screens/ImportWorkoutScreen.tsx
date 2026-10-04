@@ -40,6 +40,9 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { getUserPreferences, setUserPreferences } from "@/lib/storage";
+import { mergeAvoidLists } from "@shared/avoidExercises";
+import { toast } from "@/lib/toast";
 import {
   useWorkoutImport,
   ImportedWorkoutPlan,
@@ -541,6 +544,21 @@ export default function ImportWorkoutScreen() {
     runAnalyze({ images });
   };
 
+  const handleSaveAvoidExercises = async (names: string[]) => {
+    const current = (await getUserPreferences()) ?? { workoutDaysPerWeek: 3 };
+    const updated = {
+      ...current,
+      avoidExercises: mergeAvoidLists(current.avoidExercises ?? [], names),
+    };
+    await setUserPreferences(updated);
+    toast.success(
+      t("importWorkout.review.avoidSaved", {
+        count: names.length,
+        defaultValue: "Zur Vermeiden-Liste im Profil hinzugefügt",
+      }),
+    );
+  };
+
   const handleSavePlan = async () => {
     if (!previewPlan) return;
     const total = countImportedExercises(previewPlan);
@@ -893,6 +911,7 @@ export default function ImportWorkoutScreen() {
           }}
           onSave={handleSavePlan}
           onCancel={resetImportFlow}
+          onSaveAvoidExercises={handleSaveAvoidExercises}
         />
         {error ? (
           <View
@@ -953,6 +972,7 @@ export default function ImportWorkoutScreen() {
           }}
           onSave={handleSavePlan}
           onCancel={resetImportFlow}
+          onSaveAvoidExercises={handleSaveAvoidExercises}
         />
         <CatalogPickModal
           visible={catalogPick !== null && catalogPick.kind === "add"}

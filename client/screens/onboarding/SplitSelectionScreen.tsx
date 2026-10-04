@@ -287,6 +287,7 @@ export default function SplitSelectionScreen() {
         focusMuscles: state.focusMuscles,
         splitId: selectedSplit,
         commitments: state.weeklyCommitments,
+        avoidExercises: state.avoidExercises,
       } as const;
 
       const plan = createPlanInstantly(input);

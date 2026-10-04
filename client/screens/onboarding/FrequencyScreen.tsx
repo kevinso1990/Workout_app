@@ -133,7 +133,7 @@ export default function FrequencyScreen() {
       >
         <View>
           <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-            <ProgressBar showBrand step={4} total={5} style={{ marginBottom: Spacing.xl }} />
+            <ProgressBar showBrand step={5} total={6} style={{ marginBottom: Spacing.xl }} />
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(200).duration(500)}>

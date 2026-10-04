@@ -316,7 +316,12 @@
       "documentRead": "Read from document: \"{{name}}\"",
       "saveToPlans": "Save plan to My Plans",
       "cancel": "Cancel import",
-      "manualIntro": "Add exercises from the library, then save to My Plans."
+      "manualIntro": "Add exercises from the library, then save to My Plans.",
+      "avoidFoundTitle": "Avoid-list found",
+      "avoidFoundBody": "This source names {{count}} exercise(s) to avoid: {{list}}",
+      "avoidIgnore": "Ignore",
+      "avoidSave": "Add to profile",
+      "avoidSaved": "Added to your avoid-list in Profile"
     }
   },
   "aiCoach": {
@@ -686,7 +691,8 @@
     "commitments": {
       "title": "Sport outside the gym",
       "subtitle": "Fixed commitments — your plan is built around them"
-    }
+    },
+    "avoidExercises": "Exercises to avoid"
   },
   "onboarding": {
     "welcome": "Let's build your perfect workout plan",
@@ -859,6 +865,13 @@
         "boxing": "Combat sport",
         "custom": "Other"
       }
+    },
+    "avoidExercises": {
+      "title": "Any exercises you want to avoid?",
+      "subtitle": "From a physio, or something that has hurt before. Your plan will never include them.",
+      "placeholder": "e.g. Good Mornings",
+      "skip": "Nothing to avoid",
+      "removeA11y": "Remove {{name}}"
     }
   },
   "splits": {
@@ -1040,7 +1053,8 @@
     "saveFailed": "Couldn't save. Please try again.",
     "deleteFailed": "Couldn't delete. Please try again.",
     "loadFailed": "Couldn't load. Check your connection and pull to refresh.",
-    "actionFailed": "Something went wrong. Please try again."
+    "actionFailed": "Something went wrong. Please try again.",
+    "add": "Add"
   },
   "editPlan": {
     "planName": "Plan name",

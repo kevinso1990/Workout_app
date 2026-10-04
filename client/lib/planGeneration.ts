@@ -53,6 +53,8 @@ export type GenerateWorkoutPlanInput = {
    * not also carry maximal lower-body volume).
    */
   commitments?: WeeklyCommitment[];
+  /** Exercise names to exclude — see shared/avoidExercises.ts. */
+  avoidExercises?: string[];
 };
 
 /**
@@ -119,6 +121,7 @@ export async function fetchAiGeneratedPlan(
     splitPreference: input.splitId,
     ...(input.goalText ? { goalText: input.goalText } : {}),
     ...(commitmentsText ? { commitmentsText } : {}),
+    ...(input.avoidExercises?.length ? { avoidExercises: input.avoidExercises } : {}),
   };
 
   if (__DEV__) {
@@ -177,6 +180,8 @@ export function buildLocalPlan(input: GenerateWorkoutPlanInput): WorkoutPlan {
       input.frequency,
       input.equipment,
       input.experience,
+      undefined,
+      input.avoidExercises,
     );
   }
 
@@ -185,6 +190,7 @@ export function buildLocalPlan(input: GenerateWorkoutPlanInput): WorkoutPlan {
     input.planName ?? "My Workout Plan",
     input.equipment,
     input.experience,
+    input.avoidExercises,
   );
 }
 

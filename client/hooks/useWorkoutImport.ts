@@ -79,6 +79,8 @@ export interface ImportedWorkoutPlan {
   days: ImportedWorkoutDay[];
   /** Server: KI hat keine lesbaren Übungen geliefert — manueller Aufbau im Client. */
   emptyPlan?: boolean;
+  /** Exercise names the source itself framed as "do not do" (e.g. a physio plan's forbidden-exercise table). */
+  avoidExercises?: string[];
 }
 
 export interface PickedImage {

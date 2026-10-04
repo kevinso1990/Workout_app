@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import db from "../db";
 import { AppError } from "../middleware/errorHandler";
 import { getDislikedExerciseIds } from "./voteService";
+import { matchExerciseToCatalog } from "./importExerciseMatchService";
 import { geminiGenerateContent } from "./geminiGenerate";
 import {
   buildGeminiAutoGeneratePrompt,
@@ -53,6 +54,13 @@ const autoGenerateSchema = z.object({
    * describeCommitmentsForPrompt so the wire format stays a plain string.
    */
   commitmentsText: z.string().trim().max(600).optional(),
+  /**
+   * Exercise names to exclude entirely — typed by the user or lifted from an
+   * imported plan's own "do not do" section (see shared/avoidExercises.ts).
+   * Free text, same as commitmentsText; resolved against the catalog in
+   * makeAutoGenRuntime, not here.
+   */
+  avoidExercises: z.array(z.string().trim().max(120)).max(30).optional().default([]),
 });
 
 /**
@@ -734,13 +742,16 @@ type AutoGenRuntime = {
   weeklyMuscleFreq: number;
   allowedEquip: string[];
   dislikedIds: number[];
+  /** Lowercased canonical names resolved from avoidExercises — removed from
+   * the AI's name whitelist so it cannot choose them, not merely told not to. */
+  avoidedCanonicalNames: Set<string>;
   tpl: ReturnType<typeof selectTemplates>;
   prefix: string;
   maxSessionSets: number;
   userId?: number;
 };
 
-function makeAutoGenRuntime(
+export function makeAutoGenRuntime(
   body: AutoGeneratePlansBody,
   userId?: number,
   deviceId?: string,
@@ -750,7 +761,7 @@ function makeAutoGenRuntime(
     const msg = parsed.error.errors.map((e) => e.message).join("; ");
     throw new AppError(400, msg);
   }
-  const { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText, commitmentsText } =
+  const { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText, commitmentsText, avoidExercises } =
     parsed.data;
   const planShape = resolvePlanShape(splitPreference, frequency, experience);
   const exerciseCount = getExerciseCount(experience, planShape);
@@ -764,18 +775,33 @@ function makeAutoGenRuntime(
   const allowedEquip = goalText
     ? [...new Set([...baseEquip, ...GOAL_TEXT_EQUIPMENT])]
     : baseEquip;
-  const dislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
+  const baseDislikedIds = deviceId ? getDislikedExerciseIds(deviceId) : [];
+  // Confident matches join the SAME exclusion list every template/AI exercise
+  // pick already filters against (resolveExercise, the template SQL below) —
+  // one mechanism instead of a second parallel one. Unconfident matches have
+  // no catalog id to exclude and are covered instead by the whitelist removal
+  // (avoidedCanonicalNames), which only needs a confident canonical name too.
+  const avoidedMatches = avoidExercises
+    .map((name) => matchExerciseToCatalog(name))
+    .filter((m) => !m.needsUserMapping && m.catalogExerciseId != null);
+  const dislikedIds = [
+    ...new Set([...baseDislikedIds, ...avoidedMatches.map((m) => m.catalogExerciseId!)]),
+  ];
+  const avoidedCanonicalNames = new Set(
+    avoidedMatches.map((m) => m.canonicalName.toLowerCase().trim()),
+  );
   const tpl = selectTemplates(equipment);
   const prefix = equipment === "kettlebell" ? "KB " : "";
   const maxSessionSets =
     experience === "beginner" ? 14 : experience === "advanced" ? 25 : 21;
   return {
-    parsed: { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText, commitmentsText },
+    parsed: { frequency, experience, goal, equipment, focusMuscles, splitPreference, goalText, commitmentsText, avoidExercises },
     planShape,
     exerciseCount,
     weeklyMuscleFreq,
     allowedEquip,
     dislikedIds,
+    avoidedCanonicalNames,
     tpl,
     prefix,
     maxSessionSets,
@@ -1202,6 +1228,14 @@ export async function tryAutoGeneratePlansWithAi(
     ? baseSessions.map((s, idx) => ({ ...s, name: `Tag ${idx + 1}` }))
     : baseSessions;
   const whitelist = getExerciseNameWhitelist(rt.allowedEquip);
+  // Remove avoided exercises from the pool the model is even shown, rather
+  // than asking it not to pick them. A prompt instruction is advice an LLM can
+  // ignore; a name that was never on the list cannot be chosen. Checked against
+  // the whitelist's own keys (already lowercased) for an exact match on the
+  // RESOLVED canonical name — the free-text avoid phrase itself was already
+  // reduced to that canonical form by matchExerciseToCatalog in
+  // makeAutoGenRuntime, so this is a direct lookup, not fuzzy matching here.
+  for (const name of rt.avoidedCanonicalNames) whitelist.delete(name);
   if (whitelist.size < 12) return null;
 
   const whitelistLines = [...whitelist.values()].sort().join("\n");

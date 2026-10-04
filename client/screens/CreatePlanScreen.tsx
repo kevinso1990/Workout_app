@@ -133,6 +133,7 @@ export default function CreatePlanScreen() {
         equipment: prefs?.equipment ?? null,
         focusMuscles: prefs?.focusMuscles,
         planName: planName.trim(),
+        avoidExercises: prefs?.avoidExercises,
       } as const;
 
       const plan = createPlanInstantly(input);

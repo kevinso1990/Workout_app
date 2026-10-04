@@ -16,6 +16,7 @@ interface OnboardingState {
   fitnessGoals: FitnessGoal[];
   equipment: Equipment | null;
   focusMuscles: MuscleGroup[];
+  avoidExercises: string[];
 }
 
 interface OnboardingContextType {
@@ -26,6 +27,7 @@ interface OnboardingContextType {
   setFitnessGoals: (goals: FitnessGoal[]) => void;
   setEquipment: (equipment: Equipment) => void;
   setFocusMuscles: (muscles: MuscleGroup[]) => void;
+  setAvoidExercises: (names: string[]) => void;
   getPreferences: () => UserPreferences;
   reset: () => void;
 }
@@ -41,6 +43,7 @@ const initialState: OnboardingState = {
   fitnessGoals: [],
   equipment: null,
   focusMuscles: [],
+  avoidExercises: [],
 };
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
@@ -70,6 +73,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, focusMuscles: muscles }));
   };
 
+  const setAvoidExercises = (names: string[]) => {
+    setState((prev) => ({ ...prev, avoidExercises: names }));
+  };
+
   const getPreferences = (): UserPreferences => {
     return {
       workoutDaysPerWeek: state.workoutDaysPerWeek,
@@ -78,6 +85,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       fitnessGoals: state.fitnessGoals,
       equipment: state.equipment,
       focusMuscles: state.focusMuscles,
+      avoidExercises: state.avoidExercises,
     };
   };
 
@@ -95,6 +103,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setFitnessGoals,
         setEquipment,
         setFocusMuscles,
+        setAvoidExercises,
         getPreferences,
         reset,
       }}

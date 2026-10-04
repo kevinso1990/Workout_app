@@ -18,6 +18,7 @@ import {
   type ParsedImportPlan,
 } from '../services/importTextParser';
 import { IMPORT_WORKOUT_EXTRACTION_PROMPT, IMPORT_WORKOUT_RESPONSE_SCHEMA } from '../services/aiGenerator';
+import { mergeAvoidLists } from "../../shared/avoidExercises";
 import { formatAiServiceError } from '../lib/formatAiServiceError';
 import { jsonrepair } from 'jsonrepair';
 
@@ -97,10 +98,25 @@ function deduplicateExercisesAcrossDays(raw: Record<string, unknown>): void {
   }
 }
 
-function normalizeImportedPlan(raw: Record<string, unknown>): Record<string, unknown> {
+export function normalizeImportedPlan(raw: Record<string, unknown>): Record<string, unknown> {
   const planName =
     typeof raw.planName === "string" && raw.planName.trim() ? raw.planName.trim() : "Imported Plan";
   raw.planName = planName;
+
+  // Names the source itself framed as "do not do" (see AVOID-LIST in the
+  // extraction prompt). Sanitized the same way a user-typed entry would be —
+  // trimmed, de-duplicated, capped — since this is about to sit in the same
+  // list as anything typed in Profile or onboarding.
+  // Deterministic safety net, independent of whether the model followed the
+  // split-compound-rows instruction: an exercise name never legitimately
+  // contains a comma, so splitting on one is unambiguous and catches a model
+  // that still returns "V-Ups, Jackknives, Sit-Ups" as a single joined entry.
+  const avoidNames = Array.isArray(raw.avoidExercises)
+    ? raw.avoidExercises
+        .filter((n): n is string => typeof n === "string")
+        .flatMap((n) => n.split(","))
+    : [];
+  raw.avoidExercises = mergeAvoidLists([], avoidNames);
 
   const days = raw.days;
   if (!Array.isArray(days) || days.length === 0) {

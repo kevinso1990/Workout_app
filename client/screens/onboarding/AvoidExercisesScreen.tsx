@@ -1,4 +1,4 @@
-import React, { useState, useMemo} from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -10,48 +10,43 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
-import { HEVY } from "@/constants/hevyLayout";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { OnboardingStackParamList } from "@/navigation/OnboardingStackNavigator";
 import { screenHeaderSafeAreaStyle } from "@/lib/paddingTopUnderHeader";
 import { ProgressBar } from "@/components/onboarding/ProgressBar";
 import { OnboardingHeading } from "@/components/onboarding/OnboardingHeading";
-import { CommitmentEditor } from "@/components/schedule/CommitmentEditor";
+import { AvoidExerciseEditor } from "@/components/AvoidExerciseEditor";
 
-type NavigationProp = NativeStackNavigationProp<OnboardingStackParamList, "Commitments">;
+type NavigationProp = NativeStackNavigationProp<OnboardingStackParamList, "AvoidExercises">;
 
 /**
- * Fixed weekly commitments ("Tuesday basketball, Thursday jogging").
+ * Exercises to exclude from every generated plan — a physio's "do not do"
+ * list, or a movement that has caused pain before.
  *
- * This sits immediately before the frequency question on purpose: it changes
- * that question. Without it the app would ask for 1-7 gym days in a vacuum and
- * then silently cap the answer once the sport days are known, which reads as
- * the app overruling the athlete. Asked in this order, the next screen can
- * simply offer only the days that are actually free.
- *
- * Most people have nothing to declare, so "only the gym" is a single tap that
- * skips straight on — the previous cardio question in this flow was dropped for
- * being an unskippable step that changed nothing, and this must not repeat that.
+ * Grouped with Commitments rather than Equipment/FitnessLevel: both are
+ * boundaries the generator must respect, not preferences it can weigh. Most
+ * people have nothing to add here, so — like Commitments — skipping is a
+ * single tap, never a forced empty step.
  */
-export default function CommitmentsScreen() {
+export default function AvoidExercisesScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation = useNavigation<NavigationProp>();
-  const { state, setWeeklyCommitments } = useOnboarding();
+  const { state, setAvoidExercises } = useOnboarding();
 
   const goNext = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("AvoidExercises");
+    navigation.navigate("Frequency");
   };
 
   const skip = () => {
     Haptics.selectionAsync();
-    setWeeklyCommitments([]);
-    navigation.navigate("AvoidExercises");
+    setAvoidExercises([]);
+    navigation.navigate("Frequency");
   };
 
   return (
@@ -61,40 +56,29 @@ export default function CommitmentsScreen() {
         { flex: 1, backgroundColor: theme.backgroundRoot, ...screenHeaderSafeAreaStyle(insets.top) },
       ]}
     >
-      <ProgressBar showBrand step={3} total={6} style={{ marginBottom: Spacing.lg }} />
+      <ProgressBar showBrand step={4} total={6} style={{ marginBottom: Spacing.lg }} />
       <Animated.View entering={FadeInDown.duration(400)}>
         <OnboardingHeading
-          title={t("onboarding.commitments.title", {
-            defaultValue: "Trainierst du außerhalb des Gyms?",
+          title={t("onboarding.avoidExercises.title", {
+            defaultValue: "Übungen, die du vermeiden möchtest?",
           })}
-          subtitle={t("onboarding.commitments.subtitle", {
+          subtitle={t("onboarding.avoidExercises.subtitle", {
             defaultValue:
-              "Tippe die Tage an, an denen du Sport hast. Dein Plan wird drumherum gelegt.",
+              "Zum Beispiel von deiner Physiotherapie, oder weil eine Übung dir schon einmal wehgetan hat. Dein Plan wird sie nie enthalten.",
           })}
         />
       </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.editorWrap}>
-          <CommitmentEditor
-            commitments={state.weeklyCommitments}
-            onChange={setWeeklyCommitments}
-          />
-          {state.weeklyCommitments.length > 0 ? (
-            <ThemedText style={[styles.freeDays, { color: theme.textSecondary }]}>
-              {t("onboarding.commitments.freeDays", {
-                count: 7 - state.weeklyCommitments.length,
-                defaultValue: `${7 - state.weeklyCommitments.length} Tage bleiben fürs Gym`,
-              })}
-            </ThemedText>
-          ) : null}
+          <AvoidExerciseEditor value={state.avoidExercises} onChange={setAvoidExercises} />
         </Animated.View>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
-        <Pressable onPress={skip} testID="button-commitments-skip" style={styles.skipButton}>
+        <Pressable onPress={skip} testID="button-avoid-skip" style={styles.skipButton}>
           <ThemedText style={[styles.skipText, { color: theme.textSecondary }]}>
-            {t("onboarding.commitments.skip", { defaultValue: "Nein, nur Gym" })}
+            {t("onboarding.avoidExercises.skip", { defaultValue: "Keine Einschränkungen" })}
           </ThemedText>
         </Pressable>
         <View style={styles.footerRow}>
@@ -120,7 +104,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   container: { paddingHorizontal: Spacing.xl },
   scroll: { flex: 1 },
   editorWrap: { marginTop: Spacing.lg },
-  freeDays: { fontSize: 13, marginTop: Spacing.sm },
   footer: { gap: Spacing.md },
   skipButton: { alignItems: "center", paddingVertical: Spacing.sm },
   skipText: { fontSize: 15, fontWeight: "600" },

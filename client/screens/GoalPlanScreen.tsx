@@ -70,6 +70,7 @@ export default function GoalPlanScreen() {
   const [goalText, setGoalText] = useState("");
   const [frequency, setFrequency] = useState<number>(3);
   const [experience, setExperience] = useState<FitnessLevel>("intermediate");
+  const [avoidExercises, setAvoidExercises] = useState<string[]>([]);
   const [equipment, setEquipment] = useState<Equipment | null>("full_gym");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("");
@@ -85,6 +86,7 @@ export default function GoalPlanScreen() {
       if (prefs.workoutDaysPerWeek) setFrequency(prefs.workoutDaysPerWeek);
       if (prefs.fitnessLevel) setExperience(prefs.fitnessLevel);
       if (prefs.equipment) setEquipment(prefs.equipment);
+      if (prefs.avoidExercises?.length) setAvoidExercises(prefs.avoidExercises);
     })();
     return () => {
       cancelled = true;
@@ -118,6 +120,7 @@ export default function GoalPlanScreen() {
         equipment,
         goalText: trimmed,
         planName: trimmed.length > 40 ? trimmed.slice(0, 40).trim() : trimmed,
+        avoidExercises,
       });
 
       if (loadingTimer.current) clearTimeout(loadingTimer.current);

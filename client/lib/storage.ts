@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
+import { filterAvoidedExercises } from "@shared/avoidExercises";
 
 export type { WeeklyCommitment, Weekday } from "@shared/weeklySchedule";
 
@@ -35,6 +36,13 @@ export interface UserPreferences {
   focusMuscles?: MuscleGroupType[];
   /** Whether to show an automatic rest countdown after each set. Default true. */
   restTimerEnabled?: boolean;
+  /**
+   * Exercise names to exclude from every generated plan — typed by the user
+   * (onboarding, Profile) or imported verbatim from a physio/trainer plan's
+   * own "do not do" list. Free text, not catalog IDs: see
+   * shared/avoidExercises.ts for how a name is matched against a pool.
+   */
+  avoidExercises?: string[];
 }
 
 const DEFAULT_USER_PREFERENCES: UserPreferences = {
@@ -48,6 +56,7 @@ export function mergeRestTimerPreference(
 ): UserPreferences {
   return { ...DEFAULT_USER_PREFERENCES, ...prefs, restTimerEnabled };
 }
+
 
 export interface Exercise {
   id: string;
@@ -1645,6 +1654,7 @@ export function generateEquipmentAwarePlan(
   name: string = "My Workout Plan",
   equipment: Equipment | null = null,
   fitnessLevel: FitnessLevel | null = null,
+  avoidExercises?: string[],
 ): WorkoutPlan {
   const splitDays = SPLIT_RECOMMENDATIONS[daysPerWeek] ?? ["Full Body"];
 
@@ -1661,12 +1671,18 @@ export function generateEquipmentAwarePlan(
       fullBodyCount += 1;
       return {
         dayName: variantKey,
-        exercises: getEquipmentExercises(equipment, variantKey, fitnessLevel),
+        exercises: filterAvoidedExercises(
+          getEquipmentExercises(equipment, variantKey, fitnessLevel),
+          avoidExercises,
+        ),
       };
     }
     return {
       dayName,
-      exercises: getEquipmentExercises(equipment, dayName, fitnessLevel),
+      exercises: filterAvoidedExercises(
+        getEquipmentExercises(equipment, dayName, fitnessLevel),
+        avoidExercises,
+      ),
     };
   });
 

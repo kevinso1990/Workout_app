@@ -44,17 +44,37 @@ MULTI-DAY:
 - Do NOT duplicate identical exercise lists across days unless the source explicitly repeats them.
 - Do NOT merge warm-up or cardio exercises into strength days.
 
+AVOID-LIST — separate from the days, same pass, no extra sections to read:
+- Some plans carry a section explicitly framed as things NOT to do — titled something
+  like "Verboten", "Vermeiden", "Nicht erlaubt", "Contraindicated", "Avoid", "Do not perform" —
+  typically from a physio or trainer, often with a reason column (e.g. "Warum"/"Why") instead
+  of a sets×reps column. These sections are already excluded from "days" by the rule above.
+- Separately collect just the exercise NAMES from such a section (if present) into a top-level
+  "avoidExercises" string array — e.g. ["Superman", "Good Mornings", "Russian Twists"].
+- If one row/line names SEVERAL exercises together (e.g. "V-Ups, Jackknives, Sit-Ups mit
+  fixierten Füßen" or "Toes-to-Bar, Windshield Wipers"), split them into SEPARATE array
+  entries — one exercise name per entry, never a comma-joined group. Each entry must stand
+  alone as something that could be matched against a single exercise.
+- Do NOT use this field for exercises that are merely out of scope for THIS extraction (warm-up,
+  cardio, mobility) — those are not dangerous, just not what this pass parses. Only exercises the
+  source itself frames as something to avoid/not do belong here.
+- If no such section exists, return an empty array. Never invent entries.
+
 OUTPUT FORMAT — VALID JSON IS MANDATORY:
 - If a source exercise name contains a double-quote character (e.g. an alt-name in quotes like Hip "Getup"), you MUST escape it as \\" inside the JSON string, or rewrite the name without the quote marks. Never emit a raw, unescaped " inside a JSON string value.
 - Output must be a single valid JSON object parseable by a strict JSON parser — no trailing commas, no comments.
 
-If zero strength exercises found in allowed sections, return: {"planName":"Imported Plan","days":[]}`;
+If zero strength exercises found in allowed sections, return: {"planName":"Imported Plan","days":[],"avoidExercises":[]}`;
 
 /** JSON schema for Gemini structured output (import). */
 export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     planName: { type: "string" },
+    avoidExercises: {
+      type: "array",
+      items: { type: "string" },
+    },
     days: {
       type: "array",
       items: {
@@ -80,7 +100,7 @@ export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ["planName", "days"],
+  required: ["planName", "days", "avoidExercises"],
 } as const;
 
 /**

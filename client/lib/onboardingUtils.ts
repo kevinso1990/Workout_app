@@ -3,6 +3,7 @@ import {
   type WorkoutDay,
   type WorkoutPlan,
 } from "./storage";
+import { filterAvoidedExercises } from "@shared/avoidExercises";
 
 export type FitnessLevel = "beginner" | "intermediate" | "advanced";
 export type FitnessGoal = "build_muscle" | "lose_fat" | "get_stronger";
@@ -144,6 +145,7 @@ export function buildOnboardingPlan(
   equipment: Equipment | null,
   fitnessLevel: FitnessLevel | null,
   planId: string = Date.now().toString(),
+  avoidExercises?: string[],
 ): WorkoutPlan {
   const selectedSplitOption = SPLIT_OPTIONS.find((s) => s.id === splitId);
   if (!selectedSplitOption) {
@@ -168,12 +170,18 @@ export function buildOnboardingPlan(
       fbCount++;
       return {
         dayName: variantLabel,
-        exercises: getEquipmentExercises(equipment, variantLabel, fitnessLevel),
+        exercises: filterAvoidedExercises(
+          getEquipmentExercises(equipment, variantLabel, fitnessLevel),
+          avoidExercises,
+        ),
       };
     }
     return {
       dayName,
-      exercises: getEquipmentExercises(equipment, dayName, fitnessLevel),
+      exercises: filterAvoidedExercises(
+        getEquipmentExercises(equipment, dayName, fitnessLevel),
+        avoidExercises,
+      ),
     };
   });
 

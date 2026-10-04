@@ -47,6 +47,8 @@ type ImportPlanReviewPanelProps = {
   onSave: () => void;
   onCancel: () => void;
   introHint?: string;
+  /** Called with the names found in the source's own "do not do" section, if the user chooses to keep them. */
+  onSaveAvoidExercises?: (names: string[]) => void;
 };
 
 function PrimarySaveButton({
@@ -92,10 +94,12 @@ export function ImportPlanReviewPanel({
   onSave,
   onCancel,
   introHint,
+  onSaveAvoidExercises,
 }: ImportPlanReviewPanelProps) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
+  const [avoidDismissed, setAvoidDismissed] = useState(false);
   const insets = useSafeAreaInsets();
   const [inlinePick, setInlinePick] = useState<InlinePick>(null);
   const [inlineQuery, setInlineQuery] = useState("");
@@ -181,6 +185,57 @@ export function ImportPlanReviewPanel({
           placeholderTextColor={theme.chalkFaint}
           returnKeyType="done"
         />
+
+        {plan.avoidExercises && plan.avoidExercises.length > 0 && !avoidDismissed ? (
+          <Animated.View
+            entering={FadeInDown.duration(300)}
+            style={[
+              styles.avoidCard,
+              { backgroundColor: theme.primary + "1A", borderColor: theme.primary + "4D" },
+            ]}
+          >
+            <View style={styles.avoidHeader}>
+              <Feather name="slash" size={16} color={theme.primary} />
+              <ThemedText style={[styles.avoidTitle, { color: theme.primary }]}>
+                {t("importWorkout.review.avoidFoundTitle", { defaultValue: "Vermeiden-Liste gefunden" })}
+              </ThemedText>
+            </View>
+            <ThemedText style={[styles.avoidBody, { color: theme.text }]}>
+              {t("importWorkout.review.avoidFoundBody", {
+                count: plan.avoidExercises.length,
+                list: plan.avoidExercises.join(", "),
+                defaultValue: `Diese Quelle nennt ${plan.avoidExercises.length} Übung(en), die vermieden werden sollen: ${plan.avoidExercises.join(", ")}`,
+              })}
+            </ThemedText>
+            <View style={styles.avoidActions}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setAvoidDismissed(true);
+                }}
+                style={styles.avoidSecondaryBtn}
+                testID="button-avoid-dismiss"
+              >
+                <ThemedText style={[styles.avoidSecondaryText, { color: theme.textSecondary }]}>
+                  {t("importWorkout.review.avoidIgnore", { defaultValue: "Ignorieren" })}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  onSaveAvoidExercises?.(plan.avoidExercises!);
+                  setAvoidDismissed(true);
+                }}
+                style={[styles.avoidPrimaryBtn, { backgroundColor: theme.primary }]}
+                testID="button-avoid-save"
+              >
+                <ThemedText style={[styles.avoidPrimaryText, { color: theme.onChalk }]}>
+                  {t("importWorkout.review.avoidSave", { defaultValue: "Zum Profil hinzufügen" })}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </Animated.View>
+        ) : null}
 
         {plan.days.map((day, dayIdx) => (
           <View key={dayIdx} style={styles.dayBlock}>
@@ -516,6 +571,44 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     backgroundColor: c.ironElevated2,
     color: c.chalk,
   },
+  avoidCard: {
+    marginTop: Spacing.lg,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    gap: Spacing.sm,
+  },
+  avoidHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  avoidTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  avoidBody: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  avoidActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: Spacing.sm,
+  },
+  avoidSecondaryBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.md,
+  },
+  avoidSecondaryText: { fontSize: 13, fontWeight: "600" },
+  avoidPrimaryBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  avoidPrimaryText: { fontSize: 13, fontWeight: "700" },
   dayBlock: {
     marginTop: HEVY.padLg,
     gap: HEVY.pad,
