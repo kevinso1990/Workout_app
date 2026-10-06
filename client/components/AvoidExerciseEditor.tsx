@@ -58,6 +58,7 @@ export function AvoidExerciseEditor({ value, onChange }: Props) {
         <Pressable
           onPress={addDraft}
           disabled={!draft.trim()}
+          hitSlop={6}
           style={[styles.addBtn, { backgroundColor: theme.primary, opacity: draft.trim() ? 1 : 0.35 }]}
           testID="button-add-avoid-exercise"
           accessibilityRole="button"

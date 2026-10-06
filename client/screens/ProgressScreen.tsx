@@ -801,7 +801,7 @@ function ExerciseDetailModal({
           <ThemedText style={styles.modalTitle} numberOfLines={1}>
             {exercise.exerciseName}
           </ThemedText>
-          <Pressable onPress={onClose} style={styles.modalClose}>
+          <Pressable onPress={onClose} style={styles.modalClose} hitSlop={6}>
             <Feather name="x" size={22} color={theme.text} />
           </Pressable>
         </View>

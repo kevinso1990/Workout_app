@@ -2371,6 +2371,7 @@ export default function ActiveWorkoutScreen() {
                   },
                 ]}
                 testID="button-prev-exercise"
+                hitSlop={6}
                 accessibilityRole="button"
                 accessibilityLabel={t("activeWorkout.previousExercise")}
               >

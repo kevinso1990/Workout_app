@@ -293,6 +293,7 @@ export default function CalendarScreen() {
               <Pressable
                 onPress={() => setMonth((m) => addMonths(m, -1))}
                 style={styles.navBtn}
+                hitSlop={6}
                 accessibilityLabel={t("calendar.prevMonth")}
               >
                 <Feather name="chevron-left" size={20} color={theme.chalk} />
@@ -303,6 +304,7 @@ export default function CalendarScreen() {
               <Pressable
                 onPress={() => setMonth((m) => addMonths(m, 1))}
                 style={styles.navBtn}
+                hitSlop={6}
                 accessibilityLabel={t("calendar.nextMonth")}
               >
                 <Feather name="chevron-right" size={20} color={theme.chalk} />
