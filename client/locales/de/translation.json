@@ -495,7 +495,8 @@
       "highlightPeakRpeSub": "Auf Overreaching achten",
       "emptyPeriod": "In diesem Zeitraum noch keine Trainings geloggt."
     },
-    "noBodyWeightYet": "Noch kein Körpergewicht erfasst."
+    "noBodyWeightYet": "Noch kein Körpergewicht erfasst.",
+    "fullHistory": "Gesamter Verlauf"
   },
   "history": {
     "title": "Verlauf",

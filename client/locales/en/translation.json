@@ -576,7 +576,8 @@
       "highlightPeakRpeSub": "Watch for overreaching",
       "emptyPeriod": "No workouts logged in this period yet."
     },
-    "noBodyWeightYet": "No body weight recorded yet."
+    "noBodyWeightYet": "No body weight recorded yet.",
+    "fullHistory": "Full history"
   },
   "history": {
     "title": "History",

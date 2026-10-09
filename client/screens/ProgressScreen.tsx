@@ -290,7 +290,12 @@ function OneRMChart({
         style={[styles.oneRMContainer, { backgroundColor: theme.backgroundDefault }]}
       >
         <View style={styles.chartHeader}>
-          <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
+          <View>
+            <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
+            <ThemedText style={[styles.chartSubtitle, { color: theme.textSecondary }]}>
+              {t("progress.fullHistory", { defaultValue: "Gesamter Verlauf" })}
+            </ThemedText>
+          </View>
         </View>
         <View style={styles.muscleEmpty}>
           <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
@@ -307,7 +312,17 @@ function OneRMChart({
       style={[styles.oneRMContainer, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.chartHeader}>
-        <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
+        <View>
+          <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
+          {/* This chart ignores the Woche/Monat/Jahr toggle above — it always
+              plots the full session history for the selected lift. Worth
+              saying explicitly: that toggle looks like it should scope
+              everything on the screen, but only the summary cards above it
+              actually respect it. */}
+          <ThemedText style={[styles.chartSubtitle, { color: theme.textSecondary }]}>
+            {t("progress.fullHistory", { defaultValue: "Gesamter Verlauf" })}
+          </ThemedText>
+        </View>
         {selectedData?.history.length > 0 ? (
           <View style={[styles.oneRMBadge, { backgroundColor: selectedData.color + "15" }]}>
             <ThemedText style={[styles.oneRMBadgeText, { color: selectedData.color }]}>
@@ -1552,6 +1567,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "Montserrat_600SemiBold",
+  },
+  chartSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
   chartLegend: {
     flexDirection: "row",
