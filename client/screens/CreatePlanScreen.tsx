@@ -150,7 +150,10 @@ export default function CreatePlanScreen() {
       await saveWorkoutPlan(plan);
       scheduleDataSync();
       hapticSuccess();
-      navigation.navigate("EditPlan", { planId: plan.id });
+      // replace, not navigate: EditPlanScreen's save button does a single
+      // goBack() — pushing would land that back-navigation on this empty
+      // creation form instead of wherever the user came from.
+      navigation.replace("EditPlan", { planId: plan.id });
     } catch (error) {
       console.error("Error creating manual plan:", error);
       hapticError();
