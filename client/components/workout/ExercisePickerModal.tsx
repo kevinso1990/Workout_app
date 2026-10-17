@@ -25,6 +25,7 @@ import { toast } from "@/lib/toast";
 import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import type { CatalogRow } from "@/lib/importCatalog";
+import { sortByRelevance } from "@shared/exerciseSearch";
 
 /** Muscle groups a user can file a self-defined exercise under. */
 const CUSTOM_MUSCLE_GROUPS = [
@@ -103,7 +104,7 @@ export function ExercisePickerModal({
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return catalog.filter((e) => {
+    const filtered = catalog.filter((e) => {
       if (excludeNames?.has(e.name)) return false;
       if (mobilityOnly && !isMobilityExercise(e.name)) return false;
       if (muscleFilter && e.muscle_group !== muscleFilter) return false;
@@ -116,6 +117,18 @@ export function ExercisePickerModal({
         e.equipment.toLowerCase().includes(q)
       );
     });
+    if (!q) return filtered;
+    // A name match (English OR German — either counts equally) always
+    // outranks an equipment/muscle-group-only match. Without this, searching
+    // "kettlebell" buried exercises actually NAMED "Kettlebell ..." among
+    // every other exercise that merely USES one (e.g. "Goblet Squat"), in
+    // raw catalog order (muscle_group, then name).
+    return sortByRelevance(
+      filtered,
+      q,
+      (e) => [e.name, e.name_de ?? e.name],
+      (e) => [e.muscle_group, e.equipment],
+    );
   }, [catalog, query, excludeNames, mobilityOnly, muscleFilter]);
 
   const trimmedQuery = query.trim();

@@ -38,6 +38,7 @@ import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import { translateMuscleGroup, translateEquipment, isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { sortByRelevance } from "@shared/exerciseSearch";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -520,13 +521,17 @@ function APISearchModal({
 
   useEffect(() => {
     if (searchQuery.trim() && allExercises.length > 0) {
-      const filtered = allExercises
-        .filter((ex) =>
-          ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ex.primaryMuscles.some((m) => m.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
-        .slice(0, 30);
-      setResults(filtered);
+      const filtered = allExercises.filter((ex) =>
+        ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ex.primaryMuscles.some((m) => m.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      const ranked = sortByRelevance(
+        filtered,
+        searchQuery,
+        (ex) => ex.name,
+        (ex) => ex.primaryMuscles,
+      ).slice(0, 30);
+      setResults(ranked);
     } else if (allExercises.length > 0) {
       setResults(allExercises.slice(0, 20));
     }
@@ -1023,6 +1028,16 @@ export default function ExercisesScreen() {
     });
   }, [searchQuery, selectedFilter, allExercises]);
 
+  const rankedExercises = useMemo(
+    () =>
+      sortByRelevance(
+        filteredExercises,
+        searchQuery,
+        (ex) => [ex.name, ex.nameDe ?? ex.name],
+      ),
+    [filteredExercises, searchQuery],
+  );
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const onViewableItemsChanged = useCallback(
@@ -1087,7 +1102,7 @@ export default function ExercisesScreen() {
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
-        data={filteredExercises}
+        data={rankedExercises}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={2}
