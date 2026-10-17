@@ -158,6 +158,7 @@
       "fullWeek": "Full weekly program"
     },
     "generateNow": "Generate My Plan",
+    "dayLabel": "Day {{count}}",
     "whyThisPlan": "Why this plan?",
     "whyThisPlanDesc": "Training {{days}} days/week as a {{experience}} with a {{goal}} goal, the {{split}} is the most effective structure — it balances frequency and recovery so you make progress without burning out."
   },

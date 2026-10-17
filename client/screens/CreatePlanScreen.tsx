@@ -29,6 +29,7 @@ import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   saveWorkoutPlan,
   getUserPreferences,
+  type WorkoutPlan,
 } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
 import {
@@ -101,6 +102,7 @@ export default function CreatePlanScreen() {
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [mode, setMode] = useState<"generate" | "manual" | null>(null);
   const [planName, setPlanName] = useState("");
   const [daysPerWeek, setDaysPerWeek] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +115,48 @@ export default function CreatePlanScreen() {
   const handleDaySelect = (day: number) => {
     hapticLight();
     setDaysPerWeek(day);
+  };
+
+  const handleSelectMode = (selected: "generate" | "manual") => {
+    hapticLight();
+    setMode(selected);
+  };
+
+  const handleBackToModeSelect = () => {
+    hapticLight();
+    setMode(null);
+  };
+
+  const handleCreateManual = async () => {
+    if (!planName.trim()) {
+      hapticError();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const now = new Date().toISOString();
+      const plan: WorkoutPlan = {
+        id: Date.now().toString(),
+        name: planName.trim(),
+        daysPerWeek,
+        days: Array.from({ length: daysPerWeek }, (_, i) => ({
+          dayName: t("createPlan.dayLabel", { count: i + 1 }),
+          exercises: [],
+        })),
+        createdAt: now,
+        lastModified: now,
+      };
+      await saveWorkoutPlan(plan);
+      scheduleDataSync();
+      hapticSuccess();
+      navigation.navigate("EditPlan", { planId: plan.id });
+    } catch (error) {
+      console.error("Error creating manual plan:", error);
+      hapticError();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -158,6 +202,75 @@ export default function CreatePlanScreen() {
 
   const isValid = planName.trim().length > 0;
 
+  if (mode === null) {
+    return (
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing.xl),
+            paddingBottom: insets.bottom + Spacing.xl,
+          },
+        ]}
+      >
+        <Animated.View
+          entering={FadeInDown.delay(100).duration(400)}
+          style={styles.section}
+        >
+          <ThemedText style={styles.label}>{t("createPlan.title")}</ThemedText>
+          <ThemedText style={[styles.hint, { color: theme.textSecondary }]}>
+            {t("createPlan.subtitle")}
+          </ThemedText>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+          <Pressable
+            onPress={() => handleSelectMode("generate")}
+            style={[
+              styles.modeCard,
+              { backgroundColor: theme.backgroundDefault },
+            ]}
+            testID="button-mode-generate"
+          >
+            <Feather name="zap" size={22} color={theme.primary} style={styles.modeCardIcon} />
+            <View style={styles.modeCardTextContainer}>
+              <ThemedText style={styles.modeCardTitle}>
+                {t("createPlan.generateTitle")}
+              </ThemedText>
+              <ThemedText style={[styles.modeCardDesc, { color: theme.textSecondary }]}>
+                {t("createPlan.generateDesc")}
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+          <Pressable
+            onPress={() => handleSelectMode("manual")}
+            style={[
+              styles.modeCard,
+              { backgroundColor: theme.backgroundDefault },
+            ]}
+            testID="button-mode-manual"
+          >
+            <Feather name="edit-3" size={22} color={theme.primary} style={styles.modeCardIcon} />
+            <View style={styles.modeCardTextContainer}>
+              <ThemedText style={styles.modeCardTitle}>
+                {t("createPlan.manualTitle")}
+              </ThemedText>
+              <ThemedText style={[styles.modeCardDesc, { color: theme.textSecondary }]}>
+                {t("createPlan.manualDesc")}
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </Pressable>
+        </Animated.View>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView
       keyboardDismissMode="on-drag"
@@ -171,6 +284,22 @@ export default function CreatePlanScreen() {
       ]}
       keyboardShouldPersistTaps="handled"
     >
+      <Animated.View
+        entering={FadeInDown.delay(50).duration(300)}
+        style={styles.backRow}
+      >
+        <Pressable
+          onPress={handleBackToModeSelect}
+          style={styles.backButton}
+          testID="button-back-to-mode-select"
+        >
+          <Feather name="chevron-left" size={18} color={theme.textSecondary} />
+          <ThemedText style={[styles.backButtonText, { color: theme.textSecondary }]}>
+            {t("createPlan.back")}
+          </ThemedText>
+        </Pressable>
+      </Animated.View>
+
       <Animated.View
         entering={FadeInDown.delay(100).duration(400)}
         style={styles.section}
@@ -220,49 +349,51 @@ export default function CreatePlanScreen() {
         </View>
       </Animated.View>
 
-      <Animated.View
-        entering={FadeInDown.delay(300).duration(400)}
-        style={styles.previewSection}
-      >
-        <ThemedText style={styles.label}>{t("createPlan.recommendedSplit")}</ThemedText>
-        <View
-          style={[
-            styles.previewCard,
-            { backgroundColor: theme.backgroundDefault },
-          ]}
+      {mode === "generate" && (
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(400)}
+          style={styles.previewSection}
         >
-          <Feather
-            name="info"
-            size={16}
-            color={theme.primary}
-            style={styles.previewIcon}
-          />
-          <ThemedText
-            style={[styles.previewText, { color: theme.textSecondary }]}
+          <ThemedText style={styles.label}>{t("createPlan.recommendedSplit")}</ThemedText>
+          <View
+            style={[
+              styles.previewCard,
+              { backgroundColor: theme.backgroundDefault },
+            ]}
           >
-            {daysPerWeek === 1
-              ? t("createPlan.splitPreview.fullBody")
-              : daysPerWeek === 2
-                ? t("createPlan.splitPreview.upperLower")
-                : daysPerWeek === 3
-                  ? t("createPlan.splitPreview.pushPullLegs")
-                  : daysPerWeek === 4
-                    ? t("createPlan.splitPreview.upperLowerX2")
-                    : daysPerWeek === 5
-                      ? t("createPlan.splitPreview.pushPullLegsUpperLower")
-                      : daysPerWeek === 6
-                        ? t("createPlan.splitPreview.pushPullLegsX2")
-                        : t("createPlan.splitPreview.fullWeek")}
-          </ThemedText>
-        </View>
-      </Animated.View>
+            <Feather
+              name="info"
+              size={16}
+              color={theme.primary}
+              style={styles.previewIcon}
+            />
+            <ThemedText
+              style={[styles.previewText, { color: theme.textSecondary }]}
+            >
+              {daysPerWeek === 1
+                ? t("createPlan.splitPreview.fullBody")
+                : daysPerWeek === 2
+                  ? t("createPlan.splitPreview.upperLower")
+                  : daysPerWeek === 3
+                    ? t("createPlan.splitPreview.pushPullLegs")
+                    : daysPerWeek === 4
+                      ? t("createPlan.splitPreview.upperLowerX2")
+                      : daysPerWeek === 5
+                        ? t("createPlan.splitPreview.pushPullLegsUpperLower")
+                        : daysPerWeek === 6
+                          ? t("createPlan.splitPreview.pushPullLegsX2")
+                          : t("createPlan.splitPreview.fullWeek")}
+            </ThemedText>
+          </View>
+        </Animated.View>
+      )}
 
       <Animated.View
         entering={FadeInDown.delay(400).duration(400)}
         style={styles.buttonSection}
       >
         <AnimatedPressable
-          onPress={handleCreate}
+          onPress={mode === "manual" ? handleCreateManual : handleCreate}
           onPressIn={() => {
             buttonScale.value = withSpring(0.96, {
               damping: 15,
@@ -287,7 +418,9 @@ export default function CreatePlanScreen() {
               <ActivityIndicator color={theme.onChalk} />
             ) : (
               <ThemedText style={styles.buttonText}>
-                {t("plans.createPlan")}
+                {mode === "manual"
+                  ? t("plans.createPlan")
+                  : t("createPlan.generateNow")}
               </ThemedText>
             )}
           </View>
@@ -306,6 +439,41 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   section: {
     marginBottom: Spacing["2xl"],
+  },
+  modeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+  },
+  modeCardIcon: {
+    marginRight: Spacing.md,
+  },
+  modeCardTextContainer: {
+    flex: 1,
+  },
+  modeCardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Montserrat_600SemiBold",
+    marginBottom: 2,
+  },
+  modeCardDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  backRow: {
+    marginBottom: Spacing.md,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+  },
+  backButtonText: {
+    fontSize: 14,
+    marginLeft: 2,
   },
   label: {
     fontSize: 17,

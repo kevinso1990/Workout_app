@@ -158,6 +158,7 @@
       "fullWeek": "Volles Wochenprogramm"
     },
     "generateNow": "Plan generieren",
+    "dayLabel": "Tag {{count}}",
     "whyThisPlan": "Warum dieser Plan?",
     "whyThisPlanDesc": "Bei {{days}} Trainingstagen/Woche als {{experience}} mit dem Ziel {{goal}} ist der {{split}} die effektivste Struktur — er balanciert Häufigkeit und Erholung, damit du Fortschritte machst, ohne auszubrennen."
   },
