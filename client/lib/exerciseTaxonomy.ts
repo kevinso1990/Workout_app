@@ -53,13 +53,48 @@ const ARMS_COLOR = "#DDA0DD";
 const MOBILITY_COLOR = "#2FB8A6";
 
 /**
+ * Mobility/stretching exercise names from free-exercise-db's own "stretching"
+ * category that don't contain "stretch" (e.g. "Child's Pose", "Cat Stretch"'s
+ * sibling "90/90 Hamstring", foam-rolling "…-SMR" moves). The `exercises`
+ * table has no category column, so this is the exact-name list for everything
+ * in that category minus the ones `isMobilityExercise`'s substring check
+ * already catches — regenerate from the "stretching"-category rows of
+ * https://github.com/yuhonas/free-exercise-db if that source is re-imported.
+ */
+const MOBILITY_EXACT_NAMES = new Set(
+  [
+    "90/90 Hamstring", "Adductor", "Adductor/Groin", "Ankle Circles",
+    "Ankle On The Knee", "Anterior Tibialis-SMR", "Arm Circles",
+    "Brachialis-SMR", "Calves-SMR", "Child's Pose", "Crossover Reverse Lunge",
+    "Elbow Circles", "Elbows Back", "Foot-SMR", "Frog Hops",
+    "Front Leg Raises", "Groiners", "Hamstring-SMR", "Hip Circles (prone)",
+    "Hug A Ball", "Hug Knees To Chest", "Iliotibial Tract-SMR", "Inchworm",
+    "Knee Across The Body", "Knee Circles", "Kneeling Hip Flexor",
+    "Latissimus Dorsi-SMR", "Looking At Ceiling", "Lower Back Curl",
+    "Lower Back-SMR", "Lying Bent Leg Groin", "Lying Crossover", "Lying Glute",
+    "Lying Hamstring", "Lying Prone Quadriceps", "Neck-SMR",
+    "One Arm Against Wall", "One Half Locust", "One Handed Hang",
+    "One Knee To Chest", "Overhead Lat", "Overhead Triceps",
+    "Pelvic Tilt Into Bridge", "Peroneals-SMR", "Piriformis-SMR", "Pyramid",
+    "Quadriceps-SMR", "Rear Leg Raises", "Rhomboids-SMR", "Scissor Kick",
+    "Seated Biceps", "Seated Front Deltoid", "Seated Glute", "Seated Hamstring",
+    "Shoulder Circles", "Shoulder Raise", "Side Leg Raises", "Side Wrist Pull",
+    "Sit Squats", "Split Squats", "Standing Hip Circles",
+    "Standing Hip Flexors", "Standing Pelvic Tilt", "Standing Toe Touches",
+    "Stomach Vacuum", "Superman", "The Straddle", "Toe Touchers",
+    "Torso Rotation", "Upper Back-Leg Grab", "Windmills", "Wrist Circles",
+  ].map((n) => n.toLowerCase()),
+);
+
+/**
  * Stretch / mobility classifier. The free-exercise-db catalog files these under
  * their target muscle group (e.g. "Hamstring Stretch" → Legs), so there's no DB
- * category to key on — every mobility move in the catalog is named "… Stretch",
- * which makes the name the reliable signal (51 rows, zero false positives).
+ * category to key on. Most are named "… Stretch"; the rest are matched by exact
+ * name via MOBILITY_EXACT_NAMES above.
  */
 export function isMobilityExercise(name: string): boolean {
-  return name.toLowerCase().includes("stretch");
+  const n = name.toLowerCase();
+  return n.includes("stretch") || MOBILITY_EXACT_NAMES.has(n);
 }
 
 /**

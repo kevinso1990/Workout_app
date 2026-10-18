@@ -48,12 +48,26 @@ describe("isMobilityExercise", () => {
     expect(isMobilityExercise("Hamstring Stretch")).toBe(true);
     expect(isMobilityExercise("World's Greatest Stretch")).toBe(true);
     expect(isMobilityExercise("Cat Stretch")).toBe(true);
+    expect(isMobilityExercise("Pigeon Stretch")).toBe(true);
+    expect(isMobilityExercise("Couch Stretch")).toBe(true);
   });
 
   it("does not classify strength moves as mobility", () => {
     expect(isMobilityExercise("Barbell Bench Press")).toBe(false);
     expect(isMobilityExercise("Deadlift")).toBe(false);
     expect(isMobilityExercise("Kettlebell Swing")).toBe(false);
+  });
+
+  it("classifies free-exercise-db mobility moves that don't say 'stretch'", () => {
+    expect(isMobilityExercise("Child's Pose")).toBe(true);
+    expect(isMobilityExercise("90/90 Hamstring")).toBe(true);
+    expect(isMobilityExercise("Kneeling Hip Flexor")).toBe(true);
+    expect(isMobilityExercise("Piriformis-SMR")).toBe(true);
+  });
+
+  it("is case-insensitive on both the substring and exact-name checks", () => {
+    expect(isMobilityExercise("hamstring stretch")).toBe(true);
+    expect(isMobilityExercise("CHILD'S POSE")).toBe(true);
   });
 });
 

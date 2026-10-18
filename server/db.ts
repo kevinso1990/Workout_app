@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 
 // Allow tests to inject ":memory:" via DB_PATH env var
 const DB_PATH = process.env.DB_PATH ?? path.resolve(process.cwd(), "workout.db");
@@ -135,6 +136,7 @@ export function initDb() {
   migrateMobileWorkoutSync();
   migrateLocalSyncIds();
   migrateExerciseCatalogExpansion();
+  migrateFreeExerciseDbCatalog();
   migrateHybridAthlete();
 }
 
@@ -323,6 +325,58 @@ function migrateExerciseCatalogExpansion() {
   const tx = db.transaction(() => {
     for (const [name, group, equip] of additions) {
       insert.run(name, group, equip);
+    }
+  });
+  tx();
+}
+
+/**
+ * Bulk catalog import from the full yuhonas/free-exercise-db dataset (876
+ * exercises, MIT-licensed — the same legally-safe source the app already
+ * uses for exercise thumbnails) plus two hand-added mobility moves the
+ * dataset doesn't have under any name (Pigeon Stretch, Couch Stretch —
+ * checked directly against the dataset, no close alias either).
+ *
+ * Frozen as a committed JSON snapshot (server/data/freeExerciseDbCatalog.json)
+ * rather than fetched live, so server boot never depends on GitHub being
+ * reachable. INSERT OR IGNORE against the UNIQUE name column makes this safe
+ * to run on every startup, same as migrateExerciseCatalogExpansion above —
+ * regenerate the snapshot with scripts/import-free-exercise-db.mjs if the
+ * upstream dataset grows.
+ */
+function migrateFreeExerciseDbCatalog() {
+  type CatalogRow = {
+    name: string;
+    muscle_group: string;
+    equipment: string;
+    gif_url: string | null;
+    name_de?: string;
+  };
+
+  const dataPath = path.resolve(process.cwd(), "server", "data", "freeExerciseDbCatalog.json");
+  let rows: CatalogRow[];
+  try {
+    rows = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+  } catch (err) {
+    console.error("migrateFreeExerciseDbCatalog: failed to read catalog snapshot", err);
+    return;
+  }
+
+  const insertExercise = db.prepare(
+    "INSERT OR IGNORE INTO exercises (name, muscle_group, equipment, is_custom, gif_url) VALUES (?, ?, ?, 0, ?)",
+  );
+  const insertTranslation = db.prepare(
+    `INSERT OR IGNORE INTO exercise_translations (exercise_id, lang, name) VALUES (?, 'de', ?)`,
+  );
+  const findId = db.prepare("SELECT id FROM exercises WHERE name = ?");
+
+  const tx = db.transaction(() => {
+    for (const row of rows) {
+      insertExercise.run(row.name, row.muscle_group, row.equipment, row.gif_url);
+      if (row.name_de) {
+        const found = findId.get(row.name) as { id: number } | undefined;
+        if (found) insertTranslation.run(found.id, row.name_de);
+      }
     }
   });
   tx();
