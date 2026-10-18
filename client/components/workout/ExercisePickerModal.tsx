@@ -23,6 +23,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { nativeRequest } from "@/lib/nativeApi";
 import { toast } from "@/lib/toast";
 import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import type { CatalogRow } from "@/lib/importCatalog";
 import { sortByRelevance } from "@shared/exerciseSearch";
@@ -369,6 +370,11 @@ export function ExercisePickerModal({
                 ]}
                 testID={`row-picker-exercise-${item.id}`}
               >
+                <ExerciseDbThumb
+                  exerciseName={item.name}
+                  style={styles.rowThumb}
+                  testID={`thumb-picker-exercise-${item.id}`}
+                />
                 <View style={styles.rowInfo}>
                   <ThemedText style={styles.rowName} numberOfLines={1}>
                     {getExerciseDisplayName(
@@ -494,6 +500,13 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: c.iron,
   },
   rowInfo: {
     flex: 1,
