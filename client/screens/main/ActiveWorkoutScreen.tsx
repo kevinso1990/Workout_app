@@ -1688,7 +1688,7 @@ export default function ActiveWorkoutScreen() {
     onChange: (value: boolean) => void;
     testID: string;
   }) => (
-    <View style={[styles.headerToggleCard, { backgroundColor: theme.backgroundDefault }]}>
+    <View style={styles.headerToggleCard}>
       <View style={styles.headerToggleText}>
         <ThemedText style={[styles.headerToggleLabel, { color: theme.text }]} numberOfLines={1}>
           {opts.label}
@@ -3200,6 +3200,11 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingRight: Spacing.xs,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
+    // controlOutline is the design system's border for pressable controls —
+    // the quieter divider hairline let these melt into the background.
+    borderWidth: 1,
+    borderColor: c.controlOutline,
+    backgroundColor: c.ironElevated2,
   },
   headerToggleText: {
     flex: 1,
