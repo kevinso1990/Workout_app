@@ -1974,7 +1974,8 @@ export default function ActiveWorkoutScreen() {
                 style={[styles.headerRestCaption, { color: theme.textSecondary }]}
                 numberOfLines={1}
               >
-                {t("activeWorkout.pauseLabel")}
+                {t("activeWorkout.pauseLabel")}:{" "}
+                {restTimerEnabled ? t("common.on") : t("common.off")}
               </ThemedText>
             </View>
           </View>
@@ -1992,7 +1993,15 @@ export default function ActiveWorkoutScreen() {
                 style={[styles.circuitModeLabel, { color: theme.text }]}
                 numberOfLines={1}
               >
-                {t("activeWorkout.circuitMode")}
+                {t("activeWorkout.circuitMode")}:{" "}
+                <ThemedText
+                  style={[
+                    styles.circuitModeLabel,
+                    { color: circuitMode ? theme.primary : theme.textSecondary },
+                  ]}
+                >
+                  {circuitMode ? t("common.on") : t("common.off")}
+                </ThemedText>
               </ThemedText>
             </View>
             <Switch
