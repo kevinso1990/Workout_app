@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Platform, StyleSheet, Pressable, View, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
@@ -10,6 +10,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
@@ -30,7 +31,15 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const MOBILITY_PLAN_ID = "mobility-session";
 
-export function CreatePlanFab() {
+export function CreatePlanFab({
+  hidden = false,
+}: {
+  /**
+   * Slide the button out of the way (e.g. while the list behind it is being
+   * scrolled down), so it doesn't sit on top of the content being read.
+   */
+  hidden?: boolean;
+} = {}) {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -44,8 +53,17 @@ export function CreatePlanFab() {
 
   const fabBottom = tabBarHeight + Math.max(insets.bottom, 12) + 12;
 
+  const hideProgress = useSharedValue(0);
+  useEffect(() => {
+    hideProgress.value = withTiming(hidden ? 1 : 0, { duration: 180 });
+  }, [hidden, hideProgress]);
+
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: 1 - hideProgress.value,
+    transform: [
+      { scale: scale.value },
+      { translateY: hideProgress.value * (fabBottom + 60) },
+    ],
   }));
 
   const openSheet = () => {
@@ -162,6 +180,7 @@ export function CreatePlanFab() {
             scale.value = withSpring(1, { damping: 15, stiffness: 200 });
           }}
           style={animatedStyle}
+          disabled={hidden}
           testID="button-fab-create"
           accessibilityRole="button"
           accessibilityLabel={t("addWorkout.fabLabel")}

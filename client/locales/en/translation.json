@@ -138,7 +138,9 @@
       "minutes": "{{count}} min",
       "hours": "{{count}} h",
       "days": "{{count}} d"
-    }
+    },
+    "exerciseCount_one": "{{count}} exercise",
+    "exerciseCount_other": "{{count}} exercises"
   },
   "createPlan": {
     "back": "Back",
@@ -493,7 +495,8 @@
     "setsProgress": "{{done}}/{{total}} sets",
     "minimize": "Minimize workout",
     "circuitOnHint": "Circuit mode on: after each set you move to the next exercise — round by round.",
-    "circuitOffHint": "Circuit mode off: finish all sets of an exercise, then the next one."
+    "circuitOffHint": "Circuit mode off: finish all sets of an exercise, then the next one.",
+    "swapShort": "Swap"
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",
@@ -966,8 +969,8 @@
     "syncNudge": "Sync to update recovery data"
   },
   "addWorkout": {
-    "title": "Add workout",
-    "fabLabel": "Add workout",
+    "title": "What would you like to add?",
+    "fabLabel": "Add a plan or workout",
     "startStrength": "Start strength training",
     "startStrengthDesc": "Pick a plan and log sets & reps",
     "logCardio": "Log sport / cardio",

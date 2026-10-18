@@ -8,6 +8,8 @@ import {
   Modal,
   TextInput,
   Platform,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -49,6 +51,7 @@ import { getUserPreferences } from "@/lib/storage";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
+import { displayPlanName } from "@/lib/defaultPlanName";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
@@ -137,12 +140,16 @@ function PlanCard({
           style={animatedStyle}
         >
           <ThemedText style={styles.planName} numberOfLines={2}>
-            {plan.name}
+            {displayPlanName(t, plan.name)}
           </ThemedText>
+          {/* Was "3 Trainings/Woche · 3 Tage" — the same number twice. The
+              exercise count is the part that actually tells plans apart. */}
           <ThemedText style={styles.planMeta}>
             {t("plans.planSummary", {
-              workoutsLabel: t("plans.workoutsPerWeek", { count: plan.daysPerWeek }),
-              daysLabel: t("plans.daysCount", { count: plan.days.length }),
+              workoutsLabel: t("plans.daysCount", { count: plan.days.length }),
+              daysLabel: t("plans.exerciseCount", {
+                count: plan.days.reduce((n, d) => n + d.exercises.length, 0),
+              }),
             })}
           </ThemedText>
           {exerciseLine ? (
@@ -237,7 +244,7 @@ function PlanActionSheet({
         >
           <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
           <ThemedText style={styles.sheetTitle} numberOfLines={1}>
-            {plan?.name}
+            {plan ? displayPlanName(t, plan.name) : null}
           </ThemedText>
           {items.map((item) => (
             <Pressable
@@ -298,7 +305,7 @@ function RenamePlanModal({
   const [name, setName] = useState("");
 
   useEffect(() => {
-    if (plan) setName(plan.name);
+    if (plan) setName(displayPlanName(t, plan.name));
   }, [plan]);
 
   const trimmed = name.trim();
@@ -601,6 +608,22 @@ export default function MyPlansScreen() {
     navigation.navigate("ImportWorkout");
   }, [navigation]);
 
+  // The floating "+" sat on top of whichever plan card was behind it. Tuck it
+  // away while scrolling down through the plans, bring it back on any scroll
+  // up (and always near the top).
+  const [fabHidden, setFabHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+  const handleListScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      const dy = y - lastScrollYRef.current;
+      if (Math.abs(dy) < 8) return;
+      lastScrollYRef.current = y;
+      setFabHidden(dy > 0 && y > 40);
+    },
+    [],
+  );
+
   const handleViewPlan = (plan: WorkoutPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("PlanDetail", { planId: plan.id });
@@ -643,7 +666,7 @@ export default function MyPlansScreen() {
   const handleDeletePlan = async (plan: WorkoutPlan) => {
     const confirmed = await confirmAlert(
       t("plans.deletePlan"),
-      t("plans.deleteConfirmNamed", { name: plan.name }),
+      t("plans.deleteConfirmNamed", { name: displayPlanName(t, plan.name) }),
       {
         confirmText: t("plans.delete"),
         cancelText: t("common.cancel"),
@@ -745,6 +768,8 @@ export default function MyPlansScreen() {
       <FlatList
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        onScroll={handleListScroll}
+        scrollEventThrottle={32}
         data={plans}
         keyExtractor={(p) => p.id}
         renderItem={renderPlan}
@@ -866,7 +891,7 @@ export default function MyPlansScreen() {
           </>
         }
       />
-      <CreatePlanFab />
+      <CreatePlanFab hidden={fabHidden} />
 
       <PlanActionSheet
         plan={menuPlan}

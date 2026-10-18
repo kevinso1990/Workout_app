@@ -138,7 +138,9 @@
       "minutes": "{{count}} Min.",
       "hours": "{{count}} Std.",
       "days": "{{count}} Tg."
-    }
+    },
+    "exerciseCount_one": "{{count}} Übung",
+    "exerciseCount_other": "{{count}} Übungen"
   },
   "createPlan": {
     "back": "Zurück",
@@ -412,7 +414,8 @@
     "setsProgress": "{{done}}/{{total}} Sätze",
     "minimize": "Training minimieren",
     "circuitOnHint": "Zirkeltraining an: Nach jedem Satz geht es zur nächsten Übung – Runde für Runde.",
-    "circuitOffHint": "Zirkeltraining aus: Erst alle Sätze einer Übung, dann die nächste."
+    "circuitOffHint": "Zirkeltraining aus: Erst alle Sätze einer Übung, dann die nächste.",
+    "swapShort": "Tauschen"
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",
@@ -966,8 +969,8 @@
     "syncNudge": "Syncen, um Erholungsdaten zu aktualisieren"
   },
   "addWorkout": {
-    "title": "Training hinzufügen",
-    "fabLabel": "Training hinzufügen",
+    "title": "Was möchtest du hinzufügen?",
+    "fabLabel": "Plan oder Training hinzufügen",
     "startStrength": "Krafttraining starten",
     "startStrengthDesc": "Plan wählen, Sätze & Wdh. loggen",
     "logCardio": "Sport / Cardio loggen",

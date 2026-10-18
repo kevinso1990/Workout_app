@@ -2282,7 +2282,7 @@ export default function ActiveWorkoutScreen() {
                         onPress={() => openSwapPicker(exIdx, exercise.muscleGroup)}
                         hitSlop={6}
                         style={({ pressed }) => [
-                          styles.exerciseReorderBtn,
+                          styles.exerciseSwapBtn,
                           pressed && styles.exerciseReorderBtnPressed,
                         ]}
                         accessibilityRole="button"
@@ -2290,6 +2290,14 @@ export default function ActiveWorkoutScreen() {
                         testID={`button-swap-exercise-${exIdx}`}
                       >
                         <Feather name="repeat" size={16} color={theme.text} />
+                        {/* The bare cycle arrows didn't say "swap this
+                            exercise" to anyone seeing them for the first time. */}
+                        <ThemedText
+                          style={[styles.exerciseSwapLabel, { color: theme.textSecondary }]}
+                          numberOfLines={1}
+                        >
+                          {t("activeWorkout.swapShort")}
+                        </ThemedText>
                       </Pressable>
                     </View>
 
@@ -2711,6 +2719,18 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   exerciseReorderBtnPressed: {
     opacity: 0.55,
+  },
+  exerciseSwapBtn: {
+    minWidth: 32,
+    paddingVertical: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: BorderRadius.sm,
+    gap: 1,
+  },
+  exerciseSwapLabel: {
+    fontSize: 9,
+    fontWeight: "600",
   },
   swipeDeleteAction: {
     width: 72,

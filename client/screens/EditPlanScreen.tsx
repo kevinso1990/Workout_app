@@ -45,6 +45,7 @@ import {
 } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { translateDayName } from "@/lib/dayNameLabel";
+import { displayPlanName } from "@/lib/defaultPlanName";
 import { confirmAlert } from "@/lib/confirmAlert";
 import {
   ExercisePickerModal,
@@ -372,9 +373,12 @@ export default function EditPlanScreen() {
         const plans = await getWorkoutPlans();
         const found = plans.find((p) => p.id === planId);
         if (found) {
+          const shownName = displayPlanName(t, found.name);
           setPlan(JSON.parse(JSON.stringify(found)));
-          setPlanName(found.name);
-          savedSnapshotRef.current = snapshotOf(found.name, found.days);
+          setPlanName(shownName);
+          // Snapshot the *shown* name, so a legacy English default that is
+          // only displayed localised doesn't count as an unsaved edit.
+          savedSnapshotRef.current = snapshotOf(shownName, found.days);
         }
       } catch (err) {
         console.error("EditPlanScreen: failed to load plan", err);
@@ -382,6 +386,8 @@ export default function EditPlanScreen() {
         setIsLoading(false);
       }
     })();
+    // Load once per plan — `t` only changes on a language switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId]);
 
   const isDirty =

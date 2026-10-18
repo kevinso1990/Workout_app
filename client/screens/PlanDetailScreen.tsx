@@ -31,6 +31,7 @@ import {
   type Exercise,
 } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { displayPlanName } from "@/lib/defaultPlanName";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PlanDetail">;
 
@@ -178,7 +179,7 @@ export default function PlanDetailScreen() {
           <Feather name="edit-2" size={18} color={theme.chalk} />
         </Pressable>
 
-        <ThemedText style={styles.planName}>{plan.name}</ThemedText>
+        <ThemedText style={styles.planName}>{displayPlanName(t, plan.name)}</ThemedText>
         <ThemedText style={styles.planInfo}>
           {t("planDetail.daysPerWeekCount", { count: plan.daysPerWeek })} ·{" "}
           {t("planDetail.exerciseCount", {
