@@ -33,6 +33,7 @@ import {
 } from "@/components/workout/ExercisePickerModal";
 import { isBodyweightExercise } from "@/lib/exerciseBodyweight";
 import { translateMuscleGroup, isHoldExercise } from "@/lib/exerciseTaxonomy";
+import { findNextCircuitTarget } from "@/lib/circuitMode";
 import { HEVY } from "@/constants/hevyLayout";
 import { WEIGHT_SLIDER_STEP_KG } from "@/lib/activeWorkoutSetFormat";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -783,6 +784,7 @@ export default function ActiveWorkoutScreen() {
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
   const [restTimerEnabled, setRestTimerEnabled] = useState(true);
+  const [circuitMode, setCircuitMode] = useState(false);
   const [preferencesSnapshot, setPreferencesSnapshot] =
     useState<UserPreferences | null>(null);
   const buttonScale = useSharedValue(1);
@@ -1630,6 +1632,34 @@ export default function ActiveWorkoutScreen() {
       setNextSetCoachMessage(coachLabel);
     }
 
+    if (circuitMode) {
+      // Round-robin across exercises instead of finishing each one in full
+      // first. Patch the just-finished set into a local copy before asking
+      // "what's next" — the real setProgress(completed: true) update from the
+      // row's onUpdate call may not have landed in this closure's `progress`
+      // snapshot yet, and the rotation can wrap back onto this very exercise.
+      const patched = day.exercises.map((_, i) => ({
+        completedSets: progress[i].sets.map((s, j) =>
+          i === exerciseIndex && j === setIndex ? true : s.completed,
+        ),
+      }));
+      const next = findNextCircuitTarget(patched, exerciseIndex);
+      if (next) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (restTimerEnabled) {
+          setShowRestTimer(true);
+          setRestTimeLeft(restDuration);
+          scheduleRestNotification(restDuration);
+        }
+        setCurrentExerciseIndex(next.exerciseIndex);
+        setCurrentSetIndex(next.setIndex);
+        if (next.exerciseIndex !== exerciseIndex) {
+          requestAnimationFrame(() => scrollToExercise(next.exerciseIndex));
+        }
+      }
+      return;
+    }
+
     if (setIndex < exercise.sets - 1) {
       if (restTimerEnabled) {
         setShowRestTimer(true);
@@ -1947,6 +1977,36 @@ export default function ActiveWorkoutScreen() {
                 {t("activeWorkout.pauseLabel")}
               </ThemedText>
             </View>
+          </View>
+
+          <View style={styles.circuitModeRow}>
+            <View style={styles.circuitModeLabelGroup}>
+              <Feather
+                name="repeat"
+                size={15}
+                color={circuitMode ? theme.primary : theme.textSecondary}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+              <ThemedText
+                style={[styles.circuitModeLabel, { color: theme.text }]}
+                numberOfLines={1}
+              >
+                {t("activeWorkout.circuitMode")}
+              </ThemedText>
+            </View>
+            <Switch
+              value={circuitMode}
+              onValueChange={setCircuitMode}
+              trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
+              thumbColor="#fff"
+              ios_backgroundColor={theme.ironElevated3}
+              style={styles.headerRestSwitch}
+              testID="switch-circuit-mode"
+              accessibilityLabel={t("activeWorkout.circuitMode")}
+              accessibilityHint={t("activeWorkout.circuitModeHint")}
+              accessibilityState={{ checked: circuitMode }}
+            />
           </View>
 
           <View style={styles.progressBarContainer}>
@@ -3135,6 +3195,21 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     justifyContent: "center",
     minWidth: 76,
     maxWidth: 100,
+  },
+  circuitModeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  circuitModeLabelGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  circuitModeLabel: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   headerRestToggleInner: {
     flexDirection: "row",

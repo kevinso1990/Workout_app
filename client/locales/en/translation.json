@@ -350,6 +350,8 @@
     "setsLogged": "{{count}} sets logged",
     "restTimer": "Rest Timer",
     "restTimerHint": "Turns the automatic countdown after each completed set on or off.",
+    "circuitMode": "Circuit mode",
+    "circuitModeHint": "Instead of finishing one exercise fully, you move to the next exercise after each set and come back to this one later.",
     "exerciseChipLabel": "{{name}}, {{completed}} of {{total}} sets",
     "moveExerciseUp": "Move exercise up",
     "moveExerciseDown": "Move exercise down",

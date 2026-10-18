@@ -269,6 +269,8 @@
     "setsLogged": "{{count}} Sätze erfasst",
     "restTimer": "Pausentimer",
     "restTimerHint": "Schaltet den automatischen Countdown nach jedem abgeschlossenen Satz ein oder aus.",
+    "circuitMode": "Zirkeltraining",
+    "circuitModeHint": "Statt eine Übung komplett zu beenden, wechselst du nach jedem Satz zur nächsten Übung und kommst später wieder dran.",
     "exerciseChipLabel": "{{name}}, {{completed}} von {{total}} Sätzen",
     "moveExerciseUp": "Übung nach oben",
     "moveExerciseDown": "Übung nach unten",
