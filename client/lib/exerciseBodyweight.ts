@@ -1,4 +1,5 @@
 import type { Exercise } from "@/lib/storage";
+import { isMobilityExercise } from "@/lib/exerciseTaxonomy";
 
 const BODYWEIGHT_NAME =
   /\b(push[- ]?up|pull[- ]?up|chin[- ]?up|dip|plank|burpee|muscle[- ]?up|handstand|sit[- ]?up|crunch|leg\s*raise|pike|l[- ]?sit|bodyweight|air\s*squat|glute\s*bridge|hyperextension|sissy\s*squat)\b/i;
@@ -10,6 +11,10 @@ export function isBodyweightExercise(
     mechanics?: string | null;
   },
 ): boolean {
+  // Stretches never take load, but the catalog files most of them under
+  // equipment "other" rather than "bodyweight" — so classify by name too.
+  if (isMobilityExercise(exercise.name)) return true;
+
   const eq = exercise.equipment?.trim().toLowerCase() ?? "";
   if (eq === "bodyweight") return true;
 
