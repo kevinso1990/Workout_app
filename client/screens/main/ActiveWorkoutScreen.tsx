@@ -1681,6 +1681,45 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  const renderHeaderToggle = (opts: {
+    label: string;
+    hint: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    testID: string;
+  }) => (
+    <View style={[styles.headerToggleCard, { backgroundColor: theme.backgroundDefault }]}>
+      <View style={styles.headerToggleText}>
+        <ThemedText style={[styles.headerToggleLabel, { color: theme.text }]} numberOfLines={1}>
+          {opts.label}
+        </ThemedText>
+        <ThemedText
+          style={[
+            styles.headerToggleState,
+            { color: opts.value ? theme.primary : theme.textSecondary },
+          ]}
+          numberOfLines={1}
+        >
+          {opts.value ? t("common.on") : t("common.off")}
+        </ThemedText>
+      </View>
+      <Switch
+        value={opts.value}
+        onValueChange={opts.onChange}
+        trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
+        // White in both themes, like every iOS switch thumb — chalk turns
+        // near-black under the light palette.
+        thumbColor="#fff"
+        ios_backgroundColor={theme.ironElevated3}
+        style={styles.headerToggleSwitch}
+        testID={opts.testID}
+        accessibilityLabel={opts.label}
+        accessibilityHint={opts.hint}
+        accessibilityState={{ checked: opts.value }}
+      />
+    </View>
+  );
+
   const handleSkipRest = () => {
     cancelRestNotification();
     setShowRestTimer(false);
@@ -1942,80 +1981,25 @@ export default function ActiveWorkoutScreen() {
                 </ThemedText>
               </View>
             </View>
-            {/* Pausen-Timer: oben rechts im Header (neben Session-Uhr). Auch unter Profil → gleiche Einstellung. */}
-            <View style={styles.headerRestToggle}>
-              <View style={styles.headerRestToggleInner}>
-                <Feather
-                  name="clock"
-                  size={15}
-                  color={restTimerEnabled ? theme.primary : theme.textSecondary}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                />
-                <Switch
-                  value={restTimerEnabled}
-                  onValueChange={persistRestTimerPreference}
-                  trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
-                  // The thumb is white in BOTH themes, like every iOS switch.
-                  // It used to be chalk, which reads as white only because the
-                  // dark palette defines chalk that way — under the light
-                  // palette the same token is near-black, so the thumb turned
-                  // into a dark blob on a green track.
-                  thumbColor="#fff"
-                  ios_backgroundColor={theme.ironElevated3}
-                  style={styles.headerRestSwitch}
-                  testID="switch-rest-timer-header"
-                  accessibilityLabel={t("activeWorkout.restTimer")}
-                  accessibilityHint={t("activeWorkout.restTimerHint")}
-                  accessibilityState={{ checked: restTimerEnabled }}
-                />
-              </View>
-              <ThemedText
-                style={[styles.headerRestCaption, { color: theme.textSecondary }]}
-                numberOfLines={1}
-              >
-                {t("activeWorkout.pauseLabel")}:{" "}
-                {restTimerEnabled ? t("common.on") : t("common.off")}
-              </ThemedText>
-            </View>
+            {/* Mirrors the back button's width so the title stays centred. */}
+            <View style={styles.headerSideSpacer} />
           </View>
 
-          <View style={styles.circuitModeRow}>
-            <View style={styles.circuitModeLabelGroup}>
-              <Feather
-                name="repeat"
-                size={15}
-                color={circuitMode ? theme.primary : theme.textSecondary}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              />
-              <ThemedText
-                style={[styles.circuitModeLabel, { color: theme.text }]}
-                numberOfLines={1}
-              >
-                {t("activeWorkout.circuitMode")}:{" "}
-                <ThemedText
-                  style={[
-                    styles.circuitModeLabel,
-                    { color: circuitMode ? theme.primary : theme.textSecondary },
-                  ]}
-                >
-                  {circuitMode ? t("common.on") : t("common.off")}
-                </ThemedText>
-              </ThemedText>
-            </View>
-            <Switch
-              value={circuitMode}
-              onValueChange={setCircuitMode}
-              trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
-              thumbColor="#fff"
-              ios_backgroundColor={theme.ironElevated3}
-              style={styles.headerRestSwitch}
-              testID="switch-circuit-mode"
-              accessibilityLabel={t("activeWorkout.circuitMode")}
-              accessibilityHint={t("activeWorkout.circuitModeHint")}
-              accessibilityState={{ checked: circuitMode }}
-            />
+          <View style={styles.headerToggleRow}>
+            {renderHeaderToggle({
+              label: t("activeWorkout.restTimer"),
+              hint: t("activeWorkout.restTimerHint"),
+              value: restTimerEnabled,
+              onChange: persistRestTimerPreference,
+              testID: "switch-rest-timer-header",
+            })}
+            {renderHeaderToggle({
+              label: t("activeWorkout.circuitMode"),
+              hint: t("activeWorkout.circuitModeHint"),
+              value: circuitMode,
+              onChange: setCircuitMode,
+              testID: "switch-circuit-mode",
+            })}
           </View>
 
           <View style={styles.progressBarContainer}>
@@ -3199,39 +3183,38 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,
   },
-  headerRestToggle: {
-    alignItems: "flex-end",
-    justifyContent: "center",
-    minWidth: 76,
-    maxWidth: 100,
+  headerSideSpacer: {
+    width: 40,
   },
-  circuitModeRow: {
+  headerToggleRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  circuitModeLabelGroup: {
+  headerToggleCard: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: Spacing.sm,
+    paddingLeft: Spacing.md,
+    paddingRight: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
   },
-  circuitModeLabel: {
+  headerToggleText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  headerToggleLabel: {
     fontSize: 13,
     fontWeight: "600",
   },
-  headerRestToggleInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  headerRestCaption: {
-    fontSize: 9,
+  headerToggleState: {
+    fontSize: 11,
     fontWeight: "600",
-    marginTop: 2,
-    letterSpacing: 0.2,
+    marginTop: 1,
   },
-  headerRestSwitch: {
+  headerToggleSwitch: {
     transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
   },
   prModalOverlay: {

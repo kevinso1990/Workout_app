@@ -79,13 +79,14 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
+  // Border-only variants: the host floats over arbitrary screen content, so a
+  // translucent tint here let whatever sat underneath (e.g. a screen title)
+  // show straight through the toast.
   success: {
     borderColor: c.primary + "44",
-    backgroundColor: c.primary + "12",
   },
   error: {
-    borderColor: c.error + "44",
-    backgroundColor: c.error + "12",
+    borderColor: c.error + "66",
   },
   offline: {
     borderColor: c.border,
