@@ -126,7 +126,19 @@
     "refinementOffer": "The AI built an improved version of “{{planName}}”. Your current plan stays as it is until you accept.",
     "refinementApply": "Apply",
     "refinementKeep": "Keep mine",
-    "duplicate": "Duplicate"
+    "duplicate": "Duplicate",
+    "defaultPlanName": "My Workout Plan",
+    "resume": {
+      "title": "Workout in progress",
+      "subtitle": "{{name}} · started {{duration}} ago",
+      "continue": "Resume",
+      "discard": "Discard",
+      "discardTitle": "Discard workout?",
+      "discardMessage": "The sets you've logged in this workout will be lost.",
+      "minutes": "{{count}} min",
+      "hours": "{{count}} h",
+      "days": "{{count}} d"
+    }
   },
   "createPlan": {
     "back": "Back",
@@ -398,7 +410,9 @@
       "noResults": "No exercises found",
       "createCustom": "Create custom exercise: \"{{name}}\"",
       "chooseMuscleGroup": "Which muscle group?",
-      "createFailed": "Couldn't create the exercise. Please try again."
+      "createFailed": "Couldn't create the exercise. Please try again.",
+      "done": "Done",
+      "added": "Added"
     },
     "shareText": {
       "complete": "💪 Workout Complete — {{name}}",
@@ -468,7 +482,18 @@
         "standardHold": "You hit the rep target — holding weight steady today.",
         "standardDecrease": "Reps ran short of target — a slight deload today."
       }
-    }
+    },
+    "grid": {
+      "set": "SET",
+      "previous": "PREV",
+      "kg": "KG",
+      "reps": "REPS",
+      "seconds": "SEC"
+    },
+    "setsProgress": "{{done}}/{{total}} sets",
+    "minimize": "Minimize workout",
+    "circuitOnHint": "Circuit mode on: after each set you move to the next exercise — round by round.",
+    "circuitOffHint": "Circuit mode off: finish all sets of an exercise, then the next one."
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",
@@ -1075,6 +1100,16 @@
     "suggested": "Suggested alternatives",
     "allExercises": "All exercises",
     "setCount_one": "{{count}} set",
-    "setCount_other": "{{count}} sets"
+    "setCount_other": "{{count}} sets",
+    "noExercisesYet": "No exercises yet — add your first one.",
+    "addDay": "Add day",
+    "removeDay": "Remove day",
+    "removeDayTitle": "Remove {{name}}?",
+    "removeDayMessage": "This day and its {{count}} exercises will be deleted from the plan.",
+    "replaceTitle": "Replace exercise",
+    "unsavedTitle": "Save changes?",
+    "unsavedMessage": "You have changes to this plan that haven't been saved yet.",
+    "unsavedSave": "Save",
+    "unsavedDiscard": "Discard"
   }
 }

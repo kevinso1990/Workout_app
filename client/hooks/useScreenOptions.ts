@@ -18,6 +18,9 @@ export function useScreenOptions({
     headerBlurEffect: isDark ? "dark" : "light",
     headerTintColor: theme.text,
     headerBackVisible: true,
+    // Chevron only. Otherwise iOS labels the back button with the previous
+    // route's name — internal, English ids like "Main" leaked into the UI.
+    headerBackButtonDisplayMode: "minimal",
     headerStyle: {
       backgroundColor: Platform.select({
         ios: undefined,

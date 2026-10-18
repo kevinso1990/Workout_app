@@ -48,36 +48,12 @@ import {
 } from "@/lib/onboardingUtils";
 import { resetToRootMain } from "@/lib/navigationHelpers";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/safeHaptics";
+import { translateDayName as translateDayLabel } from "@/lib/dayNameLabel";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const isWeb = Platform.OS === "web";
 const CardShell = isWeb ? View : Animated.View;
 const PreviewShell = isWeb ? View : Animated.View;
-
-const DAY_NAME_KEYS: Record<string, string> = {
-  Push: "push",
-  Pull: "pull",
-  Legs: "legs",
-  Upper: "upper",
-  Lower: "lower",
-  Chest: "chest",
-  Back: "back",
-  Shoulders: "shoulders",
-  Arms: "arms",
-};
-
-/** Translates a split day-type label for display. `dayName` also doubles as an
- * exercise-selection key elsewhere, so only the rendered label is translated —
- * the underlying data stays in English. Handles "Full Body A"/"B" variants. */
-function translateDayLabel(t: (key: string, opts?: any) => string, day: string): string {
-  const fullBodyMatch = day.match(/^Full Body( [ABC])?$/);
-  if (fullBodyMatch) {
-    return t("onboarding.dayNames.fullBody", { defaultValue: "Full Body" }) + (fullBodyMatch[1] ?? "");
-  }
-  const key = DAY_NAME_KEYS[day];
-  if (!key) return day;
-  return t(`onboarding.dayNames.${key}`, { defaultValue: day });
-}
 
 
 function SplitCard({

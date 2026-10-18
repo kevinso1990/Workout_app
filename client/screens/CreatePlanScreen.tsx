@@ -37,6 +37,7 @@ import {
   refinePlanInBackground,
 } from "@/lib/planRefinement";
 import { toast } from "@/lib/toast";
+import { defaultPlanName } from "@/lib/defaultPlanName";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { hapticError, hapticLight, hapticSuccess } from "@/lib/safeHaptics";
 
@@ -119,6 +120,10 @@ export default function CreatePlanScreen() {
 
   const handleSelectMode = (selected: "generate" | "manual") => {
     hapticLight();
+    // Pre-fill a name so the create button works straight away — a greyed-out
+    // button with no explanation read as broken. The field's clear button
+    // (and select-on-tap) make replacing it one step.
+    setPlanName((current) => current || defaultPlanName());
     setMode(selected);
   };
 
@@ -323,6 +328,7 @@ export default function CreatePlanScreen() {
           placeholderTextColor={theme.textSecondary}
           value={planName}
           onChangeText={setPlanName}
+          selectTextOnFocus
           autoFocus={Platform.OS !== "web"}
           testID="input-plan-name"
         />

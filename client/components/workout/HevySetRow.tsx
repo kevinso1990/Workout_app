@@ -22,6 +22,7 @@ import { repsMeetsTarget } from "@/lib/coachHelpers";
 import {
   clampAndFormatReps,
   clampAndFormatWeightExact,
+  targetRepsPrefill,
 } from "@/lib/activeWorkoutSetFormat";
 
 // 1 kg step so the +/- buttons reach whole-kilo values (dumbbells come in
@@ -195,21 +196,24 @@ export function HevySetGridHeader({
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { t } = useTranslation();
   return (
     <View style={[styles.row, styles.headerRow]}>
       <View style={styles.colSet}>
-        <Text style={styles.headerLabel}>SET</Text>
+        <Text style={styles.headerLabel} numberOfLines={1}>{t("activeWorkout.grid.set")}</Text>
       </View>
       <View style={styles.colPrev}>
-        <Text style={styles.headerLabel}>PREV</Text>
+        <Text style={styles.headerLabel} numberOfLines={1}>{t("activeWorkout.grid.previous")}</Text>
       </View>
       {!isBodyweight ? (
         <View style={styles.colWeight}>
-          <Text style={styles.headerLabel}>KG</Text>
+          <Text style={styles.headerLabel}>{t("activeWorkout.grid.kg")}</Text>
         </View>
       ) : null}
       <View style={[styles.colReps, isBodyweight && styles.colRepsWide]}>
-        <Text style={styles.headerLabel}>{isHold ? "SEK." : "REPS"}</Text>
+        <Text style={styles.headerLabel}>
+          {t(isHold ? "activeWorkout.grid.seconds" : "activeWorkout.grid.reps")}
+        </Text>
       </View>
       <View style={styles.colCheck}>
         <Text style={styles.headerLabel}> </Text>
@@ -357,11 +361,12 @@ function HevySetEditor({
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { t } = useTranslation();
   return (
     <View style={styles.editorPanel}>
       {!isBodyweight ? (
         <StepperField
-          label="KG"
+          label={t("activeWorkout.grid.kg")}
           value={draftWeight}
           decimal
           onChangeText={onChangeWeight}
@@ -371,7 +376,7 @@ function HevySetEditor({
         />
       ) : null}
       <StepperField
-        label={isHold ? "SEK." : "WDH."}
+        label={t(isHold ? "activeWorkout.grid.seconds" : "activeWorkout.grid.reps")}
         value={draftReps}
         onChangeText={onChangeReps}
         onCommit={onCommitReps}
@@ -638,16 +643,23 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
     }
   }, [setData.weight, setData.reps]);
 
-  // Prefill an empty active set from the recommended progression / last session.
+  // Prefill an empty active set from the recommended progression / last
+  // session — and, the first time an exercise is ever done, from the plan's
+  // own target, so a first-timer doesn't have to step every set up from 0.
   useEffect(() => {
     if (!isActive || setData.completed) return;
-    if (setData.weight !== "" || setData.reps !== "") return;
+    if (setData.reps !== "") return;
+    // Weight is meaningless (and hidden) on bodyweight sets, so a stray value
+    // there must not block the reps/seconds prefill.
+    if (!isBodyweight && setData.weight !== "") return;
+
+    const targetPrefill = targetRepsPrefill(props.targetReps);
 
     if (isBodyweight) {
       const repPrefill =
         progressionReps != null
           ? String(progressionReps)
-          : lastWeekData?.reps ?? "";
+          : lastWeekData?.reps || targetPrefill;
       if (repPrefill) onUpdate({ reps: repPrefill, weight: "" });
       return;
     }
@@ -656,10 +668,12 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
       const repPrefill =
         progressionReps != null
           ? String(progressionReps)
-          : lastWeekData?.reps ?? "";
+          : lastWeekData?.reps || targetPrefill;
       onUpdate({ weight: String(progressionWeight), reps: repPrefill });
     } else if (lastWeekData) {
       onUpdate({ weight: lastWeekData.weight, reps: lastWeekData.reps });
+    } else if (targetPrefill) {
+      onUpdate({ weight: "", reps: targetPrefill });
     }
   }, [isActive]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo} from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Platform, StyleSheet, Pressable, View, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
@@ -22,11 +22,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { isMobilityExercise } from "@/lib/exerciseTaxonomy";
-import { saveWorkoutPlan, type WorkoutPlan } from "@/lib/storage";
+import { getWorkoutPlans, saveWorkoutPlan, type WorkoutPlan } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { toast } from "@/lib/toast";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const MOBILITY_PLAN_ID = "mobility-session";
 
 export function CreatePlanFab() {
   const tabBarHeight = useBottomTabBarHeight();
@@ -53,37 +55,42 @@ export function CreatePlanFab() {
 
   const closeSheet = () => setSheetOpen(false);
 
-  const goCardio = () => {
-    closeSheet();
+  // iOS drops a screen push started while this modal sheet is still
+  // animating closed, so a tapped option sometimes did nothing. Close first,
+  // then run the action from the modal's onDismiss.
+  const pendingActionRef = useRef<(() => void) | null>(null);
+  const afterClose = (action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("LogCardio");
+    if (Platform.OS === "ios") {
+      pendingActionRef.current = action;
+      closeSheet();
+    } else {
+      closeSheet();
+      action();
+    }
   };
 
-  const goCreatePlan = () => {
-    closeSheet();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("CreatePlan");
-  };
-
-  const goGoalPlan = () => {
-    closeSheet();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("GoalPlan");
-  };
-
-  const goImport = () => {
-    closeSheet();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("ImportWorkout");
-  };
+  const goCardio = () => afterClose(() => navigation.navigate("LogCardio"));
+  const goCreatePlan = () => afterClose(() => navigation.navigate("CreatePlan"));
+  const goGoalPlan = () => afterClose(() => navigation.navigate("GoalPlan"));
+  const goImport = () => afterClose(() => navigation.navigate("ImportWorkout"));
+  const goMobility = () => afterClose(() => void startMobilitySession());
 
   // Picks up to 6 stretch/mobility moves, one per muscle group first (for a
   // balanced full-body session) before repeating groups — about 15-20 min at
   // 2 holds each. No duration data exists in the catalog, so the "15-20 min"
   // promise lives in the copy, backed by a hold-count that roughly matches it.
-  const goMobility = async () => {
-    closeSheet();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  //
+  // One plan under a fixed id, opened as a preview: tapping this again used to
+  // add a fresh "Mobility-Session" plan to the list every time, and jumped
+  // straight into a live workout without showing what was in it. An existing
+  // session is reopened as-is, so any edits the user made to it survive.
+  const startMobilitySession = async () => {
+    const plans = await getWorkoutPlans();
+    if (plans.some((p) => p.id === MOBILITY_PLAN_ID)) {
+      navigation.navigate("PlanDetail", { planId: MOBILITY_PLAN_ID });
+      return;
+    }
 
     const mobilityExercises = catalog.filter((c) => isMobilityExercise(c.name));
     if (mobilityExercises.length === 0) {
@@ -108,7 +115,7 @@ export function CreatePlanFab() {
       const now = new Date().toISOString();
       const sessionName = t("addWorkout.mobilitySession");
       const plan: WorkoutPlan = {
-        id: Date.now().toString(),
+        id: MOBILITY_PLAN_ID,
         name: sessionName,
         daysPerWeek: 1,
         days: [
@@ -129,11 +136,7 @@ export function CreatePlanFab() {
       };
       await saveWorkoutPlan(plan);
       scheduleDataSync();
-      navigation.navigate("ActiveWorkout", {
-        planId: plan.id,
-        planName: plan.name,
-        dayIndex: 0,
-      });
+      navigation.navigate("PlanDetail", { planId: plan.id });
     } catch (err) {
       console.error("CreatePlanFab: failed to start mobility session", err);
       toast.error(t("common.actionFailed"));
@@ -174,6 +177,11 @@ export function CreatePlanFab() {
         transparent
         animationType="slide"
         onRequestClose={closeSheet}
+        onDismiss={() => {
+          const action = pendingActionRef.current;
+          pendingActionRef.current = null;
+          action?.();
+        }}
       >
         <Pressable style={styles.sheetOverlay} onPress={closeSheet}>
           <Pressable

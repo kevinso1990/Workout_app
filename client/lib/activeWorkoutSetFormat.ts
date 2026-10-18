@@ -34,3 +34,14 @@ export function clampAndFormatReps(raw: string): string {
   if (!Number.isFinite(n) || n <= 0) return "";
   return String(Math.min(100, n));
 }
+
+/**
+ * Starting value for a set's reps/seconds field when there is no previous
+ * session or progression to go on: the lower bound of the plan's target
+ * ("8-12" → "8", "30-45s" → "30", "10" → "10"). Empty for non-numeric
+ * targets such as "AMRAP".
+ */
+export function targetRepsPrefill(target?: string | null): string {
+  const match = target?.match(/\d+/);
+  return match ? clampAndFormatReps(match[0]) : "";
+}

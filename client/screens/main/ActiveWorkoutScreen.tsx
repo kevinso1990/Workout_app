@@ -34,6 +34,7 @@ import {
 import { isBodyweightExercise } from "@/lib/exerciseBodyweight";
 import { translateMuscleGroup, isHoldExercise } from "@/lib/exerciseTaxonomy";
 import { findNextCircuitTarget } from "@/lib/circuitMode";
+import { translateDayName } from "@/lib/dayNameLabel";
 import { HEVY } from "@/constants/hevyLayout";
 import { WEIGHT_SLIDER_STEP_KG } from "@/lib/activeWorkoutSetFormat";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -939,15 +940,37 @@ export default function ActiveWorkoutScreen() {
     route.params.dayIndex,
   ]);
 
+  const pendingDraftSaveRef = useRef(false);
+  const showSummaryRef = useRef(showSummary);
+  showSummaryRef.current = showSummary;
+  const buildDraftRef = useRef(buildActiveWorkoutDraft);
+  buildDraftRef.current = buildActiveWorkoutDraft;
+
   const scheduleActiveWorkoutAutosave = useCallback(() => {
     if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    pendingDraftSaveRef.current = true;
     draftSaveTimerRef.current = setTimeout(() => {
+      pendingDraftSaveRef.current = false;
       const draft = buildActiveWorkoutDraft();
       if (draft) {
         void saveActiveWorkoutDraft(draft).catch(() => {});
       }
     }, ACTIVE_WORKOUT_AUTOSAVE_MS);
   }, [buildActiveWorkoutDraft]);
+
+  // Leaving the screen (minimise) cancels the debounced save above, so a set
+  // logged in the last few seconds before leaving was lost. Flush it instead —
+  // but never after the workout was finished, or the cleared draft would come
+  // back as a phantom "workout in progress".
+  useEffect(
+    () => () => {
+      if (!pendingDraftSaveRef.current || showSummaryRef.current) return;
+      pendingDraftSaveRef.current = false;
+      const draft = buildDraftRef.current();
+      if (draft) void saveActiveWorkoutDraft(draft).catch(() => {});
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!plan || progress.length === 0 || showSummary) return;
@@ -1926,7 +1949,9 @@ export default function ActiveWorkoutScreen() {
         totalVolume={calculateTotalVolume()}
         prs={prsThisSession}
         workoutName={
-          plan?.days[route.params.dayIndex]?.dayName || t("activeWorkout.genericWorkoutName")
+          plan?.days[route.params.dayIndex]?.dayName
+            ? translateDayName(t, plan.days[route.params.dayIndex].dayName)
+            : t("activeWorkout.genericWorkoutName")
         }
         onClose={() => {
           if (navFiredRef.current) return;
@@ -1949,12 +1974,16 @@ export default function ActiveWorkoutScreen() {
           ]}
         >
           <View style={styles.headerTop} pointerEvents="box-none">
+            {/* Minimise, not cancel: the session keeps running (it is autosaved
+                and resumable from the plan list), and an X read as "discard". */}
             <Pressable
               onPress={() => navigation.goBack()}
               style={styles.backButton}
               testID="button-back"
+              accessibilityRole="button"
+              accessibilityLabel={t("activeWorkout.minimize")}
             >
-              <Feather name="x" size={24} color={theme.text} />
+              <Feather name="chevron-down" size={26} color={theme.text} />
             </Pressable>
             <View style={styles.headerInfo}>
               <ThemedText
@@ -1963,7 +1992,7 @@ export default function ActiveWorkoutScreen() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.85}
               >
-                {day.dayName}
+                {translateDayName(t, day.dayName)}
               </ThemedText>
               <View style={styles.timerBadge}>
                 <Feather
@@ -1997,7 +2026,12 @@ export default function ActiveWorkoutScreen() {
               label: t("activeWorkout.circuitMode"),
               hint: t("activeWorkout.circuitModeHint"),
               value: circuitMode,
-              onChange: setCircuitMode,
+              onChange: (on) => {
+                setCircuitMode(on);
+                // Explain the mode at the moment it's tried — "An/Aus" alone
+                // doesn't say what changes.
+                toast.info(t(on ? "activeWorkout.circuitOnHint" : "activeWorkout.circuitOffHint"));
+              },
               testID: "switch-circuit-mode",
             })}
           </View>
@@ -2027,7 +2061,7 @@ export default function ActiveWorkoutScreen() {
                 { color: theme.textSecondary },
               ]}
             >
-              {completedSets}/{totalSets}
+              {t("activeWorkout.setsProgress", { done: completedSets, total: totalSets })}
             </ThemedText>
           </View>
 
@@ -2180,7 +2214,14 @@ export default function ActiveWorkoutScreen() {
                             isHold
                               ? "activeWorkout.setsSecondsSummary"
                               : "activeWorkout.setsRepsSummary",
-                            { sets: exercise.sets, reps: exercise.reps },
+                            {
+                              sets: exercise.sets,
+                              // Hold targets are stored like "30-45s"; the summary
+                              // already appends "Sek.", so drop the trailing unit.
+                              reps: isHold
+                                ? exercise.reps.replace(/\s*s(?:ek\.?)?$/i, "")
+                                : exercise.reps,
+                            },
                           )}
                         </ThemedText>
                       </View>

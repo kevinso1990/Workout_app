@@ -19,7 +19,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
-import { getApiUrl } from "@/lib/query-client";
+import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { nativeRequest } from "@/lib/nativeApi";
 import { toast } from "@/lib/toast";
 import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
@@ -50,6 +50,13 @@ interface ExercisePickerModalProps {
   excludeNames?: Set<string>;
   /** Pre-filter results to this muscle group (e.g. when swapping an exercise). */
   initialMuscleGroup?: string;
+  /**
+   * Stay open after a pick so several exercises can be added in one go (plan
+   * building). Picked rows — and any in `selectedNames` — show a check.
+   */
+  keepOpenOnSelect?: boolean;
+  /** Names to show as already added when `keepOpenOnSelect` is on. */
+  selectedNames?: Set<string>;
   onClose: () => void;
   onSelect: (exercise: PickerExercise) => void;
 }
@@ -59,6 +66,8 @@ export function ExercisePickerModal({
   title,
   excludeNames,
   initialMuscleGroup,
+  keepOpenOnSelect = false,
+  selectedNames,
   onClose,
   onSelect,
 }: ExercisePickerModalProps) {
@@ -67,48 +76,68 @@ export function ExercisePickerModal({
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
-  const [catalog, setCatalog] = useState<CatalogRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  // The cached catalog (works offline, opens instantly) rather than a fresh
+  // fetch on every open, which came back empty without a connection.
+  const { catalog: cachedCatalog, loading: catalogLoading } = useExerciseCatalog();
+  const catalog = useMemo<CatalogRow[]>(
+    () =>
+      cachedCatalog.map((c) => ({
+        id: Number(c.id),
+        name: c.name,
+        name_de: c.nameDe ?? null,
+        muscle_group: c.muscleGroup,
+        equipment: c.equipment.toLowerCase(),
+      })),
+    [cachedCatalog],
+  );
+  const loading = catalogLoading && catalog.length === 0;
   const [mobilityOnly, setMobilityOnly] = useState(false);
   // Active muscle-group filter — seeded from initialMuscleGroup on open so a
   // swap lands straight on same-muscle alternatives; user can clear it.
   const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
+  const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (visible) setMuscleFilter(initialMuscleGroup ?? null);
+    if (visible) {
+      setMuscleFilter(initialMuscleGroup ?? null);
+      setAddedNames(new Set());
+    }
   }, [visible, initialMuscleGroup]);
   /** Name pending a muscle-group choice before it's created as a custom exercise. */
   const [pendingCustomName, setPendingCustomName] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    if (!visible || catalog.length > 0) return;
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      try {
-        const url = new URL("/api/exercises/catalog", getApiUrl()).toString();
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("catalog fetch failed");
-        const rows = (await res.json()) as CatalogRow[];
-        if (!cancelled) setCatalog(rows);
-      } catch {
-        if (!cancelled) setCatalog([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [visible, catalog.length]);
+  // Older plans file exercises under coarse groups ("Legs", "Arms") the
+  // catalog doesn't use ("Quads", "Biceps"…). Seeding the filter with one of
+  // those would show an empty list, so only apply a group the catalog has.
+  const activeMuscleFilter = useMemo(
+    () =>
+      muscleFilter && catalog.some((e) => e.muscle_group === muscleFilter)
+        ? muscleFilter
+        : null,
+    [muscleFilter, catalog],
+  );
+
+  const isAdded = (name: string) =>
+    addedNames.has(name) || (selectedNames?.has(name) ?? false);
+
+  const pick = (exercise: CatalogRow) => {
+    onSelect(exercise);
+    if (keepOpenOnSelect) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setAddedNames((prev) => new Set(prev).add(exercise.name));
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      handleClose();
+    }
+  };
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = catalog.filter((e) => {
       if (excludeNames?.has(e.name)) return false;
       if (mobilityOnly && !isMobilityExercise(e.name)) return false;
-      if (muscleFilter && e.muscle_group !== muscleFilter) return false;
+      if (activeMuscleFilter && e.muscle_group !== activeMuscleFilter) return false;
       if (!q) return true;
       return (
         e.name.toLowerCase().includes(q) ||
@@ -130,7 +159,7 @@ export function ExercisePickerModal({
       (e) => [e.name, e.name_de ?? e.name],
       (e) => [e.muscle_group, e.equipment],
     );
-  }, [catalog, query, excludeNames, mobilityOnly, muscleFilter]);
+  }, [catalog, query, excludeNames, mobilityOnly, activeMuscleFilter]);
 
   const trimmedQuery = query.trim();
   // Offer "create custom" only when the search text isn't already an exact
@@ -178,7 +207,14 @@ export function ExercisePickerModal({
       };
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onSelect(row);
-      handleClose();
+      if (keepOpenOnSelect) {
+        setAddedNames((prev) => new Set(prev).add(row.name));
+        setPendingCustomName(null);
+        setCreating(false);
+        setQuery("");
+      } else {
+        handleClose();
+      }
     } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       toast.error(t("activeWorkout.picker.createFailed"));
@@ -204,13 +240,26 @@ export function ExercisePickerModal({
           ]}
         >
           <ThemedText style={styles.modalTitle}>{title}</ThemedText>
-          <Pressable
-            onPress={handleClose}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            testID="button-close-exercise-picker"
-          >
-            <Feather name="x" size={22} color={theme.text} />
-          </Pressable>
+          {keepOpenOnSelect ? (
+            <Pressable
+              onPress={handleClose}
+              hitSlop={8}
+              style={[styles.doneButton, { backgroundColor: theme.primary }]}
+              testID="button-close-exercise-picker"
+            >
+              <ThemedText style={[styles.doneButtonText, { color: theme.onChalk }]}>
+                {t("activeWorkout.picker.done")}
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={handleClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              testID="button-close-exercise-picker"
+            >
+              <Feather name="x" size={22} color={theme.text} />
+            </Pressable>
+          )}
         </View>
 
         <View
@@ -240,7 +289,7 @@ export function ExercisePickerModal({
         </View>
 
         <View style={styles.filterRow}>
-          {muscleFilter ? (
+          {activeMuscleFilter ? (
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -249,18 +298,18 @@ export function ExercisePickerModal({
               style={[
                 styles.filterChip,
                 {
-                  borderColor: getMuscleGroupColor(muscleFilter),
-                  backgroundColor: getMuscleGroupColor(muscleFilter) + "1A",
+                  borderColor: getMuscleGroupColor(activeMuscleFilter),
+                  backgroundColor: getMuscleGroupColor(activeMuscleFilter) + "1A",
                 },
               ]}
               testID="chip-picker-muscle"
             >
               <ThemedText
-                style={[styles.filterChipText, { color: getMuscleGroupColor(muscleFilter) }]}
+                style={[styles.filterChipText, { color: getMuscleGroupColor(activeMuscleFilter) }]}
               >
-                {translateMuscleGroup(t, muscleFilter)}
+                {translateMuscleGroup(t, activeMuscleFilter)}
               </ThemedText>
-              <Feather name="x" size={13} color={getMuscleGroupColor(muscleFilter)} />
+              <Feather name="x" size={13} color={getMuscleGroupColor(activeMuscleFilter)} />
             </Pressable>
           ) : null}
           <Pressable
@@ -359,10 +408,15 @@ export function ExercisePickerModal({
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onSelect(item);
-                  handleClose();
+                  if (keepOpenOnSelect && isAdded(item.name)) {
+                    Haptics.selectionAsync();
+                    return;
+                  }
+                  pick(item);
                 }}
+                accessibilityState={
+                  keepOpenOnSelect ? { selected: isAdded(item.name) } : undefined
+                }
                 style={({ pressed }) => [
                   styles.row,
                   { borderBottomColor: theme.border },
@@ -398,7 +452,18 @@ export function ExercisePickerModal({
                     </ThemedText>
                   </View>
                 </View>
-                <Feather name="chevron-right" size={18} color={theme.textSecondary} />
+                {!keepOpenOnSelect ? (
+                  <Feather name="chevron-right" size={18} color={theme.textSecondary} />
+                ) : isAdded(item.name) ? (
+                  <View style={styles.addedBadge}>
+                    <Feather name="check" size={14} color={theme.primary} />
+                    <ThemedText style={[styles.addedText, { color: theme.primary }]}>
+                      {t("activeWorkout.picker.added")}
+                    </ThemedText>
+                  </View>
+                ) : (
+                  <Feather name="plus-circle" size={22} color={theme.primary} />
+                )}
               </Pressable>
             )}
             ListEmptyComponent={
@@ -450,6 +515,24 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
+    fontWeight: "700",
+  },
+  doneButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+  },
+  doneButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  addedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  addedText: {
+    fontSize: 12,
     fontWeight: "700",
   },
   searchRow: {

@@ -9,6 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { scheduleTrainingWeek, type WeeklyCommitment } from "@shared/weeklySchedule";
+import { translateDayName } from "@/lib/dayNameLabel";
 import {
   WEEKDAY_FALLBACK,
   useCommitmentLabels,
@@ -142,16 +143,39 @@ export function WeekScheduleStrip({
                 )}
               </View>
 
-              <ThemedText
-                numberOfLines={2}
-                style={[styles.cellCaption, { color: theme.textSecondary }]}
-              >
-                {slot.kind === "gym"
-                  ? slot.dayName
-                  : slot.kind === "sport"
-                    ? sportLabel(slot.commitment!)
-                    : ""}
-              </ThemedText>
+              {slot.kind === "gym" ? (
+                (() => {
+                  // One long word ("Ganzkörper") is wider than the column and
+                  // got broken mid-word. Shrink the name to fit one line and
+                  // put the variant letter underneath instead.
+                  const label = translateDayName(t, slot.dayName ?? "");
+                  const m = label.match(/^(.*) ([A-Z])$/);
+                  return (
+                    <>
+                      <ThemedText
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.6}
+                        style={[styles.cellCaption, { color: theme.textSecondary }]}
+                      >
+                        {m ? m[1] : label}
+                      </ThemedText>
+                      {m ? (
+                        <ThemedText style={[styles.cellCaption, { color: theme.textSecondary }]}>
+                          {m[2]}
+                        </ThemedText>
+                      ) : null}
+                    </>
+                  );
+                })()
+              ) : (
+                <ThemedText
+                  numberOfLines={2}
+                  style={[styles.cellCaption, { color: theme.textSecondary }]}
+                >
+                  {slot.kind === "sport" ? sportLabel(slot.commitment!) : ""}
+                </ThemedText>
+              )}
             </View>
           );
         })}
@@ -160,7 +184,7 @@ export function WeekScheduleStrip({
       {schedule.unplacedDayNames.length > 0 ? (
         <ThemedText style={[styles.warning, { color: theme.textSecondary }]}>
           {t("plans.weekStrip.unplaced", {
-            names: schedule.unplacedDayNames.join(", "),
+            names: schedule.unplacedDayNames.map((n) => translateDayName(t, n)).join(", "),
             defaultValue: `Kein freier Tag mehr für: ${schedule.unplacedDayNames.join(", ")}`,
           })}
         </ThemedText>
@@ -199,6 +223,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     justifyContent: "center",
   },
   restDash: { fontSize: 13 },
-  cellCaption: { fontSize: 9, lineHeight: 11, textAlign: "center" },
+  // Stretch to the column so adjustsFontSizeToFit has a width to fit into —
+  // centred content-width text would just overflow instead of shrinking.
+  cellCaption: { fontSize: 9, lineHeight: 11, textAlign: "center", alignSelf: "stretch" },
   warning: { fontSize: 12, marginTop: Spacing.md },
 });

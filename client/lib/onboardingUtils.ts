@@ -4,6 +4,7 @@ import {
   type WorkoutPlan,
 } from "./storage";
 import { filterAvoidedExercises } from "@shared/avoidExercises";
+import { defaultPlanName } from "@/lib/defaultPlanName";
 
 export type FitnessLevel = "beginner" | "intermediate" | "advanced";
 export type FitnessGoal = "build_muscle" | "lose_fat" | "get_stronger";
@@ -188,7 +189,7 @@ export function buildOnboardingPlan(
   const now = new Date().toISOString();
   return {
     id: planId,
-    name: "My Workout Plan",
+    name: defaultPlanName(),
     daysPerWeek,
     days,
     createdAt: now,

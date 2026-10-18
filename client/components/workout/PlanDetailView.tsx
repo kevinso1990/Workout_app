@@ -12,6 +12,7 @@ import { Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import type { Exercise, WorkoutDay } from "@/lib/storage";
+import { translateDayName } from "@/lib/dayNameLabel";
 
 
 type PlanDetailViewProps = {
@@ -108,7 +109,7 @@ function DayCard({
           {t("planDetail.dayLabel")} {letter}
         </Text>
         <Text style={styles.dayName} numberOfLines={1}>
-          {day.dayName}
+          {translateDayName(t, day.dayName)}
         </Text>
         <Text style={styles.exerciseCountMeta}>
           {t("planDetail.exerciseCount", { count: day.exercises.length })}
@@ -141,7 +142,7 @@ function DayCard({
             pressed && styles.cardHeaderPressed,
           ]}
           accessibilityRole="button"
-          accessibilityLabel={`${t("planDetail.dayLabel")} ${letter}: ${day.dayName}`}
+          accessibilityLabel={`${t("planDetail.dayLabel")} ${letter}: ${translateDayName(t, day.dayName)}`}
           testID={`button-start-day-${dayIndex}`}
         >
           {headerInner}

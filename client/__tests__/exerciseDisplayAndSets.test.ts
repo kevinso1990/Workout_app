@@ -18,6 +18,7 @@ import {
   clampAndFormatWeight,
   clampAndFormatWeightExact,
   clampAndFormatReps,
+  targetRepsPrefill,
 } from "@/lib/activeWorkoutSetFormat";
 
 describe("getExerciseDisplayName (German name regression)", () => {
@@ -101,5 +102,19 @@ describe("clampAndFormatReps", () => {
     expect(clampAndFormatReps("250")).toBe("100");
     expect(clampAndFormatReps("0")).toBe("");
     expect(clampAndFormatReps("abc")).toBe("");
+  });
+});
+
+describe("targetRepsPrefill (first-time set starting value)", () => {
+  it("uses the lower bound of a range, including hold targets", () => {
+    expect(targetRepsPrefill("8-12")).toBe("8");
+    expect(targetRepsPrefill("30-45s")).toBe("30");
+    expect(targetRepsPrefill("10")).toBe("10");
+  });
+
+  it("is empty for non-numeric or missing targets", () => {
+    expect(targetRepsPrefill("AMRAP")).toBe("");
+    expect(targetRepsPrefill(undefined)).toBe("");
+    expect(targetRepsPrefill("")).toBe("");
   });
 });

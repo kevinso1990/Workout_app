@@ -126,7 +126,19 @@
     "refinementOffer": "Die KI hat eine verbesserte Version von „{{planName}}“ erstellt. Dein aktueller Plan bleibt unverändert, bis du zustimmst.",
     "refinementApply": "Übernehmen",
     "refinementKeep": "Behalten",
-    "duplicate": "Duplizieren"
+    "duplicate": "Duplizieren",
+    "defaultPlanName": "Mein Trainingsplan",
+    "resume": {
+      "title": "Training läuft",
+      "subtitle": "{{name}} · seit {{duration}}",
+      "continue": "Fortsetzen",
+      "discard": "Verwerfen",
+      "discardTitle": "Training verwerfen?",
+      "discardMessage": "Die bisher geloggten Sätze dieses Trainings gehen verloren.",
+      "minutes": "{{count}} Min.",
+      "hours": "{{count}} Std.",
+      "days": "{{count}} Tg."
+    }
   },
   "createPlan": {
     "back": "Zurück",
@@ -315,7 +327,9 @@
       "noResults": "Keine Übungen gefunden",
       "createCustom": "Eigene Übung erstellen: „{{name}}“",
       "chooseMuscleGroup": "Welche Muskelgruppe?",
-      "createFailed": "Übung konnte nicht erstellt werden. Bitte erneut versuchen."
+      "createFailed": "Übung konnte nicht erstellt werden. Bitte erneut versuchen.",
+      "done": "Fertig",
+      "added": "Hinzugefügt"
     },
     "shareText": {
       "complete": "💪 Training abgeschlossen — {{name}}",
@@ -387,7 +401,18 @@
         "standardHold": "Du hast das Wdh.-Ziel getroffen – Gewicht heute stabil halten.",
         "standardDecrease": "Die Wiederholungen lagen unter dem Ziel – leichte Entlastung heute."
       }
-    }
+    },
+    "grid": {
+      "set": "SATZ",
+      "previous": "ZULETZT",
+      "kg": "KG",
+      "reps": "WDH.",
+      "seconds": "SEK."
+    },
+    "setsProgress": "{{done}}/{{total}} Sätze",
+    "minimize": "Training minimieren",
+    "circuitOnHint": "Zirkeltraining an: Nach jedem Satz geht es zur nächsten Übung – Runde für Runde.",
+    "circuitOffHint": "Zirkeltraining aus: Erst alle Sätze einer Übung, dann die nächste."
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",
@@ -1075,6 +1100,16 @@
     "suggested": "Passende Alternativen",
     "allExercises": "Alle Übungen",
     "setCount_one": "{{count}} Satz",
-    "setCount_other": "{{count}} Sätze"
+    "setCount_other": "{{count}} Sätze",
+    "noExercisesYet": "Noch keine Übungen – füge die erste hinzu.",
+    "addDay": "Tag hinzufügen",
+    "removeDay": "Tag entfernen",
+    "removeDayTitle": "{{name}} entfernen?",
+    "removeDayMessage": "Der Tag und seine {{count}} Übungen werden aus dem Plan gelöscht.",
+    "replaceTitle": "Übung ersetzen",
+    "unsavedTitle": "Änderungen speichern?",
+    "unsavedMessage": "Du hast Änderungen an diesem Plan, die noch nicht gespeichert sind.",
+    "unsavedSave": "Speichern",
+    "unsavedDiscard": "Verwerfen"
   }
 }

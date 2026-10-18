@@ -42,6 +42,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { hapticLight } from "@/lib/safeHaptics";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
+import { translateDayName } from "@/lib/dayNameLabel";
 import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
 import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
 import { NativeRecoveryPanel } from "@/components/progress/NativeRecoveryPanel";
@@ -631,7 +632,7 @@ function WorkoutHistoryItem({
         </View>
         <View style={styles.historyInfo}>
           <ThemedText style={styles.historyTitle}>
-            {cardio ? sessionDisplayTitle(session) : session.dayName}
+            {cardio ? sessionDisplayTitle(session) : translateDayName(t, session.dayName)}
           </ThemedText>
           <View style={styles.historyMeta}>
             {cardio ? (

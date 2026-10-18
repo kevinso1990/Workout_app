@@ -6,6 +6,7 @@ import type {
   WorkoutPlan,
 } from "@/lib/storage";
 import { generateEquipmentAwarePlan } from "@/lib/storage";
+import { defaultPlanName } from "@/lib/defaultPlanName";
 import {
   buildOnboardingPlan,
   type MuscleGroup,
@@ -160,7 +161,7 @@ export async function fetchAiGeneratedPlan(
   const resolvedName =
     input.goalText && cleanAiName && cleanAiName.length <= 60
       ? cleanAiName
-      : input.planName ?? "My Workout Plan";
+      : input.planName ?? defaultPlanName();
 
   return mergeApiPlansIntoWorkoutPlan(apiPlans, {
     planName: resolvedName,
@@ -187,7 +188,7 @@ export function buildLocalPlan(input: GenerateWorkoutPlanInput): WorkoutPlan {
 
   return generateEquipmentAwarePlan(
     input.frequency,
-    input.planName ?? "My Workout Plan",
+    input.planName ?? defaultPlanName(),
     input.equipment,
     input.experience,
     input.avoidExercises,

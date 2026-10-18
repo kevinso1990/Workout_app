@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo} from "react";
+import React, { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -47,6 +48,7 @@ import { WeekScheduleStrip } from "@/components/schedule/WeekScheduleStrip";
 import { getUserPreferences } from "@/lib/storage";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
+import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
@@ -178,6 +180,18 @@ function PlanActionSheet({
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  // iOS drops a screen push (or a second modal) started while this modal is
+  // still animating closed — "Plan bearbeiten" then silently did nothing.
+  // Run the chosen action only once the sheet has fully dismissed.
+  const pendingActionRef = useRef<(() => void) | null>(null);
+  const choose = (action: () => void) => {
+    if (Platform.OS === "ios") {
+      pendingActionRef.current = action;
+      onClose();
+    } else {
+      action();
+    }
+  };
 
   const items: {
     key: string;
@@ -204,6 +218,11 @@ function PlanActionSheet({
       transparent
       animationType="slide"
       onRequestClose={onClose}
+      onDismiss={() => {
+        const action = pendingActionRef.current;
+        pendingActionRef.current = null;
+        action?.();
+      }}
     >
       <Pressable style={styles.sheetOverlay} onPress={onClose}>
         <Pressable
@@ -225,7 +244,7 @@ function PlanActionSheet({
               key={item.key}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                item.onPress();
+                choose(item.onPress);
               }}
               style={({ pressed }) => [
                 styles.sheetItem,
@@ -751,6 +770,9 @@ export default function MyPlansScreen() {
         }
         ListHeaderComponent={
           <>
+            {/* A workout in progress outranks every notice — it's the thing
+                the user was in the middle of, not a suggestion. */}
+            <ResumeWorkoutCard />
             {/* At most ONE notice at a time, by priority: something went wrong
                 > actionable coaching offer > daily tip. Stacking three banners
                 pushed the real primary action (starting a workout) off screen.

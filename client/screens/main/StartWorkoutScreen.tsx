@@ -27,6 +27,7 @@ import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import { HEVY, hevyHeaderInsets, hevyHairline } from "@/constants/hevyLayout";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { translateDayName } from "@/lib/dayNameLabel";
 import { getWorkoutPlans, WorkoutPlan, WorkoutDay, getWorkoutHistory, WorkoutSession } from "@/lib/storage";
 import {
   formatLastPerformedLabel,
@@ -78,7 +79,7 @@ function DayCard({
             <ThemedText style={styles.dayIndexText}>{dayIndex + 1}</ThemedText>
           </View>
           <View style={styles.dayInfo}>
-            <ThemedText style={styles.dayName}>{day.dayName}</ThemedText>
+            <ThemedText style={styles.dayName}>{translateDayName(t, day.dayName)}</ThemedText>
             {dayLastPerformedLabel ? (
               <ThemedText style={styles.dayMeta} numberOfLines={1}>
                 {dayLastPerformedLabel}

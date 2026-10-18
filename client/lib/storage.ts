@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { filterAvoidedExercises } from "@shared/avoidExercises";
+import { defaultPlanName } from "@/lib/defaultPlanName";
 
 export type { WeeklyCommitment, Weekday } from "@shared/weeklySchedule";
 
@@ -1608,7 +1609,7 @@ function buildFullBodyDayFromPool(
 
 export function generateDefaultPlan(
   daysPerWeek: number,
-  name: string = "My Workout Plan"
+  name: string = defaultPlanName()
 ): WorkoutPlan {
   const splitDays = SPLIT_RECOMMENDATIONS[daysPerWeek] ?? ["Full Body"];
 
@@ -1651,7 +1652,7 @@ export function generateDefaultPlan(
  */
 export function generateEquipmentAwarePlan(
   daysPerWeek: number,
-  name: string = "My Workout Plan",
+  name: string = defaultPlanName(),
   equipment: Equipment | null = null,
   fitnessLevel: FitnessLevel | null = null,
   avoidExercises?: string[],

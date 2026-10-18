@@ -1,20 +1,22 @@
-import React, { useCallback, useMemo, useState} from "react";
+import React, { useEffect, useMemo, useRef, useState} from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
-  Modal,
-  FlatList,
-  SectionList,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  usePreventRemove,
+  type NavigationAction,
+} from "@react-navigation/native";
 import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -29,7 +31,11 @@ import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
-import { translateMuscleGroup, getMuscleGroupColor } from "@/lib/exerciseTaxonomy";
+import {
+  translateMuscleGroup,
+  isHoldExercise,
+  isMobilityExercise,
+} from "@/lib/exerciseTaxonomy";
 import {
   WorkoutPlan,
   WorkoutDay,
@@ -38,7 +44,12 @@ import {
   saveWorkoutPlan,
 } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
-import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
+import { translateDayName } from "@/lib/dayNameLabel";
+import { confirmAlert } from "@/lib/confirmAlert";
+import {
+  ExercisePickerModal,
+  type PickerExercise,
+} from "@/components/workout/ExercisePickerModal";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const MIN_SETS = 1;
@@ -46,434 +57,10 @@ const MAX_SETS = 10;
 
 type Props = NativeStackScreenProps<RootStackParamList, "EditPlan">;
 
-// ─── Exercise library ─────────────────────────────────────────────────────────
-//
-// Fallback only. The real source is the server catalog via useExerciseCatalog,
-// which is cached locally so it survives being offline. This list is what the
-// picker falls back to when a device has never once reached the server — it
-// used to be the ONLY source here, which is why exercises added to the catalog
-// could not be selected in this screen at all.─
-interface LibraryExercise {
-  id: string;
-  name: string;
-  muscleGroup: string;
-}
-
-const EXERCISE_LIBRARY: LibraryExercise[] = [
-  { id: "1",  name: "Bench Press",              muscleGroup: "Chest" },
-  { id: "2",  name: "Incline Dumbbell Press",   muscleGroup: "Chest" },
-  { id: "3",  name: "Decline Bench Press",      muscleGroup: "Chest" },
-  { id: "4",  name: "Cable Flyes",              muscleGroup: "Chest" },
-  { id: "5",  name: "Push-ups",                 muscleGroup: "Chest" },
-  { id: "6",  name: "Dumbbell Flyes",           muscleGroup: "Chest" },
-  { id: "7",  name: "Chest Dips",               muscleGroup: "Chest" },
-  { id: "8",  name: "Machine Chest Press",      muscleGroup: "Chest" },
-  { id: "9",  name: "Pec Deck",                 muscleGroup: "Chest" },
-  { id: "10", name: "Landmine Press",           muscleGroup: "Chest" },
-  { id: "11", name: "Squat",                    muscleGroup: "Legs" },
-  { id: "12", name: "Front Squat",              muscleGroup: "Legs" },
-  { id: "13", name: "Leg Press",                muscleGroup: "Legs" },
-  { id: "14", name: "Lunges",                   muscleGroup: "Legs" },
-  { id: "15", name: "Bulgarian Split Squat",    muscleGroup: "Legs" },
-  { id: "16", name: "Leg Extension",            muscleGroup: "Legs" },
-  { id: "17", name: "Leg Curl",                 muscleGroup: "Legs" },
-  { id: "18", name: "Romanian Deadlift",        muscleGroup: "Legs" },
-  { id: "19", name: "Goblet Squat",             muscleGroup: "Legs" },
-  { id: "20", name: "Hack Squat",               muscleGroup: "Legs" },
-  { id: "21", name: "Step-ups",                 muscleGroup: "Legs" },
-  { id: "22", name: "Hip Thrust",               muscleGroup: "Legs" },
-  { id: "23", name: "Calf Raises",              muscleGroup: "Legs" },
-  { id: "24", name: "Seated Calf Raises",       muscleGroup: "Legs" },
-  { id: "25", name: "Deadlift",                 muscleGroup: "Back" },
-  { id: "26", name: "Sumo Deadlift",            muscleGroup: "Back" },
-  { id: "27", name: "Barbell Rows",             muscleGroup: "Back" },
-  { id: "28", name: "Pendlay Rows",             muscleGroup: "Back" },
-  { id: "29", name: "Dumbbell Rows",            muscleGroup: "Back" },
-  { id: "30", name: "Lat Pulldown",             muscleGroup: "Back" },
-  { id: "31", name: "Pull-ups",                 muscleGroup: "Back" },
-  { id: "32", name: "Chin-ups",                 muscleGroup: "Back" },
-  { id: "33", name: "Seated Cable Row",         muscleGroup: "Back" },
-  { id: "34", name: "T-Bar Row",                muscleGroup: "Back" },
-  { id: "35", name: "Machine Row",              muscleGroup: "Back" },
-  { id: "36", name: "Straight Arm Pulldown",    muscleGroup: "Back" },
-  { id: "37", name: "Shrugs",                   muscleGroup: "Back" },
-  { id: "38", name: "Hyperextensions",          muscleGroup: "Back" },
-  { id: "39", name: "Overhead Press",           muscleGroup: "Shoulders" },
-  { id: "40", name: "Dumbbell Shoulder Press",  muscleGroup: "Shoulders" },
-  { id: "41", name: "Arnold Press",             muscleGroup: "Shoulders" },
-  { id: "42", name: "Lateral Raises",           muscleGroup: "Shoulders" },
-  { id: "43", name: "Cable Lateral Raises",     muscleGroup: "Shoulders" },
-  { id: "44", name: "Front Raises",             muscleGroup: "Shoulders" },
-  { id: "45", name: "Face Pulls",               muscleGroup: "Shoulders" },
-  { id: "46", name: "Reverse Flyes",            muscleGroup: "Shoulders" },
-  { id: "47", name: "Upright Rows",             muscleGroup: "Shoulders" },
-  { id: "48", name: "Machine Shoulder Press",   muscleGroup: "Shoulders" },
-  { id: "49", name: "Push Press",               muscleGroup: "Shoulders" },
-  { id: "50", name: "Bicep Curls",              muscleGroup: "Arms" },
-  { id: "51", name: "Barbell Curls",            muscleGroup: "Arms" },
-  { id: "52", name: "Hammer Curls",             muscleGroup: "Arms" },
-  { id: "53", name: "Preacher Curls",           muscleGroup: "Arms" },
-  { id: "54", name: "Concentration Curls",      muscleGroup: "Arms" },
-  { id: "55", name: "Cable Curls",              muscleGroup: "Arms" },
-  { id: "56", name: "Incline Dumbbell Curls",   muscleGroup: "Arms" },
-  { id: "57", name: "Spider Curls",             muscleGroup: "Arms" },
-  { id: "58", name: "Tricep Pushdowns",         muscleGroup: "Arms" },
-  { id: "59", name: "Skull Crushers",           muscleGroup: "Arms" },
-  { id: "60", name: "Overhead Tricep Extension",muscleGroup: "Arms" },
-  { id: "61", name: "Tricep Dips",              muscleGroup: "Arms" },
-  { id: "62", name: "Close Grip Bench Press",   muscleGroup: "Arms" },
-  { id: "63", name: "Diamond Push-ups",         muscleGroup: "Arms" },
-  { id: "64", name: "Tricep Kickbacks",         muscleGroup: "Arms" },
-  { id: "65", name: "Rope Pushdowns",           muscleGroup: "Arms" },
-  { id: "66", name: "Wrist Curls",              muscleGroup: "Arms" },
-  { id: "67", name: "Crunches",                 muscleGroup: "Core" },
-  { id: "68", name: "Plank",                    muscleGroup: "Core" },
-  { id: "69", name: "Russian Twists",           muscleGroup: "Core" },
-  { id: "70", name: "Leg Raises",               muscleGroup: "Core" },
-  { id: "71", name: "Hanging Leg Raises",       muscleGroup: "Core" },
-  { id: "72", name: "Ab Wheel Rollout",         muscleGroup: "Core" },
-  { id: "73", name: "Cable Crunches",           muscleGroup: "Core" },
-  { id: "74", name: "Mountain Climbers",        muscleGroup: "Core" },
-  { id: "75", name: "Dead Bug",                 muscleGroup: "Core" },
-  { id: "76", name: "Bird Dog",                 muscleGroup: "Core" },
-  { id: "77", name: "Side Plank",               muscleGroup: "Core" },
-  { id: "78", name: "Bicycle Crunches",         muscleGroup: "Core" },
-  { id: "79", name: "Kettlebell Swings",        muscleGroup: "Full Body" },
-  { id: "80", name: "Clean and Press",          muscleGroup: "Full Body" },
-  { id: "81", name: "Thrusters",                muscleGroup: "Full Body" },
-  { id: "82", name: "Burpees",                  muscleGroup: "Full Body" },
-  { id: "83", name: "Box Jumps",                muscleGroup: "Full Body" },
-  { id: "84", name: "Battle Ropes",             muscleGroup: "Full Body" },
-  { id: "85", name: "Farmers Walk",             muscleGroup: "Full Body" },
-  { id: "86", name: "Kettlebell Shoulder Press", muscleGroup: "Shoulders" },
-  { id: "87", name: "Kettlebell Front Rack Squat", muscleGroup: "Legs" },
-  { id: "88", name: "Kettlebell Single-Arm Row", muscleGroup: "Back" },
-  { id: "89", name: "Kettlebell Goblet Squat",   muscleGroup: "Legs" },
-];
-
-// ─── Add Exercise Modal ───────────────────────────────────────────────────────
-function AddExerciseModal({
-  visible,
-  onClose,
-  onAdd,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onAdd: (ex: LibraryExercise) => void;
-}) {
-  const { theme } = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
-  const localizeName = useLocalizeExerciseName();
-  const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState("");
-  const { catalog } = useExerciseCatalog();
-  const library = catalog.length > 0 ? catalog : EXERCISE_LIBRARY;
-
-  const filtered = query.trim()
-    ? library.filter(
-        (e) =>
-          e.name.toLowerCase().includes(query.toLowerCase()) ||
-          e.muscleGroup.toLowerCase().includes(query.toLowerCase())
-      )
-    : library;
-
-  const handleClose = () => {
-    setQuery("");
-    onClose();
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
-      <KeyboardAvoidingView
-        style={[styles.modalRoot, { backgroundColor: theme.backgroundRoot }]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View
-          style={[
-            styles.modalHeader,
-            { borderBottomColor: theme.border, paddingTop: insets.top || Spacing.lg },
-          ]}
-        >
-          <ThemedText style={styles.modalTitle}>{t("editPlan.addExerciseTitle")}</ThemedText>
-          <Pressable onPress={handleClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} testID="button-close-add-exercise-modal">
-            <Feather name="x" size={22} color={theme.text} />
-          </Pressable>
-        </View>
-
-        <View style={[styles.searchRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
-          <Feather name="search" size={16} color={theme.textSecondary} />
-          <TextInput
-            clearButtonMode="while-editing"
-            returnKeyType="search"
-            autoCapitalize="none"
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder={t("importWorkout.review.searchPlaceholder")}
-            placeholderTextColor={theme.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            autoCorrect={false}
-            testID="input-exercise-search"
-          />
-          {query.length > 0 && (
-            <Pressable onPress={() => setQuery("")} hitSlop={8}>
-              <Feather name="x-circle" size={16} color={theme.textSecondary} />
-            </Pressable>
-          )}
-        </View>
-
-        <FlatList
-          keyboardDismissMode="on-drag"
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
-          keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onAdd(item);
-                handleClose();
-              }}
-              style={({ pressed }) => [
-                styles.libraryRow,
-                {
-                  backgroundColor: pressed ? theme.backgroundSecondary : theme.backgroundDefault,
-                  borderBottomColor: theme.border,
-                },
-              ]}
-              testID={`button-add-exercise-${item.id}`}
-            >
-              <View style={styles.libraryRowInfo}>
-                <ThemedText style={styles.libraryName}>{item.name}</ThemedText>
-                <View
-                  style={[
-                    styles.libraryMuscleTag,
-                    { backgroundColor: getMuscleGroupColor(item.muscleGroup) + "1A" },
-                  ]}
-                >
-                  <ThemedText style={[styles.libraryMuscle, { color: getMuscleGroupColor(item.muscleGroup) }]}>
-                    {translateMuscleGroup(t, item.muscleGroup)}
-                  </ThemedText>
-                </View>
-              </View>
-              <Feather name="plus" size={20} color={theme.primary} />
-            </Pressable>
-          )}
-        />
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
-// ─── Replace Exercise Modal ───────────────────────────────────────────────────
 type ReplaceTarget = { dayIndex: number; exIndex: number; exercise: Exercise };
 
-function ReplaceExerciseModal({
-  visible,
-  target,
-  existingNames,
-  onClose,
-  onReplace,
-}: {
-  visible: boolean;
-  target: ReplaceTarget | null;
-  existingNames: Set<string>;
-  onClose: () => void;
-  onReplace: (ex: LibraryExercise) => void;
-}) {
-  const { theme } = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
-  const localizeName = useLocalizeExerciseName();
-  const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState("");
-  const { catalog } = useExerciseCatalog();
-  const library = catalog.length > 0 ? catalog : EXERCISE_LIBRARY;
-
-  const { suggestions, others } = useMemo(() => {
-    if (!target) return { suggestions: [], others: library };
-
-    const targetMuscle = target.exercise.muscleGroup.toLowerCase();
-    const targetName = target.exercise.name.toLowerCase();
-
-    const q = query.trim().toLowerCase();
-
-    const filtered = library.filter((e) => {
-      if (e.name.toLowerCase() === targetName) return false;
-      if (!q) return true;
-      return (
-        e.name.toLowerCase().includes(q) ||
-        e.muscleGroup.toLowerCase().includes(q)
-      );
-    });
-
-    const sugg = filtered.filter(
-      (e) => e.muscleGroup.toLowerCase() === targetMuscle && !existingNames.has(e.name)
-    );
-    const rest = filtered.filter(
-      (e) => !(e.muscleGroup.toLowerCase() === targetMuscle && !existingNames.has(e.name))
-    );
-    return { suggestions: sugg, others: rest };
-  }, [target, existingNames, query, library]);
-
-  const sections = useMemo(() => {
-    const result = [];
-    if (suggestions.length > 0) {
-      result.push({ title: t("editPlan.suggested"), data: suggestions, isSuggested: true });
-    }
-    if (others.length > 0) {
-      result.push({ title: t("editPlan.allExercises"), data: others, isSuggested: false });
-    }
-    return result;
-  }, [suggestions, others, t]);
-
-  const handleClose = () => {
-    setQuery("");
-    onClose();
-  };
-
-  const handleSelect = (item: LibraryExercise) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onReplace(item);
-    handleClose();
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
-      <KeyboardAvoidingView
-        style={[styles.modalRoot, { backgroundColor: theme.backgroundRoot }]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        {/* Header */}
-        <View
-          style={[
-            styles.modalHeader,
-            { borderBottomColor: theme.border, paddingTop: insets.top || Spacing.lg },
-          ]}
-        >
-          <View style={{ flex: 1, marginRight: Spacing.md }}>
-            <ThemedText style={styles.modalTitle}>Replace Exercise</ThemedText>
-            {target != null && (
-              <ThemedText style={[styles.replaceSubtitle, { color: theme.textSecondary }]} numberOfLines={1}>
-                {t("editPlan.replacing", { name: localizeName(target.exercise.name) })}
-              </ThemedText>
-            )}
-          </View>
-          <Pressable onPress={handleClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} testID="button-close-replace-modal">
-            <Feather name="x" size={22} color={theme.text} />
-          </Pressable>
-        </View>
-
-        {/* Search */}
-        <View style={[styles.searchRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
-          <Feather name="search" size={16} color={theme.textSecondary} />
-          <TextInput
-            clearButtonMode="while-editing"
-            returnKeyType="search"
-            autoCapitalize="none"
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder={t("importWorkout.review.searchPlaceholder")}
-            placeholderTextColor={theme.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            autoCorrect={false}
-            testID="input-replace-exercise-search"
-          />
-          {query.length > 0 && (
-            <Pressable onPress={() => setQuery("")} hitSlop={8}>
-              <Feather name="x-circle" size={16} color={theme.textSecondary} />
-            </Pressable>
-          )}
-        </View>
-
-        {/* Section list: Suggested + All */}
-        <SectionList
-          keyboardDismissMode="on-drag"
-          sections={sections}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
-          keyboardShouldPersistTaps="handled"
-          stickySectionHeadersEnabled={false}
-          renderSectionHeader={({ section }) => (
-            <View
-              style={[
-                styles.sectionHeaderRow,
-                {
-                  backgroundColor: section.isSuggested
-                    ? theme.primary + "12"
-                    : theme.backgroundRoot,
-                  borderBottomColor: theme.border,
-                },
-              ]}
-            >
-              {section.isSuggested ? (
-                <View style={styles.suggestedLabelRow}>
-                  <Feather name="zap" size={13} color={theme.primary} />
-                  <ThemedText style={[styles.sectionHeaderText, { color: theme.primary }]}>
-                    {section.title}
-                  </ThemedText>
-                </View>
-              ) : (
-                <ThemedText style={[styles.sectionHeaderText, { color: theme.textSecondary }]}>
-                  {section.title}
-                </ThemedText>
-              )}
-            </View>
-          )}
-          renderItem={({ item, section }) => (
-            <Pressable
-              onPress={() => handleSelect(item)}
-              style={({ pressed }) => [
-                styles.libraryRow,
-                {
-                  backgroundColor: pressed
-                    ? theme.backgroundSecondary
-                    : section.isSuggested
-                    ? theme.primary + "08"
-                    : theme.backgroundDefault,
-                  borderBottomColor: theme.border,
-                },
-              ]}
-              testID={`button-replace-exercise-${item.id}`}
-            >
-              <View style={styles.libraryRowInfo}>
-                <ThemedText style={styles.libraryName}>{item.name}</ThemedText>
-                <View
-                  style={[
-                    styles.libraryMuscleTag,
-                    { backgroundColor: getMuscleGroupColor(item.muscleGroup) + "1A" },
-                  ]}
-                >
-                  <ThemedText style={[styles.libraryMuscle, { color: getMuscleGroupColor(item.muscleGroup) }]}>
-                    {translateMuscleGroup(t, item.muscleGroup)}
-                  </ThemedText>
-                </View>
-              </View>
-              {section.isSuggested ? (
-                <View style={[styles.swapBadge, { backgroundColor: theme.primary + "20" }]}>
-                  <Feather name="repeat" size={14} color={theme.primary} />
-                  <ThemedText style={[styles.swapBadgeText, { color: theme.primary }]}>{t("exercises.swapBadge")}</ThemedText>
-                </View>
-              ) : (
-                <Feather name="repeat" size={18} color={theme.textSecondary} />
-              )}
-            </Pressable>
-          )}
-        />
-      </KeyboardAvoidingView>
-    </Modal>
-  );
+function snapshotOf(name: string, days: WorkoutDay[]): string {
+  return JSON.stringify({ name, days });
 }
 
 // ─── Exercise Row ─────────────────────────────────────────────────────────────
@@ -643,6 +230,7 @@ function DaySection({
   onAddExercise,
   onReplaceExercise,
   onExerciseSetsChange,
+  onRemoveDay,
 }: {
   day: WorkoutDay;
   dayIndex: number;
@@ -652,11 +240,15 @@ function DaySection({
   onAddExercise: () => void;
   onReplaceExercise: (exIndex: number) => void;
   onExerciseSetsChange: (exIndex: number, delta: number) => void;
+  /** Omitted for the last remaining day — a plan always keeps one. */
+  onRemoveDay?: () => void;
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [activeExIndex, setActiveExIndex] = useState<number | null>(null);
+  const badge = t("editPlan.day", { n: dayIndex + 1 });
+  const label = translateDayName(t, day.dayName);
 
   return (
     <Animated.View
@@ -666,17 +258,32 @@ function DaySection({
       <View style={styles.dayHeader}>
         <View style={[styles.dayBadge, { backgroundColor: theme.primary + "15" }]}>
           <ThemedText style={[styles.dayBadgeText, { color: theme.primary }]}>
-            {t("editPlan.day", { n: dayIndex + 1 })}
+            {badge}
           </ThemedText>
         </View>
-        <ThemedText style={styles.dayName}>{day.dayName}</ThemedText>
+        {/* Manually built days are named "Tag 1"… — the same as the badge —
+            so showing both read "TAG 1  Tag 1". */}
+        <ThemedText style={[styles.dayName, { flex: 1 }]} numberOfLines={1}>
+          {label.toLowerCase() === badge.toLowerCase() ? "" : label}
+        </ThemedText>
+        {onRemoveDay ? (
+          <Pressable
+            onPress={onRemoveDay}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t("editPlan.removeDay")}
+            testID={`button-remove-day-${dayIndex}`}
+          >
+            <Feather name="trash-2" size={17} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={[styles.exerciseList, { borderColor: theme.border }]}>
         {day.exercises.length === 0 ? (
           <View style={styles.emptyDay}>
             <ThemedText style={[styles.emptyDayText, { color: theme.textSecondary }]}>
-              No exercises yet
+              {t("editPlan.noExercisesYet")}
             </ThemedText>
           </View>
         ) : (
@@ -747,22 +354,38 @@ export default function EditPlanScreen() {
   const [addModalDayIndex, setAddModalDayIndex] = useState<number | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<ReplaceTarget | null>(null);
 
-  const loadPlan = useCallback(async () => {
-    try {
-      const plans = await getWorkoutPlans();
-      const found = plans.find((p) => p.id === planId);
-      if (found) {
-        setPlan(JSON.parse(JSON.stringify(found)));
-        setPlanName(found.name);
+  /** Serialized plan as last loaded/saved — compared against to detect edits. */
+  const savedSnapshotRef = useRef<string | null>(null);
+  /**
+   * A deliberate exit (after save → "back", after "discard" → the blocked
+   * action). Stored as state, not a ref: it has to lift the usePreventRemove
+   * guard in a render *before* navigating, or the guard blocks the exit too
+   * and the screen gets stuck.
+   */
+  const [exitAction, setExitAction] = useState<NavigationAction | "back" | null>(null);
+
+  // Loaded once, not on every focus: reloading on focus silently replaced any
+  // unsaved edits with the stored plan whenever the screen regained focus.
+  useEffect(() => {
+    (async () => {
+      try {
+        const plans = await getWorkoutPlans();
+        const found = plans.find((p) => p.id === planId);
+        if (found) {
+          setPlan(JSON.parse(JSON.stringify(found)));
+          setPlanName(found.name);
+          savedSnapshotRef.current = snapshotOf(found.name, found.days);
+        }
+      } catch (err) {
+        console.error("EditPlanScreen: failed to load plan", err);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error("EditPlanScreen: failed to load plan", err);
-    } finally {
-      setIsLoading(false);
-    }
+    })();
   }, [planId]);
 
-  useFocusEffect(useCallback(() => { loadPlan(); }, [loadPlan]));
+  const isDirty =
+    plan != null && snapshotOf(planName.trim(), plan.days) !== savedSnapshotRef.current;
 
   // Names already in the day being replaced (for filtering suggestions)
   const existingNamesInReplacedDay = useMemo<Set<string>>(() => {
@@ -770,6 +393,11 @@ export default function EditPlanScreen() {
     const day = plan.days[replaceTarget.dayIndex];
     return new Set(day?.exercises.map((e) => e.name) ?? []);
   }, [replaceTarget, plan]);
+
+  const namesInAddDay = useMemo<Set<string>>(() => {
+    if (addModalDayIndex === null || !plan) return new Set();
+    return new Set(plan.days[addModalDayIndex]?.exercises.map((e) => e.name) ?? []);
+  }, [addModalDayIndex, plan]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -779,12 +407,14 @@ export default function EditPlanScreen() {
       const updated: WorkoutPlan = {
         ...plan,
         name: planName.trim(),
+        daysPerWeek: plan.days.length,
         lastModified: new Date().toISOString(),
       };
       await saveWorkoutPlan(updated);
       scheduleDataSync();
+      savedSnapshotRef.current = snapshotOf(updated.name, updated.days);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
+      setExitAction("back");
     } catch (err) {
       console.error("EditPlanScreen: failed to save plan", err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -794,6 +424,81 @@ export default function EditPlanScreen() {
     } finally {
       setIsSaving(false);
     }
+  };
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+
+  // Edits only persist on "Speichern" — swiping or tapping back used to throw
+  // every added exercise away without a word. Ask first. usePreventRemove
+  // (not a bare beforeRemove listener) because on the native stack only it
+  // also holds back the header back button and the swipe gesture — a plain
+  // listener fired after the screen was already gone natively.
+  usePreventRemove(isDirty && exitAction === null, ({ data }) => {
+    const leave = () => setExitAction(data.action);
+    if (Platform.OS === "web") {
+      // RN-web's Alert has no multi-button support — without this the
+      // screen could never be left on web.
+      if (window.confirm(`${t("editPlan.unsavedTitle")}\n\n${t("editPlan.unsavedMessage")}`)) {
+        leave();
+      }
+      return;
+    }
+    Alert.alert(t("editPlan.unsavedTitle"), t("editPlan.unsavedMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("editPlan.unsavedDiscard"), style: "destructive", onPress: leave },
+      { text: t("editPlan.unsavedSave"), onPress: () => void handleSaveRef.current() },
+    ]);
+  });
+
+  useEffect(() => {
+    if (exitAction === null) return;
+    if (exitAction === "back") navigation.goBack();
+    else navigation.dispatch(exitAction);
+  }, [exitAction, navigation]);
+
+  // ── Days ──────────────────────────────────────────────────────────────────
+  const addDay = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPlan((prev) =>
+      prev
+        ? {
+            ...prev,
+            days: [
+              ...prev.days,
+              { dayName: t("createPlan.dayLabel", { count: prev.days.length + 1 }), exercises: [] },
+            ],
+            daysPerWeek: prev.days.length + 1,
+          }
+        : prev,
+    );
+  };
+
+  const removeDay = async (dayIdx: number) => {
+    if (!plan) return;
+    const day = plan.days[dayIdx];
+    if (day.exercises.length > 0) {
+      const ok = await confirmAlert(
+        t("editPlan.removeDayTitle", { name: translateDayName(t, day.dayName) }),
+        t("editPlan.removeDayMessage", { count: day.exercises.length }),
+        { confirmText: t("editPlan.removeDay"), cancelText: t("common.cancel"), destructive: true },
+      );
+      if (!ok) return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPlan((prev) => {
+      if (!prev) return prev;
+      const days = prev.days
+        .filter((_, i) => i !== dayIdx)
+        // Keep auto-named days ("Tag 3") in step with their new position, or
+        // removing Tag 2 would leave a day badged "Tag 2" but named "Tag 3".
+        .map((d, i) => {
+          const oldIndex = i >= dayIdx ? i + 1 : i;
+          return d.dayName === t("createPlan.dayLabel", { count: oldIndex + 1 })
+            ? { ...d, dayName: t("createPlan.dayLabel", { count: i + 1 }) }
+            : d;
+        });
+      return { ...prev, days, daysPerWeek: days.length };
+    });
   };
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -836,13 +541,17 @@ export default function EditPlanScreen() {
     );
   };
 
-  const addExercise = (dayIdx: number, libEx: LibraryExercise) => {
+  const addExercise = (dayIdx: number, picked: PickerExercise) => {
+    // Holds (planks, stretches) are logged in seconds, so give them a seconds
+    // target instead of "8-12" reps.
+    const hold = isHoldExercise(picked.name);
     const newExercise: Exercise = {
-      id: `${libEx.id}-${Date.now()}`,
-      name: libEx.name,
-      muscleGroup: libEx.muscleGroup,
-      sets: 3,
-      reps: "8-12",
+      id: `${picked.id}-${Date.now()}`,
+      name: picked.name,
+      muscleGroup: picked.muscle_group,
+      sets: hold && isMobilityExercise(picked.name) ? 2 : 3,
+      reps: hold ? "30-45s" : "8-12",
+      equipment: picked.equipment || null,
     };
     mutateDays((days) =>
       days.map((d, i) =>
@@ -851,18 +560,19 @@ export default function EditPlanScreen() {
     );
   };
 
-  const replaceExercise = (dayIdx: number, exIdx: number, libEx: LibraryExercise) => {
+  const replaceExercise = (dayIdx: number, exIdx: number, picked: PickerExercise) => {
     mutateDays((days) =>
       days.map((d, i) => {
         if (i !== dayIdx) return d;
         const exs = d.exercises.map((ex, j) => {
           if (j !== exIdx) return ex;
           return {
-            id: `${libEx.id}-${Date.now()}`,
-            name: libEx.name,
-            muscleGroup: libEx.muscleGroup,
+            id: `${picked.id}-${Date.now()}`,
+            name: picked.name,
+            muscleGroup: picked.muscle_group,
             sets: ex.sets,
             reps: ex.reps,
+            equipment: picked.equipment || null,
           };
         });
         return { ...d, exercises: exs };
@@ -937,8 +647,20 @@ export default function EditPlanScreen() {
               setReplaceTarget({ dayIndex: dayIdx, exIndex: exIdx, exercise: plan.days[dayIdx].exercises[exIdx] })
             }
             onExerciseSetsChange={(exIdx, delta) => changeSets(dayIdx, exIdx, delta)}
+            onRemoveDay={plan.days.length > 1 ? () => void removeDay(dayIdx) : undefined}
           />
         ))}
+
+        <Pressable
+          onPress={addDay}
+          style={[styles.addDayButton, { borderColor: theme.controlOutline }]}
+          testID="button-add-day"
+        >
+          <Feather name="plus" size={16} color={theme.text} />
+          <ThemedText style={[styles.addDayText, { color: theme.text }]}>
+            {t("editPlan.addDay")}
+          </ThemedText>
+        </Pressable>
 
         {/* Save button */}
         <Animated.View entering={FadeInDown.delay(200).duration(300)}>
@@ -966,26 +688,24 @@ export default function EditPlanScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Add Exercise Modal */}
-      <AddExerciseModal
-        visible={addModalDayIndex !== null}
-        onClose={() => setAddModalDayIndex(null)}
-        onAdd={(libEx) => {
-          if (addModalDayIndex !== null) {
-            addExercise(addModalDayIndex, libEx);
-          }
+      {/* One shared picker for add (stays open, several at once) and replace
+          (single pick, pre-filtered to the replaced exercise's muscle group). */}
+      <ExercisePickerModal
+        visible={addModalDayIndex !== null || replaceTarget !== null}
+        title={t(replaceTarget ? "editPlan.replaceTitle" : "editPlan.addExerciseTitle")}
+        keepOpenOnSelect={addModalDayIndex !== null}
+        selectedNames={namesInAddDay}
+        initialMuscleGroup={replaceTarget?.exercise.muscleGroup}
+        excludeNames={replaceTarget ? existingNamesInReplacedDay : undefined}
+        onClose={() => {
+          setAddModalDayIndex(null);
+          setReplaceTarget(null);
         }}
-      />
-
-      {/* Replace Exercise Modal */}
-      <ReplaceExerciseModal
-        visible={replaceTarget !== null}
-        target={replaceTarget}
-        existingNames={existingNamesInReplacedDay}
-        onClose={() => setReplaceTarget(null)}
-        onReplace={(libEx) => {
-          if (replaceTarget !== null) {
-            replaceExercise(replaceTarget.dayIndex, replaceTarget.exIndex, libEx);
+        onSelect={(picked) => {
+          if (replaceTarget) {
+            replaceExercise(replaceTarget.dayIndex, replaceTarget.exIndex, picked);
+          } else if (addModalDayIndex !== null) {
+            addExercise(addModalDayIndex, picked);
           }
         }}
       />
@@ -1101,6 +821,21 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontWeight: "600",
     fontFamily: FontFamily.displaySemi,
   },
+  addDayButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.xl,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  addDayText: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: FontFamily.displaySemi,
+  },
 
   saveButton: {
     flexDirection: "row",
@@ -1118,84 +853,4 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontFamily: FontFamily.displaySemi,
   },
 
-  modalRoot: { flex: 1 },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-  },
-  replaceSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    margin: Spacing.lg,
-    marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    height: Spacing.inputHeight,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    gap: Spacing.sm,
-  },
-  searchInput: { flex: 1, fontSize: 15 },
-
-  sectionHeaderRow: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  suggestedLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
-  sectionHeaderText: {
-    fontSize: 12,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-
-  libraryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    minHeight: 60,
-  },
-  libraryRowInfo: { flex: 1 },
-  libraryName: { fontSize: 15, fontWeight: "500", marginBottom: 2 },
-  libraryMuscleTag: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  libraryMuscle: { fontSize: 12, fontWeight: "600" },
-
-  swapBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.xs,
-    gap: 4,
-  },
-  swapBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
-  },
 });
