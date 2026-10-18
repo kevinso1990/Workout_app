@@ -20,6 +20,11 @@ import type { Palette } from "@/constants/palettes";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
+import { isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { saveWorkoutPlan, type WorkoutPlan } from "@/lib/storage";
+import { scheduleDataSync } from "@/lib/dataSync";
+import { toast } from "@/lib/toast";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -33,6 +38,7 @@ export function CreatePlanFab() {
   const { t } = useTranslation();
   const scale = useSharedValue(1);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { catalog } = useExerciseCatalog();
 
   const fabBottom = tabBarHeight + Math.max(insets.bottom, 12) + 12;
 
@@ -46,12 +52,6 @@ export function CreatePlanFab() {
   };
 
   const closeSheet = () => setSheetOpen(false);
-
-  const goStrength = () => {
-    closeSheet();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("StartWorkout", {});
-  };
 
   const goCardio = () => {
     closeSheet();
@@ -75,6 +75,69 @@ export function CreatePlanFab() {
     closeSheet();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("ImportWorkout");
+  };
+
+  // Picks up to 6 stretch/mobility moves, one per muscle group first (for a
+  // balanced full-body session) before repeating groups — about 15-20 min at
+  // 2 holds each. No duration data exists in the catalog, so the "15-20 min"
+  // promise lives in the copy, backed by a hold-count that roughly matches it.
+  const goMobility = async () => {
+    closeSheet();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const mobilityExercises = catalog.filter((c) => isMobilityExercise(c.name));
+    if (mobilityExercises.length === 0) {
+      toast.error(t("common.loadFailed"));
+      return;
+    }
+
+    const picked: typeof mobilityExercises = [];
+    const seenGroups = new Set<string>();
+    for (const ex of mobilityExercises) {
+      if (picked.length >= 6) break;
+      if (seenGroups.has(ex.muscleGroup)) continue;
+      seenGroups.add(ex.muscleGroup);
+      picked.push(ex);
+    }
+    for (const ex of mobilityExercises) {
+      if (picked.length >= 6) break;
+      if (!picked.includes(ex)) picked.push(ex);
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const sessionName = t("addWorkout.mobilitySession");
+      const plan: WorkoutPlan = {
+        id: Date.now().toString(),
+        name: sessionName,
+        daysPerWeek: 1,
+        days: [
+          {
+            dayName: sessionName,
+            exercises: picked.map((ex) => ({
+              id: ex.id,
+              name: ex.name,
+              muscleGroup: ex.muscleGroup,
+              sets: 2,
+              reps: "30-45s",
+              equipment: ex.equipment || null,
+            })),
+          },
+        ],
+        createdAt: now,
+        lastModified: now,
+      };
+      await saveWorkoutPlan(plan);
+      scheduleDataSync();
+      navigation.navigate("ActiveWorkout", {
+        planId: plan.id,
+        planName: plan.name,
+        dayIndex: 0,
+      });
+    } catch (err) {
+      console.error("CreatePlanFab: failed to start mobility session", err);
+      toast.error(t("common.actionFailed"));
+    }
   };
 
   return (
@@ -126,30 +189,16 @@ export function CreatePlanFab() {
             <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
             <ThemedText style={styles.sheetTitle}>{t("addWorkout.title")}</ThemedText>
 
-            <Pressable style={styles.sheetItem} onPress={goStrength} testID="button-add-strength">
+            <Pressable style={styles.sheetItem} onPress={goCreatePlan} testID="button-add-create-plan">
               <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
-                <ActivityIcon size={20} color={theme.chalk} />
+                <Feather name="clipboard" size={20} color={theme.chalk} />
               </View>
               <View style={styles.sheetCopy}>
                 <ThemedText style={styles.sheetItemTitle}>
-                  {t("addWorkout.startStrength")}
+                  {t("addWorkout.createPlan")}
                 </ThemedText>
                 <ThemedText style={styles.sheetItemDesc}>
-                  {t("addWorkout.startStrengthDesc")}
-                </ThemedText>
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.sheetItem} onPress={goCardio} testID="button-add-cardio">
-              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
-                <ActivityIcon sport="running" size={20} color={theme.chalk} />
-              </View>
-              <View style={styles.sheetCopy}>
-                <ThemedText style={styles.sheetItemTitle}>
-                  {t("addWorkout.logCardio")}
-                </ThemedText>
-                <ThemedText style={styles.sheetItemDesc}>
-                  {t("addWorkout.logCardioDesc")}
+                  {t("addWorkout.createPlanDesc")}
                 </ThemedText>
               </View>
             </Pressable>
@@ -168,6 +217,34 @@ export function CreatePlanFab() {
               </View>
             </Pressable>
 
+            <Pressable style={styles.sheetItem} onPress={goMobility} testID="button-add-mobility">
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <Feather name="wind" size={20} color={theme.chalk} />
+              </View>
+              <View style={styles.sheetCopy}>
+                <ThemedText style={styles.sheetItemTitle}>
+                  {t("addWorkout.mobilitySession")}
+                </ThemedText>
+                <ThemedText style={styles.sheetItemDesc}>
+                  {t("addWorkout.mobilitySessionDesc")}
+                </ThemedText>
+              </View>
+            </Pressable>
+
+            <Pressable style={styles.sheetItem} onPress={goCardio} testID="button-add-cardio">
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <ActivityIcon sport="running" size={20} color={theme.chalk} />
+              </View>
+              <View style={styles.sheetCopy}>
+                <ThemedText style={styles.sheetItemTitle}>
+                  {t("addWorkout.logCardio")}
+                </ThemedText>
+                <ThemedText style={styles.sheetItemDesc}>
+                  {t("addWorkout.logCardioDesc")}
+                </ThemedText>
+              </View>
+            </Pressable>
+
             <Pressable style={styles.sheetItem} onPress={goImport} testID="button-add-import">
               <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
                 <Feather name="file-text" size={20} color={theme.chalk} />
@@ -180,13 +257,6 @@ export function CreatePlanFab() {
                   {t("plans.importBanner.subtitle", { defaultValue: "PDF oder Foto → KI-Prüfung" })}
                 </ThemedText>
               </View>
-            </Pressable>
-
-            <Pressable style={styles.sheetItemSecondary} onPress={goCreatePlan}>
-              <Feather name="clipboard" size={18} color={theme.textSecondary} />
-              <ThemedText style={styles.sheetItemSecondaryText}>
-                {t("addWorkout.createPlan")}
-              </ThemedText>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -258,13 +328,4 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   sheetCopy: { flex: 1 },
   sheetItemTitle: { fontSize: 16, fontWeight: "600" },
   sheetItemDesc: { fontSize: 13, opacity: 0.65, marginTop: 2 },
-  sheetItemSecondary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: Spacing.lg,
-    marginTop: Spacing.sm,
-  },
-  sheetItemSecondaryText: { fontSize: 14, fontWeight: "500", opacity: 0.75 },
 });

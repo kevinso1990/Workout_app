@@ -947,7 +947,10 @@
     "logCardioDesc": "Laufen, Fußball, Tennis u. v. m.",
     "goalPlan": "Plan aus Ziel (KI)",
     "goalPlanDesc": "Ziel eingeben – z. B. »Hüftmobilität verbessern«",
-    "createPlan": "Neuen Plan erstellen"
+    "createPlan": "Neuen Plan erstellen",
+    "createPlanDesc": "Automatisch generieren oder Übung für Übung selbst bauen",
+    "mobilitySession": "Mobility-Session",
+    "mobilitySessionDesc": "15–20 Min. Dehnen & Beweglichkeit"
   },
   "goalPlan": {
     "title": "Was ist dein Ziel?",

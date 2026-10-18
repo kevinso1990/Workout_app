@@ -947,7 +947,10 @@
     "logCardioDesc": "Running, football, tennis and more",
     "goalPlan": "Plan from a goal (AI)",
     "goalPlanDesc": "Type a goal — e.g. \"improve hip mobility\"",
-    "createPlan": "Create a new plan"
+    "createPlan": "Create a new plan",
+    "createPlanDesc": "Generate automatically or build it exercise by exercise",
+    "mobilitySession": "Mobility session",
+    "mobilitySessionDesc": "15–20 min of stretching & mobility"
   },
   "goalPlan": {
     "title": "What's your goal?",
