@@ -43,6 +43,7 @@ import {
   rootNavigationRef,
 } from "@/navigation/ActiveWorkoutRecovery";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
+import { MobilityReminderSync } from "@/navigation/MobilityReminderSync";
 import { initDataSync } from "@/lib/dataSync";
 import { loadCustomExerciseImages } from "@/lib/customExerciseImages";
 import { hydrateExerciseNameCatalog } from "@/lib/exerciseNameCatalog";
@@ -142,6 +143,7 @@ export default function AppNative() {
                     bootstrapReady={navReady && bootstrapComplete}
                     initialRoute={bootstrapRoute}
                   />
+                  <MobilityReminderSync bootstrapReady={navReady && bootstrapComplete} />
                 </NavigationContainer>
                 <NativeToastHost />
                 <StatusBar style="auto" />

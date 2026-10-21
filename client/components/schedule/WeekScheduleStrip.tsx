@@ -44,9 +44,12 @@ export function WeekScheduleStrip({
   sessionDayNames,
   onPressEdit,
   onPress,
+  mobilityWeekdays = [],
 }: {
   commitments: WeeklyCommitment[];
   sessionDayNames: string[];
+  /** Fixed Mobility-Session weekdays (0 = Mo); shown on top of the schedule. */
+  mobilityWeekdays?: number[];
   onPressEdit?: () => void;
   /** Opens the full calendar. Omitted where the strip already sits in it. */
   onPress?: () => void;
@@ -63,7 +66,9 @@ export function WeekScheduleStrip({
     [commitments, sessionDayNames],
   );
 
-  if (sessionDayNames.length === 0 && commitments.length === 0) return null;
+  if (sessionDayNames.length === 0 && commitments.length === 0 && mobilityWeekdays.length === 0) {
+    return null;
+  }
 
   const Card = onPress ? Pressable : View;
 
@@ -96,6 +101,7 @@ export function WeekScheduleStrip({
       <View style={styles.row}>
         {schedule.slots.map((slot) => {
           const isToday = slot.weekday === today;
+          const isMobility = mobilityWeekdays.includes(slot.weekday);
           return (
             <View key={slot.weekday} style={styles.dayCol}>
               <ThemedText
@@ -136,11 +142,25 @@ export function WeekScheduleStrip({
                     size={16}
                     color={theme.text}
                   />
+                ) : isMobility ? (
+                  <Feather name="wind" size={16} color={theme.text} />
                 ) : (
                   <ThemedText style={[styles.restDash, { color: theme.textSecondary }]}>
                     –
                   </ThemedText>
                 )}
+                {/* Mobility on a day that already holds a session: a corner
+                    badge rather than replacing the session's own icon. */}
+                {isMobility && slot.kind !== "rest" ? (
+                  <View
+                    style={[
+                      styles.mobilityBadge,
+                      { backgroundColor: theme.ironElevated3, borderColor: theme.ironElevated2 },
+                    ]}
+                  >
+                    <Feather name="wind" size={9} color={theme.text} />
+                  </View>
+                ) : null}
               </View>
 
               {slot.kind === "gym" ? (
@@ -173,7 +193,11 @@ export function WeekScheduleStrip({
                   numberOfLines={2}
                   style={[styles.cellCaption, { color: theme.textSecondary }]}
                 >
-                  {slot.kind === "sport" ? sportLabel(slot.commitment!) : ""}
+                  {slot.kind === "sport"
+                    ? sportLabel(slot.commitment!)
+                    : isMobility
+                      ? t("mobility.weekStripLabel")
+                      : ""}
                 </ThemedText>
               )}
             </View>
@@ -225,6 +249,17 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   restDash: { fontSize: 13 },
   // Stretch to the column so adjustsFontSizeToFit has a width to fit into —
   // centred content-width text would just overflow instead of shrinking.
+  mobilityBadge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cellCaption: { fontSize: 9, lineHeight: 11, textAlign: "center", alignSelf: "stretch" },
   warning: { fontSize: 12, marginTop: Spacing.md },
 });

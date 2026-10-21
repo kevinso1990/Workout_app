@@ -476,6 +476,7 @@ export default function MyPlansScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);
+  const [mobilityWeekdays, setMobilityWeekdays] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -559,6 +560,7 @@ export default function MyPlansScreen() {
       setPlans(loadedPlans);
       const prefs = await getUserPreferences();
       setCommitments(prefs?.weeklyCommitments ?? []);
+      setMobilityWeekdays(prefs?.mobilityWeekdays ?? []);
       void fetchCoachBrief(loadedPlans);
       const history = await getWorkoutHistory();
       const offer = await evaluatePlanAdaptationOffer(loadedPlans, history);
@@ -881,6 +883,7 @@ export default function MyPlansScreen() {
             <WeekScheduleStrip
               commitments={commitments}
               sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
+              mobilityWeekdays={mobilityWeekdays}
               // "Profile" and "Calendar" are sibling TABS, not
               // RootStackParamList routes — navigate resolves them in the tab
               // navigator this screen actually belongs to. The casts are the

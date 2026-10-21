@@ -23,13 +23,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { getWorkoutPlans, saveWorkoutPlan, type WorkoutPlan } from "@/lib/storage";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { toast } from "@/lib/toast";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const MOBILITY_PLAN_ID = "mobility-session";
 
 export function CreatePlanFab({
   hidden = false,

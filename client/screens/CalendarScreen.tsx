@@ -104,6 +104,7 @@ export default function CalendarScreen() {
 
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);
+  const [mobilityWeekdays, setMobilityWeekdays] = useState<number[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [month, setMonth] = useState(() => new Date());
   const [history, setHistory] = useState<WorkoutSession[]>([]);
@@ -130,6 +131,7 @@ export default function CalendarScreen() {
       getWorkoutPlans(),
     ]);
     setCommitments(prefs?.weeklyCommitments ?? []);
+    setMobilityWeekdays(prefs?.mobilityWeekdays ?? []);
     setPlans(loadedPlans);
   }, []);
 
@@ -237,6 +239,7 @@ export default function CalendarScreen() {
             <WeekScheduleStrip
               commitments={commitments}
               sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
+              mobilityWeekdays={mobilityWeekdays}
             />
 
             <ThemedText style={styles.sectionLabel}>

@@ -35,6 +35,7 @@ import { isBodyweightExercise } from "@/lib/exerciseBodyweight";
 import { translateMuscleGroup, isHoldExercise } from "@/lib/exerciseTaxonomy";
 import { findNextCircuitTarget } from "@/lib/circuitMode";
 import { translateDayName } from "@/lib/dayNameLabel";
+import { syncMobilityReminders } from "@/lib/mobilityReminders";
 import { HEVY } from "@/constants/hevyLayout";
 import { WEIGHT_SLIDER_STEP_KG } from "@/lib/activeWorkoutSetFormat";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -1849,6 +1850,8 @@ export default function ActiveWorkoutScreen() {
 
     void clearActiveWorkoutDraft().catch(() => {});
     void scheduleSessionSync(session).catch(() => {});
+    // A logged mobility session cancels today's "noch nicht gedehnt" reminder.
+    void syncMobilityReminders();
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowSummary(true);

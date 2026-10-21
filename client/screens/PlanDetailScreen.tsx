@@ -32,6 +32,8 @@ import {
 } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { displayPlanName } from "@/lib/defaultPlanName";
+import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
+import { MobilityDaysCard } from "@/components/workout/MobilityDaysCard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PlanDetail">;
 
@@ -196,6 +198,7 @@ export default function PlanDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {plan.id === MOBILITY_PLAN_ID ? <MobilityDaysCard /> : null}
 
         <PlanDetailView
           days={plan.days}

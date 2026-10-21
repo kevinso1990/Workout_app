@@ -44,6 +44,12 @@ export interface UserPreferences {
    * shared/avoidExercises.ts for how a name is matched against a pool.
    */
   avoidExercises?: string[];
+  /**
+   * Fixed weekdays for the Mobility-Session (0 = Mo … 6 = So, the week
+   * strip's convention). They show in "Deine Woche" and drive the 19:30
+   * reminder. Empty or missing = no mobility days, no reminders.
+   */
+  mobilityWeekdays?: number[];
 }
 
 const DEFAULT_USER_PREFERENCES: UserPreferences = {

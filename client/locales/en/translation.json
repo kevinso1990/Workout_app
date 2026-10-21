@@ -1114,5 +1114,14 @@
     "unsavedMessage": "You have changes to this plan that haven't been saved yet.",
     "unsavedSave": "Save",
     "unsavedDiscard": "Discard"
+  },
+  "mobility": {
+    "reminderTitle": "Mobility session",
+    "reminderBody": "It's a mobility day – take 15 minutes to stretch.",
+    "daysTitle": "Fixed mobility days",
+    "daysHint": "On these days we'll remind you at {{time}} if you haven't stretched yet.",
+    "daysEmptyHint": "Pick the days you want to stretch – we'll remind you in the evening if you haven't done it yet.",
+    "permissionDenied": "Notifications are off. You can turn them on for TrackYourLift in iOS Settings.",
+    "weekStripLabel": "Mobility"
   }
 }

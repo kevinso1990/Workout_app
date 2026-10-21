@@ -1114,5 +1114,14 @@
     "unsavedMessage": "Du hast Änderungen an diesem Plan, die noch nicht gespeichert sind.",
     "unsavedSave": "Speichern",
     "unsavedDiscard": "Verwerfen"
+  },
+  "mobility": {
+    "reminderTitle": "Mobility-Session",
+    "reminderBody": "Heute ist Mobility-Tag – nimm dir noch 15 Minuten zum Dehnen.",
+    "daysTitle": "Feste Mobility-Tage",
+    "daysHint": "An diesen Tagen erinnern wir dich um {{time}} Uhr, falls du bis dahin noch nicht gedehnt hast.",
+    "daysEmptyHint": "Wähle Tage, an denen du dehnen willst – wir erinnern dich dann abends, falls du es noch nicht gemacht hast.",
+    "permissionDenied": "Benachrichtigungen sind aus. Du kannst sie in den iOS-Einstellungen für TrackYourLift einschalten.",
+    "weekStripLabel": "Mobility"
   }
 }
