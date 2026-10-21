@@ -10,6 +10,9 @@
  * mobility moves that free-exercise-db doesn't have under any name (checked
  * directly against the fetched dataset, no near-miss alias either).
  *
+ * German names come from scripts/data/freeExerciseDbNamesDe.json (hand
+ * translated, gym-German: "Kreuzheben", "Latziehen", "Scott-Curl").
+ *
  * Writes a plain .sql file (INSERT OR IGNORE, idempotent against the UNIQUE
  * name column — same pattern server/db.ts already uses for its own seeding)
  * instead of writing to the DB directly, so it has no native dependency and
@@ -19,6 +22,12 @@
  *   node scripts/import-free-exercise-db.mjs > /tmp/import-exercises.sql
  *   sqlite3 workout.db < /tmp/import-exercises.sql
  */
+
+import { readFileSync } from "node:fs";
+
+const NAMES_DE = JSON.parse(
+  readFileSync(new URL("./data/freeExerciseDbNamesDe.json", import.meta.url), "utf8"),
+);
 
 const SOURCE_URL =
   "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
@@ -101,6 +110,12 @@ async function main() {
     lines.push(
       `INSERT OR IGNORE INTO exercises (name, muscle_group, equipment, is_custom, gif_url) VALUES (${sqlQuote(ex.name)}, ${sqlQuote(muscleGroup)}, ${sqlQuote(equipment)}, 0, ${sqlQuote(gifUrl)});`,
     );
+    const nameDe = NAMES_DE[ex.name];
+    if (nameDe) {
+      lines.push(
+        `INSERT OR IGNORE INTO exercise_translations (exercise_id, lang, name) SELECT id, 'de', ${sqlQuote(nameDe)} FROM exercises WHERE name = ${sqlQuote(ex.name)};`,
+      );
+    }
   }
 
   for (const ex of HAND_ADDED) {
