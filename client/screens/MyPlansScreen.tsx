@@ -52,6 +52,7 @@ import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
 import { displayPlanName } from "@/lib/defaultPlanName";
+import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
@@ -82,11 +83,14 @@ function PlanCard({
   index,
   onViewPlan,
   onOpenMenu,
+  mobilityDaysPerWeek = 0,
 }: {
   plan: WorkoutPlan;
   index: number;
   onViewPlan: () => void;
   onOpenMenu: () => void;
+  /** Chosen Mobility-Session weekdays; only used for that plan's card. */
+  mobilityDaysPerWeek?: number;
 }) {
   const { t } = useTranslation();
   const localizeName = useLocalizeExerciseName();
@@ -145,12 +149,25 @@ function PlanCard({
           {/* Was "3 Trainings/Woche · 3 Tage" — the same number twice. The
               exercise count is the part that actually tells plans apart. */}
           <ThemedText style={styles.planMeta}>
-            {t("plans.planSummary", {
-              workoutsLabel: t("plans.daysCount", { count: plan.days.length }),
-              daysLabel: t("plans.exerciseCount", {
-                count: plan.days.reduce((n, d) => n + d.exercises.length, 0),
-              }),
-            })}
+            {plan.id === MOBILITY_PLAN_ID
+              ? // One stored session repeated on chosen weekdays — "1 Tag" said
+                // nothing true about it.
+                [
+                  mobilityDaysPerWeek > 0
+                    ? t("plans.workoutsPerWeek", { count: mobilityDaysPerWeek })
+                    : null,
+                  t("plans.exerciseCount", {
+                    count: plan.days.reduce((n, d) => n + d.exercises.length, 0),
+                  }),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : t("plans.planSummary", {
+                  workoutsLabel: t("plans.daysCount", { count: plan.days.length }),
+                  daysLabel: t("plans.exerciseCount", {
+                    count: plan.days.reduce((n, d) => n + d.exercises.length, 0),
+                  }),
+                })}
           </ThemedText>
           {exerciseLine ? (
             <ThemedText
@@ -715,10 +732,11 @@ export default function MyPlansScreen() {
           index={index}
           onViewPlan={() => handleViewPlan(item)}
           onOpenMenu={() => setMenuPlan(item)}
+          mobilityDaysPerWeek={mobilityWeekdays.length}
         />
       </SwipeRowActions>
     ),
-    [t, handleDuplicate, handleDeletePlan, handleViewPlan],
+    [t, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they

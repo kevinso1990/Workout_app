@@ -17,7 +17,12 @@ import { toast } from "@/lib/toast";
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
 
 /** Pick the fixed weekdays for the Mobility-Session; they drive the reminder. */
-export function MobilityDaysCard() {
+export function MobilityDaysCard({
+  onChange,
+}: {
+  /** Called with the chosen weekdays once loaded and after every change. */
+  onChange?: (weekdays: number[]) => void;
+} = {}) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
@@ -25,7 +30,12 @@ export function MobilityDaysCard() {
   const [days, setDays] = useState<number[]>([]);
 
   useEffect(() => {
-    void getUserPreferences().then((p) => setDays(p?.mobilityWeekdays ?? []));
+    void getUserPreferences().then((p) => {
+      const loaded = p?.mobilityWeekdays ?? [];
+      setDays(loaded);
+      onChange?.(loaded);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = async (weekday: number) => {
@@ -34,6 +44,7 @@ export function MobilityDaysCard() {
       ? days.filter((d) => d !== weekday)
       : [...days, weekday].sort((a, b) => a - b);
     setDays(next);
+    onChange?.(next);
 
     const prefs = await getUserPreferences();
     await setUserPreferences({ workoutDaysPerWeek: 3, ...prefs, mobilityWeekdays: next });

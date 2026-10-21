@@ -51,6 +51,7 @@ export default function PlanDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [detailExercise, setDetailExercise] = useState<Exercise | null>(null);
+  const [mobilityDays, setMobilityDays] = useState<number[]>([]);
 
   const loadPlan = useCallback(async () => {
     try {
@@ -183,7 +184,13 @@ export default function PlanDetailScreen() {
 
         <ThemedText style={styles.planName}>{displayPlanName(t, plan.name)}</ThemedText>
         <ThemedText style={styles.planInfo}>
-          {t("planDetail.daysPerWeekCount", { count: plan.daysPerWeek })} ·{" "}
+          {/* The Mobility-Session is one stored day, but how often it happens
+              is the user's chosen weekdays — "1 Tag pro Woche" was wrong. */}
+          {plan.id === MOBILITY_PLAN_ID
+            ? mobilityDays.length > 0
+              ? `${t("planDetail.daysPerWeekCount", { count: mobilityDays.length })} · `
+              : ""
+            : `${t("planDetail.daysPerWeekCount", { count: plan.daysPerWeek })} · `}
           {t("planDetail.exerciseCount", {
             count: plan.days.reduce((acc, day) => acc + day.exercises.length, 0),
           })}
@@ -198,7 +205,7 @@ export default function PlanDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {plan.id === MOBILITY_PLAN_ID ? <MobilityDaysCard /> : null}
+        {plan.id === MOBILITY_PLAN_ID ? <MobilityDaysCard onChange={setMobilityDays} /> : null}
 
         <PlanDetailView
           days={plan.days}
