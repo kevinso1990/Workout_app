@@ -255,7 +255,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 18,
     lineHeight: 22,
     fontWeight: "800",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   headerTextCol: {
     flex: 1,
@@ -272,7 +272,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   dayName: {
     fontSize: 17,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     color: c.chalk,
   },
   exerciseCount: {

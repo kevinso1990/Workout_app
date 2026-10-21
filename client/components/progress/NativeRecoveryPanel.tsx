@@ -198,7 +198,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   card: {
     borderRadius: BorderRadius.lg,

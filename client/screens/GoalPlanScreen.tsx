@@ -319,7 +319,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 24,
     lineHeight: 29,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     textAlign: "center",
   },
   subtitle: {
@@ -330,7 +330,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
@@ -363,7 +363,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   freqBlock: {
     gap: 0,
@@ -383,7 +383,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   freqChipText: {
     fontSize: 17,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   generateBtn: {
     flexDirection: "row",
@@ -399,7 +399,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     color: c.onChalk,
     fontSize: 16,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   loadingInner: {
     alignItems: "center",

@@ -291,7 +291,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   planTitle: {
     fontSize: 28,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     color: c.chalk,
     letterSpacing: -0.5,
     lineHeight: 34,
@@ -300,7 +300,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     marginTop: 6,
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     color: c.chalkDim,
     lineHeight: 20,
   },
@@ -341,7 +341,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   dayIndexText: {
     fontSize: 16,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     color: c.primary,
   },
   dayInfo: {
@@ -351,7 +351,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   dayName: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     color: c.chalk,
     marginBottom: 2,
   },

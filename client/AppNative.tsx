@@ -3,12 +3,6 @@ import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import {
-  Montserrat_400Regular,
-  Montserrat_500Medium,
-  Montserrat_600SemiBold,
-  Montserrat_700Bold,
-} from "@expo-google-fonts/montserrat";
-import {
   Oswald_500Medium,
   Oswald_600SemiBold,
   Oswald_700Bold,
@@ -72,10 +66,6 @@ export default function AppNative() {
   const [bootstrapComplete, setBootstrapComplete] = useState(false);
 
   const [fontsLoaded] = useFonts({
-    Montserrat_400Regular,
-    Montserrat_500Medium,
-    Montserrat_600SemiBold,
-    Montserrat_700Bold,
     Oswald_500Medium,
     Oswald_600SemiBold,
     Oswald_700Bold,

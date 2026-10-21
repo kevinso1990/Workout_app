@@ -96,6 +96,8 @@ export function buildDailyBriefingPayload(
   plans: WorkoutPlan[],
   sessions: WorkoutSession[],
   language: string,
+  /** Day names as the user sees them, so the coach doesn't say "Full Body B" next to "Ganzkörper B". */
+  dayLabel: (dayName: string) => string = (n) => n,
 ): {
   locale: "de" | "en";
   planSummary: string;
@@ -110,7 +112,7 @@ export function buildDailyBriefingPayload(
     .map((p) => {
       const dayLines = p.days.map((d) => {
         const names = d.exercises.map((e) => e.name).slice(0, 8).join(", ");
-        return `  ${d.dayName}: ${names}`;
+        return `  ${dayLabel(d.dayName)}: ${names}`;
       });
       return `Plan "${p.name}" (${p.daysPerWeek} d/w):\n${dayLines.join("\n")}`;
     })
@@ -123,7 +125,7 @@ export function buildDailyBriefingPayload(
   const sessionSummary = recent
     .map((s) => {
       const names = s.exercises.map((e) => e.name).slice(0, 8).join(", ");
-      return `${(s.completedAt || "").slice(0, 10)} — ${s.planName} / ${s.dayName}: ${names}`;
+      return `${(s.completedAt || "").slice(0, 10)} — ${s.planName} / ${dayLabel(s.dayName)}: ${names}`;
     })
     .join("\n");
 

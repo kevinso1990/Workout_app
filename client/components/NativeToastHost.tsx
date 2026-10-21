@@ -98,6 +98,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: c.text,
-    fontFamily: "Montserrat_500Medium",
+    fontFamily: "Archivo_500Medium",
   },
 });

@@ -140,7 +140,15 @@
       "days": "{{count}} Tg."
     },
     "exerciseCount_one": "{{count}} Übung",
-    "exerciseCount_other": "{{count}} Übungen"
+    "exerciseCount_other": "{{count}} Übungen",
+    "today": {
+      "title": "Heute",
+      "start": "Starten",
+      "startEarly": "Vorziehen",
+      "restDay": "Ruhetag",
+      "doneTitle": "Heute erledigt",
+      "next": "Nächstes Training: {{day}} · {{name}}"
+    }
   },
   "createPlan": {
     "back": "Zurück",
@@ -455,7 +463,7 @@
     "weeklyVolume": "Wöchentliches Volumen",
     "totalKgLifted": "Gesamt kg gehoben",
     "muscleBalanceTitle": "Muskelbalance",
-    "muscleCoverageEmpty": "Absolviere Trainings, um deine Muskelabdeckung zu sehen",
+    "muscleCoverageEmpty": "Diese Woche noch keine Sätze. Nach deinem nächsten Training siehst du hier, welche Muskeln wie viel abbekommen haben.",
     "setsCount_one": "{{count}} Satz",
     "setsCount_other": "{{count}} Sätze",
     "last30Days": "Letzte 30 Tage",
@@ -500,10 +508,10 @@
         "year": "Jahr"
       },
       "strengthLabel": "Kraft",
-      "strengthSessions": "Kraft",
-      "cardioSessions": "Cardio",
-      "countStrength": "{{count}}× Kraft",
-      "countCardio": "{{count}}× Cardio",
+      "strengthSessions": "Krafteinheiten",
+      "cardioSessions": "Cardio-Einheiten",
+      "countStrength": "{{count}}",
+      "countCardio": "{{count}}",
       "totalDuration": "Gesamtzeit",
       "totalDistance": "Distanz",
       "distanceKm": "{{km}} km",
@@ -527,7 +535,18 @@
       "emptyPeriod": "In diesem Zeitraum noch keine Trainings geloggt."
     },
     "noBodyWeightYet": "Noch kein Körpergewicht erfasst.",
-    "fullHistory": "Gesamter Verlauf"
+    "fullHistory": "Gesamter Verlauf",
+    "weekWorkouts": "Trainings",
+    "weekSets": "Sätze",
+    "weekVolume": "Volumen",
+    "weekStreak_one": "Woche in Folge",
+    "weekStreak_other": "Wochen in Folge",
+    "recordsTitle": "Neue Rekorde",
+    "recordsEmpty": "Noch kein neuer Rekord in den letzten 30 Tagen. Schlag dein bisheriges Bestes, dann taucht es hier auf.",
+    "recordLine": "{{weight}} kg × {{reps}} · 1RM ≈ {{e1rm}} kg",
+    "recordGain": "+{{kg}} kg",
+    "volumeSubtitle": "Bewegte kg pro Woche, ab Montag",
+    "oneRMNeedsTwo": "Ab der zweiten Einheit mit dieser Übung siehst du hier deinen Verlauf."
   },
   "history": {
     "title": "Verlauf",
@@ -830,7 +849,7 @@
     "searchModalPlaceholder": "Übungen suchen...",
     "customExercisePlaceholder": "z. B. einarmiges Kabelrudern",
     "createAction": "Erstellen",
-    "browseAction": "800+ durchsuchen",
+    "browseAction": "Online suchen",
     "createModal": {
       "title": "Eigene Übung erstellen",
       "nameLabel": "Übungsname",

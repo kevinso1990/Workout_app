@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState} from "react";
+import { primaryPlan } from "@/lib/todayPlan";
 import {
   View,
   StyleSheet,
@@ -238,7 +239,7 @@ export default function CalendarScreen() {
           <>
             <WeekScheduleStrip
               commitments={commitments}
-              sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
+              sessionDayNames={(primaryPlan(plans)?.days ?? []).map((d) => d.dayName)}
               mobilityWeekdays={mobilityWeekdays}
             />
 

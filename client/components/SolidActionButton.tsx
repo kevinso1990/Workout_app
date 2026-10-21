@@ -75,6 +75,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
 });

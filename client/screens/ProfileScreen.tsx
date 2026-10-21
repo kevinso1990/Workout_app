@@ -1239,7 +1239,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   greeting: {
     fontSize: 22,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginBottom: Spacing.xs,
   },
   statsText: {
@@ -1307,7 +1307,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   reminderTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   reminderSubtitle: {
     fontSize: 13,
@@ -1327,7 +1327,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   themeCardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   themeSegments: {
     flexDirection: "row",
@@ -1345,7 +1345,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   themeSegmentLabel: {
     fontSize: 12,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   themeSystemDesc: {
     fontSize: 12,
@@ -1366,7 +1366,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   prefsCardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   fitnessLevelOptions: {
     flexDirection: "row",
@@ -1395,7 +1395,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   cloudCode: {
     fontSize: 13,
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     letterSpacing: 0.5,
   },
   cloudButtonsRow: {
@@ -1415,7 +1415,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   cloudButtonText: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   cloudModalOverlay: {
     flex: 1,
@@ -1458,7 +1458,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   fitnessLevelLabel: {
     fontSize: 11,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     textAlign: "center",
   },
   bodyStatsCard: {
@@ -1477,7 +1477,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   bodyStatsTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   bodyStatsDate: {
     fontSize: 12,
@@ -1510,7 +1510,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 24,
     lineHeight: 30,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     width: "100%",
     textAlign: "center",
   },
@@ -1546,7 +1546,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   measurementModalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   measurementInputRow: {
     flexDirection: "row",

@@ -465,7 +465,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   modeCardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: 2,
   },
   modeCardDesc: {
@@ -487,7 +487,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   label: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: Spacing.sm,
   },
   hint: {
@@ -516,13 +516,13 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   dayPillText: {
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   dayPillTextSelected: {
     color: c.onChalk,
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   previewSection: {
     marginBottom: Spacing["3xl"],
@@ -554,6 +554,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
 });

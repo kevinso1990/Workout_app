@@ -4,6 +4,8 @@ import {
   type CardioSportType,
   type WorkoutSession,
 } from "@/lib/storage";
+import { mondayStart } from "@/lib/strengthProgress";
+import { translateDayName } from "@/lib/dayNameLabel";
 import {
   SERIES_AMBER,
   SERIES_BLUE,
@@ -231,9 +233,10 @@ function buildRpeTrend(
       key = item.date.toLocaleDateString(locale, { weekday: "short" });
       sort = item.date.getTime();
     } else if (period === "month") {
-      const w = Math.ceil(item.date.getDate() / 7);
-      key = `W${w}`;
-      sort = w;
+      // Same week label as the volume chart (the Monday), not "W2".
+      const monday = mondayStart(item.date);
+      key = monday.toLocaleDateString(locale, { day: "numeric", month: "numeric" });
+      sort = monday.getTime();
     } else {
       key = item.date.toLocaleDateString(locale, { month: "short" });
       sort = item.date.getMonth();
@@ -291,7 +294,7 @@ function buildHighlights(
       const vol = strengthSessionVolume(s);
       if (vol > maxStrengthVol) {
         maxStrengthVol = vol;
-        maxStrengthDay = s.dayName || s.planName;
+        maxStrengthDay = (s.dayName && translateDayName(t, s.dayName)) || s.planName;
       }
     }
   }

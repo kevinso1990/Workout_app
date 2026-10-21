@@ -339,7 +339,7 @@ const catalogModalStyles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat_700Bold", flex: 1 },
+  headerTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Archivo_700Bold", flex: 1 },
   searchWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -360,7 +360,7 @@ const catalogModalStyles = StyleSheet.create({
     marginBottom: Spacing.xs,
     borderRadius: BorderRadius.md,
   },
-  rowName: { fontSize: 16, fontWeight: "600", fontFamily: "Montserrat_600SemiBold" },
+  rowName: { fontSize: 16, fontWeight: "600", fontFamily: "Archivo_600SemiBold" },
   rowSub: { fontSize: 13, marginTop: 2 },
   empty: { textAlign: "center", padding: Spacing["2xl"], fontSize: 15 },
 });
@@ -1028,7 +1028,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 24,
     lineHeight: 29,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     textAlign: "center",
     marginBottom: Spacing.md,
   },
@@ -1100,7 +1100,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   scanTitle: {
     fontSize: 22,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginBottom: Spacing.xs,
   },
   scanSubtitle: {
@@ -1141,7 +1141,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   validationTitle: {
     fontSize: 22,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginBottom: Spacing.sm,
   },
   validationIntro: {
@@ -1152,7 +1152,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   daySectionTitle: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: Spacing.md,
@@ -1172,7 +1172,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   validationExerciseName: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   validationOriginal: {
     fontSize: 13,
@@ -1197,7 +1197,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   mapButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   manualList: {
     borderRadius: BorderRadius.md,
@@ -1229,7 +1229,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 24,
     lineHeight: 29,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     textAlign: "center",
   },
   successSubtitle: {
@@ -1246,7 +1246,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: Spacing.sm,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -1312,7 +1312,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: Spacing.md,
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   dayHeader: {
     flexDirection: "row",
@@ -1333,7 +1333,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   exerciseCount: {
     fontSize: 13,
@@ -1362,7 +1362,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: Spacing.sm,
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   importMetaLine: {
     fontSize: 12,
@@ -1381,7 +1381,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   miniFieldLabel: {
     fontSize: 11,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: 4,
     textTransform: "uppercase",
     letterSpacing: 0.4,
@@ -1393,7 +1393,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   exerciseNotes: {
     fontSize: 12,
@@ -1418,7 +1418,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     color: c.onChalk,
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   outlineButton: {
     flexDirection: "row",
@@ -1437,7 +1437,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   outlineButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     color: c.primary,
   },
   outlineButtonTextSmall: {

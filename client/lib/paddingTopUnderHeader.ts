@@ -27,10 +27,11 @@ export function paddingTopUnderHeader(
   safeAreaInsetTop: number,
   spacing: number,
 ): number {
+  // useHeaderHeight() already includes the status bar / Dynamic Island, so
+  // adding the safe-area inset on top of it left a ~60pt empty band under
+  // every tab header. Only fall back to inset + bar when there is no header.
+  if (headerHeight > 0) return headerHeight + spacing;
   const safeTop = notchSafeTopPadding(safeAreaInsetTop);
-  const navBar =
-    Platform.OS === "ios"
-      ? Math.max(headerHeight, 44)
-      : headerHeight;
+  const navBar = Platform.OS === "ios" ? 44 : 56;
   return navBar + safeTop + spacing;
 }

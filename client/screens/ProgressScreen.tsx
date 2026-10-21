@@ -43,8 +43,19 @@ import { hapticLight } from "@/lib/safeHaptics";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 import { translateDayName } from "@/lib/dayNameLabel";
-import { WorkoutSession, getWorkoutHistory, ExerciseProgress, COMPOUND_LIFTS, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
+import { WorkoutSession, getWorkoutHistory, ExerciseProgress, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
 import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
+import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
+import {
+  estimate1RM,
+  formatVolume,
+  recentRecords,
+  thisWeekSummary,
+  weekStreak,
+  weeklySetsByMuscle,
+  weeklyVolumes,
+  type PersonalRecord,
+} from "@/lib/strengthProgress";
 import { NativeRecoveryPanel } from "@/components/progress/NativeRecoveryPanel";
 import type { ProgressPeriod } from "@/lib/hybridProgressReport";
 import { useTranslation } from "react-i18next";
@@ -90,15 +101,11 @@ function StatCard({
   icon,
   label,
   value,
-  subtitle,
-  color,
   index,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   value: string;
-  subtitle?: string;
-  color: string;
   index: number;
 }) {
   const { theme } = useTheme();
@@ -109,25 +116,17 @@ function StatCard({
       entering={FadeInDown.delay(index * 100).duration(400)}
       style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}
     >
-      <View style={[styles.statIcon, { backgroundColor: color + "20" }]}>
-        <Feather name={icon} size={20} color={color} />
+      {/* Neutral on purpose: colour on this tab is reserved for load. */}
+      <View style={[styles.statIcon, { backgroundColor: theme.ironElevated3 }]}>
+        <Feather name={icon} size={18} color={theme.text} />
       </View>
-      <ThemedText
-        style={styles.statValue}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.65}
-      >
+      {/* No adjustsFontSizeToFit: on iOS it shrank a lone "0" to a dot. */}
+      <ThemedText style={styles.statValue} numberOfLines={1}>
         {value}
       </ThemedText>
       <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
         {label}
       </ThemedText>
-      {subtitle ? (
-        <ThemedText style={[styles.statSubtitle, { color: color }]}>
-          {subtitle}
-        </ThemedText>
-      ) : null}
     </Animated.View>
   );
 }
@@ -139,7 +138,7 @@ function VolumeChart({
   data: { week: string; volume: number }[];
   index: number;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const maxVolume = Math.max(...data.map((d) => d.volume), 1);
@@ -150,11 +149,10 @@ function VolumeChart({
       style={[styles.chartContainer, { backgroundColor: theme.backgroundDefault }]}
     >
       <View style={styles.chartHeader}>
-        <ThemedText style={styles.chartTitle}>{t("progress.weeklyVolume")}</ThemedText>
-        <View style={styles.chartLegend}>
-          <View style={[styles.legendDot, { backgroundColor: theme.primary }]} />
-          <ThemedText style={[styles.legendText, { color: theme.textSecondary }]}>
-            {t("progress.totalKgLifted")}
+        <View>
+          <ThemedText style={styles.chartTitle}>{t("progress.weeklyVolume")}</ThemedText>
+          <ThemedText style={[styles.chartSubtitle, { color: theme.textSecondary }]}>
+            {t("progress.volumeSubtitle")}
           </ThemedText>
         </View>
       </View>
@@ -180,11 +178,16 @@ function VolumeChart({
               <ThemedText style={[styles.barLabel, { color: theme.textSecondary }]}>
                 {item.week}
               </ThemedText>
-              {item.volume > 0 ? (
-                <ThemedText style={[styles.barValue, { color: theme.text }]}>
-                  {(item.volume / 1000).toFixed(1)}k
-                </ThemedText>
-              ) : null}
+              {/* Always one line, even for empty weeks — otherwise the bars
+                  with a value sat higher than the ones without. */}
+              <ThemedText
+                style={[
+                  styles.barValue,
+                  { color: item.volume > 0 ? theme.text : theme.textSecondary },
+                ]}
+              >
+                {item.volume > 0 ? formatVolume(item.volume, i18n.language) : "–"}
+              </ThemedText>
             </View>
           );
         })}
@@ -214,7 +217,7 @@ function MuscleBalance({
       <View style={styles.muscleHeader}>
         <ThemedText style={styles.chartTitle}>{t("progress.muscleBalanceTitle")}</ThemedText>
         <ThemedText style={[styles.musclePeriod, { color: theme.textSecondary }]}>
-          {t("progress.last30Days")}
+          {t("progress.thisWeek")}
         </ThemedText>
       </View>
 
@@ -241,7 +244,7 @@ function MuscleBalance({
                       entering={FadeIn.delay(400 + idx * 30).duration(300)}
                       style={[
                         styles.muscleBarFill,
-                        { width: `${widthPercent}%`, backgroundColor: muscle.color },
+                        { width: `${widthPercent}%`, backgroundColor: theme.primary },
                       ]}
                     />
                   </View>
@@ -258,11 +261,7 @@ function MuscleBalance({
   );
 }
 
-function calculate1RM(weight: number, reps: number): number {
-  if (reps === 1) return weight;
-  if (reps <= 0 || weight <= 0) return 0;
-  return Math.round(weight * (1 + reps / 30));
-}
+const calculate1RM = estimate1RM;
 
 function OneRMChart({
   data,
@@ -271,7 +270,7 @@ function OneRMChart({
   data: { exercise: string; history: { date: string; estimated1RM: number }[]; color: string }[];
   index: number;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const [selectedLift, setSelectedLift] = useState(0);
@@ -327,7 +326,7 @@ function OneRMChart({
         {selectedData?.history.length > 0 ? (
           <View style={[styles.oneRMBadge, { backgroundColor: selectedData.color + "15" }]}>
             <ThemedText style={[styles.oneRMBadgeText, { color: selectedData.color }]}>
-              {selectedData.history[selectedData.history.length - 1]?.estimated1RM}kg
+              {selectedData.history[selectedData.history.length - 1]?.estimated1RM} kg
             </ThemedText>
           </View>
         ) : null}
@@ -345,25 +344,32 @@ function OneRMChart({
             onPress={() => setSelectedLift(idx)}
             style={[
               styles.liftChip,
-              {
-                backgroundColor: idx === selectedLift ? lift.color : theme.backgroundSecondary,
-                borderColor: lift.color,
-              },
+              idx === selectedLift
+                ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                : { backgroundColor: "transparent", borderColor: theme.controlOutline },
             ]}
           >
             <ThemedText
               style={[
                 styles.liftChipText,
-                { color: idx === selectedLift ? "#FFFFFF" : lift.color },
+                { color: idx === selectedLift ? theme.onChalk : theme.text },
               ]}
             >
-              {lift.exercise}
+              {localizeExerciseName(lift.exercise, i18n.language)}
             </ThemedText>
           </Pressable>
         ))}
       </ScrollView>
 
-      {selectedData?.history.length > 0 ? (
+      {selectedData?.history.length === 1 ? (
+        // One session is a value, not a trend — a "chart" of one dot on an
+        // axis reading 19 / 19 / 19 looked broken.
+        <View style={styles.muscleEmpty}>
+          <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
+            {t("progress.oneRMNeedsTwo")}
+          </ThemedText>
+        </View>
+      ) : selectedData?.history.length > 0 ? (
         <View style={styles.oneRMGraph}>
           <View style={styles.oneRMYAxis}>
             <ThemedText style={[styles.oneRMAxisLabel, { color: theme.textSecondary }]}>
@@ -412,7 +418,9 @@ function OneRMChart({
       ) : (
         <View style={styles.muscleEmpty}>
           <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
-            {t("progress.noDataFor", { exercise: selectedData?.exercise })}
+            {t("progress.noDataFor", {
+              exercise: localizeExerciseName(selectedData?.exercise ?? "", i18n.language),
+            })}
           </ThemedText>
         </View>
       )}
@@ -420,126 +428,57 @@ function OneRMChart({
   );
 }
 
-const MUSCLE_HEATMAP_DATA = [
-  { id: "chest", label: "Chest", top: 22, left: 35, width: 30 },
-  { id: "back", label: "Back", top: 22, left: 35, width: 30 },
-  { id: "shoulders", label: "Shoulders", top: 16, left: 25, width: 50 },
-  { id: "biceps", label: "Biceps", top: 28, left: 18, width: 15 },
-  { id: "triceps", label: "Triceps", top: 28, left: 67, width: 15 },
-  { id: "quads", label: "Quads", top: 52, left: 30, width: 18 },
-  { id: "hamstrings", label: "Hamstrings", top: 58, left: 30, width: 18 },
-  { id: "calves", label: "Calves", top: 72, left: 32, width: 14 },
-];
-
-function MuscleHeatmap({
-  data,
-  index,
-}: {
-  data: { name: string; sets: number; intensity: number }[];
-  index: number;
-}) {
-  const { t } = useTranslation();
+/**
+ * The reason people open a progress tab: "did I get stronger?". Hevy leads
+ * with PRs; we buried strength under the hybrid report.
+ */
+function RecordsCard({ records, index }: { records: PersonalRecord[]; index: number }) {
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const maxSets = Math.max(...data.map(d => d.sets), 1);
-
-  const getIntensityColor = (sets: number) => {
-    const intensity = sets / maxSets;
-    if (intensity === 0) return theme.border;
-    if (intensity < 0.33) return theme.primary + "40";
-    if (intensity < 0.66) return theme.primary + "80";
-    return theme.primary;
-  };
 
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 100).duration(400)}
-      style={[styles.heatmapContainer, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.chartContainer, { backgroundColor: theme.backgroundDefault }]}
+      testID="card-records"
     >
       <View style={styles.chartHeader}>
-        <ThemedText style={styles.chartTitle}>{t("progress.trainingHeatmap")}</ThemedText>
+        <ThemedText style={styles.chartTitle}>{t("progress.recordsTitle")}</ThemedText>
         <ThemedText style={[styles.musclePeriod, { color: theme.textSecondary }]}>
-          {t("progress.thisWeek")}
+          {t("progress.last30Days")}
         </ThemedText>
       </View>
-
-      <View style={styles.heatmapBody}>
-        <View style={styles.heatmapFigure}>
-          <View style={[styles.heatmapHead, { backgroundColor: theme.border }]} />
-          <View style={[styles.heatmapNeck, { backgroundColor: theme.border }]} />
-          <View style={styles.heatmapTorso}>
-            <View 
-              style={[
-                styles.heatmapShoulders, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Shoulders")?.sets || 0) }
-              ]} 
-            />
-            <View 
-              style={[
-                styles.heatmapChest, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Chest")?.sets || 0) }
-              ]} 
-            />
-            <View 
-              style={[
-                styles.heatmapCore, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Core")?.sets || 0) }
-              ]} 
-            />
-          </View>
-          <View style={styles.heatmapArms}>
-            <View 
-              style={[
-                styles.heatmapArm, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Biceps")?.sets || 0) }
-              ]} 
-            />
-            <View 
-              style={[
-                styles.heatmapArm, 
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Triceps")?.sets || 0) }
-              ]} 
-            />
-          </View>
-          <View style={styles.heatmapLegs}>
-            <View
-              style={[
-                styles.heatmapLeg,
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Legs")?.sets || 0) }
-              ]}
-            />
-            <View
-              style={[
-                styles.heatmapLeg,
-                { backgroundColor: getIntensityColor(data.find(d => d.name === "Legs")?.sets || 0) }
-              ]}
-            />
-          </View>
-        </View>
-        <View style={styles.heatmapLegend}>
-          {data.filter(d => d.sets > 0).slice(0, 5).map((muscle, idx) => (
-            <View key={muscle.name} style={styles.heatmapLegendItem}>
-              <View 
-                style={[
-                  styles.heatmapLegendDot, 
-                  { backgroundColor: getIntensityColor(muscle.sets) }
-                ]} 
-              />
-              <ThemedText style={[styles.heatmapLegendText, { color: theme.text }]}>
-                {translateMuscleGroup(t, muscle.name)}
+      {records.length === 0 ? (
+        <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
+          {t("progress.recordsEmpty")}
+        </ThemedText>
+      ) : (
+        records.map((r, i) => (
+          <View
+            key={r.exerciseName}
+            style={[
+              styles.recordRow,
+              i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline },
+            ]}
+          >
+            <View style={[styles.recordIcon, { backgroundColor: theme.ironElevated3 }]}>
+              <Feather name="award" size={16} color={theme.text} />
+            </View>
+            <View style={styles.recordText}>
+              <ThemedText style={styles.recordName} numberOfLines={1}>
+                {localizeExerciseName(r.exerciseName, i18n.language)}
               </ThemedText>
-              <ThemedText style={[styles.heatmapLegendValue, { color: theme.textSecondary }]}>
-                {muscle.sets}
+              <ThemedText style={[styles.recordMeta, { color: theme.textSecondary }]}>
+                {t("progress.recordLine", { weight: r.weight, reps: r.reps, e1rm: r.estimated1RM })}
               </ThemedText>
             </View>
-          ))}
-          {data.every(d => d.sets === 0) ? (
-            <ThemedText style={[styles.muscleEmptyText, { color: theme.textSecondary }]}>
-              {t("progress.trainToSeeHeatmap")}
+            <ThemedText style={[styles.recordGain, { color: theme.text }]}>
+              {t("progress.recordGain", { kg: r.estimated1RM - r.previous1RM })}
             </ThemedText>
-          ) : null}
-        </View>
-      </View>
+          </View>
+        ))
+      )}
     </Animated.View>
   );
 }
@@ -755,7 +694,7 @@ function ExerciseProgressRow({
     >
       <View style={styles.exerciseRowLeft}>
         <ThemedText style={styles.exerciseRowName} numberOfLines={1}>
-          {exercise.exerciseName}
+          {localizeExerciseName(exercise.exerciseName, i18n.language)}
         </ThemedText>
         <ThemedText style={[styles.exerciseRowMeta, { color: theme.textSecondary }]}>
           {t("exerciseChart.sessionCount", { count: exercise.totalSessions })} · {formatLastUsed(exercise.lastUsed)}
@@ -763,7 +702,7 @@ function ExerciseProgressRow({
       </View>
       <View style={styles.exerciseRowRight}>
         <ThemedText style={[styles.exerciseRowWeight, { color: theme.primary }]}>
-          {exercise.bestSession.maxWeight}kg
+          {exercise.bestSession.maxWeight} kg
         </ThemedText>
         <ThemedText style={[styles.exerciseRowWeightLabel, { color: theme.textSecondary }]}>
           {t("exerciseChart.best")}
@@ -815,7 +754,7 @@ function ExerciseDetailModal({
 
         <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
           <ThemedText style={styles.modalTitle} numberOfLines={1}>
-            {exercise.exerciseName}
+            {localizeExerciseName(exercise.exerciseName, i18n.language)}
           </ThemedText>
           <Pressable onPress={onClose} style={styles.modalClose} hitSlop={6}>
             <Feather name="x" size={22} color={theme.text} />
@@ -838,7 +777,7 @@ function ExerciseDetailModal({
             </View>
             <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
               <ThemedText style={[styles.modalStatValue, { color: "#10B981" }]}>
-                {exercise.bestSession.maxWeight}kg
+                {exercise.bestSession.maxWeight} kg
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
                 {t("exerciseChart.bestWeight")}
@@ -846,7 +785,7 @@ function ExerciseDetailModal({
             </View>
             <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
               <ThemedText style={[styles.modalStatValue, { color: SERIES_BLUE }]}>
-                {exercise.bestSession.estimated1RM}kg
+                {exercise.bestSession.estimated1RM} kg
               </ThemedText>
               <ThemedText style={[styles.modalStatLabel, { color: theme.textSecondary }]}>
                 {t("exerciseChart.est1RM")}
@@ -903,7 +842,7 @@ function ExerciseDetailModal({
                 <View style={styles.singleSessionStat}>
                   <View style={styles.singleSessionValueRow}>
                     <ThemedText style={[styles.singleSessionValue, { color: theme.primary }]}>
-                      {exercise.sessions[0].maxWeight}kg
+                      {exercise.sessions[0].maxWeight} kg
                     </ThemedText>
                     <View style={styles.pbBadge}>
                       <ThemedText style={styles.pbBadgeText}>{t("exerciseChart.pb")}</ThemedText>
@@ -925,7 +864,7 @@ function ExerciseDetailModal({
                 <View style={[styles.singleSessionDivider, { backgroundColor: theme.border }]} />
                 <View style={styles.singleSessionStat}>
                   <ThemedText style={[styles.singleSessionValue, { color: SERIES_BLUE }]}>
-                    {exercise.sessions[0].estimated1RM}kg
+                    {exercise.sessions[0].estimated1RM} kg
                   </ThemedText>
                   <ThemedText style={[styles.singleSessionLabel, { color: theme.textSecondary }]}>
                     {t("exerciseChart.est1RM")}
@@ -953,7 +892,7 @@ function ExerciseDetailModal({
               </ThemedText>
               <View style={styles.bestSessionWeightRow}>
                 <ThemedText style={[styles.bestSessionStats, { color: theme.text }]}>
-                  {exercise.bestSession.maxWeight}kg × {exercise.bestSession.maxWeightReps} reps
+                  {exercise.bestSession.maxWeight} kg × {exercise.bestSession.maxWeightReps}
                 </ThemedText>
                 <View style={styles.pbBadge}>
                   <ThemedText style={styles.pbBadgeText}>{t("exerciseChart.personalBest")}</ThemedText>
@@ -1092,220 +1031,33 @@ export default function ProgressScreen() {
     loadHistory();
   };
 
-  const calculateStreak = () => {
-    if (history.length === 0) return 0;
+  const { i18n } = useTranslation();
+  // Re-read the clock whenever history reloads (focus / pull-to-refresh).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => new Date(), [history]);
+  const week = useMemo(() => thisWeekSummary(history, now), [history, now]);
+  const streak = useMemo(() => weekStreak(history, now), [history, now]);
+  const records = useMemo(() => recentRecords(history, now), [history, now]);
 
-    let streak = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const weeklyVolumeData = useMemo(
+    () =>
+      weeklyVolumes(history, now).map(({ weekStart, volume }) => ({
+        // Every bar labelled the same way — the week's Monday — instead of
+        // a mix of "3w", "2w", "Letzte", "Diese".
+        week: weekStart.toLocaleDateString(i18n.language, { day: "numeric", month: "numeric" }),
+        volume,
+      })),
+    [history, now, i18n.language],
+  );
 
-    const sortedHistory = [...history].sort(
-      (a, b) =>
-        new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-    );
-
-    for (let i = 0; i < 30; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(checkDate.getDate() - i);
-      checkDate.setHours(0, 0, 0, 0);
-
-      const hasWorkout = sortedHistory.some((session) => {
-        const sessionDate = new Date(session.completedAt);
-        sessionDate.setHours(0, 0, 0, 0);
-        return sessionDate.getTime() === checkDate.getTime();
-      });
-
-      if (hasWorkout) {
-        streak++;
-      } else if (i > 0) {
-        break;
-      }
-    }
-
-    return streak;
-  };
-
-  const getThisWeekCount = () => {
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    return history.filter(
-      (session) => new Date(session.completedAt) >= startOfWeek
-    ).length;
-  };
-
-  const getTotalVolume = useMemo(() => {
-    return history.reduce((total, session) => {
-      if (!session.exerciseProgress) return total;
-      return (
-        total +
-        session.exerciseProgress.reduce((epTotal, ep) => {
-          return (
-            epTotal +
-            ep.sets
-              .filter((s) => s.completed)
-              .reduce((setTotal, s) => {
-                const weight = parseFloat(s.weight) || 0;
-                const reps = parseInt(s.reps) || 0;
-                return setTotal + weight * reps;
-              }, 0)
-          );
-        }, 0)
-      );
-    }, 0);
-  }, [history]);
-
-  const getWeeklyVolumeData = useMemo(() => {
-    const weeks: { week: string; volume: number }[] = [];
-    const now = new Date();
-
-    for (let i = 3; i >= 0; i--) {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay() - i * 7);
-      weekStart.setHours(0, 0, 0, 0);
-
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 7);
-
-      const weekVolume = history
-        .filter((session) => {
-          const sessionDate = new Date(session.completedAt);
-          return sessionDate >= weekStart && sessionDate < weekEnd;
-        })
-        .reduce((total, session) => {
-          if (!session.exerciseProgress) return total;
-          return (
-            total +
-            session.exerciseProgress.reduce((epTotal, ep) => {
-              return (
-                epTotal +
-                ep.sets
-                  .filter((s) => s.completed)
-                  .reduce((setTotal, s) => {
-                    const weight = parseFloat(s.weight) || 0;
-                    const reps = parseInt(s.reps) || 0;
-                    return setTotal + weight * reps;
-                  }, 0)
-              );
-            }, 0)
-          );
-        }, 0);
-
-      const weekLabel =
-        i === 0
-          ? t("progress.thisWeekShort")
-          : i === 1
-          ? t("progress.lastWeekShort")
-          : `${i}w`;
-
-      weeks.push({ week: weekLabel, volume: weekVolume });
-    }
-
-    return weeks;
-  }, [history]);
-
-  const getMuscleBalanceData = useMemo(() => {
-    const muscleData: Record<string, number> = {};
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    history
-      .filter((session) => new Date(session.completedAt) >= thirtyDaysAgo)
-      .forEach((session) => {
-        session.exercises.forEach((exercise, idx) => {
-          const muscleGroup = exercise.muscleGroup;
-          const completedSets =
-            session.exerciseProgress?.[idx]?.sets.filter((s) => s.completed)
-              .length || 0;
-
-          if (!muscleData[muscleGroup]) {
-            muscleData[muscleGroup] = 0;
-          }
-          muscleData[muscleGroup] += completedSets;
-        });
-      });
-
+  const muscleBalanceData = useMemo(() => {
+    const sets = weeklySetsByMuscle(history, now);
     return MUSCLE_GROUPS.map((mg) => ({
       name: mg.name,
-      sets: muscleData[mg.name] || 0,
+      sets: sets[mg.name] || 0,
       color: mg.color,
     })).sort((a, b) => b.sets - a.sets);
-  }, [history]);
-
-  const getOneRMData = useMemo(() => {
-    const liftColors: Record<string, string> = {
-      "Barbell Bench Press": theme.primary,
-      "Barbell Back Squat": SERIES_BLUE,
-      "Barbell Deadlift": "#10B981",
-      "Barbell Overhead Press": "#3B82F6",
-      "Barbell Bent-Over Row": "#F59E0B",
-      "Machine Leg Press": "#06B6D4",
-    };
-
-    return COMPOUND_LIFTS.map(liftName => {
-      const liftHistory: { date: string; estimated1RM: number }[] = [];
-
-      history.forEach(session => {
-        session.exercises.forEach((exercise, idx) => {
-          if (exercise.name === liftName && session.exerciseProgress?.[idx]) {
-            const sets = session.exerciseProgress[idx].sets.filter(s => s.completed);
-            if (sets.length > 0) {
-              const bestSet = sets.reduce((best, set) => {
-                const weight = parseFloat(set.weight) || 0;
-                const reps = parseInt(set.reps) || 0;
-                const est1RM = calculate1RM(weight, reps);
-                const bestEst = calculate1RM(parseFloat(best.weight) || 0, parseInt(best.reps) || 0);
-                return est1RM > bestEst ? set : best;
-              });
-              const weight = parseFloat(bestSet.weight) || 0;
-              const reps = parseInt(bestSet.reps) || 0;
-              if (weight > 0 && reps > 0) {
-                liftHistory.push({
-                  date: session.completedAt,
-                  estimated1RM: calculate1RM(weight, reps),
-                });
-              }
-            }
-          }
-        });
-      });
-
-      liftHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      return {
-        exercise: liftName,
-        history: liftHistory,
-        color: liftColors[liftName] || theme.primary,
-      };
-    });
-  }, [history]);
-
-  const getWeeklyHeatmapData = useMemo(() => {
-    const muscleData: Record<string, number> = {};
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    history
-      .filter(session => new Date(session.completedAt) >= startOfWeek)
-      .forEach(session => {
-        session.exercises.forEach((exercise, idx) => {
-          const muscleGroup = exercise.muscleGroup;
-          const completedSets = session.exerciseProgress?.[idx]?.sets.filter(s => s.completed).length || 0;
-          if (!muscleData[muscleGroup]) muscleData[muscleGroup] = 0;
-          muscleData[muscleGroup] += completedSets;
-        });
-      });
-
-    return MUSCLE_GROUPS.map(mg => ({
-      name: mg.name,
-      sets: muscleData[mg.name] || 0,
-      intensity: muscleData[mg.name] || 0,
-    }));
-  }, [history]);
+  }, [history, now]);
 
   const getExerciseProgressData = useMemo((): ExerciseProgressData[] => {
     const exerciseMap = new Map<string, ExerciseProgressData>();
@@ -1375,6 +1127,21 @@ export default function ProgressScreen() {
     );
   }, [history]);
 
+  // The lifts this athlete actually logs most, instead of six hard-coded
+  // barbell names that most plans never contain.
+  const oneRMData = useMemo(
+    () =>
+      [...getExerciseProgressData]
+        .sort((a, b) => b.totalSessions - a.totalSessions)
+        .slice(0, 6)
+        .map((e) => ({
+          exercise: e.exerciseName,
+          history: e.sessions.map((x) => ({ date: x.date, estimated1RM: x.estimated1RM })),
+          color: theme.primary,
+        })),
+    [getExerciseProgressData, theme.primary],
+  );
+
   if (isLoading) {
     return (
       <View
@@ -1413,65 +1180,61 @@ export default function ProgressScreen() {
         </>
       ) : (
         <>
-          <HybridProgressPanel
-            history={history}
-            period={hybridPeriod}
-            onPeriodChange={setHybridPeriod}
-          />
-
-          <Animated.View
-            entering={FadeInDown.delay(200).duration(400)}
-            style={styles.sectionHeader}
-          >
-            <ThemedText style={styles.sectionTitle}>{t("progress.strengthAnalytics")}</ThemedText>
-          </Animated.View>
+          <View style={styles.sectionHeaderFirst}>
+            <ThemedText style={styles.sectionTitle}>{t("progress.weeklySummaryTitle")}</ThemedText>
+          </View>
 
           <View style={styles.statsRow}>
             <StatCard
-              icon="activity"
-              label={t("progress.totalWorkouts")}
-              value={history.length.toString()}
-              color={theme.primary}
+              icon="calendar"
+              label={t("progress.weekWorkouts")}
+              value={week.workouts.toString()}
               index={0}
             />
             <StatCard
-              icon="zap"
-              label={t("progress.dayStreak")}
-              value={calculateStreak().toString()}
-              color="#FFB800"
+              icon="layers"
+              label={t("progress.weekSets")}
+              value={week.sets.toString()}
               index={1}
             />
           </View>
 
           <View style={styles.statsRow}>
             <StatCard
-              icon="calendar"
-              label={t("progress.thisWeek")}
-              value={getThisWeekCount().toString()}
-              color={theme.success}
+              icon="bar-chart-2"
+              label={t("progress.weekVolume")}
+              value={formatVolume(week.volume, i18n.language)}
               index={2}
             />
             <StatCard
-              icon="trending-up"
-              label={t("progress.totalVolume")}
-              value={`${(getTotalVolume / 1000).toFixed(0)}k`}
-              subtitle="kg"
-              color="#9B59B6"
+              icon="zap"
+              label={t("progress.weekStreak", { count: streak })}
+              value={streak.toString()}
               index={3}
             />
           </View>
 
-          <VolumeChart data={getWeeklyVolumeData} index={4} />
+          <RecordsCard records={records} index={4} />
 
-          <OneRMChart data={getOneRMData} index={5} />
+          <VolumeChart data={weeklyVolumeData} index={5} />
 
-          <MuscleHeatmap data={getWeeklyHeatmapData} index={6} />
+          <OneRMChart data={oneRMData} index={6} />
 
-          <MuscleBalance data={getMuscleBalanceData} index={7} />
+          <MuscleBalance data={muscleBalanceData} index={7} />
 
-          <NativeRecoveryPanel index={8} />
+          <ExerciseProgressSection data={getExerciseProgressData} index={8} />
 
-          <ExerciseProgressSection data={getExerciseProgressData} index={9} />
+          {/* Cardio and recovery are context for the lifting, not the
+              headline — they sit below it. */}
+          <View style={styles.hybridSection}>
+            <HybridProgressPanel
+              history={history}
+              period={hybridPeriod}
+              onPeriodChange={setHybridPeriod}
+            />
+          </View>
+
+          <NativeRecoveryPanel index={9} />
 
           <Animated.View
             entering={FadeInDown.delay(500).duration(400)}
@@ -1536,9 +1299,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 28,
     lineHeight: 34,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginBottom: Spacing.xs,
-    paddingTop: 12,
+    paddingTop: 4,
     width: "100%",
     textAlign: "center",
   },
@@ -1567,7 +1330,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   chartSubtitle: {
     fontSize: 12,
@@ -1684,10 +1447,45 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     marginTop: Spacing.md,
     marginBottom: Spacing.md,
   },
+  sectionHeaderFirst: {
+    marginBottom: Spacing.md,
+  },
+  hybridSection: {
+    marginTop: Spacing.xl,
+  },
+  recordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+  },
+  recordIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recordText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  recordName: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  recordMeta: {
+    fontSize: 13,
+  },
+  recordGain: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   historyList: {
     gap: Spacing.md,
@@ -1714,7 +1512,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   historyTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: Spacing.xs,
   },
   historyMeta: {
@@ -1744,7 +1542,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginBottom: Spacing.md,
     textAlign: "center",
   },
@@ -1783,7 +1581,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   oneRMBadgeText: {
     fontSize: 14,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   liftSelector: {
     marginBottom: Spacing.md,
@@ -1969,7 +1767,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   exerciseRowName: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: 2,
   },
   exerciseRowMeta: {
@@ -1981,7 +1779,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   exerciseRowWeight: {
     fontSize: 15,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   exerciseRowWeightLabel: {
     fontSize: 11,
@@ -2012,7 +1810,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   modalClose: {
     padding: Spacing.sm,
@@ -2039,7 +1837,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   modalStatValue: {
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginBottom: 2,
   },
   modalStatLabel: {
@@ -2062,7 +1860,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   modalChartTitle: {
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   modalChartUnit: {
     fontSize: 12,
@@ -2122,7 +1920,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   pbBadgeText: {
     fontSize: 10,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     color: c.primary,
   },
   singleSessionStatsRow: {
@@ -2143,7 +1941,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   singleSessionValue: {
     fontSize: 20,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
   },
   singleSessionLabel: {
     fontSize: 11,

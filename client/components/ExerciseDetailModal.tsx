@@ -280,7 +280,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 22,
     lineHeight: 30,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
   },
@@ -346,7 +346,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   cuesTitle: {
     fontSize: 13,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },

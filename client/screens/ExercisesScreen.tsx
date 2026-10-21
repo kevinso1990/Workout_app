@@ -1135,7 +1135,7 @@ export default function ExercisesScreen() {
                 style={[styles.actionButton, { backgroundColor: theme.backgroundDefault }]}
                 testID="button-search-database"
               >
-                <Feather name="database" size={18} color={theme.primary} />
+                <Feather name="globe" size={18} color={theme.primary} />
                 <ThemedText style={[styles.actionButtonText, { color: theme.primary }]}>
                   {t("exercisesScreen.browseAction")}
                 </ThemedText>

@@ -51,6 +51,9 @@ import { getUserPreferences } from "@/lib/storage";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
+import { TodayCard } from "@/components/workout/TodayCard";
+import { translateDayName } from "@/lib/dayNameLabel";
+import { primaryPlan } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { confirmAlert } from "@/lib/confirmAlert";
@@ -529,7 +532,8 @@ export default function MyPlansScreen() {
       // Daily briefing only needs to be generated once per calendar day —
       // this screen is the home tab, refetching on every focus was hammering the AI API.
       const today = new Date().toISOString().slice(0, 10);
-      const cacheKey = "coachBriefCache";
+      // v2: day names are now sent translated; older cached briefs quote "Full Body B".
+      const cacheKey = "coachBriefCache:v2";
       try {
         const cachedRaw = await AsyncStorage.getItem(cacheKey);
         if (cachedRaw) {
@@ -545,7 +549,9 @@ export default function MyPlansScreen() {
 
       try {
         const history = await getWorkoutHistory();
-        const body = buildDailyBriefingPayload(loadedPlans, history, i18n.language);
+        const body = buildDailyBriefingPayload(loadedPlans, history, i18n.language, (n) =>
+          translateDayName(t, n),
+        );
         const url = new URL("/api/coach/daily-briefing", getApiUrl()).toString();
         const res = await fetch(url, {
           method: "POST",
@@ -568,7 +574,7 @@ export default function MyPlansScreen() {
         setCoachBrief(null);
       }
     },
-    [i18n.language],
+    [i18n.language, t],
   );
 
   const loadPlans = useCallback(async () => {
@@ -818,6 +824,11 @@ export default function MyPlansScreen() {
             {/* A workout in progress outranks every notice — it's the thing
                 the user was in the middle of, not a suggestion. */}
             <ResumeWorkoutCard />
+            <TodayCard
+              plans={plans}
+              commitments={commitments}
+              mobilityWeekdays={mobilityWeekdays}
+            />
             {/* At most ONE notice at a time, by priority: something went wrong
                 > actionable coaching offer > daily tip. Stacking three banners
                 pushed the real primary action (starting a workout) off screen.
@@ -900,7 +911,7 @@ export default function MyPlansScreen() {
 
             <WeekScheduleStrip
               commitments={commitments}
-              sessionDayNames={(plans[0]?.days ?? []).map((d) => d.dayName)}
+              sessionDayNames={(primaryPlan(plans)?.days ?? []).map((d) => d.dayName)}
               mobilityWeekdays={mobilityWeekdays}
               // "Profile" and "Calendar" are sibling TABS, not
               // RootStackParamList routes — navigate resolves them in the tab

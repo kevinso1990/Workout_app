@@ -10,6 +10,8 @@ import { flushWorkoutSyncQueue } from "@/lib/workoutSessionSyncQueue";
 import { toast } from "@/lib/toast";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
+const AUTO_RESUME_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
 export const rootNavigationRef =
   createNavigationContainerRef<RootStackParamList>();
 
@@ -36,6 +38,11 @@ export function ActiveWorkoutRecovery({ bootstrapReady, initialRoute }: Props) {
 
       restoredRef.current = true;
       void flushWorkoutSyncQueue();
+
+      // A crash mid-workout should drop you back into it. A session abandoned
+      // days ago should not hijack every launch — the "Training läuft" card on
+      // the home tab still offers to continue or discard it.
+      if (Date.now() - draft.workoutStartedAt > AUTO_RESUME_MAX_AGE_MS) return;
 
       rootNavigationRef.dispatch(
         CommonActions.reset({

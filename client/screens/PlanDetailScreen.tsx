@@ -279,7 +279,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   planName: {
     fontSize: 28,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     color: c.chalk,
     letterSpacing: -0.5,
     lineHeight: 34,

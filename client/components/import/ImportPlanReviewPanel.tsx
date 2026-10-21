@@ -541,7 +541,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 24,
     lineHeight: 29,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     color: c.chalk,
     marginBottom: Spacing.xs,
   },
@@ -567,7 +567,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: HEVY.pad,
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     backgroundColor: c.ironElevated2,
     color: c.chalk,
   },
@@ -653,7 +653,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     lineHeight: 17,
   },
   exerciseCardHeader: {
@@ -677,7 +677,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     minHeight: 44,
     color: c.chalk,
     backgroundColor: c.iron,
@@ -707,7 +707,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     minHeight: 44,
     textAlign: "center",
     color: c.chalk,
@@ -726,7 +726,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   assignChipText: {
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   inlinePicker: {
     marginTop: Spacing.xs,
@@ -762,7 +762,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   inlineRowName: {
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     color: c.chalk,
   },
   inlineRowSub: { fontSize: 12, marginTop: 2, color: c.chalkDim },
@@ -788,7 +788,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   addRowText: {
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   cancelLink: {
     alignItems: "center",
@@ -822,6 +822,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     color: c.onChalk,
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
 });

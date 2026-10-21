@@ -140,7 +140,15 @@
       "days": "{{count}} d"
     },
     "exerciseCount_one": "{{count}} exercise",
-    "exerciseCount_other": "{{count}} exercises"
+    "exerciseCount_other": "{{count}} exercises",
+    "today": {
+      "title": "Today",
+      "start": "Start",
+      "startEarly": "Do now",
+      "restDay": "Rest day",
+      "doneTitle": "Done for today",
+      "next": "Next workout: {{day}} · {{name}}"
+    }
   },
   "createPlan": {
     "back": "Back",
@@ -200,11 +208,11 @@
     "unlink": "Unlink"
   },
   "exercisesScreen": {
-    "searchPlaceholder": "Search 800+ exercises...",
+    "searchPlaceholder": "Search exercises...",
     "searchModalPlaceholder": "Search exercises...",
     "customExercisePlaceholder": "e.g., Single Arm Cable Row",
     "createAction": "Create",
-    "browseAction": "Browse 800+",
+    "browseAction": "Search online",
     "createModal": {
       "title": "Create Custom Exercise",
       "nameLabel": "Exercise Name",
@@ -537,7 +545,7 @@
     "weeklyVolume": "Weekly Volume",
     "totalKgLifted": "Total kg lifted",
     "muscleBalanceTitle": "Muscle Balance",
-    "muscleCoverageEmpty": "Complete workouts to see muscle coverage",
+    "muscleCoverageEmpty": "No sets yet this week. After your next workout you'll see how much each muscle got.",
     "setsCount_one": "{{count}} set",
     "setsCount_other": "{{count}} sets",
     "last30Days": "Last 30 days",
@@ -581,10 +589,10 @@
         "year": "Year"
       },
       "strengthLabel": "Strength",
-      "strengthSessions": "Strength",
-      "cardioSessions": "Cardio",
-      "countStrength": "{{count}}× strength",
-      "countCardio": "{{count}}× cardio",
+      "strengthSessions": "Strength sessions",
+      "cardioSessions": "Cardio sessions",
+      "countStrength": "{{count}}",
+      "countCardio": "{{count}}",
       "totalDuration": "Total time",
       "totalDistance": "Distance",
       "distanceKm": "{{km}} km",
@@ -608,7 +616,18 @@
       "emptyPeriod": "No workouts logged in this period yet."
     },
     "noBodyWeightYet": "No body weight recorded yet.",
-    "fullHistory": "Full history"
+    "fullHistory": "Full history",
+    "weekWorkouts": "Workouts",
+    "weekSets": "Sets",
+    "weekVolume": "Volume",
+    "weekStreak_one": "week in a row",
+    "weekStreak_other": "weeks in a row",
+    "recordsTitle": "New records",
+    "recordsEmpty": "No new record in the last 30 days. Beat your previous best and it shows up here.",
+    "recordLine": "{{weight}} kg × {{reps}} · 1RM ≈ {{e1rm}} kg",
+    "recordGain": "+{{kg}} kg",
+    "volumeSubtitle": "kg moved per week, from Monday",
+    "oneRMNeedsTwo": "Your trend shows up here from your second session with this exercise."
   },
   "history": {
     "title": "History",

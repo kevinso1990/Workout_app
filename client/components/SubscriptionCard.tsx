@@ -138,7 +138,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
   },
   subtitle: {
     fontSize: 13,

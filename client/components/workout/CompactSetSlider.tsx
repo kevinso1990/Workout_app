@@ -160,7 +160,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "600",
-    fontFamily: "Montserrat_600SemiBold",
+    fontFamily: "Archivo_600SemiBold",
     color: c.chalkFaint,
     textTransform: "uppercase",
     letterSpacing: 0.3,
@@ -168,7 +168,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   valueText: {
     fontSize: 14,
     fontWeight: "700",
-    fontFamily: "Montserrat_700Bold",
+    fontFamily: "Archivo_700Bold",
     color: c.chalk,
   },
   slider: {

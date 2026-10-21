@@ -171,9 +171,12 @@ function getHistoricalCompletedSetsForExercise(
 }
 
 function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+  const ss = secs.toString().padStart(2, "0");
+  // "4269:05" for a long session read like a bug; switch to h:mm:ss past an hour.
+  return hours > 0 ? `${hours}:${mins.toString().padStart(2, "0")}:${ss}` : `${mins}:${ss}`;
 }
 
 function calculatePlates(totalWeight: number): { plates: number[] } {

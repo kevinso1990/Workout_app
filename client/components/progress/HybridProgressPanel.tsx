@@ -1,10 +1,5 @@
 import React, { useMemo } from "react";
-import {
-  SERIES_AMBER,
-  SERIES_BLUE,
-  SERIES_GREEN,
-} from "@/constants/chartColors";
-import { View, StyleSheet, Pressable, Dimensions } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 import { Feather } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -23,7 +18,6 @@ import type { WorkoutSession } from "@/lib/storage";
 import { useTheme } from "@/hooks/useTheme";
 
 const PERIODS: ProgressPeriod[] = ["week", "month", "year"];
-const CHART_W = Dimensions.get("window").width - Spacing.xl * 2 - Spacing.lg * 2;
 
 type Props = {
   history: WorkoutSession[];
@@ -78,19 +72,18 @@ function MetricTile({
   icon,
   label,
   value,
-  color,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   value: string;
-  color: string;
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={[styles.metricTile, { backgroundColor: theme.backgroundDefault }]}>
-      <View style={[styles.metricIcon, { backgroundColor: color + "18" }]}>
-        <Feather name={icon} size={16} color={color} />
+      {/* Neutral like the strength stats above — colour is for data series. */}
+      <View style={[styles.metricIcon, { backgroundColor: theme.ironElevated3 }]}>
+        <Feather name={icon} size={16} color={theme.text} />
       </View>
       <ThemedText style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {value}
@@ -145,19 +138,16 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
           icon="activity"
           label={t("progress.hybrid.strengthSessions")}
           value={t("progress.hybrid.countStrength", { count: report.strengthCount })}
-          color={theme.primary}
         />
         <MetricTile
           icon="zap"
           label={t("progress.hybrid.cardioSessions")}
           value={t("progress.hybrid.countCardio", { count: report.cardioCount })}
-          color={SERIES_AMBER}
         />
         <MetricTile
           icon="clock"
           label={t("progress.hybrid.totalDuration")}
           value={formatDurationHuman(report.totalDurationMinutes, t)}
-          color={SERIES_GREEN}
         />
         <MetricTile
           icon="map-pin"
@@ -167,7 +157,6 @@ export function HybridProgressPanel({ history, period, onPeriodChange }: Props) 
               ? t("progress.hybrid.distanceKm", { km: report.totalDistanceKm })
               : "—"
           }
-          color={SERIES_BLUE}
         />
       </View>
 
@@ -301,8 +290,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     marginBottom: Spacing.md,
   },
   reportTitle: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "Archivo_600SemiBold",
   },
   reportRange: {
     fontSize: 13,
@@ -333,13 +323,19 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   metricGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
   metricTile: {
-    width: (CHART_W - Spacing.sm) / 2,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    // Two equal columns of whatever width the parent has; the old fixed width
+    // assumed different screen padding and left the right column short.
+    flexGrow: 1,
+    flexBasis: "40%",
+    alignItems: "center",
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: c.hairlineStrong,
   },
   metricIcon: {
     width: 32,
@@ -349,21 +345,24 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     justifyContent: "center",
     marginBottom: Spacing.sm,
   },
+  // Same type scale as the strength stats above, so the tab reads as one.
   metricValue: {
-    fontSize: 18,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: "700",
+    fontFamily: "Archivo_700Bold",
     marginBottom: 2,
   },
   metricLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
+    fontSize: 13,
+    textAlign: "center",
   },
   card: {
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: c.hairlineStrong,
   },
   cardHeader: {
     flexDirection: "row",
@@ -373,7 +372,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
+    fontFamily: "Archivo_600SemiBold",
     marginBottom: Spacing.md,
   },
   distributionRow: {
