@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { endWorkoutActivity } from "@/lib/workoutLiveActivity";
+
 import type { ExerciseProgress, WorkoutPlan, WorkoutSession } from "@/lib/storage";
 import type { ExerciseCoachState } from "@/lib/coachProgressionState";
 
@@ -59,6 +61,9 @@ export async function clearActiveWorkoutDraft(): Promise<void> {
   } catch {
     // non-fatal
   }
+  // Every way a workout ends (finished, discarded, replaced) goes through
+  // here, so this is where the lock-screen activity goes away too.
+  void endWorkoutActivity();
 }
 
 export async function hasActiveWorkoutDraft(): Promise<boolean> {

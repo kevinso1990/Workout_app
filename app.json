@@ -68,7 +68,8 @@
       "expo-dev-client",
       "./plugins/withPrivacyManifest.js",
       "expo-localization",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-live-activity"
     ],
     "experiments": {
       "reactCompiler": false

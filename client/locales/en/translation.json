@@ -504,7 +504,14 @@
     "minimize": "Minimize workout",
     "circuitOnHint": "Circuit mode on: after each set you move to the next exercise — round by round.",
     "circuitOffHint": "Circuit mode off: finish all sets of an exercise, then the next one.",
-    "swapShort": "Swap"
+    "swapShort": "Swap",
+    "liveActivity": {
+      "set": "Set {{number}}/{{total}}",
+      "restThen": "Rest · then {{set}} · {{target}}",
+      "allDone": "All sets done – finish your workout",
+      "seconds": "sec",
+      "reps": "reps"
+    }
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",

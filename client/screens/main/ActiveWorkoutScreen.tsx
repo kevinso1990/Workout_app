@@ -106,6 +106,7 @@ import {
   clearActiveWorkoutDraft,
   type ActiveWorkoutDraft,
 } from "@/lib/activeWorkoutPersistence";
+import { syncWorkoutActivity } from "@/lib/workoutLiveActivity";
 import { scheduleSessionSync } from "@/lib/dataSync";
 import { useKeepAwake } from "expo-keep-awake";
 import {
@@ -1746,6 +1747,50 @@ export default function ActiveWorkoutScreen() {
       />
     </View>
   );
+
+  // Mirror the workout onto the lock screen / Dynamic Island. Re-sent on every
+  // set, exercise and rest change; the countdown itself runs natively, so it
+  // keeps ticking while the phone is locked and JS is suspended.
+  useEffect(() => {
+    if (!plan || progress.length === 0 || showSummary) return;
+    const day = plan.days[route.params.dayIndex];
+    const exercise = day?.exercises[currentExerciseIndex];
+    const exProgress = progress[currentExerciseIndex];
+    if (!exercise || !exProgress) return;
+
+    const working = progress.flatMap((ep) => ep.sets.filter((s) => s.setType !== "warmup"));
+    const done = working.filter((s) => s.completed).length;
+    const set = exProgress.sets[currentSetIndex];
+    const setLabel = t("activeWorkout.liveActivity.set", {
+      number: currentSetIndex + 1,
+      total: exProgress.sets.length,
+    });
+    const weight = parseFloat(set?.weight ?? "") || 0;
+    const reps = set?.reps || exercise.reps;
+    // A bare "30" on the lock screen doesn't say whether it's reps or seconds.
+    const unit = t(
+      isHoldExercise(exercise.name)
+        ? "activeWorkout.liveActivity.seconds"
+        : "activeWorkout.liveActivity.reps",
+    );
+    const withUnit = /[a-zäöü]/i.test(reps) ? reps : `${reps} ${unit}`; // "30-45 Sek." already has one
+    const target = weight > 0 ? `${weight} kg × ${reps}` : withUnit;
+    const allDone = done === working.length && working.length > 0;
+    const resting = showRestTimer && timerEndTimeRef.current !== null;
+
+    void syncWorkoutActivity({
+      title: allDone ? translateDayName(t, day.dayName) : localizeName(exercise.name),
+      subtitle: allDone
+        ? t("activeWorkout.liveActivity.allDone")
+        : resting
+          ? t("activeWorkout.liveActivity.restThen", { set: setLabel, target })
+          : `${setLabel} · ${target}`,
+      restEndsAt: resting ? timerEndTimeRef.current : null,
+      progress: working.length > 0 ? done / working.length : 0,
+    });
+    // restTimeLeft is in the deps so ±15s (which moves the end time) re-syncs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, progress, currentExerciseIndex, currentSetIndex, showRestTimer, restTimeLeft, showSummary]);
 
   const handleSkipRest = () => {
     cancelRestNotification();

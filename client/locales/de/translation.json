@@ -423,7 +423,14 @@
     "minimize": "Training minimieren",
     "circuitOnHint": "Zirkeltraining an: Nach jedem Satz geht es zur nächsten Übung – Runde für Runde.",
     "circuitOffHint": "Zirkeltraining aus: Erst alle Sätze einer Übung, dann die nächste.",
-    "swapShort": "Tauschen"
+    "swapShort": "Tauschen",
+    "liveActivity": {
+      "set": "Satz {{number}}/{{total}}",
+      "restThen": "Pause · dann {{set}} · {{target}}",
+      "allDone": "Alle Sätze geschafft – Training beenden",
+      "seconds": "Sek.",
+      "reps": "Wdh."
+    }
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",
