@@ -45,6 +45,7 @@ import { runDataSync } from "@/lib/dataSync";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { BrandMark } from "@/components/brand/BrandLogo";
 import { CommitmentEditor } from "@/components/schedule/CommitmentEditor";
+import { MobilityDaysCard } from "@/components/workout/MobilityDaysCard";
 import { AvoidExerciseEditor } from "@/components/AvoidExerciseEditor";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import * as WebBrowser from "expo-web-browser";
@@ -1033,13 +1034,21 @@ export default function ProfileScreen() {
         </ThemedText>
       </Animated.View>
 
+      {/* Sport days and mobility days answer the same question — "what's
+          fixed in my week?" — so they live together. */}
+      <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.section}>
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          {t("profile.myWeek")}
+        </ThemedText>
+      </Animated.View>
+
       <Animated.View
         entering={FadeInDown.delay(175).duration(400)}
         style={[styles.commitmentsCard, { backgroundColor: theme.backgroundDefault }]}
       >
         <View style={styles.commitmentsHeader}>
-          <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
-            <Feather name="calendar" size={20} color={theme.primary} />
+          <View style={[styles.settingsIcon, styles.settingsIconFlush, { backgroundColor: theme.ironElevated3 }]}>
+            <Feather name="calendar" size={20} color={theme.text} />
           </View>
           <View style={styles.reminderInfo}>
             <ThemedText style={styles.reminderTitle}>
@@ -1057,6 +1066,10 @@ export default function ProfileScreen() {
           onChange={handleChangeCommitments}
           testIDPrefix="profile-commitment"
         />
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+        <MobilityDaysCard style={styles.mobilityDaysCard} />
       </Animated.View>
 
       <Animated.View
@@ -1281,6 +1294,20 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   settingsValue: {
     fontSize: 14,
     marginRight: Spacing.sm,
+  },
+  mobilityDaysCard: {
+    marginHorizontal: 0,
+    marginTop: 0,
+    marginBottom: Spacing.md,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 0,
+    backgroundColor: c.backgroundDefault,
+  },
+  settingsIconFlush: {
+    // The header row spaces with `gap`; the shared icon's marginRight doubled it.
+    marginRight: 0,
   },
   commitmentsCard: {
     borderRadius: BorderRadius.lg,

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, type StyleProp, type ViewStyle } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
@@ -8,6 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 import { getUserPreferences, setUserPreferences } from "@/lib/storage";
 import { ensureReminderPermission, syncMobilityReminders } from "@/lib/mobilityReminders";
@@ -19,9 +20,11 @@ const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
 /** Pick the fixed weekdays for the Mobility-Session; they drive the reminder. */
 export function MobilityDaysCard({
   onChange,
+  style,
 }: {
   /** Called with the chosen weekdays once loaded and after every change. */
   onChange?: (weekdays: number[]) => void;
+  style?: StyleProp<ViewStyle>;
 } = {}) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -61,10 +64,18 @@ export function MobilityDaysCard({
   const time = `${MOBILITY_REMINDER_HOUR}:${String(MOBILITY_REMINDER_MINUTE).padStart(2, "0")}`;
 
   return (
-    <View style={styles.card} testID="card-mobility-days">
+    <View style={[styles.card, style]} testID="card-mobility-days">
+      {/* Same header as the sport-days card it sits under in the profile. */}
       <View style={styles.titleRow}>
-        <Feather name="bell" size={16} color={theme.text} />
-        <ThemedText style={styles.title}>{t("mobility.daysTitle")}</ThemedText>
+        <View style={[styles.iconTile, { backgroundColor: theme.ironElevated3 }]}>
+          <Feather name="wind" size={20} color={theme.text} />
+        </View>
+        <View style={styles.titleCol}>
+          <ThemedText style={styles.title}>{t("mobility.daysTitle")}</ThemedText>
+          <ThemedText style={[styles.hint, { color: theme.textSecondary }]}>
+            {days.length > 0 ? t("mobility.daysHint", { time }) : t("mobility.daysEmptyHint")}
+          </ThemedText>
+        </View>
       </View>
       <View style={styles.dayRow}>
         {WEEKDAYS.map((d) => {
@@ -91,9 +102,6 @@ export function MobilityDaysCard({
           );
         })}
       </View>
-      <ThemedText style={[styles.hint, { color: theme.textSecondary }]}>
-        {days.length > 0 ? t("mobility.daysHint", { time }) : t("mobility.daysEmptyHint")}
-      </ThemedText>
     </View>
   );
 }
@@ -113,11 +121,23 @@ const makeStyles = (c: Palette) =>
     titleRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: Spacing.md,
+    },
+    iconTile: {
+      width: 40,
+      height: 40,
+      borderRadius: BorderRadius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    titleCol: {
+      flex: 1,
+      gap: 2,
     },
     title: {
       fontSize: 16,
-      fontWeight: "700",
+      fontWeight: "600",
+      fontFamily: "Archivo_600SemiBold",
     },
     dayRow: {
       flexDirection: "row",
@@ -138,6 +158,5 @@ const makeStyles = (c: Palette) =>
     },
     hint: {
       fontSize: 13,
-      lineHeight: 18,
     },
   });
