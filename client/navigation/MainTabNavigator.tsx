@@ -12,6 +12,7 @@ import ProgressScreen from "@/screens/ProgressScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { HeaderTitle } from "@/components/HeaderTitle";
+import { CoachHeaderButton } from "@/components/CoachHeaderButton";
 import { Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 
@@ -133,6 +134,8 @@ export default function MainTabNavigator() {
             title: t("nav.plans"),
             headerTitle: () => <HeaderTitle brand />,
             headerTitleAlign: "center",
+            // The coach is always one tap away, not only when today's tip shows.
+            headerRight: () => <CoachHeaderButton />,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon name="clipboard" color={color} focused={focused} />
             ),

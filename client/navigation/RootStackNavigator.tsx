@@ -12,6 +12,7 @@ import GoalPlanScreen from "@/screens/GoalPlanScreen";
 import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
 import ActiveWorkoutScreen from "@/screens/main/ActiveWorkoutScreen";
 import LogCardioScreen from "@/screens/LogCardioScreen";
+import CoachChatScreen from "@/screens/CoachChatScreen";
 import DisclaimerScreen from "@/screens/DisclaimerScreen";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -41,6 +42,8 @@ export type RootStackParamList = {
     restored?: boolean;
   };
   LogCardio: { prefilledDate?: string } | undefined;
+  /** `seed`: the daily coach tip the chat opens with, when started from it. */
+  CoachChat: { seed?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -151,6 +154,14 @@ export default function RootStackNavigator({
         options={{
           headerTitle: () => <HeaderTitle brand />,
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="CoachChat"
+        component={CoachChatScreen}
+        options={{
+          headerTitle: "Coach",
+          headerBackTitle: "",
         }}
       />
       <Stack.Screen

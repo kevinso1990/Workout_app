@@ -1159,5 +1159,29 @@
     "daysEmptyHint": "Pick the days you want to stretch – we'll remind you in the evening if you haven't done it yet.",
     "permissionDenied": "Notifications are off. You can turn them on for TrackYourLift in iOS Settings.",
     "weekStripLabel": "Mobility"
+  },
+  "coachChat": {
+    "reply": "Reply",
+    "placeholder": "Ask your coach…",
+    "send": "Send",
+    "emptyTitle": "Ask your coach",
+    "emptyBody": "It knows your plan, recent workouts, records and your week. It suggests plan changes, you decide.",
+    "suggestion1": "Why am I stuck on an exercise?",
+    "suggestion2": "I only have 30 minutes today. What should I do?",
+    "suggestion3": "Swap an exercise that doesn't feel right",
+    "suggestion4": "How much should I lift next time?",
+    "proposalTitle": "Plan change",
+    "proposalLoading": "Preparing the change…",
+    "proposalFailed": "Couldn't prepare the change right now. Just ask again.",
+    "apply": "Apply",
+    "dismiss": "Dismiss",
+    "applied": "Plan updated",
+    "dismissed": "Dismissed",
+    "limitReached": "You've used today's 20 coach messages. More tomorrow.",
+    "error": "I can't be reached right now. Check your connection and try again shortly.",
+    "clear": "New chat",
+    "clearTitle": "Start a new chat?",
+    "clearMessage": "The current conversation will be deleted.",
+    "open": "Open coach chat"
   }
 }

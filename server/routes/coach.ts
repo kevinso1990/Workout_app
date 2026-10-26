@@ -1,12 +1,21 @@
 import express from "express";
 import { rateLimit } from "../middleware/rateLimiter";
 import { aiUsageGuard } from "../middleware/aiUsageGuard";
-import { generateDailyBriefing, suggestSmartSubstitutions, adaptPlanFromPerformance } from "../services/coachService";
+import {
+  generateDailyBriefing,
+  suggestSmartSubstitutions,
+  adaptPlanFromPerformance,
+  coachChat,
+  type CoachChatMessage,
+} from "../services/coachService";
 import type { ClientPlanPayload } from "../services/planModifyService";
 
 const router = express.Router();
 
 const coachLimiter = rateLimit(30, 24 * 60 * 60 * 1000);
+/** Free-tier AI: 20 chat messages per device per day to start with. */
+export const COACH_CHAT_DAILY_LIMIT = 20;
+const chatLimiter = rateLimit(COACH_CHAT_DAILY_LIMIT, 24 * 60 * 60 * 1000);
 
 router.post("/smart-substitutions", coachLimiter, aiUsageGuard, async (req, res) => {
   try {
@@ -71,6 +80,42 @@ router.post("/daily-briefing", coachLimiter, aiUsageGuard, async (req, res) => {
     return res.json({ brief });
   } catch (err) {
     console.error("[coach] daily-briefing:", err);
+    const msg = err instanceof Error ? err.message : "Coach error";
+    return res.status(500).json({ error: msg });
+  }
+});
+
+router.post("/chat", chatLimiter, aiUsageGuard, async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY) {
+      return res.status(503).json({ error: "Coach AI is not configured" });
+    }
+    const body = req.body as { locale?: string; context?: string; messages?: unknown };
+    const raw = Array.isArray(body.messages) ? body.messages : [];
+    // Last 12 turns are plenty of memory and keep the prompt small.
+    const messages: CoachChatMessage[] = raw
+      .filter(
+        (m): m is CoachChatMessage =>
+          !!m &&
+          typeof m === "object" &&
+          ((m as CoachChatMessage).role === "user" || (m as CoachChatMessage).role === "coach") &&
+          typeof (m as CoachChatMessage).text === "string" &&
+          (m as CoachChatMessage).text.trim().length > 0,
+      )
+      .slice(-12)
+      .map((m) => ({ role: m.role, text: m.text.trim().slice(0, 1000) }));
+    if (messages.length === 0 || messages[messages.length - 1].role !== "user") {
+      return res.status(400).json({ error: "last message must be from the user" });
+    }
+    const context = typeof body.context === "string" ? body.context.slice(0, 10000) : "";
+    const result = await coachChat({
+      locale: body.locale === "de" ? "de" : "en",
+      context,
+      messages,
+    });
+    return res.json(result);
+  } catch (err) {
+    console.error("[coach] chat:", err);
     const msg = err instanceof Error ? err.message : "Coach error";
     return res.status(500).json({ error: msg });
   }

@@ -504,7 +504,6 @@ export default function MyPlansScreen() {
   const [bannerHeight, setBannerHeight] = useState(70);
   const [coachBrief, setCoachBrief] = useState<string | null>(null);
   const [menuPlan, setMenuPlan] = useState<WorkoutPlan | null>(null);
-  const [coachExpanded, setCoachExpanded] = useState(false);
   const [renameTarget, setRenameTarget] = useState<WorkoutPlan | null>(null);
   const [adaptPlan, setAdaptPlan] = useState<WorkoutPlan | null>(null);
   const [adaptSignals, setAdaptSignals] = useState<PerformanceSignal[]>([]);
@@ -871,13 +870,13 @@ export default function MyPlansScreen() {
             ) : coachBrief ? (
               // Tinted rather than another card surface: this is a note, not a
               // thing you own, and drawn on the same surface as the plans it
-              // read as a fourth plan. It is also capped to two lines — at full
-              // length it pushed the actual plans off the first screen, which
-              // is the one thing this list exists to show. Tap to read the rest.
+              // read as a fourth plan. Capped to two lines so the plans stay on
+              // the first screen; tapping opens the coach chat with this tip as
+              // the opening message, so you can read it in full and answer.
               <Pressable
                 onPress={() => {
                   Haptics.selectionAsync();
-                  setCoachExpanded((v) => !v);
+                  navigation.navigate("CoachChat", { seed: coachBrief });
                 }}
                 style={[
                   styles.coachCard,
@@ -887,7 +886,7 @@ export default function MyPlansScreen() {
                   },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel={t("plans.coach.title", { defaultValue: "Coach" })}
+                accessibilityLabel={t("coachChat.reply")}
                 testID="card-coach-brief"
               >
                 <Feather name="zap" size={14} color={theme.primary} />
@@ -895,21 +894,17 @@ export default function MyPlansScreen() {
                   <ThemedText style={styles.coachCardTitle}>
                     {t("plans.coach.title", { defaultValue: "Coach" })}
                   </ThemedText>
-                  <ThemedText
-                    style={[styles.coachCardBody, { color: theme.text }]}
-                    numberOfLines={coachExpanded ? undefined : 2}
-                  >
+                  <ThemedText style={[styles.coachCardBody, { color: theme.text }]} numberOfLines={2}>
                     {coachBrief}
                   </ThemedText>
+                  <View style={styles.coachReplyRow}>
+                    <Feather name="message-circle" size={13} color={theme.primary} />
+                    <ThemedText style={[styles.coachReplyText, { color: theme.primary }]}>
+                      {t("coachChat.reply")}
+                    </ThemedText>
+                  </View>
                 </View>
-                {/* Truncating advice without showing there is more to read
-                    just loses it. The chevron is the only hint that the card
-                    does anything when tapped. */}
-                <Feather
-                  name={coachExpanded ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color={theme.primary}
-                />
+                <Feather name="chevron-right" size={16} color={theme.primary} />
               </Pressable>
             ) : null}
 
@@ -1046,6 +1041,16 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   coachCardBody: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  coachReplyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 6,
+  },
+  coachReplyText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
   emptyContainer: {
     flex: 1,

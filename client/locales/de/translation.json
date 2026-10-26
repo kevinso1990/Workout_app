@@ -1159,5 +1159,29 @@
     "daysEmptyHint": "Wähle Tage, an denen du dehnen willst – wir erinnern dich dann abends, falls du es noch nicht gemacht hast.",
     "permissionDenied": "Benachrichtigungen sind aus. Du kannst sie in den iOS-Einstellungen für TrackYourLift einschalten.",
     "weekStripLabel": "Mobility"
+  },
+  "coachChat": {
+    "reply": "Antworten",
+    "placeholder": "Frag deinen Coach…",
+    "send": "Senden",
+    "emptyTitle": "Frag deinen Coach",
+    "emptyBody": "Er kennt deinen Plan, deine letzten Trainings, Rekorde und deine Woche. Planänderungen schlägt er vor, du entscheidest.",
+    "suggestion1": "Warum komme ich bei einer Übung nicht weiter?",
+    "suggestion2": "Ich habe heute nur 30 Minuten. Was soll ich machen?",
+    "suggestion3": "Tausch eine Übung, die mir nicht guttut",
+    "suggestion4": "Wie viel sollte ich nächstes Mal auflegen?",
+    "proposalTitle": "Planänderung",
+    "proposalLoading": "Änderung wird vorbereitet…",
+    "proposalFailed": "Die Änderung konnte gerade nicht vorbereitet werden. Frag einfach nochmal.",
+    "apply": "Übernehmen",
+    "dismiss": "Verwerfen",
+    "applied": "Plan aktualisiert",
+    "dismissed": "Verworfen",
+    "limitReached": "Für heute sind deine 20 Coach-Nachrichten aufgebraucht. Morgen geht's weiter.",
+    "error": "Ich bin gerade nicht erreichbar. Prüf deine Verbindung und versuch es gleich nochmal.",
+    "clear": "Neuer Chat",
+    "clearTitle": "Neuen Chat starten?",
+    "clearMessage": "Der bisherige Verlauf wird gelöscht.",
+    "open": "Coach-Chat öffnen"
   }
 }

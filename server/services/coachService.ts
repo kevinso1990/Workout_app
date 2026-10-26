@@ -179,6 +179,73 @@ Rules:
   return oneLine || (input.locale === "de" ? "Bereit für dein Training — bleib konsistent." : "Ready to train — stay consistent.");
 }
 
+export interface CoachChatMessage {
+  role: "user" | "coach";
+  text: string;
+}
+
+export interface CoachChatReply {
+  reply: string;
+  /** Imperative instruction for the plan editor when the athlete wants a change; else null. */
+  planChange: string | null;
+}
+
+/**
+ * Back-and-forth with the coach. The client sends the athlete's training
+ * context (plan, recent sessions, signals, schedule) with every turn — the
+ * server keeps no chat state. A requested plan change comes back as an
+ * instruction the app runs through the existing plan editor, so the athlete
+ * sees a preview and confirms before anything changes.
+ */
+export async function coachChat(input: {
+  locale: "de" | "en";
+  context: string;
+  messages: CoachChatMessage[];
+}): Promise<CoachChatReply> {
+  const lang = input.locale === "de" ? "German" : "English";
+  const transcript = input.messages
+    .map((m) => `${m.role === "user" ? "Athlete" : "Coach"}: ${m.text}`)
+    .join("\n");
+
+  const prompt = `You are the strength coach inside the TrackYourLift app, chatting with one athlete.
+Answer in ${lang}, informal ("du" in German), like a knowledgeable training partner.
+
+What you know about this athlete:
+${input.context || "(no data yet)"}
+
+Conversation so far:
+${transcript}
+
+Rules:
+- Reply to the athlete's last message. Keep it short: at most 4 sentences or a short list of up to 4 points. Plain text, no markdown headings, no bold.
+- Use their real data above (exercises, weights, feedback, schedule) instead of generic advice whenever it is relevant.
+- Pain or injury: no diagnosis. Suggest pain-free alternatives and lowering the load, and recommend a physio or doctor if pain is sharp, persists, or worsens.
+- If the athlete asks to change their plan (swap, add, remove exercises or days, shorter sessions, different focus), or clearly agrees to a change you proposed, set "planChange" to one precise imperative instruction in English for the plan editor (e.g. "Replace Barbell Back Squat with Leg Press on all days"). Mention in your reply that they can review the change below. Otherwise "planChange" is null.
+- Never invent workouts the athlete logged.
+
+Respond with JSON only: {"reply": "...", "planChange": null}`;
+
+  const raw = (await callCoachText(prompt)).trim();
+  try {
+    const parsed = extractFirstJsonObject(raw) as { reply?: unknown; planChange?: unknown };
+    const reply = typeof parsed.reply === "string" ? parsed.reply.trim() : "";
+    const planChange =
+      typeof parsed.planChange === "string" && parsed.planChange.trim()
+        ? parsed.planChange.trim().slice(0, 500)
+        : null;
+    if (reply) return { reply: reply.slice(0, 1500), planChange };
+  } catch {
+    // Model ignored the JSON instruction — fall through and use the text.
+  }
+  const text = raw.replace(/^```(?:json)?|```$/g, "").trim();
+  return {
+    reply:
+      text.slice(0, 1500) ||
+      (input.locale === "de" ? "Da bin ich mir gerade nicht sicher — frag mich gern nochmal." : "I'm not sure right now — try asking again."),
+    planChange: null,
+  };
+}
+
 /**
  * Closed-loop adaptation: rewrites a plan using logged performance summary.
  */
