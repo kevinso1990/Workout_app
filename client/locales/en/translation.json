@@ -148,6 +148,15 @@
       "restDay": "Rest day",
       "doneTitle": "Done for today",
       "next": "Next workout: {{day}} · {{name}}"
+    },
+    "mobilitySplit": {
+      "title": "Make the mobility day its own session?",
+      "body": "“{{day}}” in “{{plan}}” is a mobility day. As its own session you start it directly, with fixed days and a reminder, and your week only schedules the strength days.",
+      "replaces": "This replaces your current mobility session.",
+      "yes": "Own session",
+      "keep": "Keep in plan",
+      "doneTitle": "Mobility session created",
+      "finish": "Done"
     }
   },
   "createPlan": {

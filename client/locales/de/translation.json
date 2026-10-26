@@ -148,6 +148,15 @@
       "restDay": "Ruhetag",
       "doneTitle": "Heute erledigt",
       "next": "Nächstes Training: {{day}} · {{name}}"
+    },
+    "mobilitySplit": {
+      "title": "Mobility-Tag als eigene Session?",
+      "body": "„{{day}}“ in „{{plan}}“ ist ein Mobility-Tag. Als eigene Session startest du ihn direkt, mit festen Tagen und Erinnerung, und deine Woche plant nur die Krafttage.",
+      "replaces": "Deine bisherige Mobility-Session wird dabei ersetzt.",
+      "yes": "Eigene Session",
+      "keep": "Im Plan lassen",
+      "doneTitle": "Mobility-Session angelegt",
+      "finish": "Fertig"
     }
   },
   "createPlan": {

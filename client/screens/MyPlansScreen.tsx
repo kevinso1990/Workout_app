@@ -52,6 +52,7 @@ import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
 import { TodayCard } from "@/components/workout/TodayCard";
+import { MobilityDayQuestion } from "@/components/workout/MobilityDayQuestion";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { primaryPlan } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
@@ -824,6 +825,9 @@ export default function MyPlansScreen() {
             {/* A workout in progress outranks every notice — it's the thing
                 the user was in the middle of, not a suggestion. */}
             <ResumeWorkoutCard />
+            {/* Asked before "Heute": until it's answered, the week (and the
+                Today card) would treat the mobility day as a strength day. */}
+            <MobilityDayQuestion plans={plans} onChanged={loadPlans} />
             <TodayCard
               plans={plans}
               commitments={commitments}
