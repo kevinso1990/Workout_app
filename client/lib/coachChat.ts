@@ -27,6 +27,7 @@ const STORAGE_KEY = "@coachChat";
 const MAX_STORED = 60;
 /** Turns sent with each request — the server trims to the same window. */
 const MAX_SENT = 12;
+const REQUEST_TIMEOUT_MS = 45_000;
 
 export async function loadCoachChat(): Promise<CoachChatMessage[]> {
   try {
@@ -73,15 +74,25 @@ export async function sendCoachMessage(input: {
   messages: CoachChatMessage[];
 }): Promise<{ reply: string; planChange: string | null }> {
   const url = new URL("/api/coach/chat", getApiUrl()).toString();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { ...IMPORT_JSON_HEADERS },
-    body: JSON.stringify({
-      locale: input.locale,
-      context: input.context,
-      messages: toWireMessages(input.messages),
-    }),
-  });
+  // The server retries AI providers for up to ~50s; don't leave the athlete
+  // staring at a spinner longer than that.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { ...IMPORT_JSON_HEADERS },
+      body: JSON.stringify({
+        locale: input.locale,
+        context: input.context,
+        messages: toWireMessages(input.messages),
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (res.status === 429) throw new CoachLimitError("daily limit");
   const data = (await res.json().catch(() => null)) as
     | { reply?: string; planChange?: string | null; error?: string }
