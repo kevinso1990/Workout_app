@@ -1,4 +1,4 @@
-import { getApiUrl } from "@/lib/query-client";
+import { nativeRequest } from "@/lib/nativeApi";
 import { IMPORT_JSON_HEADERS } from "@/lib/importApiHeaders";
 import type { WorkoutPlan } from "@/lib/storage";
 
@@ -22,41 +22,45 @@ export type PlanModifyResponse = {
 export async function requestPlanModify(
   plan: WorkoutPlan,
   instruction: string,
+  /** Language of the summary/changes shown to the athlete (the editor defaults to English). */
+  language?: string,
 ): Promise<PlanModifyResponse> {
-  const url = new URL("/api/plans/modify", getApiUrl()).toString();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { ...IMPORT_JSON_HEADERS },
-    body: JSON.stringify({
-      plan: {
-        name: plan.name,
-        days: plan.days.map((d) => ({
-          dayName: d.dayName,
-          exercises: d.exercises.map((e) => ({
-            name: e.name,
-            sets: e.sets,
-            reps: e.reps,
-            muscleGroup: e.muscleGroup,
-          })),
+  // /api/plans/* sits behind requireAuth. A plain fetch without the guest JWT
+  // got 401 for every guest — the adapt/split-refresh banners and coach chat
+  // proposals could never apply. nativeRequest attaches (and refreshes) it.
+  const body = {
+    plan: {
+      name: plan.name,
+      days: plan.days.map((d) => ({
+        dayName: d.dayName,
+        exercises: d.exercises.map((e) => ({
+          name: e.name,
+          sets: e.sets,
+          reps: e.reps,
+          muscleGroup: e.muscleGroup,
         })),
-      },
-      instruction,
-    }),
-  });
-
-  const text = await res.text();
-  let data: PlanModifyResponse & { error?: string };
+      })),
+    },
+    instruction: language?.startsWith("de")
+      ? `${instruction}\n\nWrite "summary" and "changes" in German (du-form). Keep exercise names as they are.`
+      : instruction,
+  };
   try {
-    data = JSON.parse(text) as PlanModifyResponse & { error?: string };
-  } catch {
-    throw new Error(`AI Coach failed (${res.status})`);
+    return await nativeRequest<PlanModifyResponse>(
+      "/api/plans/modify",
+      { method: "POST", headers: { ...IMPORT_JSON_HEADERS }, body: JSON.stringify(body) },
+      60_000,
+    );
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : "";
+    let message = raw;
+    try {
+      message = (JSON.parse(raw) as { error?: string }).error ?? raw;
+    } catch {
+      // not JSON — keep the text
+    }
+    throw new Error(message || "AI Coach failed");
   }
-
-  if (!res.ok) {
-    throw new Error(data.error ?? `AI Coach failed (${res.status})`);
-  }
-
-  return data;
 }
 
 export function applyModifyResultToPlan(

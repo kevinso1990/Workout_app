@@ -102,3 +102,20 @@ export async function sendCoachMessage(input: {
   }
   return { reply: data.reply, planChange: data.planChange ?? null };
 }
+
+/**
+ * The plan editor writes its summary with the plan's stored names ("Full Body
+ * A", "Leg Press"); the athlete sees "Ganzkörper A", "Beinpresse" everywhere
+ * else. Swap every known name for its display form — longest first, so
+ * "Barbell Bench Press" isn't half-replaced by "Bench Press".
+ */
+export function localizeNamesInText(text: string, names: Map<string, string>): string {
+  const entries = [...names.entries()]
+    .filter(([raw, shown]) => raw && shown && raw !== shown)
+    .sort((a, b) => b[0].length - a[0].length);
+  let out = text;
+  for (const [raw, shown] of entries) {
+    out = out.split(raw).join(shown);
+  }
+  return out;
+}

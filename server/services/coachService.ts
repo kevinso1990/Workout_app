@@ -217,8 +217,8 @@ Conversation so far:
 ${transcript}
 
 Rules:
-- Reply to the athlete's last message. Keep it short: at most 4 sentences or a short list of up to 4 points. Plain text, no markdown headings, no bold.
-- Use their real data above (exercises, weights, feedback, schedule) instead of generic advice whenever it is relevant.
+- Reply to the athlete's last message. Keep it short: at most 3 sentences (about 60 words), or a list of up to 3 short points. Plain text, no markdown headings, no bold.
+- Use their real data above (exercises, weights, feedback, schedule) when it answers the question. Do not bring up unrelated data (e.g. missed sessions) unless they ask about it.
 - Pain or injury: no diagnosis. Suggest pain-free alternatives and lowering the load, and recommend a physio or doctor if pain is sharp, persists, or worsens.
 - If the athlete asks to change their plan (swap, add, remove exercises or days, shorter sessions, different focus), or clearly agrees to a change you proposed, set "planChange" to one precise imperative instruction in English for the plan editor (e.g. "Replace Barbell Back Squat with Leg Press on all days"). Mention in your reply that they can review the change below. Otherwise "planChange" is null.
 - Never invent workouts the athlete logged.

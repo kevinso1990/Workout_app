@@ -23,3 +23,20 @@ describe("toWireMessages", () => {
     expect(wire[11]).toEqual({ role: "coach", text: "m19" });
   });
 });
+
+import { localizeNamesInText } from "@/lib/coachChat";
+
+describe("localizeNamesInText", () => {
+  it("replaces stored names with display names, longest first", () => {
+    const names = new Map([
+      ["Full Body A", "Ganzkörper A"],
+      ["Leg Press", "Beinpresse"],
+      ["Bench Press", "Bankdrücken"],
+      ["Barbell Bench Press", "Langhantel-Bankdrücken"],
+      ["Goblet Squat", "Goblet Squat"],
+    ]);
+    expect(
+      localizeNamesInText("Full Body A: Goblet Squat durch Leg Press ersetzt, Barbell Bench Press bleibt.", names),
+    ).toBe("Ganzkörper A: Goblet Squat durch Beinpresse ersetzt, Langhantel-Bankdrücken bleibt.");
+  });
+});

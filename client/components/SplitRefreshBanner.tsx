@@ -46,7 +46,7 @@ Suggest specific changes to day structure, exercise selection, or weekly frequen
 export function SplitRefreshBanner({ offer, onApplied, onDismiss }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<PlanModifyResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +59,7 @@ export function SplitRefreshBanner({ offer, onApplied, onDismiss }: Props) {
       const result = await requestPlanModify(
         offer.plan,
         buildSplitReviewInstruction(offer),
+        i18n.language,
       );
       setPreview(result);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

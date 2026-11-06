@@ -37,6 +37,7 @@ import {
   CoachLimitError,
   clearCoachChat,
   loadCoachChat,
+  localizeNamesInText,
   saveCoachChat,
   sendCoachMessage,
   type CoachChatMessage,
@@ -45,6 +46,7 @@ import { applyModifyResultToPlan, requestPlanModify } from "@/lib/planModifyApi"
 import { scheduleDataSync } from "@/lib/dataSync";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { toast } from "@/lib/toast";
+import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 
 type Route = RouteProp<RootStackParamList, "CoachChat">;
@@ -66,6 +68,7 @@ export default function CoachChatScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<Route>();
   const { dayLabel, sportLabel } = useCommitmentLabels();
+  const localizeName = useLocalizeExerciseName();
   const scrollRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<CoachChatMessage[] | null>(null);
   const [draft, setDraft] = useState("");
@@ -185,7 +188,18 @@ export default function CoachChatScreen() {
         return;
       }
       try {
-        const result = await requestPlanModify(plan, instruction);
+        const raw = await requestPlanModify(plan, instruction, i18n.language);
+        // Show the change in the names the athlete knows.
+        const names = new Map<string, string>();
+        for (const d of [...plan.days, ...raw.days]) {
+          names.set(d.dayName, translateDayName(t, d.dayName));
+          for (const e of d.exercises) names.set(e.name, localizeName(e.name));
+        }
+        const result = {
+          ...raw,
+          summary: localizeNamesInText(raw.summary ?? "", names),
+          changes: (raw.changes ?? []).map((c) => localizeNamesInText(c, names)),
+        };
         update((prev) =>
           prev.map((m) =>
             m.id === messageId && m.proposal
@@ -201,7 +215,7 @@ export default function CoachChatScreen() {
         );
       }
     },
-    [update],
+    [update, i18n.language, t, localizeName],
   );
 
   const send = useCallback(
