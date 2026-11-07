@@ -81,7 +81,21 @@ import {
   UserPreferences,
   SetType,
   SetData,
+  saveWorkoutPlan,
 } from "@/lib/storage";
+import {
+  appendedSet,
+  carryOverToNextSet,
+  isExerciseDone,
+  liveSets,
+  nextOpenExercise,
+} from "@/lib/workoutSetFlow";
+import {
+  applyPlanDeviation,
+  detectPlanDeviations,
+  type PlanDeviation,
+} from "@/lib/planDeviations";
+import { loadAnsweredDeviations, rememberAnsweredDeviation } from "@/lib/planDeviationStore";
 import {
   getMuscleGroupMeta,
 } from "@/lib/exerciseImages";
@@ -107,7 +121,7 @@ import {
   type ActiveWorkoutDraft,
 } from "@/lib/activeWorkoutPersistence";
 import { syncWorkoutActivity } from "@/lib/workoutLiveActivity";
-import { scheduleSessionSync } from "@/lib/dataSync";
+import { scheduleDataSync, scheduleSessionSync } from "@/lib/dataSync";
 import { useKeepAwake } from "expo-keep-awake";
 import {
   notchSafeTopPadding,
@@ -130,6 +144,8 @@ type DifficultyRating = "easy" | "good" | "hard";
 interface ExerciseProgress {
   exerciseId: string;
   sets: SetData[];
+  /** Closed early mid-workout: unfinished sets were skipped on purpose. */
+  closed?: boolean;
 }
 
 interface PRRecord {
@@ -497,6 +513,8 @@ function WorkoutSummary({
   totalVolume,
   prs,
   workoutName,
+  deviations,
+  onAnswerDeviation,
   onClose,
 }: {
   visible: boolean;
@@ -506,6 +524,8 @@ function WorkoutSummary({
   totalVolume: number;
   prs: PRRecord[];
   workoutName: string;
+  deviations: PlanDeviation[];
+  onAnswerDeviation: (deviation: PlanDeviation, accept: boolean) => void;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -571,8 +591,16 @@ function WorkoutSummary({
           style={[styles.shareableCard, { backgroundColor: theme.backgroundRoot }]}
         >
           <View style={[styles.shareCardHeader, { backgroundColor: theme.iron }]}>
-            <BrandLogo height={28} centered={false} style={{ marginRight: 0 }} />
-            <ThemedText style={styles.shareCardDate}>{today}</ThemedText>
+            {/* BrandLogo fills its parent's width by default, which shoved the
+                date off the card ("Sa…"). Here it shares the row. */}
+            <BrandLogo
+              height={28}
+              centered={false}
+              style={{ width: "auto", flexShrink: 1, marginRight: Spacing.md }}
+            />
+            <ThemedText style={styles.shareCardDate} numberOfLines={1}>
+              {today}
+            </ThemedText>
           </View>
 
           <View
@@ -676,6 +704,14 @@ function WorkoutSummary({
           </Pressable>
         </Animated.View>
 
+        {deviations[0] ? (
+          <PlanHabitCard
+            key={deviations[0].key}
+            deviation={deviations[0]}
+            onAnswer={(accept) => onAnswerDeviation(deviations[0], accept)}
+          />
+        ) : null}
+
         <Animated.View
           entering={FadeInUp.delay(500).duration(400)}
           style={[
@@ -690,6 +726,81 @@ function WorkoutSummary({
           </Pressable>
         </Animated.View>
       </ThemedView>
+    </Animated.View>
+  );
+}
+
+/** "You always skip X — take it out of the plan?" One habit at a time. */
+function PlanHabitCard({
+  deviation,
+  onAnswer,
+}: {
+  deviation: PlanDeviation;
+  onAnswer: (accept: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const localizeName = useLocalizeExerciseName();
+
+  const question = (() => {
+    switch (deviation.kind) {
+      case "skip":
+        return t("activeWorkout.planHabit.skip", { name: localizeName(deviation.exerciseName) });
+      case "sets":
+        return t("activeWorkout.planHabit.sets", {
+          name: localizeName(deviation.exerciseName),
+          to: deviation.to,
+          from: deviation.from,
+        });
+      case "add":
+        return t("activeWorkout.planHabit.add", {
+          name: localizeName(deviation.exercise.name),
+          sets: deviation.exercise.sets,
+        });
+      case "replace":
+        return t("activeWorkout.planHabit.replace", {
+          old: localizeName(deviation.exerciseName),
+          name: localizeName(deviation.exercise.name),
+        });
+    }
+  })();
+
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(450).duration(400)}
+      style={styles.habitCard}
+      testID="plan-habit-card"
+    >
+      <View style={styles.habitHeader}>
+        <Feather name="zap" size={14} color={theme.chalk} />
+        <ThemedText style={[styles.habitEyebrow, { color: theme.chalkDim }]}>
+          {t("activeWorkout.planHabit.eyebrow")}
+        </ThemedText>
+      </View>
+      <ThemedText style={[styles.habitQuestion, { color: theme.text }]}>{question}</ThemedText>
+      <View style={styles.habitActions}>
+        <Pressable
+          onPress={() => onAnswer(false)}
+          style={({ pressed }) => [styles.habitBtn, styles.habitBtnGhost, pressed && { opacity: 0.6 }]}
+          accessibilityRole="button"
+          testID="button-plan-habit-no"
+        >
+          <ThemedText style={[styles.habitBtnText, { color: theme.text }]}>
+            {t("activeWorkout.planHabit.no")}
+          </ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={() => onAnswer(true)}
+          style={({ pressed }) => [styles.habitBtn, { backgroundColor: theme.chalk }, pressed && { opacity: 0.8 }]}
+          accessibilityRole="button"
+          testID="button-plan-habit-yes"
+        >
+          <ThemedText style={[styles.habitBtnText, { color: theme.onChalk }]}>
+            {t("activeWorkout.planHabit.yes")}
+          </ThemedText>
+        </Pressable>
+      </View>
     </Animated.View>
   );
 }
@@ -774,6 +885,7 @@ export default function ActiveWorkoutScreen() {
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState<PRRecord[]>([]);
   const [showSummary, setShowSummary] = useState(false);
+  const [planDeviations, setPlanDeviations] = useState<PlanDeviation[]>([]);
   const [nextSetCoachMessage, setNextSetCoachMessage] = useState<string | null>(null);
   const [coachStateByExercise, setCoachStateByExercise] = useState<
     Record<string, ExerciseCoachState>
@@ -892,6 +1004,8 @@ export default function ActiveWorkoutScreen() {
   }, [restTimerEnabled]);
 
   useEffect(() => {
+    // Finished: the summary shows the saved duration, not a clock that keeps going.
+    if (showSummary) return;
     const interval = setInterval(() => {
       let pausedMs = workoutPausedMsRef.current;
       if (workoutPauseStartedAtRef.current !== null) {
@@ -902,7 +1016,7 @@ export default function ActiveWorkoutScreen() {
       );
     }, 1000);
     return () => clearInterval(interval);
-  }, [workoutStartedAt, restTimerEnabled]);
+  }, [workoutStartedAt, restTimerEnabled, showSummary]);
 
   const buildActiveWorkoutDraft = useCallback((): ActiveWorkoutDraft | null => {
     if (!plan) return null;
@@ -1613,6 +1727,7 @@ export default function ActiveWorkoutScreen() {
       rating: SetRating;
       reps: number;
       targetMet: boolean;
+      logged: { weight: string; reps: string };
     },
   ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1620,7 +1735,16 @@ export default function ActiveWorkoutScreen() {
     const day = plan.days[route.params.dayIndex];
     const exercise = day.exercises[exerciseIndex];
     const exerciseProgress = progress[exerciseIndex];
-    const completedSet = exerciseProgress.sets[setIndex];
+    // `progress` in this closure predates the row's commit of what it showed.
+    const completedSet = { ...exerciseProgress.sets[setIndex], ...payload.logged };
+
+    // 80 kg on set 1 → set 2 starts at 80 kg, not at last week's number.
+    const carry = carryOverToNextSet(
+      completedSet,
+      exerciseProgress.sets[setIndex + 1],
+      isBodyweightExercise(exercise),
+    );
+    if (carry) handleUpdateSet(exerciseIndex, setIndex + 1, carry);
     const progression = getProgressionForExercise(exerciseIndex);
     const coachLabel = progression?.contextKey
       ? t(
@@ -1668,7 +1792,7 @@ export default function ActiveWorkoutScreen() {
       // snapshot yet, and the rotation can wrap back onto this very exercise.
       const patched = day.exercises.map((_, i) => ({
         completedSets: progress[i].sets.map((s, j) =>
-          i === exerciseIndex && j === setIndex ? true : s.completed,
+          (i === exerciseIndex && j === setIndex) || progress[i].closed ? true : s.completed,
         ),
       }));
       const next = findNextCircuitTarget(patched, exerciseIndex);
@@ -1695,18 +1819,78 @@ export default function ActiveWorkoutScreen() {
         scheduleRestNotification(restDuration);
       }
       setCurrentSetIndex(setIndex + 1);
-    } else if (exerciseIndex < day.exercises.length - 1) {
+    } else {
+      const next = nextOpenExercise(progress, exerciseIndex);
+      if (!next) return;
       Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
       );
-      setCurrentExerciseIndex(exerciseIndex + 1);
-      const nextEp = progress[exerciseIndex + 1];
-      const firstIncomplete = nextEp
-        ? nextEp.sets.findIndex((s) => !s.completed)
-        : 0;
-      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
-      requestAnimationFrame(() => scrollToExercise(exerciseIndex + 1));
+      setCurrentExerciseIndex(next.exerciseIndex);
+      setCurrentSetIndex(next.setIndex);
+      requestAnimationFrame(() => scrollToExercise(next.exerciseIndex));
     }
+  };
+
+  /** "+ Satz": one more set at the load of the last one. */
+  const handleAddSet = (exerciseIndex: number) => {
+    if (!plan) return;
+    const dayIndex = route.params.dayIndex;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const sets = progress[exerciseIndex]?.sets ?? [];
+    const newSetIndex = sets.length;
+    setPlan((prev) => {
+      if (!prev) return prev;
+      const days = [...prev.days];
+      days[dayIndex] = {
+        ...days[dayIndex],
+        exercises: days[dayIndex].exercises.map((ex, i) =>
+          i === exerciseIndex ? { ...ex, sets: ex.sets + 1 } : ex,
+        ),
+      };
+      return { ...prev, days };
+    });
+    setProgress((prev) => {
+      const updated = [...prev];
+      const ep = updated[exerciseIndex];
+      updated[exerciseIndex] = { ...ep, sets: [...ep.sets, appendedSet(ep.sets)] };
+      return updated;
+    });
+    // Everything before it is done → the new set is the one to do now.
+    if (sets.every((s) => s.completed)) activateSet(exerciseIndex, newSetIndex);
+    scheduleActiveWorkoutAutosave();
+  };
+
+  /**
+   * Swipe → "Fertig": the exercise is done even with sets left over (or
+   * skipped outright, when none were done). The leftovers stay in state so
+   * "Wieder öffnen" can bring them back.
+   */
+  const handleCloseExercise = (exerciseIndex: number) => {
+    const ep = progress[exerciseIndex];
+    if (!plan || !ep || isExerciseDone(ep)) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const updated = progress.map((p, i) => (i === exerciseIndex ? { ...p, closed: true } : p));
+    setProgress(updated);
+    if (exerciseIndex === currentExerciseIndex) {
+      const next = nextOpenExercise(updated, exerciseIndex) ?? nextOpenExercise(updated, -1);
+      if (next) {
+        setCurrentExerciseIndex(next.exerciseIndex);
+        setCurrentSetIndex(next.setIndex);
+        requestAnimationFrame(() => scrollToExercise(next.exerciseIndex));
+      }
+    }
+    scheduleActiveWorkoutAutosave();
+  };
+
+  const handleReopenExercise = (exerciseIndex: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const ep = progress[exerciseIndex];
+    setProgress((prev) =>
+      prev.map((p, i) => (i === exerciseIndex ? { ...p, closed: false } : p)),
+    );
+    const firstOpen = ep?.sets.findIndex((s) => !s.completed) ?? -1;
+    if (firstOpen >= 0) activateSet(exerciseIndex, firstOpen);
+    scheduleActiveWorkoutAutosave();
   };
 
   const renderHeaderToggle = (opts: {
@@ -1758,7 +1942,7 @@ export default function ActiveWorkoutScreen() {
     const exProgress = progress[currentExerciseIndex];
     if (!exercise || !exProgress) return;
 
-    const working = progress.flatMap((ep) => ep.sets.filter((s) => s.setType !== "warmup"));
+    const working = progress.flatMap((ep) => liveSets(ep).filter((s) => s.setType !== "warmup"));
     const done = working.filter((s) => s.completed).length;
     const set = exProgress.sets[currentSetIndex];
     const setLabel = t("activeWorkout.liveActivity.set", {
@@ -1813,7 +1997,7 @@ export default function ActiveWorkoutScreen() {
     if (!plan) return;
 
     const totalSets = progress.reduce(
-      (acc, ex) => acc + ex.sets.length,
+      (acc, ex) => acc + liveSets(ex).length,
       0
     );
     const completedSets = progress.reduce(
@@ -1857,7 +2041,9 @@ export default function ActiveWorkoutScreen() {
     setShowExerciseDetail(false);
 
     const day = plan.days[route.params.dayIndex];
-    const enrichedProgress = progress.map((ep, idx) => {
+    const enrichedProgress = progress.map((full) => {
+      // Closed early: history keeps what was done, not the sets skipped.
+      const ep = full.closed ? { ...full, sets: full.sets.filter((s) => s.completed) } : full;
       const suggested =
         sessionSuggestionsRef.current[ep.exerciseId] ??
         exerciseProgressionSuggestion?.suggestedWeightKg ??
@@ -1882,8 +2068,13 @@ export default function ActiveWorkoutScreen() {
 
     try {
       await addWorkoutSession(session);
+      // A skipped exercise wasn't lifted light — it wasn't lifted. Keep it
+      // out of the progression bookkeeping.
+      const skippedIds = new Set(
+        enrichedProgress.filter((ep) => ep.closed && ep.sets.length === 0).map((ep) => ep.exerciseId),
+      );
       await recordSessionCoachOutcomes(
-        day.exercises.map((e) => ({ id: e.id, name: e.name })),
+        day.exercises.filter((e) => !skippedIds.has(e.id)).map((e) => ({ id: e.id, name: e.name })),
         enrichedProgress,
         sessionSuggestionsRef.current,
       );
@@ -1901,8 +2092,46 @@ export default function ActiveWorkoutScreen() {
     // A logged mobility session cancels today's "noch nicht gedehnt" reminder.
     void syncMobilityReminders();
 
+    // Habits the plan doesn't reflect yet (always skipping an exercise, always
+    // a set short) — asked on the summary, never changed silently. Compared
+    // against the stored plan: `plan` here carries this session's swaps.
+    try {
+      const [storedPlans, answered] = await Promise.all([
+        getWorkoutPlans(),
+        loadAnsweredDeviations(),
+      ]);
+      const stored = storedPlans.find((p) => p.id === plan.id);
+      const storedDayIndex = stored?.days.findIndex((d) => d.dayName === day.dayName) ?? -1;
+      if (stored && storedDayIndex >= 0) {
+        setPlanDeviations(
+          detectPlanDeviations(stored, storedDayIndex, [session, ...allHistory], answered).slice(0, 3),
+        );
+      }
+    } catch {
+      // optional extra — the summary shows without it
+    }
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowSummary(true);
+  };
+
+  /** Yes → write the habit into the stored plan; either way, never ask again. */
+  const answerPlanDeviation = async (deviation: PlanDeviation, accept: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPlanDeviations((prev) => prev.filter((d) => d.key !== deviation.key));
+    void rememberAnsweredDeviation(deviation.key);
+    if (!accept || !plan) return;
+    try {
+      const dayName = plan.days[route.params.dayIndex].dayName;
+      const stored = (await getWorkoutPlans()).find((p) => p.id === plan.id);
+      const storedDayIndex = stored?.days.findIndex((d) => d.dayName === dayName) ?? -1;
+      if (!stored || storedDayIndex < 0) return;
+      await saveWorkoutPlan(applyPlanDeviation(stored, storedDayIndex, deviation));
+      scheduleDataSync();
+      toast.show(t("activeWorkout.planHabit.applied"), "success", 2000);
+    } catch {
+      toast.error(t("activeWorkout.planHabit.failed"));
+    }
   };
 
   const calculateTotalVolume = () => {
@@ -1936,7 +2165,7 @@ export default function ActiveWorkoutScreen() {
 
   // Warm-up sets don't count toward the working-set progress ("1/23").
   const totalSets = progress.reduce(
-    (acc, ex) => acc + ex.sets.filter((s) => s.setType !== "warmup").length,
+    (acc, ex) => acc + liveSets(ex).filter((s) => s.setType !== "warmup").length,
     0
   );
   const completedSets = progress.reduce(
@@ -1947,9 +2176,7 @@ export default function ActiveWorkoutScreen() {
   const progressPercent =
     totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
-  const workoutComplete = progress.every((ep) =>
-    ep.sets.every((s) => s.completed),
-  );
+  const workoutComplete = progress.every(isExerciseDone);
 
   return (
     <ThemedView style={styles.container}>
@@ -1999,6 +2226,8 @@ export default function ActiveWorkoutScreen() {
         completedSets={completedSets}
         totalVolume={calculateTotalVolume()}
         prs={prsThisSession}
+        deviations={planDeviations}
+        onAnswerDeviation={answerPlanDeviation}
         workoutName={
           plan?.days[route.params.dayIndex]?.dayName
             ? translateDayName(t, plan.days[route.params.dayIndex].dayName)
@@ -2129,7 +2358,8 @@ export default function ActiveWorkoutScreen() {
               const completedCount =
                 ep?.sets.filter((s) => s.completed).length ?? 0;
               const totalCount = ep?.sets.length ?? exercise.sets;
-              const isDone = completedCount >= totalCount && totalCount > 0;
+              // A closed exercise reads "2/3" but tinted done — finished early.
+              const isDone = ep ? isExerciseDone(ep) : false;
               const isCurrent = exIdx === currentExerciseIndex;
               const localizedName = localizeName(exercise.name);
               const shortName =
@@ -2226,6 +2456,8 @@ export default function ActiveWorkoutScreen() {
             const isBodyweight = isBodyweightExercise(exercise);
             const isHold = isHoldExercise(exercise.name);
             const isCurrentExercise = exIdx === currentExerciseIndex;
+            const doneCount = ep.sets.filter((s) => s.completed).length;
+            const exerciseDone = isExerciseDone(ep);
 
             return (
               <View
@@ -2241,7 +2473,47 @@ export default function ActiveWorkoutScreen() {
                   sectionOffsetsRef.current[exIdx] = e.nativeEvent.layout.y;
                 }}
               >
-                <View style={styles.exerciseHeader}>
+                {/* Swipe the header right to call the exercise done with sets
+                    left over — or to skip it when none were done. Right-swipe
+                    keeps it apart from the left-swipe that deletes a set. */}
+                <Swipeable
+                  enabled={!exerciseDone}
+                  overshootLeft={false}
+                  leftThreshold={60}
+                  onSwipeableOpen={(_direction, swipeable) => {
+                    swipeable.close();
+                    handleCloseExercise(exIdx);
+                  }}
+                  renderLeftActions={() => (
+                    <View style={styles.swipeFinishAction}>
+                      <Feather
+                        name={doneCount > 0 ? "check" : "skip-forward"}
+                        size={18}
+                        color={theme.iron}
+                      />
+                      <ThemedText style={[styles.swipeFinishLabel, { color: theme.iron }]}>
+                        {t(doneCount > 0 ? "activeWorkout.finishExercise" : "activeWorkout.skipExercise")}
+                      </ThemedText>
+                    </View>
+                  )}
+                >
+                <View
+                  style={[
+                    styles.exerciseHeader,
+                    {
+                      // Padding, not margin: the gap has to slide with the header.
+                      marginBottom: 0,
+                      paddingBottom: Spacing.sm,
+                      backgroundColor: isCurrentExercise
+                        ? theme.ironElevated3
+                        : theme.ironElevated2,
+                    },
+                  ]}
+                  accessibilityActions={
+                    exerciseDone ? undefined : [{ name: "activate", label: t("activeWorkout.finishExercise") }]
+                  }
+                  onAccessibilityAction={() => handleCloseExercise(exIdx)}
+                >
                   <View style={styles.exerciseHeaderRow}>
                     <View style={styles.exerciseHeaderText}>
                       <ThemedText style={styles.exerciseName}>
@@ -2370,7 +2642,9 @@ export default function ActiveWorkoutScreen() {
                     />
                   </View>
                 </View>
+                </Swipeable>
 
+                {ep.closed && doneCount === 0 ? null : (
                 <View
                   style={[
                     styles.setsContainer,
@@ -2379,6 +2653,9 @@ export default function ActiveWorkoutScreen() {
                 >
                   <HevySetGridHeader isBodyweight={isBodyweight} isHold={isHold} />
                   {ep.sets.map((setData, setIdx) => {
+                    // Closed early: the skipped sets stay in state for
+                    // "Wieder öffnen" but leave the card.
+                    if (ep.closed && !setData.completed) return null;
                     const isActiveSet =
                       exIdx === currentExerciseIndex && setIdx === currentSetIndex;
                     const exercisePR = prsThisSession.find(
@@ -2443,6 +2720,45 @@ export default function ActiveWorkoutScreen() {
                     );
                   })}
                 </View>
+                )}
+
+                {ep.closed ? (
+                  <View style={styles.exerciseFooterRow}>
+                    <ThemedText
+                      style={[styles.exerciseFooterNote, { color: theme.textSecondary }]}
+                      numberOfLines={1}
+                    >
+                      {doneCount > 0
+                        ? t("activeWorkout.exerciseClosed", { done: doneCount, total: ep.sets.length })
+                        : t("activeWorkout.exerciseSkipped")}
+                    </ThemedText>
+                    <Pressable
+                      onPress={() => handleReopenExercise(exIdx)}
+                      hitSlop={8}
+                      style={({ pressed }) => [styles.exerciseFooterBtn, pressed && { opacity: 0.6 }]}
+                      accessibilityRole="button"
+                      testID={`button-reopen-exercise-${exIdx}`}
+                    >
+                      <Feather name="rotate-ccw" size={14} color={theme.text} />
+                      <ThemedText style={[styles.exerciseFooterBtnText, { color: theme.text }]}>
+                        {t("activeWorkout.reopenExercise")}
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={() => handleAddSet(exIdx)}
+                    style={({ pressed }) => [styles.addSetBtn, pressed && { opacity: 0.6 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("activeWorkout.addSet")}
+                    testID={`button-add-set-${exIdx}`}
+                  >
+                    <Feather name="plus" size={15} color={theme.text} />
+                    <ThemedText style={[styles.addSetBtnText, { color: theme.text }]}>
+                      {t("activeWorkout.addSet")}
+                    </ThemedText>
+                  </Pressable>
+                )}
               </View>
             );
           })}
@@ -2788,6 +3104,55 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EF4444",
+  },
+  // Chalk = action. Fills the swiped-open strip behind the exercise header.
+  swipeFinishAction: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: HEVY.pad,
+    backgroundColor: c.chalk,
+  },
+  swipeFinishLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  addSetBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.hairlineStrong,
+  },
+  addSetBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  exerciseFooterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+    paddingHorizontal: HEVY.pad,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.hairlineStrong,
+  },
+  exerciseFooterNote: {
+    flex: 1,
+    fontSize: 13,
+  },
+  exerciseFooterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  exerciseFooterBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   addExerciseBtn: {
     flexDirection: "row",
@@ -3523,6 +3888,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontFamily: "Oswald_600SemiBold",
   },
   shareableCard: {
+    // The container centres its children; without stretch the card sized to
+    // its content and ran off both screen edges (logo and date cut off).
+    alignSelf: "stretch",
     borderRadius: BorderRadius.xl,
     overflow: "hidden",
     marginHorizontal: Spacing.lg,
@@ -3607,8 +3975,54 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexShrink: 1,
   },
   shareActions: {
+    alignSelf: "stretch",
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
+  },
+  habitCard: {
+    alignSelf: "stretch",
+    marginHorizontal: Spacing.lg,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairlineStrong,
+    backgroundColor: c.ironElevated2,
+  },
+  habitHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  habitEyebrow: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  habitQuestion: {
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  habitActions: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  habitBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 11,
+    borderRadius: BorderRadius.md,
+  },
+  habitBtnGhost: {
+    borderWidth: 1,
+    borderColor: c.hairlineStrong,
+  },
+  habitBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   shareButton: {
     flexDirection: "row",

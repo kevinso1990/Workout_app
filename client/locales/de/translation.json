@@ -439,6 +439,23 @@
       "allDone": "Alle Sätze geschafft – Training beenden",
       "seconds": "Sek.",
       "reps": "Wdh."
+    },
+    "finishExercise": "Fertig",
+    "skipExercise": "Überspringen",
+    "exerciseClosed": "Abgeschlossen · {{done}} von {{total}} Sätzen",
+    "exerciseSkipped": "Übersprungen",
+    "reopenExercise": "Wieder öffnen",
+    "addSet": "Satz hinzufügen",
+    "planHabit": {
+      "eyebrow": "Plan anpassen?",
+      "skip": "{{name}} hast du die letzten 3 Male ausgelassen. Aus dem Plan nehmen?",
+      "sets": "Bei {{name}} machst du zuletzt immer {{to}} statt {{from}} Sätze. Im Plan auf {{to}} ändern?",
+      "add": "{{name}} hast du die letzten 3 Male ergänzt. Fest in den Plan aufnehmen ({{sets}} Sätze)?",
+      "replace": "Statt {{old}} machst du immer {{name}}. Im Plan tauschen?",
+      "yes": "Ja, anpassen",
+      "no": "Nein, so lassen",
+      "applied": "Plan angepasst",
+      "failed": "Plan konnte nicht gespeichert werden"
     }
   },
   "postWorkout": {

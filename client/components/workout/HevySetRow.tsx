@@ -172,6 +172,8 @@ export type HevySetRowProps = {
     rating: SetRating;
     reps: number;
     targetMet: boolean;
+    /** The values committed with the check, as stored on the set. */
+    logged: { weight: string; reps: string };
   }) => void;
 };
 
@@ -467,11 +469,16 @@ export function HevySetRow({
     // values simply contribute 0 volume and don't count as a PR.
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const rating: SetRating = "yellow";
-    onUpdate({ rating, completed: true });
+    // Commit what the row shows: a value typed into the editor is only a local
+    // draft until blur, and tapping the check doesn't always blur on iOS.
+    const weight = clampAndFormatWeightExact(setData.weight);
+    const reps = clampAndFormatReps(setData.reps);
+    onUpdate({ rating, completed: true, weight, reps });
     onComplete({
       rating,
       reps: repsNum,
       targetMet: repsMeetsTarget(repsNum, targetReps),
+      logged: { weight, reps },
     });
   };
 

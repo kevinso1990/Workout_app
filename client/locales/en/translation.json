@@ -520,6 +520,23 @@
       "allDone": "All sets done – finish your workout",
       "seconds": "sec",
       "reps": "reps"
+    },
+    "finishExercise": "Done",
+    "skipExercise": "Skip",
+    "exerciseClosed": "Finished · {{done}} of {{total}} sets",
+    "exerciseSkipped": "Skipped",
+    "reopenExercise": "Reopen",
+    "addSet": "Add set",
+    "planHabit": {
+      "eyebrow": "Update your plan?",
+      "skip": "You've skipped {{name}} the last 3 times. Remove it from the plan?",
+      "sets": "You've done {{to}} instead of {{from}} sets of {{name}} lately. Change the plan to {{to}}?",
+      "add": "You've added {{name}} the last 3 times. Make it part of the plan ({{sets}} sets)?",
+      "replace": "You always do {{name}} instead of {{old}}. Swap it in the plan?",
+      "yes": "Yes, update",
+      "no": "No, keep it",
+      "applied": "Plan updated",
+      "failed": "Couldn't save the plan"
     }
   },
   "postWorkout": {

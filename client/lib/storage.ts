@@ -203,6 +203,8 @@ export interface ExerciseProgress {
   exerciseId: string;
   sets: SetData[];
   coachMeta?: ExerciseCoachMeta;
+  /** Closed early mid-workout: unfinished sets were skipped on purpose. */
+  closed?: boolean;
 }
 
 export interface WorkoutSession {
