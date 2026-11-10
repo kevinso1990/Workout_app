@@ -38,6 +38,16 @@ export const plateMedium = "#E8B10E"; // yellow — working sets
 export const plateHeavy = "#CB3A2C"; // red    — top set / PR zone
 export const plateInfo = "#2E77BE"; // blue   — informational links / neutral accent
 
+/**
+ * Signal — the one colour that means "now": today's session, the week's
+ * progress, the exercise you're on. Everything else stays iron and chalk, so
+ * this is the only thing on a screen that pulls the eye. Not for decoration,
+ * not for load (that's the plates), not for every button.
+ */
+export const signal = "#FF6B2C";
+const signalText = "#FF8A55"; // signal as text/strokes on iron — a touch lighter to read
+const onSignal = "#1D0D05"; // text on a signal-filled surface
+
 /** The primary action colour is chalk itself. */
 const primaryColor = chalk;
 /** Completed-set indicator fills with chalk (was a bright orange tick). */
@@ -76,6 +86,9 @@ const palette = {
   plateMedium,
   plateHeavy,
   plateInfo,
+  signal,
+  signalText,
+  onSignal,
 };
 
 
@@ -170,6 +183,10 @@ const lightPalette = {
   plateMedium,
   plateHeavy,
   plateInfo,
+  // A deeper orange on paper; the light fill stays readable with dark text.
+  signal: "#F2601F",
+  signalText: "#B8430F",
+  onSignal,
 };
 
 /**

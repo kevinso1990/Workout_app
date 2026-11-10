@@ -114,7 +114,7 @@ export function TodayCard({
   // notices, the week and the plans around it stay quiet.
   return (
     <View style={styles.hero} testID="card-today">
-      <ThemedText style={[styles.overline, { color: theme.textSecondary }]}>
+      <ThemedText style={[styles.overline, { color: strength ? theme.signalText : theme.textSecondary }]}>
         {t("plans.today.title")} · {dateLabel}
       </ThemedText>
 
@@ -130,13 +130,13 @@ export function TodayCard({
             onPress={() => void start(strength)}
             style={({ pressed }) => [
               styles.heroBtn,
-              { backgroundColor: theme.primary, opacity: pressed ? 0.9 : 1 },
+              { backgroundColor: theme.signal, opacity: pressed ? 0.9 : 1 },
             ]}
             accessibilityRole="button"
             testID="button-today-start"
           >
-            <Feather name="play" size={16} color={theme.onChalk} />
-            <ThemedText style={[styles.heroBtnText, { color: theme.onChalk }]}>
+            <Feather name="play" size={16} color={theme.onSignal} />
+            <ThemedText style={[styles.heroBtnText, { color: theme.onSignal }]}>
               {t("plans.today.start")}
             </ThemedText>
           </Pressable>
@@ -199,12 +199,12 @@ export function TodayCard({
               styles.smallBtn,
               strength
                 ? { borderColor: theme.controlOutline }
-                : { backgroundColor: theme.primary, borderColor: theme.primary },
+                : { backgroundColor: theme.signal, borderColor: theme.signal },
             ]}
             accessibilityRole="button"
             testID="button-today-mobility"
           >
-            <ThemedText style={[styles.smallBtnText, { color: strength ? theme.text : theme.onChalk }]}>
+            <ThemedText style={[styles.smallBtnText, { color: strength ? theme.text : theme.onSignal }]}>
               {t("plans.today.start")}
             </ThemedText>
           </Pressable>

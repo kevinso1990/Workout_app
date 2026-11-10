@@ -120,7 +120,8 @@
       "title": "Deine Woche",
       "edit": "Termine",
       "unplaced": "Kein freier Tag mehr für: {{names}}",
-      "cycleWeek": "Woche {{week}} von {{of}}"
+      "cycleWeek": "Woche {{week}} von {{of}}",
+      "progress": "{{done}} von {{total}} Trainings diese Woche"
     },
     "coach": {
       "title": "Coach"
@@ -161,10 +162,13 @@
       "doneTitle": "Mobility-Session angelegt",
       "finish": "Fertig"
     },
-    "activePlan": "Aktiver Plan",
-    "otherPlans": "Weitere Pläne",
     "rotationWeeks_one": "{{count}}-Wochen-Rotation",
-    "rotationWeeks_other": "{{count}}-Wochen-Rotation"
+    "rotationWeeks_other": "{{count}}-Wochen-Rotation",
+    "suggestions_one": "{{count}} Vorschlag",
+    "suggestions_other": "{{count}} Vorschläge",
+    "suggestionsNone": "Vorschläge",
+    "activeShort": "aktiv",
+    "yourPlans": "Pläne"
   },
   "createPlan": {
     "back": "Zurück",

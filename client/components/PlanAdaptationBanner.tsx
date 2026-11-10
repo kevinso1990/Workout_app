@@ -103,7 +103,7 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
   return (
     <>
       <View
-        style={[styles.banner, { backgroundColor: theme.backgroundDefault }]}
+        style={[styles.banner, { borderBottomColor: theme.hairline }]}
       >
         <Feather name="cpu" size={18} color={theme.textSecondary} />
         <View style={styles.bannerText}>
@@ -179,9 +179,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
-    marginBottom: Spacing.lg,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    paddingBottom: Spacing.md,
+    marginBottom: Spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   bannerText: { flex: 1 },
   bannerTitle: { fontWeight: "700", fontSize: 14 },

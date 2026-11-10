@@ -52,7 +52,8 @@ import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
 import { TodayCard } from "@/components/workout/TodayCard";
-import { MobilityDayQuestion } from "@/components/workout/MobilityDayQuestion";
+import { MobilityDayQuestion, useMobilitySplitAnswers } from "@/components/workout/MobilityDayQuestion";
+import { findMobilityDayToSplit } from "@/lib/mobilitySplit";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { primaryPlan } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
@@ -73,14 +74,8 @@ import {
   type SplitRefreshOffer,
 } from "@/lib/splitRefreshEvaluation";
 import { SplitRefreshBanner } from "@/components/SplitRefreshBanner";
-import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function firstDayExercisePreview(plan: WorkoutPlan): string {
-  const names = plan.days[0]?.exercises.map((e) => e.name).filter(Boolean) ?? [];
-  return names.join(", ");
-}
 
 function PlanCard({
   plan,
@@ -104,15 +99,9 @@ function PlanCard({
   mobilityDaysPerWeek?: number;
 }) {
   const { t } = useTranslation();
-  const localizeName = useLocalizeExerciseName();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
-  const exerciseLine = useMemo(
-    () =>
-      (plan.days[0]?.exercises.map((e) => localizeName(e.name)).filter(Boolean) ?? []).join(", "),
-    [plan, localizeName],
-  );
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -121,7 +110,7 @@ function PlanCard({
   return (
     <Animated.View entering={FadeInDown.delay(index * 80).duration(350)}>
       <View
-        style={active ? styles.planCard : [styles.planRow, { borderBottomColor: theme.hairline }]}
+        style={[styles.planRow, { borderBottomColor: theme.hairline }]}
         testID={`card-plan-${plan.id}`}
       >
         <Pressable
@@ -130,7 +119,7 @@ function PlanCard({
             onOpenMenu();
           }}
           hitSlop={12}
-          style={[styles.menuBtn, !active && styles.menuBtnRow]}
+          style={[styles.menuBtn, styles.menuBtnRow]}
           testID={`button-plan-menu-${plan.id}`}
           accessibilityRole="button"
           accessibilityLabel={t("plans.planOptions")}
@@ -157,14 +146,19 @@ function PlanCard({
           }}
           style={animatedStyle}
         >
-          {active ? (
-            <ThemedText style={[styles.activeTag, { color: theme.primary }]}>
-              {t("plans.activePlan")}
+          <View style={styles.planRowTitle}>
+            <ThemedText style={styles.planRowName} numberOfLines={1}>
+              {displayPlanName(t, plan.name)}
             </ThemedText>
-          ) : null}
-          <ThemedText style={active ? styles.planName : styles.planRowName} numberOfLines={active ? 2 : 1}>
-            {displayPlanName(t, plan.name)}
-          </ThemedText>
+            {active ? (
+              <View style={styles.activeTag}>
+                <View style={[styles.activeDot, { backgroundColor: theme.signal }]} />
+                <ThemedText style={[styles.activeTagText, { color: theme.signalText }]}>
+                  {t("plans.activeShort")}
+                </ThemedText>
+              </View>
+            ) : null}
+          </View>
           {/* Was "3 Trainings/Woche · 3 Tage" — the same number twice. The
               exercise count is the part that actually tells plans apart. */}
           <ThemedText style={styles.planMeta}>
@@ -199,15 +193,6 @@ function PlanCard({
                   }),
                 })}
           </ThemedText>
-          {active && !!exerciseLine ? (
-            <ThemedText
-              style={styles.exercisePreview}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {exerciseLine}
-            </ThemedText>
-          ) : null}
         </AnimatedPressable>
       </View>
     </Animated.View>
@@ -530,6 +515,7 @@ export default function MyPlansScreen() {
   const [bannerHeight, setBannerHeight] = useState(70);
   const [coachBrief, setCoachBrief] = useState<string | null>(null);
   const [menuPlan, setMenuPlan] = useState<WorkoutPlan | null>(null);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<WorkoutPlan | null>(null);
   const [adaptPlan, setAdaptPlan] = useState<WorkoutPlan | null>(null);
   const [adaptSignals, setAdaptSignals] = useState<PerformanceSignal[]>([]);
@@ -739,15 +725,22 @@ export default function MyPlansScreen() {
 
   const listPaddingTop = paddingTopUnderHeader(headerHeight, insets.top, Spacing.md);
 
+  const mobilityAnswers = useMobilitySplitAnswers();
+  const mobilityCandidate = mobilityAnswers.answered
+    ? findMobilityDayToSplit(plans, mobilityAnswers.answered)
+    : null;
+  const suggestionCount =
+    (mobilityCandidate ? 1 : 0) +
+    (pendingRefinement || adaptPlan || splitRefreshOffer || coachBrief ? 1 : 0);
+
   const activePlanId = primaryPlan(plans)?.id ?? null;
-  const firstOtherPlanId = plans.find((p) => p.id !== activePlanId)?.id ?? null;
 
   const renderPlan = useCallback(
     ({ item, index }: { item: WorkoutPlan; index: number }) => (
       <>
-      {item.id === firstOtherPlanId && plans.length > 1 ? (
+      {index === 0 ? (
         <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-          {t("plans.otherPlans")}
+          {t("plans.yourPlans")}
         </ThemedText>
       ) : null}
       {/* Swipe is the shortcut, not the only route: the "..." menu stays for
@@ -779,7 +772,7 @@ export default function MyPlansScreen() {
       </SwipeRowActions>
       </>
     ),
-    [t, theme, styles, plans.length, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId, firstOtherPlanId],
+    [t, theme, styles, plans.length, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they
@@ -869,83 +862,119 @@ export default function MyPlansScreen() {
               commitments={commitments}
               mobilityWeekdays={mobilityWeekdays}
             />
-            <MobilityDayQuestion plans={plans} onChanged={loadPlans} />
+            {/* Suggestions fold into one line under Today: they're offers,
+                not the day's task, and as open cards they buried it. */}
+            {suggestionCount > 0 || suggestionsOpen ? (
+              <View style={styles.suggestions}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSuggestionsOpen((o) => !o);
+                  }}
+                  style={[styles.suggestionsRow, { borderColor: theme.hairline }]}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: suggestionsOpen }}
+                  testID="button-suggestions"
+                >
+                  <Feather name="zap" size={15} color={theme.textSecondary} />
+                  <ThemedText style={[styles.suggestionsText, { color: theme.text }]}>
+                    {suggestionCount > 0
+                      ? t("plans.suggestions", { count: suggestionCount })
+                      : t("plans.suggestionsNone")}
+                  </ThemedText>
+                  <Feather
+                    name={suggestionsOpen ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={theme.textSecondary}
+                  />
+                </Pressable>
+                {suggestionsOpen ? (
+                  <View style={styles.suggestionsBody}>
+                    <MobilityDayQuestion
+                      plans={plans}
+                      onChanged={loadPlans}
+                      answered={mobilityAnswers.answered}
+                      remember={mobilityAnswers.remember}
+                    />
             {/* At most ONE notice at a time, by priority: something went wrong
-                > actionable coaching offer > daily tip. Stacking three banners
-                pushed the real primary action (starting a workout) off screen.
-                Dismissing one surfaces the next. */}
-            {pendingRefinement ? (
-              <PlanRefinementBanner
-                pending={pendingRefinement}
-                onResolved={() => {
-                  setPendingRefinement(null);
-                  loadPlans();
-                }}
-              />
-            ) : adaptPlan ? (
-              <PlanAdaptationBanner
-                plan={adaptPlan}
-                signals={adaptSignals}
-                onApplied={async (updated) => {
-                  await saveWorkoutPlan(updated);
-                  scheduleDataSync();
-                  setAdaptPlan(null);
-                  loadPlans();
-                }}
-                onDismiss={() => setAdaptPlan(null)}
-              />
-            ) : splitRefreshOffer ? (
-              <SplitRefreshBanner
-                offer={splitRefreshOffer}
-                onApplied={async (updated) => {
-                  await saveWorkoutPlan(updated);
-                  scheduleDataSync();
-                  setSplitRefreshOffer(null);
-                  loadPlans();
-                }}
-                onDismiss={() => setSplitRefreshOffer(null)}
-              />
-            ) : coachBrief ? (
-              // Tinted rather than another card surface: this is a note, not a
-              // thing you own, and drawn on the same surface as the plans it
-              // read as a fourth plan. Capped to two lines so the plans stay on
-              // the first screen; tapping opens the coach chat with this tip as
-              // the opening message, so you can read it in full and answer.
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  navigation.navigate("CoachChat", { seed: coachBrief });
-                }}
-                style={[
-                  styles.coachCard,
-                  {
-                    backgroundColor: theme.primary + "1A",
-                    borderColor: theme.primary + "4D",
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t("coachChat.reply")}
-                testID="card-coach-brief"
-              >
-                <Feather name="zap" size={14} color={theme.primary} />
-                <View style={styles.coachCardTextCol}>
-                  <ThemedText style={styles.coachCardTitle}>
-                    {t("plans.coach.title", { defaultValue: "Coach" })}
-                  </ThemedText>
-                  <ThemedText style={[styles.coachCardBody, { color: theme.text }]} numberOfLines={2}>
-                    {coachBrief}
-                  </ThemedText>
-                  <View style={styles.coachReplyRow}>
-                    <Feather name="message-circle" size={13} color={theme.primary} />
-                    <ThemedText style={[styles.coachReplyText, { color: theme.primary }]}>
-                      {t("coachChat.reply")}
-                    </ThemedText>
+                        > actionable coaching offer > daily tip. Stacking three banners
+                        pushed the real primary action (starting a workout) off screen.
+                        Dismissing one surfaces the next. */}
+                    {pendingRefinement ? (
+                      <PlanRefinementBanner
+                        pending={pendingRefinement}
+                        onResolved={() => {
+                          setPendingRefinement(null);
+                          loadPlans();
+                        }}
+                      />
+                    ) : adaptPlan ? (
+                      <PlanAdaptationBanner
+                        plan={adaptPlan}
+                        signals={adaptSignals}
+                        onApplied={async (updated) => {
+                          await saveWorkoutPlan(updated);
+                          scheduleDataSync();
+                          setAdaptPlan(null);
+                          loadPlans();
+                        }}
+                        onDismiss={() => setAdaptPlan(null)}
+                      />
+                    ) : splitRefreshOffer ? (
+                      <SplitRefreshBanner
+                        offer={splitRefreshOffer}
+                        onApplied={async (updated) => {
+                          await saveWorkoutPlan(updated);
+                          scheduleDataSync();
+                          setSplitRefreshOffer(null);
+                          loadPlans();
+                        }}
+                        onDismiss={() => setSplitRefreshOffer(null)}
+                      />
+                    ) : coachBrief ? (
+                      // Tinted rather than another card surface: this is a note, not a
+                      // thing you own, and drawn on the same surface as the plans it
+                      // read as a fourth plan. Capped to two lines so the plans stay on
+                      // the first screen; tapping opens the coach chat with this tip as
+                      // the opening message, so you can read it in full and answer.
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          navigation.navigate("CoachChat", { seed: coachBrief });
+                        }}
+                        style={[
+                          styles.coachCard,
+                          {
+                            backgroundColor: theme.primary + "1A",
+                            borderColor: theme.primary + "4D",
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("coachChat.reply")}
+                        testID="card-coach-brief"
+                      >
+                        <Feather name="zap" size={14} color={theme.primary} />
+                        <View style={styles.coachCardTextCol}>
+                          <ThemedText style={styles.coachCardTitle}>
+                            {t("plans.coach.title", { defaultValue: "Coach" })}
+                          </ThemedText>
+                          <ThemedText style={[styles.coachCardBody, { color: theme.text }]} numberOfLines={2}>
+                            {coachBrief}
+                          </ThemedText>
+                          <View style={styles.coachReplyRow}>
+                            <Feather name="message-circle" size={13} color={theme.primary} />
+                            <ThemedText style={[styles.coachReplyText, { color: theme.primary }]}>
+                              {t("coachChat.reply")}
+                            </ThemedText>
+                          </View>
+                        </View>
+                        <Feather name="chevron-right" size={16} color={theme.primary} />
+                      </Pressable>
+                    ) : null}
                   </View>
-                </View>
-                <Feather name="chevron-right" size={16} color={theme.primary} />
-              </Pressable>
+                ) : null}
+              </View>
             ) : null}
-
             <WeekScheduleStrip
               commitments={commitments}
               plan={primaryPlan(plans)}
@@ -1003,20 +1032,50 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   listContent: {
     paddingHorizontal: HEVY.pad,
   },
+  suggestions: {
+    marginBottom: Spacing.xl,
+  },
+  suggestionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  suggestionsText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  suggestionsBody: {
+    paddingTop: Spacing.md,
+  },
   sectionTitle: {
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.8,
     textTransform: "uppercase",
-    marginTop: Spacing.xl,
     marginBottom: Spacing.xs,
   },
+  planRowTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
   activeTag: {
-    fontSize: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  activeTagText: {
+    fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 6,
   },
   planRow: {
     paddingVertical: Spacing.md,
@@ -1027,39 +1086,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     position: "relative",
   },
   planRowName: {
+    flexShrink: 1,
     fontSize: 17,
     lineHeight: 22,
     fontFamily: "Oswald_600SemiBold",
     color: c.chalk,
     marginBottom: 2,
-  },
-  planCard: {
-    backgroundColor: c.ironElevated2,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.hairlineStrong,
-    // Slim brand-amber accent down the leading edge + soft depth so the cards
-    // read as raised and a touch sportier than a flat outlined box.
-    borderLeftWidth: 3,
-    borderLeftColor: c.primary,
-    padding: 22,
-    minHeight: 132,
-    justifyContent: "center",
-    position: "relative",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  planName: {
-    fontSize: 20,
-    lineHeight: 25,
-    fontWeight: "700",
-    fontFamily: "Oswald_700Bold",
-    color: c.chalk,
-    marginBottom: 4,
-    paddingRight: 36,
   },
   planMeta: {
     fontSize: 13,
@@ -1079,13 +1111,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   menuBtnRow: {
     top: 14,
     right: -6,
-  },
-  exercisePreview: {
-    marginTop: 10,
-    fontSize: 13,
-    fontWeight: "400",
-    color: c.chalkDim,
-    lineHeight: 18,
   },
   coachCard: {
     flexDirection: "row",

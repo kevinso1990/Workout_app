@@ -2376,7 +2376,7 @@ export default function ActiveWorkoutScreen() {
                 ]}
               >
                 <View
-                  style={[styles.progressGradient, { backgroundColor: theme.primary }]}
+                  style={[styles.progressGradient, { backgroundColor: theme.signal }]}
                 />
               </Animated.View>
             </View>
@@ -2413,7 +2413,7 @@ export default function ActiveWorkoutScreen() {
                   : localizedName;
 
               const sets = ep?.sets ?? [];
-              const ink = isCurrent ? theme.onChalk : isDone ? theme.textSecondary : theme.text;
+              const ink = isCurrent ? theme.onSignal : isDone ? theme.textSecondary : theme.text;
 
               // One chalk pill marks "you are here"; the rest stay unboxed so
               // the bar reads as a path, not a row of identical cards.
@@ -2423,7 +2423,7 @@ export default function ActiveWorkoutScreen() {
                   onPress={() => jumpToExercise(exIdx)}
                   style={[
                     styles.exerciseChip,
-                    isCurrent && { backgroundColor: theme.primary },
+                    isCurrent && { backgroundColor: theme.signal },
                   ]}
                   testID={`chip-exercise-${exIdx}`}
                   accessibilityRole="button"
@@ -2438,7 +2438,7 @@ export default function ActiveWorkoutScreen() {
                     {isDone ? (
                       <Feather name="check" size={12} color={ink} />
                     ) : (
-                      <ThemedText style={[styles.exerciseChipNumber, { color: isCurrent ? theme.onChalk : theme.textSecondary }]}>
+                      <ThemedText style={[styles.exerciseChipNumber, { color: isCurrent ? theme.onSignal : theme.textSecondary }]}>
                         {exIdx + 1}
                       </ThemedText>
                     )}
@@ -2459,10 +2459,10 @@ export default function ActiveWorkoutScreen() {
                             {
                               backgroundColor: set.completed
                                 ? isCurrent
-                                  ? theme.onChalk
+                                  ? theme.onSignal
                                   : theme.text
                                 : isCurrent
-                                  ? theme.onChalk + "33"
+                                  ? theme.onSignal + "40"
                                   : theme.border,
                             },
                           ]}

@@ -32,21 +32,15 @@ const ANSWERED_KEY = "@mobilityDaySplitAnswered";
  * plan. Offer to make it the standalone Mobility-Session — startable on its
  * own, with its own weekdays and reminder — then ask which days.
  */
-export function MobilityDayQuestion({
-  plans,
-  onChanged,
-}: {
-  plans: WorkoutPlan[];
-  /** Plans were rewritten; reload them. */
-  onChanged: () => void;
-}) {
-  const { theme } = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
+/**
+ * Which mobility days were already answered. Lifted out of the card so the
+ * home tab can count the question among its suggestions.
+ */
+export function useMobilitySplitAnswers(): {
+  answered: Set<string> | null;
+  remember: (key: string) => Promise<void>;
+} {
   const [answered, setAnswered] = useState<Set<string> | null>(null);
-  const [step, setStep] = useState<"ask" | "days">("ask");
-  const [busy, setBusy] = useState(false);
-
   useEffect(() => {
     void AsyncStorage.getItem(ANSWERED_KEY).then((raw) => {
       try {
@@ -56,18 +50,37 @@ export function MobilityDayQuestion({
       }
     });
   }, []);
-
-  const candidate: MobilityDayCandidate | null = useMemo(
-    () => (answered ? findMobilityDayToSplit(plans, answered) : null),
-    [plans, answered],
-  );
-
   const remember = async (key: string) => {
     const next = new Set(answered ?? []);
     next.add(key);
     setAnswered(next);
     await AsyncStorage.setItem(ANSWERED_KEY, JSON.stringify([...next]));
   };
+  return { answered, remember };
+}
+
+export function MobilityDayQuestion({
+  plans,
+  onChanged,
+  answered,
+  remember,
+}: {
+  plans: WorkoutPlan[];
+  /** Plans were rewritten; reload them. */
+  onChanged: () => void;
+  answered: Set<string> | null;
+  remember: (key: string) => Promise<void>;
+}) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { t } = useTranslation();
+  const [step, setStep] = useState<"ask" | "days">("ask");
+  const [busy, setBusy] = useState(false);
+
+  const candidate: MobilityDayCandidate | null = useMemo(
+    () => (answered ? findMobilityDayToSplit(plans, answered) : null),
+    [plans, answered],
+  );
 
   if (step === "days") {
     return (
@@ -182,11 +195,11 @@ const makeStyles = (c: Palette) =>
     // A question, not a thing you own: a quiet notice on the darker ground,
     // so it doesn't wear the same box as Today, the week and the plans.
     card: {
-      marginBottom: Spacing.lg,
-      padding: Spacing.md,
+      paddingBottom: Spacing.md,
+      marginBottom: Spacing.md,
       gap: Spacing.sm,
-      borderRadius: BorderRadius.lg,
-      backgroundColor: c.backgroundDefault,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.hairline,
     },
     header: {
       flexDirection: "row",

@@ -1,4 +1,5 @@
-import React, { useMemo} from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
@@ -6,18 +7,17 @@ import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
+import { Spacing, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { planTrainingWeek } from "@shared/planSchedule";
-import type { WorkoutPlan } from "@/lib/storage";
+import { getWorkoutHistory, type WorkoutPlan } from "@/lib/storage";
+import { isMobilitySession, mondayBasedWeekday } from "@/lib/mobilitySchedule";
+import { mondayOf } from "@shared/planSchedule";
 import { isMobilityDay } from "@/lib/mobilitySplit";
 import { weekStripCaption } from "@/lib/planStructure";
 import { translateDayName } from "@/lib/dayNameLabel";
-import {
-  WEEKDAY_FALLBACK,
-  useCommitmentLabels,
-} from "@/components/schedule/CommitmentEditor";
+import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 
 /** JS getDay() is Sunday-based; the schedule is Monday-based. */
 function todayWeekday(): number {
@@ -66,6 +66,31 @@ export function WeekScheduleStrip({
   const today = todayWeekday();
   const weekDates = datesOfCurrentWeek();
 
+  // Weekdays of this week with a strength session logged — the ticks and the
+  // progress line. Cardio and mobility don't count toward the plan's week.
+  const [trainedWeekdays, setTrainedWeekdays] = useState<Set<number>>(new Set());
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      void getWorkoutHistory().then((history) => {
+        if (cancelled) return;
+        const start = mondayOf(new Date()).getTime();
+        const end = start + 7 * 24 * 60 * 60 * 1000;
+        const set = new Set<number>();
+        for (const s of history) {
+          const at = new Date(s.completedAt);
+          if (at.getTime() < start || at.getTime() >= end) continue;
+          if (s.workoutType === "cardio" || s.cardio || isMobilitySession(s)) continue;
+          set.add(mondayBasedWeekday(at));
+        }
+        setTrainedWeekdays(set);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
   const days = plan?.days ?? [];
   const schedule = useMemo(
     () => planTrainingWeek({ commitments, days, schedule: plan?.schedule, now: new Date() }),
@@ -79,6 +104,13 @@ export function WeekScheduleStrip({
 
   const Card = onPress ? Pressable : View;
 
+  // Planned strength sessions this week vs. the days one was actually logged.
+  const plannedGym = schedule.slots.filter((slot) => {
+    const idx = schedule.dayIndexByWeekday.get(slot.weekday);
+    return slot.kind === "gym" && !(idx !== undefined && isMobilityDay(days[idx]));
+  }).length;
+  const doneCount = schedule.slots.filter((slot) => trainedWeekdays.has(slot.weekday)).length;
+
   return (
     <Card
       onPress={onPress}
@@ -87,16 +119,10 @@ export function WeekScheduleStrip({
       style={styles.card}
     >
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <ThemedText style={[styles.title, { color: theme.textSecondary }]}>
-            {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
-          </ThemedText>
-          {schedule.cycle ? (
-            <ThemedText style={[styles.cycle, { color: theme.textSecondary }]}>
-              {t("plans.weekStrip.cycleWeek", schedule.cycle)}
-            </ThemedText>
-          ) : null}
-        </View>
+        <ThemedText style={[styles.title, { color: theme.textSecondary }]} numberOfLines={1}>
+          {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
+          {schedule.cycle ? ` · ${t("plans.weekStrip.cycleWeek", schedule.cycle)}` : ""}
+        </ThemedText>
         {onPressEdit ? (
           <Pressable
             onPress={onPressEdit}
@@ -104,7 +130,7 @@ export function WeekScheduleStrip({
             hitSlop={8}
             style={styles.editBtn}
           >
-            <Feather name="edit-2" size={14} color={theme.textSecondary} />
+            <Feather name="edit-2" size={13} color={theme.textSecondary} />
             <ThemedText style={[styles.editText, { color: theme.textSecondary }]}>
               {t("plans.weekStrip.edit", { defaultValue: "Termine" })}
             </ThemedText>
@@ -112,122 +138,84 @@ export function WeekScheduleStrip({
         ) : null}
       </View>
 
+      {/* Days as a line of marks, not seven boxes: a dot is a session, a
+          ring is mobility, a tick is done — and only "today" is in signal. */}
       <View style={styles.row}>
         {schedule.slots.map((slot) => {
           const isToday = slot.weekday === today;
           const planDayIdx = schedule.dayIndexByWeekday.get(slot.weekday);
-          // The plan's own mobility day ("Mo Mobility") reads as mobility,
-          // not as a gym session.
           const planMobility =
             slot.kind === "gym" && planDayIdx !== undefined && isMobilityDay(days[planDayIdx]);
           const isGym = slot.kind === "gym" && !planMobility;
           const isMobility = planMobility || mobilityWeekdays.includes(slot.weekday);
+          const trained = trainedWeekdays.has(slot.weekday);
+
+          let caption = "";
+          if (isGym) caption = weekStripCaption(translateDayName(t, slot.dayName ?? ""))[0];
+          else if (slot.kind === "sport") caption = sportLabel(slot.commitment!);
+          else if (isMobility) caption = t("mobility.weekStripLabel");
+
           return (
             <View key={slot.weekday} style={styles.dayCol}>
               <ThemedText
                 style={[
                   styles.dayLabel,
-                  { color: isToday ? theme.text : theme.textSecondary },
+                  { color: isToday ? theme.signalText : theme.textSecondary },
                   isToday && styles.dayLabelToday,
                 ]}
               >
                 {dayLabel(slot.weekday)}
               </ThemedText>
               <ThemedText
-                style={[
-                  styles.dayDate,
-                  { color: isToday ? theme.text : theme.textSecondary },
-                ]}
+                style={[styles.dayDate, { color: isToday ? theme.text : theme.textSecondary }]}
               >
                 {weekDates[slot.weekday]}
               </ThemedText>
-
-              <View
-                style={[
-                  styles.cell,
-                  { borderColor: theme.border },
-                  isGym && {
-                    backgroundColor: theme.primary,
-                    borderColor: theme.primary,
-                  },
-                  slot.kind === "sport" && { backgroundColor: theme.backgroundSecondary },
-                  isToday && { borderColor: theme.chalk, borderWidth: 2 },
-                ]}
-              >
-                {isGym ? (
-                  <ActivityIcon size={16} color={theme.onChalk} />
-                ) : slot.kind === "sport" ? (
-                  <ActivityIcon
-                    sport={slot.commitment!.sport}
-                    size={16}
-                    color={theme.text}
-                  />
-                ) : isMobility ? (
-                  <Feather name="wind" size={16} color={theme.text} />
-                ) : (
-                  <ThemedText style={[styles.restDash, { color: theme.textSecondary }]}>
-                    –
-                  </ThemedText>
-                )}
-                {/* Mobility on a day that already holds a session: a corner
-                    badge rather than replacing the session's own icon. */}
-                {isMobility && slot.kind !== "rest" && !planMobility ? (
+              <View style={styles.markWrap}>
+                {trained && (isGym || slot.kind === "rest") ? (
+                  <Feather name="check" size={14} color={theme.signalText} />
+                ) : isGym ? (
                   <View
                     style={[
-                      styles.mobilityBadge,
-                      { backgroundColor: theme.ironElevated3, borderColor: theme.ironElevated2 },
+                      styles.dot,
+                      { backgroundColor: isToday ? theme.signal : theme.chalk },
                     ]}
-                  >
-                    <Feather name="wind" size={9} color={theme.text} />
-                  </View>
+                  />
+                ) : slot.kind === "sport" ? (
+                  <ActivityIcon sport={slot.commitment!.sport} size={13} color={theme.textSecondary} />
+                ) : isMobility ? (
+                  <View style={[styles.ring, { borderColor: theme.textSecondary }]} />
                 ) : null}
               </View>
-
-              {isGym ? (
-                (() => {
-                  // One long word ("Ganzkörper") is wider than the column and
-                  // got broken mid-word. Shrink the name to fit one line and
-                  // put the variant underneath instead.
-                  const [line1, line2] = weekStripCaption(translateDayName(t, slot.dayName ?? ""));
-                  return (
-                    <>
-                      <ThemedText
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.75}
-                        style={[styles.cellCaption, { color: theme.textSecondary }]}
-                      >
-                        {line1}
-                      </ThemedText>
-                      {line2 ? (
-                        <ThemedText
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.75}
-                          style={[styles.cellCaption, { color: theme.textSecondary }]}
-                        >
-                          {line2}
-                        </ThemedText>
-                      ) : null}
-                    </>
-                  );
-                })()
-              ) : (
-                <ThemedText
-                  numberOfLines={2}
-                  style={[styles.cellCaption, { color: theme.textSecondary }]}
-                >
-                  {slot.kind === "sport"
-                    ? sportLabel(slot.commitment!)
-                    : isMobility
-                      ? t("mobility.weekStripLabel")
-                      : ""}
-                </ThemedText>
-              )}
+              <ThemedText
+                numberOfLines={1}
+                style={[styles.caption, { color: isToday ? theme.text : theme.textSecondary }]}
+              >
+                {caption}
+              </ThemedText>
             </View>
           );
         })}
       </View>
+
+      {plannedGym > 0 ? (
+        <View style={styles.progressWrap}>
+          <View style={[styles.progressTrack, { backgroundColor: theme.hairlineStrong }]}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  backgroundColor: theme.signal,
+                  width: `${Math.min(100, Math.round((doneCount / plannedGym) * 100))}%`,
+                },
+              ]}
+            />
+          </View>
+          <ThemedText style={[styles.progressText, { color: theme.textSecondary }]}>
+            {t("plans.weekStrip.progress", { done: doneCount, total: plannedGym })}
+          </ThemedText>
+        </View>
+      ) : null}
 
       {schedule.unplacedDayNames.length > 0 ? (
         <ThemedText style={[styles.warning, { color: theme.textSecondary }]}>
@@ -242,55 +230,32 @@ export function WeekScheduleStrip({
 }
 
 const makeStyles = (c: Palette) => StyleSheet.create({
-  // A section of the page, not another box: the day cells are the content.
+  // A section of the page, not another box.
   card: {
     marginBottom: Spacing.xl,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: Spacing.sm,
-  },
-  cycle: {
-    fontSize: 12,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: Spacing.md,
+    gap: Spacing.sm,
   },
-  title: { fontSize: 12, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
+  title: { flex: 1, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   editText: { fontSize: 13, fontWeight: "600" },
-  row: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
-  dayCol: { flex: 1, alignItems: "center", gap: 4 },
-  dayLabel: { fontSize: 11, fontWeight: "600" },
-  dayDate: { fontSize: 12, fontFamily: FontFamily.mono, marginBottom: 1 },
-  dayLabelToday: { fontWeight: "700" },
-  cell: {
-    width: "100%",
-    aspectRatio: 1,
-    maxHeight: 38,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  restDash: { fontSize: 13 },
-  // Stretch to the column so adjustsFontSizeToFit has a width to fit into —
-  // centred content-width text would just overflow instead of shrinking.
-  mobilityBadge: {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cellCaption: { fontSize: 9, lineHeight: 11, textAlign: "center", alignSelf: "stretch" },
-  warning: { fontSize: 12, marginTop: Spacing.md },
+  row: { flexDirection: "row", justifyContent: "space-between" },
+  dayCol: { flex: 1, alignItems: "center", gap: 3 },
+  dayLabel: { fontSize: 12, fontWeight: "600" },
+  dayLabelToday: { fontWeight: "800" },
+  dayDate: { fontSize: 11, fontFamily: FontFamily.mono },
+  markWrap: { height: 18, alignItems: "center", justifyContent: "center" },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  ring: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5 },
+  caption: { fontSize: 10, maxWidth: "100%" },
+  progressWrap: { marginTop: Spacing.md, gap: 6 },
+  progressTrack: { height: 4, borderRadius: 2, overflow: "hidden" },
+  progressFill: { height: 4, borderRadius: 2 },
+  progressText: { fontSize: 12 },
+  warning: { fontSize: 12, marginTop: Spacing.sm },
 });
