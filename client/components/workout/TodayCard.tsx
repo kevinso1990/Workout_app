@@ -142,48 +142,63 @@ export function TodayCard({
           </Pressable>
         </>
       ) : (
-        <View style={styles.statusRow}>
-          <View style={styles.statusText}>
-            <View style={styles.statusTitleRow}>
-              {sport ? (
-                <ActivityIcon sport={sport.sport} size={20} color={theme.text} />
-              ) : (
-                <Feather name={doneToday ? "check-circle" : "moon"} size={20} color={theme.text} />
-              )}
-              <ThemedText style={styles.statusTitle} numberOfLines={1}>
-                {sport
-                  ? sportLabel(sport)
-                  : doneToday
-                    ? t("plans.today.doneTitle")
-                    : t("plans.today.restDay")}
-              </ThemedText>
-            </View>
-            {next ? (
-              <ThemedText style={[styles.heroMeta, { color: theme.textSecondary }]} numberOfLines={1}>
-                {t("plans.today.next", {
-                  day: dayLabel(next.weekday),
-                  name: translateDayName(t, next.dayName),
-                })}
-              </ThemedText>
-            ) : null}
+        <>
+          {/* Done is today's news and gets the accent; the next session is
+              what to look at, so it reads as a row of its own instead of a
+              truncated sentence under the status. */}
+          <View style={styles.statusTitleRow}>
+            {sport ? (
+              <ActivityIcon sport={sport.sport} size={24} color={theme.text} />
+            ) : (
+              <Feather
+                name={doneToday ? "check-circle" : "moon"}
+                size={24}
+                color={doneToday ? theme.signal : theme.text}
+              />
+            )}
+            <ThemedText style={styles.statusTitle} numberOfLines={1}>
+              {sport
+                ? sportLabel(sport)
+                : doneToday
+                  ? t("plans.today.doneTitle")
+                  : t("plans.today.restDay")}
+            </ThemedText>
           </View>
-          {next && !mobility ? (
-            <Pressable
-              onPress={() => void start(next)}
-              style={[styles.smallBtn, { borderColor: theme.controlOutline }]}
-              accessibilityRole="button"
-              testID="button-today-start-next"
-            >
-              <ThemedText style={[styles.smallBtnText, { color: theme.text }]}>
-                {t("plans.today.startEarly")}
-              </ThemedText>
-            </Pressable>
+          {next ? (
+            <View style={[styles.sessionRow, { borderTopColor: theme.hairline }]} testID="row-today-next">
+              <View style={[styles.weekdayBadge, { borderColor: theme.controlOutline }]}>
+                <ThemedText style={styles.weekdayBadgeText}>{dayLabel(next.weekday)}</ThemedText>
+              </View>
+              <View style={styles.statusText}>
+                <ThemedText style={[styles.rowOverline, { color: theme.textSecondary }]}>
+                  {t("plans.today.nextOverline")}
+                </ThemedText>
+                <ThemedText style={styles.rowTitle} numberOfLines={1}>
+                  {translateDayName(t, next.dayName)}
+                </ThemedText>
+                <ThemedText style={[styles.heroMeta, { color: theme.textSecondary }]} numberOfLines={1}>
+                  {exercises(next)}
+                </ThemedText>
+              </View>
+              {!mobility ? (
+                <Pressable
+                  onPress={() => void start(next)}
+                  style={[styles.smallBtn, { borderColor: theme.controlOutline }]}
+                  accessibilityRole="button"
+                  testID="button-today-start-next"
+                >
+                  <ThemedText style={[styles.smallBtnText, { color: theme.text }]}>
+                    {t("plans.today.startEarly")}
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
-        </View>
+        </>
       )}
 
       {mobility ? (
-        <View style={[styles.mobilityRow, { borderTopColor: theme.hairline }]}>
+        <View style={[styles.sessionRow, { borderTopColor: theme.hairline }]}>
           <Feather name="wind" size={16} color={theme.text} />
           <View style={styles.statusText}>
             <ThemedText style={styles.mobilityTitle} numberOfLines={1}>
@@ -248,11 +263,6 @@ const makeStyles = (c: Palette) =>
       fontSize: 16,
       fontWeight: "700",
     },
-    statusRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.md,
-    },
     statusText: {
       flex: 1,
       minWidth: 0,
@@ -270,7 +280,7 @@ const makeStyles = (c: Palette) =>
       lineHeight: 32,
       color: c.chalk,
     },
-    mobilityRow: {
+    sessionRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.md,
@@ -280,6 +290,28 @@ const makeStyles = (c: Palette) =>
     },
     mobilityTitle: {
       fontSize: 15,
+      fontWeight: "700",
+    },
+    weekdayBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    weekdayBadgeText: {
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    rowOverline: {
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    rowTitle: {
+      fontSize: 16,
       fontWeight: "700",
     },
     smallBtn: {

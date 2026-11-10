@@ -151,7 +151,7 @@
       "startEarly": "Do now",
       "restDay": "Rest day",
       "doneTitle": "Done for today",
-      "next": "Next workout: {{day}} · {{name}}"
+      "nextOverline": "Next workout"
     },
     "mobilitySplit": {
       "title": "Make the mobility day its own session?",

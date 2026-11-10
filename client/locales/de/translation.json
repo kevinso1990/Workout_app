@@ -151,7 +151,7 @@
       "startEarly": "Vorziehen",
       "restDay": "Ruhetag",
       "doneTitle": "Heute erledigt",
-      "next": "Nächstes Training: {{day}} · {{name}}"
+      "nextOverline": "Nächstes Training"
     },
     "mobilitySplit": {
       "title": "Mobility-Tag als eigene Session?",

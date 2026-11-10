@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, FontFamily } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { planTrainingWeek } from "@shared/planSchedule";
@@ -156,7 +156,10 @@ export function WeekScheduleStrip({
           else if (isMobility) caption = t("mobility.weekStripLabel");
 
           return (
-            <View key={slot.weekday} style={styles.dayCol}>
+            <View
+              key={slot.weekday}
+              style={[styles.dayCol, isToday && { backgroundColor: theme.signal + "1F" }]}
+            >
               <ThemedText
                 style={[
                   styles.dayLabel,
@@ -173,7 +176,9 @@ export function WeekScheduleStrip({
               </ThemedText>
               <View style={styles.markWrap}>
                 {trained && (isGym || slot.kind === "rest") ? (
-                  <Feather name="check" size={14} color={theme.signalText} />
+                  <View style={[styles.checkDot, { backgroundColor: theme.signal }]}>
+                    <Feather name="check" size={11} color={theme.onSignal} />
+                  </View>
                 ) : isGym ? (
                   <View
                     style={[
@@ -245,14 +250,16 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   editText: { fontSize: 13, fontWeight: "600" },
   row: { flexDirection: "row", justifyContent: "space-between" },
-  dayCol: { flex: 1, alignItems: "center", gap: 3 },
+  // Today's column is tinted — the one place on the strip the eye should land.
+  dayCol: { flex: 1, alignItems: "center", gap: 3, paddingVertical: 8, borderRadius: BorderRadius.md },
   dayLabel: { fontSize: 12, fontWeight: "600" },
   dayLabelToday: { fontWeight: "800" },
   dayDate: { fontSize: 11, fontFamily: FontFamily.mono },
   markWrap: { height: 18, alignItems: "center", justifyContent: "center" },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  ring: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5 },
-  caption: { fontSize: 10, maxWidth: "100%" },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  ring: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5 },
+  checkDot: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  caption: { fontSize: 10, maxWidth: "100%", paddingHorizontal: 2 },
   progressWrap: { marginTop: Spacing.md, gap: 6 },
   progressTrack: { height: 4, borderRadius: 2, overflow: "hidden" },
   progressFill: { height: 4, borderRadius: 2 },
