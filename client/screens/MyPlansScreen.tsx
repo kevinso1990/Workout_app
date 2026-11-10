@@ -85,12 +85,19 @@ function firstDayExercisePreview(plan: WorkoutPlan): string {
 function PlanCard({
   plan,
   index,
+  active,
   onViewPlan,
   onOpenMenu,
   mobilityDaysPerWeek = 0,
 }: {
   plan: WorkoutPlan;
   index: number;
+  /**
+   * The plan the week and Today are built from — the only one drawn as a
+   * card. The others are a compact list: five identical boxes said nothing
+   * about which plan you actually train by.
+   */
+  active: boolean;
   onViewPlan: () => void;
   onOpenMenu: () => void;
   /** Chosen Mobility-Session weekdays; only used for that plan's card. */
@@ -113,19 +120,22 @@ function PlanCard({
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 80).duration(350)}>
-      <View style={styles.planCard} testID={`card-plan-${plan.id}`}>
+      <View
+        style={active ? styles.planCard : [styles.planRow, { borderBottomColor: theme.hairline }]}
+        testID={`card-plan-${plan.id}`}
+      >
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onOpenMenu();
           }}
           hitSlop={12}
-          style={styles.menuBtn}
+          style={[styles.menuBtn, !active && styles.menuBtnRow]}
           testID={`button-plan-menu-${plan.id}`}
           accessibilityRole="button"
           accessibilityLabel={t("plans.planOptions")}
         >
-          <Feather name="more-horizontal" size={22} color={theme.chalkFaint} />
+          <Feather name="more-horizontal" size={20} color={theme.chalkFaint} />
         </Pressable>
 
         <AnimatedPressable
@@ -147,7 +157,12 @@ function PlanCard({
           }}
           style={animatedStyle}
         >
-          <ThemedText style={styles.planName} numberOfLines={2}>
+          {active ? (
+            <ThemedText style={[styles.activeTag, { color: theme.primary }]}>
+              {t("plans.activePlan")}
+            </ThemedText>
+          ) : null}
+          <ThemedText style={active ? styles.planName : styles.planRowName} numberOfLines={active ? 2 : 1}>
             {displayPlanName(t, plan.name)}
           </ThemedText>
           {/* Was "3 Trainings/Woche · 3 Tage" — the same number twice. The
@@ -166,14 +181,25 @@ function PlanCard({
                 ]
                   .filter(Boolean)
                   .join(" · ")
-              : t("plans.planSummary", {
+              : plan.schedule && plan.schedule.weeks.length > 0
+                ? // A scheduled plan: how often you train, not how many
+                  // sessions the document lists ("7 Tage" for a 3×/week plan).
+                  [
+                    t("plans.workoutsPerWeek", { count: plan.daysPerWeek }),
+                    plan.schedule.weeks.length > 1
+                      ? t("plans.rotationWeeks", { count: plan.schedule.weeks.length })
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : t("plans.planSummary", {
                   workoutsLabel: t("plans.daysCount", { count: plan.days.length }),
                   daysLabel: t("plans.exerciseCount", {
                     count: plan.days.reduce((n, d) => n + d.exercises.length, 0),
                   }),
                 })}
           </ThemedText>
-          {exerciseLine ? (
+          {active && !!exerciseLine ? (
             <ThemedText
               style={styles.exercisePreview}
               numberOfLines={1}
@@ -713,11 +739,20 @@ export default function MyPlansScreen() {
 
   const listPaddingTop = paddingTopUnderHeader(headerHeight, insets.top, Spacing.md);
 
+  const activePlanId = primaryPlan(plans)?.id ?? null;
+  const firstOtherPlanId = plans.find((p) => p.id !== activePlanId)?.id ?? null;
+
   const renderPlan = useCallback(
     ({ item, index }: { item: WorkoutPlan; index: number }) => (
-      // Swipe is the shortcut, not the only route: the "..." menu stays for
-      // discoverability, and both paths call the same handlers so the delete
-      // confirmation cannot drift apart between them.
+      <>
+      {item.id === firstOtherPlanId && plans.length > 1 ? (
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          {t("plans.otherPlans")}
+        </ThemedText>
+      ) : null}
+      {/* Swipe is the shortcut, not the only route: the "..." menu stays for
+          discoverability, and both paths call the same handlers so the delete
+          confirmation cannot drift apart between them. */}
       <SwipeRowActions
         actions={[
           {
@@ -736,13 +771,15 @@ export default function MyPlansScreen() {
         <PlanCard
           plan={item}
           index={index}
+          active={item.id === activePlanId}
           onViewPlan={() => handleViewPlan(item)}
           onOpenMenu={() => setMenuPlan(item)}
           mobilityDaysPerWeek={mobilityWeekdays.length}
         />
       </SwipeRowActions>
+      </>
     ),
-    [t, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length],
+    [t, theme, styles, plans.length, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId, firstOtherPlanId],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they
@@ -824,14 +861,15 @@ export default function MyPlansScreen() {
             {/* A workout in progress outranks every notice — it's the thing
                 the user was in the middle of, not a suggestion. */}
             <ResumeWorkoutCard />
-            {/* Asked before "Heute": until it's answered, the week (and the
-                Today card) would treat the mobility day as a strength day. */}
-            <MobilityDayQuestion plans={plans} onChanged={loadPlans} />
+            {/* Today leads; questions and coaching notes sit under it. Today
+                already offers a plan's own mobility day as mobility, so the
+                split question no longer has to come first. */}
             <TodayCard
               plans={plans}
               commitments={commitments}
               mobilityWeekdays={mobilityWeekdays}
             />
+            <MobilityDayQuestion plans={plans} onChanged={loadPlans} />
             {/* At most ONE notice at a time, by priority: something went wrong
                 > actionable coaching offer > daily tip. Stacking three banners
                 pushed the real primary action (starting a workout) off screen.
@@ -964,7 +1002,36 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: HEVY.pad,
-    gap: HEVY.pad,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.xs,
+  },
+  activeTag: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  planRow: {
+    paddingVertical: Spacing.md,
+    paddingRight: 44,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: "center",
+    minHeight: 64,
+    position: "relative",
+  },
+  planRowName: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontFamily: "Oswald_600SemiBold",
+    color: c.chalk,
+    marginBottom: 2,
   },
   planCard: {
     backgroundColor: c.ironElevated2,
@@ -1008,6 +1075,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 2,
+  },
+  menuBtnRow: {
+    top: 14,
+    right: -6,
   },
   exercisePreview: {
     marginTop: 10,

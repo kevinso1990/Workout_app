@@ -141,7 +141,7 @@ export function MobilityDayQuestion({
     <View style={styles.card} testID="card-mobility-split">
       <View style={styles.header}>
         <View style={[styles.iconTile, { backgroundColor: theme.ironElevated3 }]}>
-          <Feather name="wind" size={18} color={theme.text} />
+          <Feather name="wind" size={15} color={theme.text} />
         </View>
         <ThemedText style={styles.title}>{t("plans.mobilitySplit.title")}</ThemedText>
       </View>
@@ -155,7 +155,7 @@ export function MobilityDayQuestion({
       <View style={styles.actions}>
         <Pressable
           onPress={keep}
-          style={[styles.btn, { borderWidth: 1, borderColor: theme.controlOutline }]}
+          style={styles.btn}
           accessibilityRole="button"
           testID="button-mobility-split-keep"
         >
@@ -164,11 +164,11 @@ export function MobilityDayQuestion({
         <Pressable
           onPress={() => void split()}
           disabled={busy}
-          style={[styles.btn, styles.btnPrimary, { backgroundColor: theme.primary, opacity: busy ? 0.6 : 1 }]}
+          style={[styles.btn, { borderWidth: 1, borderColor: theme.controlOutline, opacity: busy ? 0.6 : 1 }]}
           accessibilityRole="button"
           testID="button-mobility-split-yes"
         >
-          <ThemedText style={[styles.btnText, { color: theme.onChalk }]}>
+          <ThemedText style={[styles.btnText, { color: theme.text }]}>
             {t("plans.mobilitySplit.yes")}
           </ThemedText>
         </Pressable>
@@ -179,30 +179,30 @@ export function MobilityDayQuestion({
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
+    // A question, not a thing you own: a quiet notice on the darker ground,
+    // so it doesn't wear the same box as Today, the week and the plans.
     card: {
-      marginBottom: Spacing.md,
-      padding: Spacing.lg,
-      gap: Spacing.md,
+      marginBottom: Spacing.lg,
+      padding: Spacing.md,
+      gap: Spacing.sm,
       borderRadius: BorderRadius.lg,
-      backgroundColor: c.ironElevated2,
-      borderWidth: 1,
-      borderColor: c.controlOutline,
+      backgroundColor: c.backgroundDefault,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
-      gap: Spacing.md,
+      gap: Spacing.sm,
     },
     iconTile: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
+      width: 28,
+      height: 28,
+      borderRadius: 8,
       alignItems: "center",
       justifyContent: "center",
     },
     title: {
       flex: 1,
-      fontSize: 17,
+      fontSize: 15,
       fontWeight: "700",
     },
     confirm: {
@@ -211,25 +211,26 @@ const makeStyles = (c: Palette) =>
       fontWeight: "600",
     },
     body: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 13,
+      lineHeight: 18,
     },
     actions: {
       flexDirection: "row",
+      justifyContent: "flex-end",
       gap: Spacing.sm,
     },
     btn: {
-      flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      height: 36,
       borderRadius: BorderRadius.full,
     },
     btnPrimary: {
       borderWidth: 0,
     },
     btnText: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: "700",
     },
     embeddedDays: {

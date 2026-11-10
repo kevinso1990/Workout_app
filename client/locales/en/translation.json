@@ -154,13 +154,17 @@
     },
     "mobilitySplit": {
       "title": "Make the mobility day its own session?",
-      "body": "“{{day}}” in “{{plan}}” is a mobility day. As its own session you start it directly, with fixed days and a reminder, and your week only schedules the strength days.",
-      "replaces": "This replaces your current mobility session.",
+      "body": "Start “{{day}}” on its own, with fixed days and a reminder. The week then plans strength days only.",
+      "replaces": "Replaces your current Mobility session.",
       "yes": "Own session",
       "keep": "Keep in plan",
       "doneTitle": "Mobility session created",
       "finish": "Done"
-    }
+    },
+    "activePlan": "Active plan",
+    "otherPlans": "Other plans",
+    "rotationWeeks_one": "{{count}}-week rotation",
+    "rotationWeeks_other": "{{count}}-week rotation"
   },
   "createPlan": {
     "back": "Back",

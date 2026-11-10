@@ -103,15 +103,9 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
   return (
     <>
       <View
-        style={[
-          styles.banner,
-          {
-            backgroundColor: theme.primary + "12",
-            borderColor: theme.primary + "40",
-          },
-        ]}
+        style={[styles.banner, { backgroundColor: theme.backgroundDefault }]}
       >
-        <Feather name="cpu" size={20} color={theme.primary} />
+        <Feather name="cpu" size={18} color={theme.textSecondary} />
         <View style={styles.bannerText}>
           <ThemedText style={styles.bannerTitle}>
             {t("planAdaptation.title")}
@@ -123,10 +117,12 @@ export function PlanAdaptationBanner({ plan, signals, onApplied, onDismiss }: Pr
         <Pressable
           onPress={handleAdapt}
           disabled={loading}
-          style={[styles.cta, { backgroundColor: theme.primary }]}
+          // Outlined, not chalk-filled: the chalk button on this tab is
+          // Today's "Start"; a suggestion shouldn't outrank it.
+          style={[styles.cta, { borderColor: theme.controlOutline }]}
         >
           {loading ? (
-            <ActivityIndicator color={theme.onChalk} size="small" />
+            <ActivityIndicator color={theme.text} size="small" />
           ) : (
             <ThemedText style={styles.ctaText}>{t("planAdaptation.cta")}</ThemedText>
           )}
@@ -182,24 +178,24 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   banner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
   },
   bannerText: { flex: 1 },
   bannerTitle: { fontWeight: "700", fontSize: 14 },
   bannerSub: { fontSize: 12, marginTop: 2 },
   cta: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    height: 36,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
     minWidth: 72,
     alignItems: "center",
+    justifyContent: "center",
   },
-  ctaText: { color: c.onChalk, fontWeight: "600", fontSize: 13 },
+  ctaText: { color: c.text, fontWeight: "700", fontSize: 13 },
   dismiss: { padding: 4 },
   error: { fontSize: 12, marginHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   modalBackdrop: {

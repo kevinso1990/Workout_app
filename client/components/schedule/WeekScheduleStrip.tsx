@@ -84,11 +84,11 @@ export function WeekScheduleStrip({
       onPress={onPress}
       testID={onPress ? "button-week-strip" : undefined}
       accessibilityRole={onPress ? "button" : undefined}
-      style={[styles.card, { backgroundColor: theme.ironElevated2 }]}
+      style={styles.card}
     >
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <ThemedText style={styles.title}>
+          <ThemedText style={[styles.title, { color: theme.textSecondary }]}>
             {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
           </ThemedText>
           {schedule.cycle ? (
@@ -242,10 +242,9 @@ export function WeekScheduleStrip({
 }
 
 const makeStyles = (c: Palette) => StyleSheet.create({
+  // A section of the page, not another box: the day cells are the content.
   card: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   titleRow: {
     flexDirection: "row",
@@ -253,7 +252,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     gap: Spacing.sm,
   },
   cycle: {
-    fontSize: 13,
+    fontSize: 12,
   },
   header: {
     flexDirection: "row",
@@ -261,7 +260,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: Spacing.md,
   },
-  title: { fontSize: 15, fontWeight: "700" },
+  title: { fontSize: 12, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   editText: { fontSize: 13, fontWeight: "600" },
   row: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
