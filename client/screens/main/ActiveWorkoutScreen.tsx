@@ -14,7 +14,6 @@ import {
   AppState,
   AppStateStatus,
   ActivityIndicator,
-  Switch,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
@@ -885,6 +884,8 @@ export default function ActiveWorkoutScreen() {
   const [restTimeLeft, setRestTimeLeft] = useState(DEFAULT_REST_TIME);
   /** Length of the running rest — the plan's own pause can differ from the default. */
   const [restTotal, setRestTotal] = useState<number | null>(null);
+  /** null = follow the default (open until the first set is done). */
+  const [warmupExpanded, setWarmupExpanded] = useState<boolean | null>(null);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState<PRRecord[]>([]);
@@ -1928,43 +1929,48 @@ export default function ActiveWorkoutScreen() {
     scheduleActiveWorkoutAutosave();
   };
 
+  // Session settings are secondary to the exercise — small pills, not two
+  // full-width cards competing with it for attention.
   const renderHeaderToggle = (opts: {
     label: string;
     hint: string;
+    icon: React.ComponentProps<typeof Feather>["name"];
     value: boolean;
     onChange: (value: boolean) => void;
     testID: string;
   }) => (
-    <View style={styles.headerToggleCard}>
-      <View style={styles.headerToggleText}>
-        <ThemedText style={[styles.headerToggleLabel, { color: theme.text }]} numberOfLines={1}>
-          {opts.label}
-        </ThemedText>
-        <ThemedText
-          style={[
-            styles.headerToggleState,
-            { color: opts.value ? theme.primary : theme.textSecondary },
-          ]}
-          numberOfLines={1}
-        >
-          {opts.value ? t("common.on") : t("common.off")}
-        </ThemedText>
-      </View>
-      <Switch
-        value={opts.value}
-        onValueChange={opts.onChange}
-        trackColor={{ false: theme.ironElevated3, true: theme.plateLight }}
-        // White in both themes, like every iOS switch thumb — chalk turns
-        // near-black under the light palette.
-        thumbColor="#fff"
-        ios_backgroundColor={theme.ironElevated3}
-        style={styles.headerToggleSwitch}
-        testID={opts.testID}
-        accessibilityLabel={opts.label}
-        accessibilityHint={opts.hint}
-        accessibilityState={{ checked: opts.value }}
-      />
-    </View>
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync();
+        opts.onChange(!opts.value);
+      }}
+      style={({ pressed }) => [
+        styles.headerPill,
+        opts.value
+          ? { backgroundColor: theme.ironElevated3, borderColor: theme.ironElevated3 }
+          : { borderColor: theme.border },
+        pressed && { opacity: 0.7 },
+      ]}
+      hitSlop={6}
+      testID={opts.testID}
+      accessibilityRole="switch"
+      accessibilityLabel={opts.label}
+      accessibilityHint={opts.hint}
+      accessibilityState={{ checked: opts.value }}
+    >
+      <Feather name={opts.icon} size={13} color={opts.value ? theme.text : theme.textSecondary} />
+      <ThemedText
+        style={[styles.headerPillLabel, { color: opts.value ? theme.text : theme.textSecondary }]}
+        numberOfLines={1}
+      >
+        {opts.label}
+      </ThemedText>
+      <ThemedText
+        style={[styles.headerPillState, { color: opts.value ? theme.primary : theme.textSecondary }]}
+      >
+        {opts.value ? t("common.on") : t("common.off")}
+      </ThemedText>
+    </Pressable>
   );
 
   // Mirror the workout onto the lock screen / Dynamic Island. Re-sent on every
@@ -2209,6 +2215,7 @@ export default function ActiveWorkoutScreen() {
       acc + ex.sets.filter((s) => s.completed && s.setType !== "warmup").length,
     0
   );
+  const warmupOpen = warmupExpanded ?? completedSets === 0;
   const progressPercent =
     totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
@@ -2334,6 +2341,7 @@ export default function ActiveWorkoutScreen() {
             {renderHeaderToggle({
               label: t("activeWorkout.restTimer"),
               hint: t("activeWorkout.restTimerHint"),
+              icon: "clock",
               value: restTimerEnabled,
               onChange: persistRestTimerPreference,
               testID: "switch-rest-timer-header",
@@ -2341,6 +2349,7 @@ export default function ActiveWorkoutScreen() {
             {renderHeaderToggle({
               label: t("activeWorkout.circuitMode"),
               hint: t("activeWorkout.circuitModeHint"),
+              icon: "refresh-cw",
               value: circuitMode,
               onChange: (on) => {
                 setCircuitMode(on);
@@ -2403,21 +2412,18 @@ export default function ActiveWorkoutScreen() {
                   ? `${localizedName.slice(0, 13)}…`
                   : localizedName;
 
+              const sets = ep?.sets ?? [];
+              const ink = isCurrent ? theme.onChalk : isDone ? theme.textSecondary : theme.text;
+
+              // One chalk pill marks "you are here"; the rest stay unboxed so
+              // the bar reads as a path, not a row of identical cards.
               return (
                 <Pressable
                   key={exercise.id}
                   onPress={() => jumpToExercise(exIdx)}
                   style={[
                     styles.exerciseChip,
-                    {
-                      borderColor: isCurrent
-                        ? theme.primary
-                        : theme.border,
-                      backgroundColor: isDone
-                        ? theme.primary + "18"
-                        : theme.backgroundRoot,
-                    },
-                    isCurrent && styles.exerciseChipActive,
+                    isCurrent && { backgroundColor: theme.primary },
                   ]}
                   testID={`chip-exercise-${exIdx}`}
                   accessibilityRole="button"
@@ -2428,28 +2434,46 @@ export default function ActiveWorkoutScreen() {
                   })}
                   accessibilityState={{ selected: isCurrent }}
                 >
-                  <ThemedText
-                    style={[
-                      styles.exerciseChipLabel,
-                      {
-                        color: isCurrent
-                          ? theme.primary
-                          : theme.text,
-                        fontWeight: isCurrent ? "700" : "600",
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {exIdx + 1}. {shortName}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.exerciseChipMeta,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    {completedCount}/{totalCount}
-                  </ThemedText>
+                  <View style={styles.exerciseChipTop}>
+                    {isDone ? (
+                      <Feather name="check" size={12} color={ink} />
+                    ) : (
+                      <ThemedText style={[styles.exerciseChipNumber, { color: isCurrent ? theme.onChalk : theme.textSecondary }]}>
+                        {exIdx + 1}
+                      </ThemedText>
+                    )}
+                    <ThemedText
+                      style={[styles.exerciseChipLabel, { color: ink }]}
+                      numberOfLines={1}
+                    >
+                      {shortName}
+                    </ThemedText>
+                  </View>
+                  {sets.length > 0 && sets.length <= 8 ? (
+                    <View style={styles.exerciseChipDots}>
+                      {sets.map((set, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.exerciseChipDot,
+                            {
+                              backgroundColor: set.completed
+                                ? isCurrent
+                                  ? theme.onChalk
+                                  : theme.text
+                                : isCurrent
+                                  ? theme.onChalk + "33"
+                                  : theme.border,
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <ThemedText style={[styles.exerciseChipMeta, { color: ink }]}>
+                      {completedCount}/{totalCount}
+                    </ThemedText>
+                  )}
                 </Pressable>
               );
             })}
@@ -2483,18 +2507,32 @@ export default function ActiveWorkoutScreen() {
           ) : null}
 
           {day.warmup ? (
-            <View
-              style={[styles.warmupCard, { backgroundColor: theme.ironElevated2 }]}
+            // Open until the first set is done, then one quiet line.
+            <Pressable
+              onPress={() => setWarmupExpanded(!warmupOpen)}
+              style={[styles.warmupCard, { borderLeftColor: theme.border }]}
               testID="card-warmup"
+              accessibilityRole="button"
+              accessibilityState={{ expanded: warmupOpen }}
             >
               <View style={styles.warmupHeader}>
-                <Feather name="sunrise" size={14} color={theme.text} />
-                <ThemedText style={styles.warmupTitle}>{t("activeWorkout.warmup")}</ThemedText>
+                <Feather name="sunrise" size={13} color={theme.textSecondary} />
+                <ThemedText style={[styles.warmupTitle, { color: theme.textSecondary }]}>
+                  {t("activeWorkout.warmup")}
+                </ThemedText>
+                <Feather
+                  name={warmupOpen ? "chevron-up" : "chevron-down"}
+                  size={14}
+                  color={theme.textSecondary}
+                />
               </View>
-              <ThemedText style={[styles.warmupText, { color: theme.textSecondary }]}>
+              <ThemedText
+                style={[styles.warmupText, { color: theme.textSecondary }]}
+                numberOfLines={warmupOpen ? undefined : 1}
+              >
                 {day.warmup}
               </ThemedText>
-            </View>
+            </Pressable>
           ) : null}
 
           {day.exercises.map((exercise, exIdx) => {
@@ -3121,29 +3159,46 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   exerciseChipBar: {
     marginTop: Spacing.sm,
+    // Scroll edge to edge, but line the first chip up with the pills above.
+    marginHorizontal: -Spacing.lg,
   },
   exerciseChipBarContent: {
     paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   exerciseChip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    minWidth: 88,
-    maxWidth: 140,
+    minWidth: 72,
+    maxWidth: 150,
+    gap: 6,
   },
-  exerciseChipActive: {
-    borderWidth: 1.5,
+  exerciseChipTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  exerciseChipNumber: {
+    fontSize: 12,
+    fontFamily: "Oswald_600SemiBold",
   },
   exerciseChipLabel: {
+    flexShrink: 1,
     fontSize: 13,
     fontFamily: "Oswald_600SemiBold",
   },
+  exerciseChipDots: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  exerciseChipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   exerciseChipMeta: {
     fontSize: 11,
-    marginTop: 2,
     fontWeight: "500",
   },
   exerciseReorderCol: {
@@ -3377,8 +3432,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   warmupCard: {
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    paddingLeft: Spacing.md,
+    paddingVertical: 2,
+    borderLeftWidth: 2,
     gap: 4,
   },
   warmupHeader: {
@@ -3387,7 +3443,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     gap: Spacing.xs,
   },
   warmupTitle: {
-    fontSize: 13,
+    flex: 1,
+    fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.4,
@@ -3794,36 +3851,22 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  headerToggleCard: {
-    flex: 1,
+  headerPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-    paddingLeft: Spacing.md,
-    paddingRight: Spacing.xs,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    // controlOutline is the design system's border for pressable controls —
-    // the quieter divider hairline let these melt into the background.
-    borderWidth: 1,
-    borderColor: c.controlOutline,
-    backgroundColor: c.ironElevated2,
+    gap: 6,
+    height: 32,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  headerToggleText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  headerToggleLabel: {
+  headerPillLabel: {
     fontSize: 13,
     fontWeight: "600",
   },
-  headerToggleState: {
-    fontSize: 11,
+  headerPillState: {
+    fontSize: 12,
     fontWeight: "600",
-    marginTop: 1,
-  },
-  headerToggleSwitch: {
-    transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
   },
   prModalOverlay: {
     flex: 1,
