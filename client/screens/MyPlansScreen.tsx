@@ -910,7 +910,7 @@ export default function MyPlansScreen() {
 
             <WeekScheduleStrip
               commitments={commitments}
-              sessionDayNames={(primaryPlan(plans)?.days ?? []).map((d) => d.dayName)}
+              plan={primaryPlan(plans)}
               mobilityWeekdays={mobilityWeekdays}
               // "Profile" and "Calendar" are sibling TABS, not
               // RootStackParamList routes — navigate resolves them in the tab

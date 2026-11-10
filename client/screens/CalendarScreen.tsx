@@ -239,7 +239,7 @@ export default function CalendarScreen() {
           <>
             <WeekScheduleStrip
               commitments={commitments}
-              sessionDayNames={(primaryPlan(plans)?.days ?? []).map((d) => d.dayName)}
+              plan={primaryPlan(plans)}
               mobilityWeekdays={mobilityWeekdays}
             />
 

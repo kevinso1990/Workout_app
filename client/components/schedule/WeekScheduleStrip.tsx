@@ -8,7 +8,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
-import { scheduleTrainingWeek, type WeeklyCommitment } from "@shared/weeklySchedule";
+import type { WeeklyCommitment } from "@shared/weeklySchedule";
+import { planTrainingWeek } from "@shared/planSchedule";
+import type { WorkoutPlan } from "@/lib/storage";
+import { isMobilityDay } from "@/lib/mobilitySplit";
+import { weekStripCaption } from "@/lib/planStructure";
 import { translateDayName } from "@/lib/dayNameLabel";
 import {
   WEEKDAY_FALLBACK,
@@ -33,21 +37,22 @@ function datesOfCurrentWeek(): number[] {
 }
 
 /**
- * "What's on this week" — the plan's sessions laid out around the athlete's
+ * "What's on this week" — the plan's sessions on the plan's own weekdays (and
+ * rotation week) when it prescribes them, else laid out around the athlete's
  * fixed sport days.
  *
- * The layout is derived on every render from (commitments + plan day names)
- * rather than stored, so it can never show a stale week after either changes.
+ * The layout is derived on every render from (commitments + plan) rather
+ * than stored, so it can never show a stale week after either changes.
  */
 export function WeekScheduleStrip({
   commitments,
-  sessionDayNames,
+  plan,
   onPressEdit,
   onPress,
   mobilityWeekdays = [],
 }: {
   commitments: WeeklyCommitment[];
-  sessionDayNames: string[];
+  plan: Pick<WorkoutPlan, "days" | "schedule"> | null;
   /** Fixed Mobility-Session weekdays (0 = Mo); shown on top of the schedule. */
   mobilityWeekdays?: number[];
   onPressEdit?: () => void;
@@ -61,12 +66,14 @@ export function WeekScheduleStrip({
   const today = todayWeekday();
   const weekDates = datesOfCurrentWeek();
 
+  const days = plan?.days ?? [];
   const schedule = useMemo(
-    () => scheduleTrainingWeek({ commitments, sessionDayNames }),
-    [commitments, sessionDayNames],
+    () => planTrainingWeek({ commitments, days, schedule: plan?.schedule, now: new Date() }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [commitments, plan],
   );
 
-  if (sessionDayNames.length === 0 && commitments.length === 0 && mobilityWeekdays.length === 0) {
+  if (days.length === 0 && commitments.length === 0 && mobilityWeekdays.length === 0) {
     return null;
   }
 
@@ -80,9 +87,16 @@ export function WeekScheduleStrip({
       style={[styles.card, { backgroundColor: theme.ironElevated2 }]}
     >
       <View style={styles.header}>
-        <ThemedText style={styles.title}>
-          {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
-        </ThemedText>
+        <View style={styles.titleRow}>
+          <ThemedText style={styles.title}>
+            {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
+          </ThemedText>
+          {schedule.cycle ? (
+            <ThemedText style={[styles.cycle, { color: theme.textSecondary }]}>
+              {t("plans.weekStrip.cycleWeek", schedule.cycle)}
+            </ThemedText>
+          ) : null}
+        </View>
         {onPressEdit ? (
           <Pressable
             onPress={onPressEdit}
@@ -101,7 +115,13 @@ export function WeekScheduleStrip({
       <View style={styles.row}>
         {schedule.slots.map((slot) => {
           const isToday = slot.weekday === today;
-          const isMobility = mobilityWeekdays.includes(slot.weekday);
+          const planDayIdx = schedule.dayIndexByWeekday.get(slot.weekday);
+          // The plan's own mobility day ("Mo Mobility") reads as mobility,
+          // not as a gym session.
+          const planMobility =
+            slot.kind === "gym" && planDayIdx !== undefined && isMobilityDay(days[planDayIdx]);
+          const isGym = slot.kind === "gym" && !planMobility;
+          const isMobility = planMobility || mobilityWeekdays.includes(slot.weekday);
           return (
             <View key={slot.weekday} style={styles.dayCol}>
               <ThemedText
@@ -126,7 +146,7 @@ export function WeekScheduleStrip({
                 style={[
                   styles.cell,
                   { borderColor: theme.border },
-                  slot.kind === "gym" && {
+                  isGym && {
                     backgroundColor: theme.primary,
                     borderColor: theme.primary,
                   },
@@ -134,7 +154,7 @@ export function WeekScheduleStrip({
                   isToday && { borderColor: theme.chalk, borderWidth: 2 },
                 ]}
               >
-                {slot.kind === "gym" ? (
+                {isGym ? (
                   <ActivityIcon size={16} color={theme.onChalk} />
                 ) : slot.kind === "sport" ? (
                   <ActivityIcon
@@ -151,7 +171,7 @@ export function WeekScheduleStrip({
                 )}
                 {/* Mobility on a day that already holds a session: a corner
                     badge rather than replacing the session's own icon. */}
-                {isMobility && slot.kind !== "rest" ? (
+                {isMobility && slot.kind !== "rest" && !planMobility ? (
                   <View
                     style={[
                       styles.mobilityBadge,
@@ -163,26 +183,30 @@ export function WeekScheduleStrip({
                 ) : null}
               </View>
 
-              {slot.kind === "gym" ? (
+              {isGym ? (
                 (() => {
                   // One long word ("Ganzkörper") is wider than the column and
                   // got broken mid-word. Shrink the name to fit one line and
-                  // put the variant letter underneath instead.
-                  const label = translateDayName(t, slot.dayName ?? "");
-                  const m = label.match(/^(.*) ([A-Z])$/);
+                  // put the variant underneath instead.
+                  const [line1, line2] = weekStripCaption(translateDayName(t, slot.dayName ?? ""));
                   return (
                     <>
                       <ThemedText
                         numberOfLines={1}
                         adjustsFontSizeToFit
-                        minimumFontScale={0.6}
+                        minimumFontScale={0.75}
                         style={[styles.cellCaption, { color: theme.textSecondary }]}
                       >
-                        {m ? m[1] : label}
+                        {line1}
                       </ThemedText>
-                      {m ? (
-                        <ThemedText style={[styles.cellCaption, { color: theme.textSecondary }]}>
-                          {m[2]}
+                      {line2 ? (
+                        <ThemedText
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.75}
+                          style={[styles.cellCaption, { color: theme.textSecondary }]}
+                        >
+                          {line2}
                         </ThemedText>
                       ) : null}
                     </>
@@ -222,6 +246,14 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.lg,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: Spacing.sm,
+  },
+  cycle: {
+    fontSize: 13,
   },
   header: {
     flexDirection: "row",

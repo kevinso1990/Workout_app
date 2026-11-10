@@ -6,6 +6,7 @@ import {
   isExerciseDone,
   liveSets,
   nextOpenExercise,
+  nextSupersetStep,
 } from "@/lib/workoutSetFlow";
 import type { ExerciseProgress, SetData } from "@/lib/storage";
 
@@ -66,5 +67,32 @@ describe("appendedSet", () => {
       set("80", "8"),
     );
     expect(appendedSet([])).toEqual(set("", ""));
+  });
+});
+
+describe("nextSupersetStep", () => {
+  // A1 = 0, A2 = 1, a finisher at 2 outside the superset.
+  const members = [0, 1];
+
+  it("alternates A1 → A2 without rest, then rests before the next round", () => {
+    expect(nextSupersetStep(members, [[true, false], [false, false], [false]], 0)).toEqual({
+      target: { exerciseIndex: 1, setIndex: 0 },
+      rest: false,
+    });
+    expect(nextSupersetStep(members, [[true, false], [true, false], [false]], 1)).toEqual({
+      target: { exerciseIndex: 0, setIndex: 1 },
+      rest: true,
+    });
+  });
+
+  it("keeps going on the member with sets left once the other is done", () => {
+    expect(nextSupersetStep(members, [[true, false], [true, true], [false]], 0)).toEqual({
+      target: { exerciseIndex: 0, setIndex: 1 },
+      rest: true,
+    });
+  });
+
+  it("reports the superset as finished", () => {
+    expect(nextSupersetStep(members, [[true], [true], [false]], 1)).toEqual({ target: null, rest: false });
   });
 });

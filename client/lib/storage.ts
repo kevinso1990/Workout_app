@@ -1,10 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { computeAdaptiveProgression } from "@shared/coachProgression";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
+import type { PlanSchedule } from "@shared/planSchedule";
 import { filterAvoidedExercises } from "@shared/avoidExercises";
 import { defaultPlanName } from "@/lib/defaultPlanName";
 
 export type { WeeklyCommitment, Weekday } from "@shared/weeklySchedule";
+export type { PlanSchedule, PlanScheduleEntry } from "@shared/planSchedule";
 
 const STORAGE_KEYS = {
   /** Legal disclaimer accepted (v1 — bump key if disclaimer text materially changes). */
@@ -80,11 +82,30 @@ export interface Exercise {
   targetWeight?: number;
   /** Optional rep target (single number); complements `reps` (may be a range string). */
   targetReps?: number;
+  /** `reps` counts each side separately ("8 / Seite"). */
+  perSide?: boolean;
+  /** Coaching cue from the plan ("Rippen unten, Gesäß fest."). */
+  notes?: string;
+  /** What to do instead without the gym ("Zuhause: KB Suitcase DL 3 × 8/Seite"). */
+  alternative?: string;
+  /**
+   * Superset/circuit block ("A", "B"): exercises sharing it are done one set
+   * each in turn, resting only after the round.
+   */
+  superset?: string;
+  /** Rest after a set (or, in a superset, after the round) in seconds. */
+  restSeconds?: number;
 }
 
 export interface WorkoutDay {
+  /** Stable id the plan's schedule points at; survives renames and reordering. */
+  id?: string;
   dayName: string;
   exercises: Exercise[];
+  /** Warm-up the plan prescribes before the first exercise, as written. */
+  warmup?: string;
+  /** Set by import for a stretching session; name-based detection otherwise. */
+  kind?: "mobility";
 }
 
 export type WorkoutType = "strength" | "cardio";
@@ -113,6 +134,8 @@ export interface WorkoutPlan {
   name: string;
   daysPerWeek: number;
   days: WorkoutDay[];
+  /** Fixed weekdays (and rotation) from the plan itself; absent → auto-placed. */
+  schedule?: PlanSchedule;
   createdAt: string;
   lastModified: string;
 }
@@ -296,11 +319,17 @@ export async function getWorkoutPlans(): Promise<WorkoutPlan[]> {
   }
 }
 
-export async function saveWorkoutPlan(plan: WorkoutPlan): Promise<void> {
+export async function saveWorkoutPlan(
+  plan: WorkoutPlan,
+  opts: { first?: boolean } = {},
+): Promise<void> {
   const plans = await getWorkoutPlans();
   const existingIndex = plans.findIndex((p) => p.id === plan.id);
   if (existingIndex >= 0) {
     plans[existingIndex] = plan;
+  } else if (opts.first) {
+    // The first plan is the one the week and the home tab are built from.
+    plans.unshift(plan);
   } else {
     plans.push(plan);
   }

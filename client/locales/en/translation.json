@@ -13,7 +13,9 @@
     "exerciseCount_one": "{{count}} exercise",
     "exerciseCount_other": "{{count}} exercises",
     "daysPerWeekCount_one": "{{count}} day per week",
-    "daysPerWeekCount_other": "{{count}} days per week"
+    "daysPerWeekCount_other": "{{count}} days per week",
+    "perSide": "per side",
+    "warmup": "Warm-up: {{text}}"
   },
   "planGeneration": {
     "fallbackBanner": "We used a standard template — AI generation failed (no connection or server error). You can regenerate from Plan Settings."
@@ -117,7 +119,8 @@
     "weekStrip": {
       "title": "Your week",
       "edit": "Commitments",
-      "unplaced": "No free day left for: {{names}}"
+      "unplaced": "No free day left for: {{names}}",
+      "cycleWeek": "Week {{week}} of {{of}}"
     },
     "coach": {
       "title": "Coach"
@@ -333,8 +336,7 @@
     "review": {
       "title": "Review & correct plan",
       "subtitle": "{{count}} exercises detected — adjust anything before saving.",
-      "unmappedCount": "{{count}} need assignment",
-      "unknownExercise": "Unknown exercise — please assign",
+      "unmappedCount": "{{count}} to check",
       "assignFromCatalog": "Assign from library",
       "searchPlaceholder": "Search exercises…",
       "noMatches": "No matches",
@@ -353,7 +355,26 @@
       "avoidFoundBody": "This source names {{count}} exercise(s) to avoid: {{list}}",
       "avoidIgnore": "Ignore",
       "avoidSave": "Add to profile",
-      "avoidSaved": "Added to your avoid-list in Profile"
+      "avoidSaved": "Added to your avoid-list in Profile",
+      "duration": "~{{min}} min",
+      "warmup": "Warm-up: {{text}}",
+      "cardioAppointment": "Saved as a fixed appointment in your week.",
+      "superset": "Superset {{label}}",
+      "supersetRest": "Superset {{label}} · {{rest}} rest",
+      "rest": "{{rest}} rest",
+      "repsPerSide": "Reps / side",
+      "checkMatch": "Please check – right exercise?",
+      "customExercise": "Custom exercise · search catalog"
+    },
+    "schedule": {
+      "title": "Your week, per the plan",
+      "rotation": "{{count}}-week rotation – week 1 starts this week.",
+      "week": "Week {{n}}",
+      "kind": {
+        "mobility": "Mobility",
+        "cardio": "Cardio"
+      },
+      "cardioAsAppointment": "Cardio sessions go into your week as fixed appointments."
     }
   },
   "aiCoach": {
@@ -537,7 +558,10 @@
       "no": "No, keep it",
       "applied": "Plan updated",
       "failed": "Couldn't save the plan"
-    }
+    },
+    "warmup": "Warm-up",
+    "supersetChip": "Superset {{label}}",
+    "perSideSuffix": " / side"
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",

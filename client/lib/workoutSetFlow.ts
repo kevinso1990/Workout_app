@@ -70,3 +70,29 @@ export function appendedSet(sets: SetData[]): SetData {
     completed: false,
   };
 }
+
+/**
+ * Superset flow ("A1 → A2 → Pause → A1 …"): after a set of one member, the
+ * next member in plan order that still has an open set. `rest` is true when
+ * that step wraps back past the end of the round — that's where the plan's
+ * pause goes, not between A1 and A2. A null target means the superset is
+ * finished. `completed[i][j]`: set j of exercise i is done (closed exercises
+ * count as all done).
+ */
+export function nextSupersetStep(
+  members: number[],
+  completed: boolean[][],
+  fromIndex: number,
+): { target: { exerciseIndex: number; setIndex: number } | null; rest: boolean } {
+  const pos = members.indexOf(fromIndex);
+  const n = members.length;
+  if (pos < 0 || n === 0) return { target: null, rest: false };
+  for (let step = 1; step <= n; step++) {
+    const idx = members[(pos + step) % n];
+    const setIndex = (completed[idx] ?? []).findIndex((done) => !done);
+    if (setIndex !== -1) {
+      return { target: { exerciseIndex: idx, setIndex }, rest: pos + step >= n };
+    }
+  }
+  return { target: null, rest: false };
+}

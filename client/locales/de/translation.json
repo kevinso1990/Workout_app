@@ -13,7 +13,9 @@
     "exerciseCount_one": "{{count}} Übung",
     "exerciseCount_other": "{{count}} Übungen",
     "daysPerWeekCount_one": "{{count}} Tag pro Woche",
-    "daysPerWeekCount_other": "{{count}} Tage pro Woche"
+    "daysPerWeekCount_other": "{{count}} Tage pro Woche",
+    "perSide": "pro Seite",
+    "warmup": "Warm-up: {{text}}"
   },
   "planGeneration": {
     "fallbackBanner": "Wir haben eine Standardvorlage verwendet — die KI-Generierung ist fehlgeschlagen (keine Verbindung oder Serverfehler). Du kannst in den Planeinstellungen neu generieren."
@@ -117,7 +119,8 @@
     "weekStrip": {
       "title": "Deine Woche",
       "edit": "Termine",
-      "unplaced": "Kein freier Tag mehr für: {{names}}"
+      "unplaced": "Kein freier Tag mehr für: {{names}}",
+      "cycleWeek": "Woche {{week}} von {{of}}"
     },
     "coach": {
       "title": "Coach"
@@ -252,8 +255,7 @@
     "review": {
       "title": "Plan prüfen & korrigieren",
       "subtitle": "{{count}} Übungen erkannt — passe alles an, bevor du speicherst.",
-      "unmappedCount": "{{count}} Zuordnung offen",
-      "unknownExercise": "Unbekannte Übung – Bitte zuordnen",
+      "unmappedCount": "{{count}} zum Prüfen",
       "assignFromCatalog": "Aus Katalog zuordnen",
       "searchPlaceholder": "Übung suchen…",
       "noMatches": "Keine Treffer",
@@ -272,7 +274,26 @@
       "avoidFoundBody": "Diese Quelle nennt {{count}} Übung(en), die vermieden werden sollen: {{list}}",
       "avoidIgnore": "Ignorieren",
       "avoidSave": "Zum Profil hinzufügen",
-      "avoidSaved": "Zur Vermeiden-Liste im Profil hinzugefügt"
+      "avoidSaved": "Zur Vermeiden-Liste im Profil hinzugefügt",
+      "duration": "~{{min}} Min",
+      "warmup": "Warm-up: {{text}}",
+      "cardioAppointment": "Wird als fester Termin in deiner Woche gespeichert.",
+      "superset": "Superset {{label}}",
+      "supersetRest": "Superset {{label}} · {{rest}} Pause",
+      "rest": "{{rest}} Pause",
+      "repsPerSide": "Wdh. / Seite",
+      "checkMatch": "Bitte prüfen – richtige Übung?",
+      "customExercise": "Eigene Übung · im Katalog suchen"
+    },
+    "schedule": {
+      "title": "Deine Woche laut Plan",
+      "rotation": "{{count}}-Wochen-Rotation – Woche 1 startet diese Woche.",
+      "week": "Woche {{n}}",
+      "kind": {
+        "mobility": "Mobility",
+        "cardio": "Cardio"
+      },
+      "cardioAsAppointment": "Cardio-Einheiten kommen als fester Termin in deine Woche."
     }
   },
   "aiCoach": {
@@ -456,7 +477,10 @@
       "no": "Nein, so lassen",
       "applied": "Plan angepasst",
       "failed": "Plan konnte nicht gespeichert werden"
-    }
+    },
+    "warmup": "Warm-up",
+    "supersetChip": "Superset {{label}}",
+    "perSideSuffix": " / Seite"
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",

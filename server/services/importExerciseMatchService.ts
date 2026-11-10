@@ -405,7 +405,26 @@ const MATERIAL_QUALIFIERS = [
   "close-grip",
   "wide-grip",
   "bulgarian",
+  // Variations that are their own exercise, not a dressed-up base lift:
+  // "Copenhagen Plank" is an adductor drill, not a plank; "Sliding Leg Curl"
+  // is done on the floor, not the machine; "Split Squat Iso Hold" is held.
+  "copenhagen",
+  "sliding",
+  "suitcase",
+  "iso",
+  "hold",
+  "rotation",
+  "elevated",
+  "erhöhung",
+  "erhöht",
+  "rock-back",
 ];
+
+/** Whole-word presence ("iso" must not fire inside "isolation"). */
+function hasQualifier(s: string, q: string): boolean {
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-zäöüß])${escaped}($|[^a-zäöüß])`).test(s);
+}
 
 /**
  * False when the input carries a material qualifier the candidate lacks.
@@ -415,7 +434,7 @@ const MATERIAL_QUALIFIERS = [
 export function qualifiersOk(searchName: string, canonical: string): boolean {
   const from = canonicalizeQualifiers(searchName).toLowerCase();
   const to = canonicalizeQualifiers(canonical).toLowerCase();
-  return !MATERIAL_QUALIFIERS.some((q) => from.includes(q) && !to.includes(q));
+  return !MATERIAL_QUALIFIERS.some((q) => hasQualifier(from, q) && !hasQualifier(to, q));
 }
 
 export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {

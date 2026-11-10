@@ -1053,6 +1053,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   pasteInput: {
     minHeight: 160,
+    // A pasted multi-page plan scrolls inside the field instead of pushing
+    // the analyse button off screen.
+    maxHeight: 240,
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,

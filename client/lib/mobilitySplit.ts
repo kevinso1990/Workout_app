@@ -10,7 +10,7 @@ const MOBILITY_DAY_NAME = /mobil|dehn|stretch|beweglich|yoga|flexib/i;
  * a strength week ("Tag 4 – Mobility").
  */
 export function isMobilityDay(day: WorkoutDay): boolean {
-  if (MOBILITY_DAY_NAME.test(day.dayName)) return true;
+  if (day.kind === "mobility" || MOBILITY_DAY_NAME.test(day.dayName)) return true;
   const n = day.exercises.length;
   if (n === 0) return false;
   const mobility = day.exercises.filter((e) => isMobilityExercise(e.name)).length;
@@ -68,7 +68,9 @@ export function splitMobilityDay(
     trainingPlan: {
       ...plan,
       days: remaining,
-      daysPerWeek: remaining.length,
+      // A scheduled plan already counts training days only; its schedule
+      // entries for the removed day simply stop resolving.
+      daysPerWeek: plan.schedule ? plan.daysPerWeek : remaining.length,
       lastModified: now,
     },
     mobilityPlan: {

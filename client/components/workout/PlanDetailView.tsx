@@ -13,6 +13,7 @@ import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import type { Exercise, WorkoutDay } from "@/lib/storage";
 import { translateDayName } from "@/lib/dayNameLabel";
+import { supersetLabels } from "@/lib/planStructure";
 
 
 type PlanDetailViewProps = {
@@ -30,11 +31,13 @@ function PlanExerciseRow({
   exercise,
   index,
   isLast,
+  supersetLabel,
   onExercisePress,
 }: {
   exercise: Exercise;
   index: number;
   isLast: boolean;
+  supersetLabel: string | null;
   onExercisePress?: (exercise: Exercise) => void;
 }) {
   const { theme } = useTheme();
@@ -56,24 +59,34 @@ function PlanExerciseRow({
         <Text style={styles.exerciseTitle} numberOfLines={2}>
           {localizeName(exercise.name)}
         </Text>
-        <View
-          style={[
-            styles.muscleTag,
-            { backgroundColor: theme.ironElevated2 },
-          ]}
-        >
-          <Text
-            style={[styles.muscleTagText, { color: theme.chalkDim }]}
-            numberOfLines={1}
+        <View style={styles.tagRow}>
+          {supersetLabel ? (
+            <View style={[styles.muscleTag, styles.supersetTag, { borderColor: theme.controlOutline }]}>
+              <Text style={[styles.muscleTagText, { color: theme.text }]}>{supersetLabel}</Text>
+            </View>
+          ) : null}
+          <View
+            style={[
+              styles.muscleTag,
+              { backgroundColor: theme.ironElevated2 },
+            ]}
           >
-            {translateMuscleGroup(t, exercise.muscleGroup)}
-          </Text>
+            <Text
+              style={[styles.muscleTagText, { color: theme.chalkDim }]}
+              numberOfLines={1}
+            >
+              {translateMuscleGroup(t, exercise.muscleGroup)}
+            </Text>
+          </View>
         </View>
       </View>
       <View style={styles.exerciseSetsCol}>
         <Text style={styles.setsLine}>
           {exercise.sets} × {exercise.reps}
         </Text>
+        {exercise.perSide ? (
+          <Text style={styles.rirLine}>{t("planDetail.perSide")}</Text>
+        ) : null}
         {exercise.targetRIR !== undefined ? (
           <Text style={styles.rirLine}>{exercise.targetRIR} RIR</Text>
         ) : null}
@@ -98,6 +111,7 @@ function DayCard({
   const { t } = useTranslation();
   const letter = dayLetter(dayIndex);
   const canStart = typeof onStartDay === "function";
+  const labels = supersetLabels(day.exercises);
 
   const headerInner = (
     <>
@@ -152,12 +166,18 @@ function DayCard({
       )}
 
       <View style={styles.cardBody}>
+        {day.warmup ? (
+          <Text style={styles.warmupLine}>
+            {t("planDetail.warmup", { text: day.warmup })}
+          </Text>
+        ) : null}
         {day.exercises.map((exercise, index) => (
           <PlanExerciseRow
             key={exercise.id}
             exercise={exercise}
             index={index}
             isLast={index === day.exercises.length - 1}
+            supersetLabel={labels[index]}
             onExercisePress={onExercisePress}
           />
         ))}
@@ -318,6 +338,19 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 12,
     color: c.chalkDim,
     lineHeight: 16,
+  },
+  tagRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  supersetTag: {
+    borderWidth: 1,
+  },
+  warmupLine: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: c.chalkDim,
+    paddingTop: 10,
   },
   muscleTag: {
     alignSelf: "flex-start",

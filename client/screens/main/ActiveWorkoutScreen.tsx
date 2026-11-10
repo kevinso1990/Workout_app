@@ -89,7 +89,9 @@ import {
   isExerciseDone,
   liveSets,
   nextOpenExercise,
+  nextSupersetStep,
 } from "@/lib/workoutSetFlow";
+import { isTimedTarget, supersetLabels, supersetMembers } from "@/lib/planStructure";
 import {
   applyPlanDeviation,
   detectPlanDeviations,
@@ -881,6 +883,8 @@ export default function ActiveWorkoutScreen() {
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(DEFAULT_REST_TIME);
+  /** Length of the running rest — the plan's own pause can differ from the default. */
+  const [restTotal, setRestTotal] = useState<number | null>(null);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState<PRRecord[]>([]);
@@ -913,6 +917,10 @@ export default function ActiveWorkoutScreen() {
     if (fitnessGoals.includes("lose_fat"))     return 45;  // 45 s  — elevated HR is the goal
     return 90; // default: muscle / build_muscle
   }, [fitnessGoals]);
+
+  /** The plan's pause for this exercise ("90 Sek Pause") wins over the goal default. */
+  const restFor = (exercise: Exercise | undefined): number =>
+    exercise?.restSeconds && exercise.restSeconds > 0 ? exercise.restSeconds : restDuration;
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
@@ -948,6 +956,14 @@ export default function ActiveWorkoutScreen() {
     } catch {
       // Notification permission may be denied — timer still works visually.
     }
+  };
+
+  const startRest = (seconds: number) => {
+    if (!restTimerEnabled) return;
+    setShowRestTimer(true);
+    setRestTotal(seconds);
+    setRestTimeLeft(seconds);
+    scheduleRestNotification(seconds);
   };
 
   // Request notification permissions and set up AppState sync for background timer.
@@ -1798,11 +1814,7 @@ export default function ActiveWorkoutScreen() {
       const next = findNextCircuitTarget(patched, exerciseIndex);
       if (next) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        if (restTimerEnabled) {
-          setShowRestTimer(true);
-          setRestTimeLeft(restDuration);
-          scheduleRestNotification(restDuration);
-        }
+        startRest(restFor(exercise));
         setCurrentExerciseIndex(next.exerciseIndex);
         setCurrentSetIndex(next.setIndex);
         if (next.exerciseIndex !== exerciseIndex) {
@@ -1812,12 +1824,35 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
-    if (setIndex < exercise.sets - 1) {
-      if (restTimerEnabled) {
-        setShowRestTimer(true);
-        setRestTimeLeft(restDuration);
-        scheduleRestNotification(restDuration);
+    // Superset: one set of each member in turn, the pause after the round.
+    const members = supersetMembers(day.exercises, exerciseIndex);
+    if (members) {
+      const completed = day.exercises.map((_, i) =>
+        progress[i].sets.map((s, j) =>
+          (i === exerciseIndex && j === setIndex) || progress[i].closed ? true : s.completed,
+        ),
+      );
+      const step = nextSupersetStep(members, completed, exerciseIndex);
+      if (step.target) {
+        if (step.rest) startRest(restFor(exercise));
+        setCurrentExerciseIndex(step.target.exerciseIndex);
+        setCurrentSetIndex(step.target.setIndex);
+        if (step.target.exerciseIndex !== exerciseIndex) {
+          requestAnimationFrame(() => scrollToExercise(step.target!.exerciseIndex));
+        }
+        return;
       }
+      const next = nextOpenExercise(progress, Math.max(...members));
+      if (!next) return;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setCurrentExerciseIndex(next.exerciseIndex);
+      setCurrentSetIndex(next.setIndex);
+      requestAnimationFrame(() => scrollToExercise(next.exerciseIndex));
+      return;
+    }
+
+    if (setIndex < exercise.sets - 1) {
+      startRest(restFor(exercise));
       setCurrentSetIndex(setIndex + 1);
     } else {
       const next = nextOpenExercise(progress, exerciseIndex);
@@ -1953,7 +1988,7 @@ export default function ActiveWorkoutScreen() {
     const reps = set?.reps || exercise.reps;
     // A bare "30" on the lock screen doesn't say whether it's reps or seconds.
     const unit = t(
-      isHoldExercise(exercise.name)
+      isHoldExercise(exercise.name) || isTimedTarget(exercise.reps)
         ? "activeWorkout.liveActivity.seconds"
         : "activeWorkout.liveActivity.reps",
     );
@@ -2162,6 +2197,7 @@ export default function ActiveWorkoutScreen() {
 
   const day = plan.days[route.params.dayIndex];
   const detailExercise = day.exercises[detailExerciseIndex] ?? day.exercises[0];
+  const daySupersetLabels = supersetLabels(day.exercises);
 
   // Warm-up sets don't count toward the working-set progress ("1/23").
   const totalSets = progress.reduce(
@@ -2446,15 +2482,31 @@ export default function ActiveWorkoutScreen() {
             </View>
           ) : null}
 
+          {day.warmup ? (
+            <View
+              style={[styles.warmupCard, { backgroundColor: theme.ironElevated2 }]}
+              testID="card-warmup"
+            >
+              <View style={styles.warmupHeader}>
+                <Feather name="sunrise" size={14} color={theme.text} />
+                <ThemedText style={styles.warmupTitle}>{t("activeWorkout.warmup")}</ThemedText>
+              </View>
+              <ThemedText style={[styles.warmupText, { color: theme.textSecondary }]}>
+                {day.warmup}
+              </ThemedText>
+            </View>
+          ) : null}
+
           {day.exercises.map((exercise, exIdx) => {
             const ep = progress[exIdx];
             if (!ep) return null;
+            const supersetLabel = daySupersetLabels[exIdx];
             const lastWeekExercise = lastWeekProgress.find(
               (lep) => lep.exerciseId === ep.exerciseId,
             );
             const progression = getProgressionForExercise(exIdx);
             const isBodyweight = isBodyweightExercise(exercise);
-            const isHold = isHoldExercise(exercise.name);
+            const isHold = isHoldExercise(exercise.name) || isTimedTarget(exercise.reps);
             const isCurrentExercise = exIdx === currentExerciseIndex;
             const doneCount = ep.sets.filter((s) => s.completed).length;
             const exerciseDone = isExerciseDone(ep);
@@ -2520,15 +2572,28 @@ export default function ActiveWorkoutScreen() {
                         {localizeName(exercise.name)}
                       </ThemedText>
                       <View style={styles.exerciseMeta}>
-                        <ThemedText
-                          style={[
-                            styles.metaMuscleLabel,
-                            { color: theme.chalkDim },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {translateMuscleGroup(t, exercise.muscleGroup)}
-                        </ThemedText>
+                        <View style={styles.metaTopRow}>
+                          {supersetLabel ? (
+                            <ThemedText
+                              style={[
+                                styles.supersetChip,
+                                { color: theme.text, borderColor: theme.controlOutline },
+                              ]}
+                              testID={`chip-superset-${exIdx}`}
+                            >
+                              {t("activeWorkout.supersetChip", { label: supersetLabel })}
+                            </ThemedText>
+                          ) : null}
+                          <ThemedText
+                            style={[
+                              styles.metaMuscleLabel,
+                              { color: theme.chalkDim, flexShrink: 1 },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {translateMuscleGroup(t, exercise.muscleGroup)}
+                          </ThemedText>
+                        </View>
                         <ThemedText
                           style={[styles.targetSetsLine, { color: theme.text }]}
                           numberOfLines={1}
@@ -2546,7 +2611,21 @@ export default function ActiveWorkoutScreen() {
                                 : exercise.reps,
                             },
                           )}
+                          {exercise.perSide ? t("activeWorkout.perSideSuffix") : ""}
                         </ThemedText>
+                        {exercise.notes ? (
+                          <ThemedText style={[styles.exerciseCue, { color: theme.chalkDim }]}>
+                            {exercise.notes}
+                          </ThemedText>
+                        ) : null}
+                        {exercise.alternative ? (
+                          <View style={styles.exerciseAltRow}>
+                            <Feather name="corner-down-right" size={12} color={theme.chalkDim} />
+                            <ThemedText style={[styles.exerciseCue, { color: theme.chalkDim }]}>
+                              {exercise.alternative}
+                            </ThemedText>
+                          </View>
+                        ) : null}
                       </View>
                     </View>
 
@@ -2793,7 +2872,7 @@ export default function ActiveWorkoutScreen() {
           {showRestTimer ? (
             <RestTimerBar
               timeLeft={restTimeLeft}
-              totalSeconds={restDuration}
+              totalSeconds={Math.max(restTotal ?? restDuration, restTimeLeft)}
               onSkip={handleSkipRest}
               onAdjust={handleAdjustRest}
             />
@@ -3269,6 +3348,53 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "flex-start",
     gap: 4,
     marginTop: 2,
+  },
+  metaTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  supersetChip: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: BorderRadius.xs,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  exerciseCue: {
+    flexShrink: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  exerciseAltRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  warmupCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: 4,
+  },
+  warmupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  warmupTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  warmupText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   metaMuscleLabel: {
     fontSize: 13,

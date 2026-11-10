@@ -9,7 +9,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
-import { saveWorkoutPlan, type WorkoutPlan } from "@/lib/storage";
+import { getUserPreferences, saveWorkoutPlan, setUserPreferences, type WorkoutPlan } from "@/lib/storage";
+import { weekdaysOfDay } from "@shared/planSchedule";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { syncMobilityReminders } from "@/lib/mobilityReminders";
@@ -109,6 +110,15 @@ export function MobilityDayQuestion({
       );
       await saveWorkoutPlan(mobilityPlan);
       await saveWorkoutPlan(trainingPlan);
+      // The plan said when ("Mo abends") — preselect those days; the days
+      // card below still lets the user change them.
+      const planned = weekdaysOfDay(candidate.plan.schedule, day.id);
+      if (planned.length > 0) {
+        const prefs = await getUserPreferences();
+        if (!prefs?.mobilityWeekdays?.length) {
+          await setUserPreferences({ workoutDaysPerWeek: 3, ...prefs, mobilityWeekdays: planned });
+        }
+      }
       await remember(candidate.key);
       scheduleDataSync();
       void syncMobilityReminders();

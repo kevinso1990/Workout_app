@@ -22,11 +22,13 @@ import { HEVY } from "@/constants/hevyLayout";
 import type { ImportedExercise, ImportedWorkoutPlan } from "@/hooks/useWorkoutImport";
 import {
   type CatalogRow,
-  isImportedExerciseUnmapped,
+  importMatchStatus,
   rankCatalogMatches,
 } from "@/lib/importCatalog";
 import { parseRepsInput, repsInputValue } from "@/lib/importReps";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
+import { formatRest, supersetLabels } from "@/lib/planStructure";
+import { ImportScheduleSummary } from "@/components/import/ImportScheduleSummary";
 
 type InlinePick = { dayIdx: number; exIdx: number } | null;
 
@@ -106,7 +108,7 @@ export function ImportPlanReviewPanel({
 
   const totalExercises = plan.days.reduce((n, d) => n + d.exercises.length, 0);
   const unmappedCount = plan.days.reduce(
-    (n, d) => n + d.exercises.filter(isImportedExerciseUnmapped).length,
+    (n, d) => n + d.exercises.filter((ex) => importMatchStatus(ex) === "check").length,
     0,
   );
 
@@ -237,14 +239,52 @@ export function ImportPlanReviewPanel({
           </Animated.View>
         ) : null}
 
-        {plan.days.map((day, dayIdx) => (
+        <ImportScheduleSummary plan={plan} />
+
+        {plan.days.map((day, dayIdx) => {
+          const labels = supersetLabels(day.exercises);
+          return (
           <View key={dayIdx} style={styles.dayBlock}>
-            <ThemedText style={styles.dayTitle}>
-              {day.dayName}
-            </ThemedText>
+            <View>
+              <ThemedText style={styles.dayTitle}>
+                {day.dayName}
+              </ThemedText>
+              {day.kind === "mobility" || day.kind === "cardio" || day.durationMinutes ? (
+                <ThemedText style={styles.dayMeta}>
+                  {[
+                    day.kind === "mobility" || day.kind === "cardio"
+                      ? t(`importWorkout.schedule.kind.${day.kind}`)
+                      : null,
+                    day.durationMinutes ? t("importWorkout.review.duration", { min: day.durationMinutes }) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </ThemedText>
+              ) : null}
+            </View>
+            {day.warmup ? (
+              <View style={styles.structureNote}>
+                <Feather name="sunrise" size={14} color={theme.chalkDim} />
+                <ThemedText style={styles.structureNoteText}>
+                  {t("importWorkout.review.warmup", { text: day.warmup })}
+                </ThemedText>
+              </View>
+            ) : null}
+            {day.kind === "cardio" ? (
+              <View style={styles.structureNote}>
+                <Feather name="activity" size={14} color={theme.chalkDim} />
+                <ThemedText style={styles.structureNoteText}>
+                  {[day.notes, t("importWorkout.review.cardioAppointment")].filter(Boolean).join("\n")}
+                </ThemedText>
+              </View>
+            ) : null}
 
             {day.exercises.map((ex, exIdx) => {
-              const unmapped = isImportedExerciseUnmapped(ex);
+              const matchStatus = importMatchStatus(ex);
+              // Only a guessed rename is flagged; an exercise the catalog
+              // doesn't know is simply kept under the plan's own name.
+              const unmapped = matchStatus === "check";
+              const supersetLabel = labels[exIdx];
               const pickerOpen =
                 inlinePick?.dayIdx === dayIdx && inlinePick?.exIdx === exIdx;
 
@@ -252,7 +292,7 @@ export function ImportPlanReviewPanel({
                 <View key={`${dayIdx}-${exIdx}`}>
                   <Pressable
                     onPress={() => {
-                      if (unmapped || pickerOpen) {
+                      if (matchStatus !== "matched" || pickerOpen) {
                         openInlinePicker(dayIdx, exIdx, ex);
                       }
                     }}
@@ -289,16 +329,29 @@ export function ImportPlanReviewPanel({
                             { color: theme.primary },
                           ]}
                         >
-                          {t("importWorkout.review.unknownExercise")}
+                          {t("importWorkout.review.checkMatch")}
                         </ThemedText>
                       </View>
                     ) : null}
 
                     <View style={styles.exerciseCardHeader}>
                       <View style={{ flex: 1 }}>
-                        <ThemedText style={styles.miniLabel}>
-                          {t("importWorkout.review.exercise")}
-                        </ThemedText>
+                        <View style={styles.labelRow}>
+                          <ThemedText style={styles.miniLabel}>
+                            {t("importWorkout.review.exercise")}
+                          </ThemedText>
+                          {supersetLabel ? (
+                            <ThemedText style={[styles.supersetChip, { color: theme.text, backgroundColor: theme.ironElevated3 }]}>
+                              {ex.restSeconds
+                                ? t("importWorkout.review.supersetRest", { label: supersetLabel, rest: formatRest(ex.restSeconds) })
+                                : t("importWorkout.review.superset", { label: supersetLabel })}
+                            </ThemedText>
+                          ) : ex.restSeconds ? (
+                            <ThemedText style={[styles.supersetChip, { color: theme.textSecondary }]}>
+                              {t("importWorkout.review.rest", { rest: formatRest(ex.restSeconds) })}
+                            </ThemedText>
+                          ) : null}
+                        </View>
                         <TextInput
                           returnKeyType="done"
                           clearButtonMode="while-editing"
@@ -363,7 +416,9 @@ export function ImportPlanReviewPanel({
                       </View>
                       <View style={styles.metricCell}>
                         <ThemedText style={styles.miniLabel}>
-                          {t("importWorkout.review.reps")}
+                          {ex.perSide
+                            ? t("importWorkout.review.repsPerSide")
+                            : t("importWorkout.review.reps")}
                         </ThemedText>
                         <TextInput
                           returnKeyType="done"
@@ -410,6 +465,16 @@ export function ImportPlanReviewPanel({
                       </View>
                     </View>
 
+                    {ex.notes ? (
+                      <ThemedText style={styles.cueLine}>{ex.notes}</ThemedText>
+                    ) : null}
+                    {ex.alternative ? (
+                      <View style={styles.altRow}>
+                        <Feather name="repeat" size={12} color={theme.chalkDim} />
+                        <ThemedText style={styles.cueLine}>{ex.alternative}</ThemedText>
+                      </View>
+                    ) : null}
+
                     {unmapped ? (
                       <Pressable
                         onPress={() => openInlinePicker(dayIdx, exIdx, ex)}
@@ -423,6 +488,18 @@ export function ImportPlanReviewPanel({
                           style={[styles.assignChipText, { color: theme.primary }]}
                         >
                           {t("importWorkout.review.assignFromCatalog")}
+                        </ThemedText>
+                      </Pressable>
+                    ) : matchStatus === "custom" ? (
+                      <Pressable
+                        onPress={() => openInlinePicker(dayIdx, exIdx, ex)}
+                        style={styles.customRow}
+                        hitSlop={6}
+                        testID={`button-import-custom-${dayIdx}-${exIdx}`}
+                      >
+                        <Feather name="edit-3" size={12} color={theme.chalkDim} />
+                        <ThemedText style={styles.cueLine}>
+                          {t("importWorkout.review.customExercise")}
                         </ThemedText>
                       </Pressable>
                     ) : null}
@@ -499,17 +576,20 @@ export function ImportPlanReviewPanel({
               );
             })}
 
-            <Pressable
-              onPress={() => onAddExercise(dayIdx)}
-              style={styles.addRowBtn}
-            >
-              <Feather name="plus" size={16} color={theme.primary} />
-              <ThemedText style={[styles.addRowText, { color: theme.primary }]}>
-                {t("importWorkout.review.addExercise")}
-              </ThemedText>
-            </Pressable>
+            {day.kind === "cardio" ? null : (
+              <Pressable
+                onPress={() => onAddExercise(dayIdx)}
+                style={styles.addRowBtn}
+              >
+                <Feather name="plus" size={16} color={theme.primary} />
+                <ThemedText style={[styles.addRowText, { color: theme.primary }]}>
+                  {t("importWorkout.review.addExercise")}
+                </ThemedText>
+              </Pressable>
+            )}
           </View>
-        ))}
+          );
+        })}
 
         <Pressable onPress={onCancel} style={styles.cancelLink}>
           <ThemedText style={styles.cancelLinkText}>
@@ -687,6 +767,53 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
+  },
+  dayMeta: {
+    fontSize: 13,
+    color: c.chalkDim,
+  },
+  structureNote: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+    alignItems: "flex-start",
+  },
+  structureNoteText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: c.chalkDim,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.xs,
+  },
+  supersetChip: {
+    fontSize: 11,
+    fontWeight: "700",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: BorderRadius.xs,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  cueLine: {
+    flexShrink: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.chalkDim,
+  },
+  customRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+  },
+  altRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   documentLine: {
     fontSize: 12,

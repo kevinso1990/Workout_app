@@ -1,4 +1,6 @@
-import { scheduleTrainingWeek, type WeeklyCommitment } from "@shared/weeklySchedule";
+import type { WeeklyCommitment, Weekday } from "@shared/weeklySchedule";
+import { isUsableSchedule, planTrainingWeek, scheduledDayIndex } from "@shared/planSchedule";
+import { isMobilityDay } from "@/lib/mobilitySplit";
 import type { WorkoutPlan, WorkoutSession } from "@/lib/storage";
 import {
   MOBILITY_PLAN_ID,
@@ -71,41 +73,42 @@ export function todayOverview(input: {
   const sport = commitments.find((c) => c.weekday === weekday) ?? null;
 
   let strength: TodaySession | null = null;
+  let mobilityFromPlan: TodaySession | null = null;
   let next: TodayOverview["next"] = null;
   const plan = primaryPlan(plans);
   if (plan) {
-    const { slots } = scheduleTrainingWeek({
-      commitments,
-      sessionDayNames: plan.days.map((d) => d.dayName),
-    });
-    // Day names can repeat ("Tag" twice); hand out plan days in order so each
-    // slot points at its own day.
-    const used = new Set<number>();
-    const indexByWeekday = new Map<number, number>();
-    for (const slot of slots) {
-      if (slot.kind !== "gym" || slot.dayName === undefined) continue;
-      const idx = plan.days.findIndex((d, i) => d.dayName === slot.dayName && !used.has(i));
-      if (idx < 0) continue;
-      used.add(idx);
-      indexByWeekday.set(slot.weekday, idx);
-    }
+    // Same lookup as the week strip: the plan's own weekdays/rotation when it
+    // has them, else the sessions laid out around the sport days.
+    const schedule = plan.schedule;
+    const autoWeek = isUsableSchedule(schedule, plan.days)
+      ? null
+      : planTrainingWeek({ commitments, days: plan.days, now });
+    const dayOn = (date: Date): number | undefined =>
+      autoWeek
+        ? autoWeek.dayIndexByWeekday.get(mondayBasedWeekday(date) as Weekday)
+        : scheduledDayIndex(schedule!, plan.days, date);
 
-    const todayIdx = indexByWeekday.get(weekday);
-    if (todayIdx !== undefined && !strengthLogged) {
+    const todayIdx = dayOn(now);
+    // A mobility day the plan puts on today is offered as mobility, not as
+    // the day's strength session.
+    if (todayIdx !== undefined && isMobilityDay(plan.days[todayIdx])) {
+      if (!mobilityLogged) mobilityFromPlan = session(plan, todayIdx);
+    } else if (todayIdx !== undefined && !strengthLogged) {
       strength = session(plan, todayIdx);
-    } else {
+    }
+    if (!strength) {
       for (let k = 1; k <= 7; k++) {
-        const d = (weekday + k) % 7;
-        const idx = indexByWeekday.get(d);
-        if (idx !== undefined) {
-          next = { ...session(plan, idx), weekday: d };
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + k);
+        const idx = dayOn(date);
+        if (idx !== undefined && !isMobilityDay(plan.days[idx])) {
+          next = { ...session(plan, idx), weekday: (weekday + k) % 7 };
           break;
         }
       }
     }
   }
 
-  let mobility: TodaySession | null = null;
+  let mobility: TodaySession | null = mobilityFromPlan;
   const mobilityPlan = plans.find((p) => p.id === MOBILITY_PLAN_ID);
   if (mobilityPlan && mobilityPlan.days.length > 0 && mobilityWeekdays.includes(weekday) && !mobilityLogged) {
     mobility = session(mobilityPlan, 0);

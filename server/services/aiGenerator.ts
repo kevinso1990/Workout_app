@@ -2,69 +2,65 @@
  * Central AI instruction sets for plan extraction and auto-generation.
  */
 
-/** Strict import prompt — NO internet RAG, NO warm-up/cardio/meta sections. */
-export const IMPORT_WORKOUT_EXTRACTION_PROMPT = `You are a strength-training plan extractor. Output ONLY structured JSON for KRAFT/STRENGTH workout days.
+/**
+ * Import prompt — NO internet RAG. Reads every session of the plan (strength,
+ * mobility, cardio) with its structure: supersets, rest, cues, home
+ * alternatives, warm-up and the weekly schedule / rotation.
+ */
+export const IMPORT_WORKOUT_EXTRACTION_PROMPT = `You read a training plan document and output ONLY structured JSON. Be faithful to the document: never invent exercises, numbers or days.
 
-STRICT FILTERING — IGNORE COMPLETELY (do not parse, do not output):
-- Introductions, week schedules ("Bei 2x/Woche: Mo + Do Kraft"), training frequency notes
-- Warm-up / Aufwärmen / Activation sections
-- Physio rules, general coaching text, disclaimers, tables of rules
-- Bürotage, office days, recovery-only days
-- Cardio, Mobility, Stretching, Yoga, Pilates, conditioning-only blocks
-- Page headers, footers, page numbers, copyright
+WHAT TO READ — every SESSION block of the plan:
+- Strength days, however titled ("GK A", "GK A kurz – Bein / Hinge", "Tag 1", "Day A", "Push", "Workout B", …). Short and long versions of the same focus day are SEPARATE days.
+- Mobility / stretching sessions ("Mobility – Mo abends") → kind "mobility".
+- Cardio / conditioning sessions ("Cardio – So", "Norwegisches 4×4") → kind "cardio".
+WHAT TO IGNORE: introductions, rule/physio text, disclaimers, page headers/footers, table header rows ("# Übung Sätze × Wdh Kurz-Hinweis").
 
-ONLY PARSE sections explicitly titled like:
-- "GK A", "GK B", "GK C" (Ganzkörper A/B/C)
-- "Tag 1", "Tag 2", "Tag A", "Day A", "Day B", "Workout A", "Training A"
-- Similar labeled STRENGTH day blocks with a list of resistance exercises (sets × reps)
+PER DAY:
+- dayName: the session title exactly as written (e.g. "GK A kurz – Bein / Hinge"). For a cardio session use a short name with its format when the document gives one (e.g. "Cardio 4×4").
+- kind: "strength" | "mobility" | "cardio".
+- warmup: a warm-up row/section of this day as ONE line of text, exactly as written (e.g. "5 Min Seil · Couch Stretch 60–90 Sek/Seite (Becken nach hinten) · 2×15 Glute Bridges"). A warm-up is NEVER an exercise. null if none.
+- durationMinutes: the session's stated duration (upper bound of a range), else null.
+- notes: for cardio days, the full prescription in one or two short lines (e.g. "10 Min warm-up locker · 4 × 4 Min bei 90–95 % HRmax, dazwischen 3 Min sehr locker · 5 Min Cool-down. Bike oder Sprints."). Otherwise null.
+- exercises: for cardio days return []. Otherwise every exercise row in order.
 
-EXERCISE RULES:
-- Include ONLY real resistance/strength exercises (barbell, dumbbell, kettlebell, machine, bodyweight strength moves).
-- Each exercise MUST have a recognizable exercise name (e.g. "Trap Bar Deadlift", "Kettlebell Swing", "Reverse Lunges").
-- If a line is NOT a clear strength exercise (schedule text, section title, note, rule), OMIT it entirely — never guess.
-- Use exact exercise names as written in the document. Do not invent exercises.
-- sets: positive integer (default 3 only if sets column is missing but exercise row is clearly a working set).
-- reps: integer or null if not visible.
-- weight: number or null.
+PER EXERCISE:
+- name: the exercise name only — no numbering, no "A1"/"B2" prefix, no conditions like "(falls Stange da)" (those go to notes). Keep qualifiers that change WHICH exercise it is ("Single Leg KB RDL", "Enge Klimmzüge (supinated)", "Bulgarian Split Squat (KB Front Rack)"). Equipment choices between otherwise identical options go to notes ("Rudern Sitzend (Kabel/Maschine)" → name "Rudern Sitzend", notes "Kabel/Maschine").
+- sets: integer. For a range ("2–3") use the higher number and add "2–3 Sätze" to notes. A row with only a duration ("Child's Pose 60 Sek") is 1 set. If the block header gives rounds ("3 Runden") and the row has no own sets, use the rounds.
+- reps: the per-set target as a string, WITHOUT the "per side" part:
+    "6–8" → "6-8", "10" → "10", "20–30 Sek" → "20-30 s", "45 Sek" → "45 s", "2 Min" → "120 s", "2–3 Min" → "120-180 s". null if none.
+- perSide: true when the target is per side ("/Seite", "pro Seite", "je Seite", "each side", "per side"), else false.
+- weight: number in kg if the row prescribes a load, else null.
+- notes: the row's coaching cue as written, shortened only by removing the alternative (below). Instructions in a BLOCK header that apply to every exercise of the block (e.g. "linke Seite zuerst, links +1 Satz") are added to each of those exercises' notes. null if nothing.
+- alternative: an alternative exercise the row offers for another setting, with its label, e.g. "Zuhause: KB Suitcase DL 3 × 8/Seite" or "Gym: Reverse Butterfly". Remove it from notes. null if none.
+- superset: when the row belongs to a superset/circuit block ("Superset A – 3 Runden, 90 Sek Pause", rows prefixed A1/A2), the block letter ("A", "B"). Exercises of a normal block or a "Finisher" without superset wording → null.
+- restSeconds: rest in seconds stated for the row or its block ("90 Sek Pause" → 90, "2 Min Pause" → 120), else null.
+- muscleGroup: the main muscle group the exercise trains, one of: Chest, Back, Shoulders, Biceps, Triceps, Forearms, Traps, Quads, Hamstrings, Glutes, Calves, Legs, Core, Full Body, Mobility ("Mobility" for stretches and mobility drills).
 
-NAME CLEANUP — move descriptive asides into "notes", keep "name" matchable:
-- A trailing parenthetical, or text after "oder"/"ODER"/"or"/"/", belongs in "name" only if it
-  changes WHICH exercise this is (e.g. "Incline Dumbbell Press", "Close-Grip Bench Press",
-  "Single-Leg RDL" — keep these whole, qualifier and all).
-- It belongs in "notes" instead if it is coaching guidance, a body-position hint, or an
-  equipment choice between otherwise-identical options:
-  "Dips (Beine locker hängend/gebeugt)" -> name: "Dips", notes: "Beine locker hängend/gebeugt"
-  "Rudern Sitzend (Kabelzug oder Maschine)" -> name: "Rudern Sitzend", notes: "Kabelzug oder Maschine"
-  "Inverted Rows (Barbell im Rack / Ringe)" -> name: "Inverted Rows", notes: "Barbell im Rack / Ringe"
-- When genuinely unsure which case applies, leave the aside in "name" — losing a qualifier that
-  changes the exercise is worse than an overly long name.
+SCHEDULE — only when the document assigns sessions to weekdays:
+- schedule.weeks: one entry per week of the cycle. A plan without rotation has exactly one week.
+- Each week lists sessions { weekday, dayName }: weekday is "mon","tue","wed","thu","fri","sat","sun"; dayName must be EXACTLY one of the dayName values you output in "days".
+- Resolve rotation tables: e.g. "Woche 1: Di GK B kurz, Do GK C kurz, Sa GK A lang" → week 1 has tue → "GK B kurz – Pull", thu → "GK C kurz – Push / Core", sat → "GK A lang – Bein / Hinge".
+- Sessions that are the same every week (e.g. "Mo Mobility", "So Cardio") appear in EVERY week of the cycle.
+- Free/rest days are simply not listed.
+- If the document has no weekday assignment at all, return "weeks": [].
 
-MULTI-DAY:
-- Preserve day grouping (GK A, GK B, GK C as separate days).
-- Do NOT duplicate identical exercise lists across days unless the source explicitly repeats them.
-- Do NOT merge warm-up or cardio exercises into strength days.
-
-AVOID-LIST — separate from the days, same pass, no extra sections to read:
-- Some plans carry a section explicitly framed as things NOT to do — titled something
-  like "Verboten", "Vermeiden", "Nicht erlaubt", "Contraindicated", "Avoid", "Do not perform" —
-  typically from a physio or trainer, often with a reason column (e.g. "Warum"/"Why") instead
-  of a sets×reps column. These sections are already excluded from "days" by the rule above.
-- Separately collect just the exercise NAMES from such a section (if present) into a top-level
-  "avoidExercises" string array — e.g. ["Superman", "Good Mornings", "Russian Twists"].
-- If one row/line names SEVERAL exercises together (e.g. "V-Ups, Jackknives, Sit-Ups mit
-  fixierten Füßen" or "Toes-to-Bar, Windshield Wipers"), split them into SEPARATE array
-  entries — one exercise name per entry, never a comma-joined group. Each entry must stand
-  alone as something that could be matched against a single exercise.
-- Do NOT use this field for exercises that are merely out of scope for THIS extraction (warm-up,
-  cardio, mobility) — those are not dangerous, just not what this pass parses. Only exercises the
-  source itself frames as something to avoid/not do belong here.
-- If no such section exists, return an empty array. Never invent entries.
+AVOID-LIST — separate from the days:
+- Some plans carry a section framed as things NOT to do ("Verboten", "Vermeiden", "Nicht erlaubt", "Contraindicated", "Avoid"), often with a reason column instead of sets×reps. Those are NOT days.
+- Collect just the exercise NAMES from such a section into "avoidExercises". Split a row naming several exercises ("V-Ups, Jackknives, Sit-Ups mit fixierten Füßen") into separate entries.
+- Only exercises the document itself frames as to be avoided. Empty array if none.
 
 OUTPUT FORMAT — VALID JSON IS MANDATORY:
-- If a source exercise name contains a double-quote character (e.g. an alt-name in quotes like Hip "Getup"), you MUST escape it as \\" inside the JSON string, or rewrite the name without the quote marks. Never emit a raw, unescaped " inside a JSON string value.
-- Output must be a single valid JSON object parseable by a strict JSON parser — no trailing commas, no comments.
+{"planName": string, "days": [...], "schedule": {"weeks": [{"sessions": [{"weekday": "tue", "dayName": "..."}]}]}, "avoidExercises": [...]}
+- Escape a double-quote inside a string as \\" or leave the quote marks out. No trailing commas, no comments.
+- planName: the document's title if it has one, else a short descriptive name.
 
-If zero strength exercises found in allowed sections, return: {"planName":"Imported Plan","days":[],"avoidExercises":[]}`;
+If no session with exercises is found, return: {"planName":"Imported Plan","days":[],"schedule":{"weeks":[]},"avoidExercises":[]}`;
+
+/** Catalog muscle groups (+ Mobility) the model may assign to an exercise the catalog doesn't know. */
+export const IMPORT_MUSCLE_GROUPS = [
+  "Chest", "Back", "Shoulders", "Biceps", "Triceps", "Forearms", "Traps",
+  "Quads", "Hamstrings", "Glutes", "Calves", "Legs", "Core", "Full Body", "Mobility",
+] as const;
 
 /** JSON schema for Gemini structured output (import). */
 export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
@@ -81,6 +77,10 @@ export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
         type: "object",
         properties: {
           dayName: { type: "string" },
+          kind: { type: "string", enum: ["strength", "mobility", "cardio"] },
+          warmup: { type: "string", nullable: true },
+          durationMinutes: { type: "integer", nullable: true },
+          notes: { type: "string", nullable: true },
           exercises: {
             type: "array",
             items: {
@@ -88,19 +88,50 @@ export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
               properties: {
                 name: { type: "string" },
                 sets: { type: "integer" },
-                reps: { type: "integer", nullable: true },
+                reps: { type: "string", nullable: true },
+                perSide: { type: "boolean" },
                 weight: { type: "number", nullable: true },
                 notes: { type: "string", nullable: true },
+                alternative: { type: "string", nullable: true },
+                superset: { type: "string", nullable: true },
+                restSeconds: { type: "integer", nullable: true },
+                muscleGroup: { type: "string", enum: [...IMPORT_MUSCLE_GROUPS] },
               },
               required: ["name", "sets"],
             },
           },
         },
-        required: ["dayName", "exercises"],
+        required: ["dayName", "kind", "exercises"],
       },
     },
+    schedule: {
+      type: "object",
+      properties: {
+        weeks: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              sessions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    weekday: { type: "string", enum: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] },
+                    dayName: { type: "string" },
+                  },
+                  required: ["weekday", "dayName"],
+                },
+              },
+            },
+            required: ["sessions"],
+          },
+        },
+      },
+      required: ["weeks"],
+    },
   },
-  required: ["planName", "days", "avoidExercises"],
+  required: ["planName", "days", "schedule", "avoidExercises"],
 } as const;
 
 /**

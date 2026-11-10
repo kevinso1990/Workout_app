@@ -92,9 +92,15 @@ export function extractStrengthDaySections(fullText: string): string {
       continue;
     }
 
-    if (IGNORE_SECTION_HEADER.test(line) || NON_EXERCISE_LINE.test(line)) {
+    if (IGNORE_SECTION_HEADER.test(line)) {
       if (inStrength) flush();
       inStrength = false;
+      continue;
+    }
+    // A warm-up or cardio row INSIDE a day ("– Warm-up (5 Min) 1× Couch
+    // Stretch …") is skipped, not treated as the end of the day — that used
+    // to cut every GK block off right after its header.
+    if (NON_EXERCISE_LINE.test(line) || /^(?:superset|finisher|zirkel|circuit)\b/i.test(line)) {
       continue;
     }
 

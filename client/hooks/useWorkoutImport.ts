@@ -11,9 +11,8 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImageManipulator from "expo-image-manipulator";
-import { repsToPlanString } from "@/lib/importReps";
-import { saveWorkoutPlan } from "@/lib/storage";
-import type { WorkoutPlan as StorageWorkoutPlan, Exercise as StorageExercise } from "@/lib/storage";
+import { getUserPreferences, saveWorkoutPlan, setUserPreferences } from "@/lib/storage";
+import { importedPlanToStorage, withCardioCommitments } from "@/lib/importedPlan";
 import { getApiUrl } from "@/lib/query-client";
 import { ImportRequestError } from "@/hooks/importRequestError";
 import {
@@ -33,6 +32,9 @@ import {
 
 export { ImportRequestError } from "@/hooks/importRequestError";
 export { formatImportFailure } from "@/hooks/importRequestError";
+
+// v=2: the app understands mobility/cardio days, supersets and the schedule.
+const IMPORT_PATH = "/api/import-workout?v=2";
 
 // 3 MB in base64 characters (~4 MB raw). Images larger than this are
 // compressed client-side before being sent to the server.
@@ -54,6 +56,13 @@ export interface ImportedExercise {
   reps: number | string | null;
   weight: number | null;
   notes: string | null;
+  /** Target counts each side ("8 / Seite"). */
+  perSide?: boolean;
+  /** Alternative for another setting, labelled ("Zuhause: KB Suitcase DL 3 × 8/Seite"). */
+  alternative?: string | null;
+  /** Superset block letter ("A") — members alternate sets. */
+  superset?: string | null;
+  restSeconds?: number | null;
   /** SQLite catalog id when mapped to the exercise library. */
   catalogExerciseId?: number | null;
   /** Filled by server after catalog matching. */
@@ -69,9 +78,22 @@ export class WorkoutImportUnreadableError extends Error {
   }
 }
 
+export type ImportedDayKind = "strength" | "mobility" | "cardio";
+
 export interface ImportedWorkoutDay {
   dayName: string;
   exercises: ImportedExercise[];
+  /** Absent from servers before the full-plan import (treated as strength). */
+  kind?: ImportedDayKind;
+  warmup?: string | null;
+  durationMinutes?: number | null;
+  /** Cardio prescription ("4 × 4 Min bei 90–95 % HRmax …"). */
+  notes?: string | null;
+}
+
+/** Weekday (0 = Mo) → index into `days`, one list per week of the cycle. */
+export interface ImportedSchedule {
+  weeks: { weekday: number; dayIndex: number }[][];
 }
 
 export interface ImportedWorkoutPlan {
@@ -81,6 +103,8 @@ export interface ImportedWorkoutPlan {
   emptyPlan?: boolean;
   /** Exercise names the source itself framed as "do not do" (e.g. a physio plan's forbidden-exercise table). */
   avoidExercises?: string[];
+  /** Weekdays / rotation the plan itself prescribes. */
+  schedule?: ImportedSchedule;
 }
 
 export interface PickedImage {
@@ -112,7 +136,8 @@ const SPREADSHEET_MIMES = new Set([
 const SPREADSHEET_EXTENSIONS = [".xlsx", ".xls", ".csv"];
 
 const IMPORT_LOG = "[WorkoutImport]";
-const IMPORT_FETCH_TIMEOUT_MS = 45_000;
+// A full plan (several days with cues, schedule) takes the model 20–40 s.
+const IMPORT_FETCH_TIMEOUT_MS = 90_000;
 
 function logImportDebug(stage: string, detail?: Record<string, unknown>) {
   if (detail) {
@@ -455,7 +480,7 @@ export function useWorkoutImport() {
   // ── Network ────────────────────────────────────────────────────────────────
 
   async function postImportPdfMultipart(fileUri: string): Promise<ImportedWorkoutPlan> {
-    const url = new URL("/api/import-workout", getApiUrl()).toString();
+    const url = new URL(IMPORT_PATH, getApiUrl()).toString();
     const form = new FormData();
     form.append("pdf", {
       uri: fileUri,
@@ -470,7 +495,7 @@ export function useWorkoutImport() {
     file: File | Blob,
     fileName: string,
   ): Promise<ImportedWorkoutPlan> {
-    const url = new URL("/api/import-workout", getApiUrl()).toString();
+    const url = new URL(IMPORT_PATH, getApiUrl()).toString();
     const form = new FormData();
     const name = fileName.toLowerCase().endsWith(".pdf") ? fileName : "import.pdf";
     form.append("pdf", file, name);
@@ -536,7 +561,7 @@ export function useWorkoutImport() {
     if (isAbort) {
       throw new ImportRequestError({
         statusCode: null,
-        nativeMessage: `Request aborted (45s timeout). Try a smaller PDF or stronger Wi‑Fi.`,
+        nativeMessage: `Request aborted (${IMPORT_FETCH_TIMEOUT_MS / 1000}s timeout). Try a smaller PDF or stronger Wi‑Fi.`,
         url,
       });
     }
@@ -638,7 +663,7 @@ export function useWorkoutImport() {
   }
 
   async function postImport(payload: Record<string, unknown>): Promise<ImportedWorkoutPlan> {
-    const url = new URL("/api/import-workout", getApiUrl()).toString();
+    const url = new URL(IMPORT_PATH, getApiUrl()).toString();
     const keys = Object.keys(payload);
 
     logImportDebug("postImport:fetch_start", {
@@ -742,38 +767,18 @@ export function useWorkoutImport() {
    */
   async function saveImportedPlan(plan: ImportedWorkoutPlan): Promise<string> {
     const planId = Date.now().toString();
-    const storagePlan: StorageWorkoutPlan = {
-      id: planId,
-      name: plan.planName?.trim() || "Imported Plan",
-      daysPerWeek: plan.days.length,
-      days: plan.days.map((day, dIdx) => ({
-        dayName: day.dayName,
-        exercises: day.exercises.map((ex, idx): StorageExercise => {
-          const row: StorageExercise = {
-            id: `imported-${planId}-${dIdx}-${idx}`,
-            name: ex.name,
-            muscleGroup: (ex.muscleGroup ?? "").trim(),
-            sets: ex.sets,
-            reps: repsToPlanString(ex.reps),
-          };
-          if (ex.weight != null && Number.isFinite(ex.weight)) {
-            row.targetWeight = Math.round(ex.weight * 10) / 10;
-          }
-          if (typeof ex.reps === "number" && Number.isFinite(ex.reps)) {
-            row.targetReps = Math.min(120, Math.max(0, Math.floor(ex.reps)));
-          } else if (typeof ex.reps === "string") {
-            const first = ex.reps.match(/(\d+)/);
-            if (first) {
-              row.targetReps = Math.min(120, Math.max(0, parseInt(first[1], 10)));
-            }
-          }
-          return row;
-        }),
-      })),
-      createdAt: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-    };
-    await saveWorkoutPlan(storagePlan);
+    const { plan: storagePlan, cardioDays } = importedPlanToStorage(plan, planId, new Date());
+    // A plan you just imported is the one you're about to train by.
+    await saveWorkoutPlan(storagePlan, { first: true });
+    if (cardioDays.length > 0) {
+      // The plan's cardio day ("So Cardio 4×4") becomes a fixed weekly
+      // appointment — it shows in the week and on the home tab that day.
+      const prefs = await getUserPreferences();
+      const commitments = withCardioCommitments(prefs?.weeklyCommitments ?? [], cardioDays, planId);
+      if (commitments !== prefs?.weeklyCommitments) {
+        await setUserPreferences({ workoutDaysPerWeek: storagePlan.daysPerWeek, ...prefs, weeklyCommitments: commitments });
+      }
+    }
     return planId;
   }
 

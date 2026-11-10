@@ -17,6 +17,12 @@ export type GeminiGenerateOptions = {
   grounding?: boolean;
   /** When set, forces JSON output matching this schema (Gemini structured outputs). */
   responseSchema?: Record<string, unknown>;
+  /**
+   * false → no thinking tokens. Plain extraction (import) reads the same
+   * without them and answers in half the time — a full plan took 44 s with
+   * thinking, 22 s without, close to the app's request timeout.
+   */
+  thinking?: boolean;
 };
 
 function modelChain(): string[] {
@@ -51,6 +57,9 @@ async function generateWithRest(
   if (options?.responseSchema) {
     generationConfig.responseMimeType = "application/json";
     generationConfig.responseSchema = options.responseSchema;
+  }
+  if (options?.thinking === false) {
+    generationConfig.thinkingConfig = { thinkingBudget: 0 };
   }
 
   const body: Record<string, unknown> = {

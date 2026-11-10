@@ -1,0 +1,30 @@
+import { describe, it, expect } from "vitest";
+import { formatRest, isTimedTarget, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
+
+describe("plan structure helpers", () => {
+  it("labels superset members A1/A2 and ignores single-member blocks", () => {
+    const exs = [{ superset: "A" }, { superset: "A" }, { superset: "B" }, { superset: "B" }, { superset: "C" }, {}];
+    expect(supersetLabels(exs)).toEqual(["A1", "A2", "B1", "B2", null, null]);
+    expect(supersetMembers(exs, 3)).toEqual([2, 3]);
+    expect(supersetMembers(exs, 4)).toBeNull();
+  });
+
+  it("recognises timed targets", () => {
+    expect(isTimedTarget("30-45 s")).toBe(true);
+    expect(isTimedTarget("45 Sek.")).toBe(true);
+    expect(isTimedTarget("8-12")).toBe(false);
+  });
+
+  it("formats rest", () => {
+    expect(formatRest(90)).toBe("90 s");
+    expect(formatRest(210)).toBe("3:30 min");
+    expect(formatRest(60)).toBe("1 min");
+    expect(formatRest(45)).toBe("45 s");
+  });
+
+  it("splits long session names into two short caption lines", () => {
+    expect(weekStripCaption("Ganzkörper A")).toEqual(["Ganzkörper", "A"]);
+    expect(weekStripCaption("GK A kurz – Bein / Hinge")).toEqual(["GK A", "kurz"]);
+    expect(weekStripCaption("Push")).toEqual(["Push", null]);
+  });
+});

@@ -17,9 +17,23 @@ import {
   isSpreadsheetLikeText,
   type ParsedImportPlan,
 } from '../services/importTextParser';
-import { IMPORT_WORKOUT_EXTRACTION_PROMPT, IMPORT_WORKOUT_RESPONSE_SCHEMA } from '../services/aiGenerator';
+import {
+  IMPORT_MUSCLE_GROUPS,
+  IMPORT_WORKOUT_EXTRACTION_PROMPT,
+  IMPORT_WORKOUT_RESPONSE_SCHEMA,
+} from '../services/aiGenerator';
 import { mergeAvoidLists } from "../../shared/avoidExercises";
 import { formatAiServiceError } from '../lib/formatAiServiceError';
+import {
+  cleanText,
+  normalizeDayKind,
+  normalizeRepsTarget,
+  normalizeRestSeconds,
+  normalizeSchedule,
+  normalizeSets,
+  normalizeSuperset,
+  stripWeekdaySuffix,
+} from '../services/importStructure';
 import { jsonrepair } from 'jsonrepair';
 
 const router = express.Router();
@@ -98,7 +112,19 @@ function deduplicateExercisesAcrossDays(raw: Record<string, unknown>): void {
   }
 }
 
-export function normalizeImportedPlan(raw: Record<string, unknown>): Record<string, unknown> {
+export interface NormalizeImportOptions {
+  /**
+   * Client understands mobility/cardio days, supersets and the schedule
+   * (request `?v=2`). Older app builds get strength days only — they would
+   * otherwise turn a cardio day into a list of "exercises".
+   */
+  fullPlan?: boolean;
+}
+
+export function normalizeImportedPlan(
+  raw: Record<string, unknown>,
+  opts: NormalizeImportOptions = {},
+): Record<string, unknown> {
   const planName =
     typeof raw.planName === "string" && raw.planName.trim() ? raw.planName.trim() : "Imported Plan";
   raw.planName = planName;
@@ -118,7 +144,10 @@ export function normalizeImportedPlan(raw: Record<string, unknown>): Record<stri
     : [];
   raw.avoidExercises = mergeAvoidLists([], avoidNames);
 
-  const days = raw.days;
+  const rawSchedule = raw.schedule;
+  delete raw.schedule;
+
+  let days = raw.days;
   if (!Array.isArray(days) || days.length === 0) {
     raw.days = [];
     raw.emptyPlan = true;
@@ -133,8 +162,18 @@ export function normalizeImportedPlan(raw: Record<string, unknown>): Record<stri
     if (typeof d.dayName !== "string" || !d.dayName.trim()) {
       d.dayName = "Day";
     }
+    // "GK A lang (Sa)", "Mobility – Mo abends", "Cardio – So": the weekday
+    // belongs to the schedule, not the session's name.
+    d.dayName = stripWeekdaySuffix(String(d.dayName));
+    d.kind = normalizeDayKind(d.kind, String(d.dayName));
+    d.warmup = cleanText(d.warmup, 500);
+    d.notes = cleanText(d.notes, 500);
+    const dur = typeof d.durationMinutes === "number" ? d.durationMinutes : parseInt(String(d.durationMinutes ?? ""), 10);
+    d.durationMinutes = Number.isFinite(dur) && dur > 0 && dur <= 300 ? Math.round(dur) : null;
+
     const exercises = d.exercises;
-    if (!Array.isArray(exercises)) {
+    // A cardio session is a prescription, not a list of lifts to log.
+    if (!Array.isArray(exercises) || d.kind === "cardio") {
       d.exercises = [];
       continue;
     }
@@ -143,7 +182,8 @@ export function normalizeImportedPlan(raw: Record<string, unknown>): Record<stri
     for (const ex of exercises) {
       if (typeof ex !== "object" || ex === null) continue;
       const e = ex as Record<string, unknown>;
-      const rawName = String(e.name ?? "").trim();
+      // "A1 Trap Bar Deadlift" — the block prefix is structure, not name.
+      const rawName = String(e.name ?? "").trim().replace(/^[A-H][1-9]\s+/, "");
       if (!rawName) continue;
 
       const m = matchExerciseToCatalog(rawName);
@@ -155,36 +195,46 @@ export function normalizeImportedPlan(raw: Record<string, unknown>): Record<stri
         console.warn(`[import-workout] kept unmapped row for manual assignment: "${rawName}" → ${m.matchQuality}`);
       }
       e.name = m.canonicalName;
-      e.muscleGroup = m.muscleGroup;
+      // An exercise the catalog doesn't know still gets the model's read of
+      // what it trains, so it doesn't land in the plan without a muscle group.
+      const modelGroup = typeof e.muscleGroup === "string" ? e.muscleGroup : "";
+      e.muscleGroup =
+        m.muscleGroup ||
+        ((IMPORT_MUSCLE_GROUPS as readonly string[]).includes(modelGroup) ? modelGroup : "");
       e.catalogExerciseId = m.catalogExerciseId;
       e.importMeta = {
         originalName: m.originalName,
         matchQuality: m.matchQuality,
         needsUserMapping: m.needsUserMapping,
       };
-      e.sets = coerceNumber(e.sets, 3);
-      if (e.reps !== null && e.reps !== undefined && e.reps !== "") {
-        const r = typeof e.reps === "number" ? e.reps : parseInt(String(e.reps), 10);
-        e.reps = Number.isFinite(r) ? Math.min(120, Math.max(0, Math.floor(r))) : null;
-      } else {
-        e.reps = null;
-      }
+      e.sets = normalizeSets(e.sets, 3);
+      const target = normalizeRepsTarget(e.reps, e.perSide);
+      e.reps = target.reps;
+      e.perSide = target.perSide;
       if (e.weight !== null && e.weight !== undefined && e.weight !== "") {
         const w = typeof e.weight === "number" ? e.weight : parseFloat(String(e.weight).replace(",", "."));
         e.weight = Number.isFinite(w) ? Math.round(w * 10) / 10 : null;
       } else {
         e.weight = null;
       }
-      if (e.notes !== null && e.notes !== undefined) {
-        e.notes = String(e.notes).trim() || null;
-      } else {
-        e.notes = null;
-      }
+      e.notes = cleanText(e.notes);
+      e.alternative = cleanText(e.alternative, 160);
+      e.superset = normalizeSuperset(e.superset);
+      e.restSeconds = normalizeRestSeconds(e.restSeconds);
 
       cleaned.push(e);
       exerciseCount++;
     }
+    // A "superset" of one is just an exercise.
+    for (const e of cleaned) {
+      if (e.superset && cleaned.filter((o) => o.superset === e.superset).length < 2) e.superset = null;
+    }
     d.exercises = cleaned;
+  }
+
+  if (!opts.fullPlan) {
+    days = (days as Record<string, unknown>[]).filter((d) => d?.kind === "strength");
+    raw.days = days;
   }
 
   if (exerciseCount === 0) {
@@ -193,6 +243,11 @@ export function normalizeImportedPlan(raw: Record<string, unknown>): Record<stri
   }
 
   deduplicateExercisesAcrossDays(raw);
+
+  if (opts.fullPlan) {
+    const dayNames = (raw.days as Record<string, unknown>[]).map((d) => String(d?.dayName ?? ""));
+    raw.schedule = { weeks: normalizeSchedule(rawSchedule, dayNames) };
+  }
   return raw;
 }
 
@@ -338,7 +393,8 @@ async function callClaude(
 
   const message = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
+    // A full plan with cues for every row runs well past 4k tokens.
+    max_tokens: 16000,
     messages: [{ role: 'user', content }],
   });
 
@@ -378,6 +434,7 @@ async function callGemini(
   return geminiGenerateContent(parts, {
     grounding: useGrounding,
     responseSchema: IMPORT_WORKOUT_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+    thinking: false,
   });
 }
 
@@ -498,21 +555,20 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
     }
 
     const plainText = [pdfText, spreadsheetText, pastedText].filter(Boolean).join("\n\n") || null;
-    const focusedText =
-      plainText && !isSpreadsheetLikeText(plainText) ? extractStrengthDaySections(plainText) : plainText;
     if (pdfText) {
       logImportText('extracted PDF text', pdfText);
     }
-    if (plainText && focusedText && focusedText !== plainText) {
-      logImportText('focused strength-day text', focusedText);
-    }
-
-    // Text sent to AI: GK A/B/C slices for PDFs; full text for spreadsheets.
-    const aiText = focusedText ?? plainText;
+    // The model gets the whole document: the schedule, rotation, warm-ups and
+    // mobility/cardio sessions are part of the plan. Only the offline parser
+    // (no AI) works on the pre-filtered strength sections.
+    const aiText = plainText;
+    const offlineText =
+      plainText && !isSpreadsheetLikeText(plainText) ? extractStrengthDaySections(plainText) : plainText;
+    const fullPlan = String(req.query.v ?? "") === "2";
 
     if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY) {
-      if (aiText) {
-        const fallback = parseWorkoutTextImport(aiText, { minExercises: 1 });
+      if (offlineText) {
+        const fallback = parseWorkoutTextImport(offlineText, { minExercises: 1 });
         if (fallback) {
           const plan = normalizeImportedPlan(parsedPlanToRaw(fallback));
           console.log(`[import-workout] parsed plan via text_parser (no AI keys):`, (plan as { planName?: string }).planName ?? '(unnamed)');
@@ -547,14 +603,14 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
 
       console.log(`[import-workout] ${usedProvider} raw response:\n${rawText}`);
 
-      const plan = normalizeImportedPlan(extractPlan(rawText));
+      const plan = normalizeImportedPlan(extractPlan(rawText), { fullPlan });
       console.log(`[import-workout] parsed plan via ${usedProvider}:`, (plan as { planName?: string }).planName ?? '(unnamed)');
       res.json(plan);
     } catch (aiErr) {
       // When AI quota/billing is exhausted but we have readable text, fall back
       // to the offline parser on pre-filtered strength sections only.
-      if (aiText && isAiQuotaOrBillingError(aiErr)) {
-        const fallback = parseWorkoutTextImport(aiText, { minExercises: 1 });
+      if (offlineText && isAiQuotaOrBillingError(aiErr)) {
+        const fallback = parseWorkoutTextImport(offlineText, { minExercises: 1 });
         if (fallback) {
           const plan = normalizeImportedPlan(parsedPlanToRaw(fallback));
           console.warn('[import-workout] AI quota exhausted — used text_parser fallback');

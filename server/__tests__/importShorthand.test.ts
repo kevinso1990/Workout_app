@@ -98,3 +98,17 @@ describe("a dropped qualifier must not pass as a confident match", () => {
     expect(qualifiersOk("Seated Cable Row", "Cable Row")).toBe(true);
   });
 });
+
+describe("qualifiersOk — variations that are their own exercise", () => {
+  it("keeps a Copenhagen plank, iso hold or sliding curl from collapsing to the base lift", () => {
+    expect(qualifiersOk("Copenhagen Plank", "Plank")).toBe(false);
+    expect(qualifiersOk("Split Squat Iso Hold", "Split Squats")).toBe(false);
+    expect(qualifiersOk("Sliding Leg Curl", "Leg Curl")).toBe(false);
+    expect(qualifiersOk("KB Suitcase Deadlift", "Kettlebell Deadlift")).toBe(false);
+  });
+
+  it("matches qualifiers as whole words only", () => {
+    expect(qualifiersOk("Isolation Curl", "Curl")).toBe(true);
+    expect(qualifiersOk("Dead Hang Hold", "Dead Hang Hold")).toBe(true);
+  });
+});

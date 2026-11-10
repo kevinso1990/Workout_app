@@ -26,6 +26,24 @@ export function isImportedExerciseUnmapped(ex: ImportedExercise): boolean {
   return !ex.catalogExerciseId;
 }
 
+/**
+ * How an imported row relates to the catalog:
+ *  - "matched": confidently the catalog exercise it names.
+ *  - "check": we renamed it to a catalog exercise on a guess — worth a look.
+ *  - "custom": the catalog doesn't know it; it's kept under the plan's own
+ *    name. Specialist plans are full of these (Copenhagen Plank, Hip
+ *    Airplanes …) and they're fine as they are — not an error to resolve.
+ */
+export type ImportMatchStatus = "matched" | "check" | "custom";
+
+export function importMatchStatus(ex: ImportedExercise): ImportMatchStatus {
+  const hasCatalogId = typeof ex.catalogExerciseId === "number" && ex.catalogExerciseId > 0;
+  if (!hasCatalogId || ex.importMeta?.needsUserMapping || ex.importMeta?.matchQuality === "uncertain") {
+    return "custom";
+  }
+  return ex.importMeta?.matchQuality === "fuzzy" ? "check" : "matched";
+}
+
 /** Closest catalog rows for inline search (original OCR name preferred). */
 export function rankCatalogMatches(
   exercise: ImportedExercise,

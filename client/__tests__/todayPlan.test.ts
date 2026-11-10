@@ -105,3 +105,47 @@ describe("primaryPlan", () => {
     expect(primaryPlan([mobilityPlan])).toBeNull();
   });
 });
+
+describe("todayOverview — plan with its own weekdays and rotation", () => {
+  const rotating: WorkoutPlan = {
+    id: "gk",
+    name: "GK Advanced",
+    daysPerWeek: 3,
+    days: [
+      { id: "mob", dayName: "Mobility", kind: "mobility", exercises: [ex("Child's Pose")] },
+      { id: "ak", dayName: "GK A kurz", exercises: [ex("Trap Bar Deadlift")] },
+      { id: "bk", dayName: "GK B kurz", exercises: [ex("Rudern Sitzend")] },
+      { id: "al", dayName: "GK A lang", exercises: [ex("Trap Bar Deadlift")] },
+    ],
+    // Cycle starts Mon 2026-10-19 (the week onWeekday() builds dates in).
+    schedule: {
+      cycleStart: "2026-10-19",
+      weeks: [
+        [{ weekday: 0, dayId: "mob" }, { weekday: 1, dayId: "bk" }, { weekday: 5, dayId: "al" }],
+        [{ weekday: 0, dayId: "mob" }, { weekday: 1, dayId: "ak" }],
+      ],
+    },
+    createdAt: "",
+    lastModified: "",
+  };
+  const input = { plans: [rotating], commitments: [], mobilityWeekdays: [], history: [] };
+
+  it("offers the session the rotation puts on today", () => {
+    expect(todayOverview({ ...input, now: onWeekday(1) }).strength?.dayName).toBe("GK B kurz");
+    // Same weekday a week later is cycle week 2.
+    expect(todayOverview({ ...input, now: new Date(2026, 9, 27, 10) }).strength?.dayName).toBe("GK A kurz");
+  });
+
+  it("offers the plan's mobility day as mobility, and the next strength day", () => {
+    const o = todayOverview({ ...input, now: onWeekday(0) });
+    expect(o.strength).toBeNull();
+    expect(o.mobility?.dayName).toBe("Mobility");
+    expect(o.next).toMatchObject({ dayName: "GK B kurz", weekday: 1 });
+  });
+
+  it("looks into next cycle week for the next session", () => {
+    // Sat of week 1 is done → next is Mon mobility (skipped) → Tue week 2.
+    const o = todayOverview({ ...input, now: onWeekday(6) });
+    expect(o.next).toMatchObject({ dayName: "GK A kurz", weekday: 1 });
+  });
+});
