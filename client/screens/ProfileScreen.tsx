@@ -21,6 +21,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useThemeContext, ThemeMode } from "@/context/ThemeContext";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
   UserPreferences,
@@ -74,8 +75,9 @@ function BodyStatsCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(350).duration(400)}
-      style={[styles.bodyStatsCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.bodyStatsCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.bodyStatsHeader}>
         <View>
           <ThemedText style={styles.bodyStatsTitle}>{t("profile.bodyStatsTitle")}</ThemedText>
@@ -300,8 +302,9 @@ function ThemeToggleCard() {
   return (
     <Animated.View
       entering={FadeInDown.delay(160).duration(400)}
-      style={[styles.themeCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.themeCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.themeCardHeader}>
         <View
           style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}
@@ -365,8 +368,9 @@ function LanguageToggleCard() {
   return (
     <Animated.View
       entering={FadeInDown.delay(165).duration(400)}
-      style={[styles.themeCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.themeCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.themeCardHeader}>
         <View
           style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}
@@ -432,8 +436,9 @@ function FitnessLevelCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(170).duration(400)}
-      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.prefsCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.prefsCardHeader}>
         <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
           <Feather name="trending-up" size={20} color={theme.primary} />
@@ -511,8 +516,9 @@ function AvoidExercisesCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(195).duration(400)}
-      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.prefsCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.prefsCardHeader}>
         <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
           <Feather name="slash" size={18} color={theme.primary} />
@@ -540,8 +546,9 @@ function EquipmentCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(185).duration(400)}
-      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.prefsCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.prefsCardHeader}>
         <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
           <Feather name="tool" size={20} color={theme.primary} />
@@ -645,8 +652,9 @@ function CloudBackupCard() {
   return (
     <Animated.View
       entering={FadeInDown.delay(195).duration(400)}
-      style={[styles.prefsCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.prefsCard, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.prefsCardHeader}>
         <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
           <Feather name="cloud" size={20} color={theme.primary} />
@@ -798,10 +806,11 @@ function SettingsItem({
         style={[
           animatedStyle,
           styles.settingsItem,
-          { backgroundColor: theme.backgroundDefault },
+          panelFrame(theme),
         ]}
         testID={`button-settings-${label.toLowerCase().replace(/\s/g, "-")}`}
       >
+        <PanelFill />
         <View
           style={[
             styles.settingsIcon,
@@ -1044,10 +1053,11 @@ export default function ProfileScreen() {
 
       <Animated.View
         entering={FadeInDown.delay(175).duration(400)}
-        style={[styles.commitmentsCard, { backgroundColor: theme.backgroundDefault }]}
+        style={[styles.commitmentsCard, panelFrame(theme)]}
       >
+        <PanelFill />
         <View style={styles.commitmentsHeader}>
-          <View style={[styles.settingsIcon, styles.settingsIconFlush, { backgroundColor: theme.ironElevated3 }]}>
+          <View style={[styles.settingsIcon, styles.settingsIconFlush, { backgroundColor: theme.chipIdle }]}>
             <Feather name="calendar" size={20} color={theme.text} />
           </View>
           <View style={styles.reminderInfo}>
@@ -1085,8 +1095,9 @@ export default function ProfileScreen() {
 
       <Animated.View
         entering={FadeInDown.delay(150).duration(400)}
-        style={[styles.restTimerCard, { backgroundColor: theme.backgroundDefault }]}
+        style={[styles.restTimerCard, panelFrame(theme)]}
       >
+        <PanelFill />
         <View style={[styles.settingsIcon, { backgroundColor: theme.primary + "15" }]}>
           <Feather name="clock" size={20} color={theme.primary} />
         </View>
@@ -1147,9 +1158,10 @@ export default function ProfileScreen() {
         {/* App Version: informational only — no press handler, no chevron, no animation */}
         <Animated.View
           entering={FadeInDown.delay(350).duration(400)}
-          style={[styles.settingsItem, { backgroundColor: theme.backgroundDefault }]}
+          style={[styles.settingsItem, panelFrame(theme)]}
         >
-          <View style={[styles.settingsIcon, { backgroundColor: theme.backgroundSecondary }]}>
+          <PanelFill />
+          <View style={[styles.settingsIcon, { backgroundColor: theme.chipIdle }]}>
             <Feather name="info" size={20} color={theme.textSecondary} />
           </View>
           <ThemedText style={[styles.settingsLabel, { color: theme.text }]}>{t("profile.appVersion")}</ThemedText>
@@ -1301,9 +1313,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     marginBottom: Spacing.md,
     padding: Spacing.lg,
     gap: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 0,
-    backgroundColor: c.backgroundDefault,
   },
   settingsIconFlush: {
     // The header row spaces with `gap`; the shared icon's marginRight doubled it.

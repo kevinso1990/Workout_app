@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { HEVY } from "@/constants/hevyLayout";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
@@ -65,9 +66,10 @@ export function MobilityDaysCard({
 
   return (
     <View style={[styles.card, style]} testID="card-mobility-days">
+      <PanelFill />
       {/* Same header as the sport-days card it sits under in the profile. */}
       <View style={styles.titleRow}>
-        <View style={[styles.iconTile, { backgroundColor: theme.ironElevated3 }]}>
+        <View style={[styles.iconTile, { backgroundColor: theme.chipIdle }]}>
           <Feather name="wind" size={20} color={theme.text} />
         </View>
         <View style={styles.titleCol}>
@@ -113,10 +115,7 @@ const makeStyles = (c: Palette) =>
       marginTop: 8,
       padding: 16,
       gap: 12,
-      borderRadius: 18,
-      backgroundColor: c.ironElevated2,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.hairline,
+      ...panelFrame(c),
     },
     titleRow: {
       flexDirection: "row",

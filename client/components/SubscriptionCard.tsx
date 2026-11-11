@@ -8,6 +8,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { PRO_PRICE_DISPLAY } from "@/lib/subscriptionConfig";
@@ -64,8 +65,9 @@ export function SubscriptionCard() {
   return (
     <Animated.View
       entering={FadeInDown.delay(192).duration(400)}
-      style={[styles.card, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.card, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.header}>
         <View style={[styles.icon, { backgroundColor: theme.primary + "15" }]}>
           <Feather name="star" size={20} color={theme.primary} />

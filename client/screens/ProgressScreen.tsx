@@ -38,6 +38,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { hapticLight } from "@/lib/safeHaptics";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
@@ -114,10 +115,11 @@ function StatCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 100).duration(400)}
-      style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.statCard, panelFrame(theme)]}
     >
+      <PanelFill />
       {/* Neutral on purpose: colour on this tab is reserved for load. */}
-      <View style={[styles.statIcon, { backgroundColor: theme.ironElevated3 }]}>
+      <View style={[styles.statIcon, { backgroundColor: theme.chipIdle }]}>
         <Feather name={icon} size={18} color={theme.text} />
       </View>
       {/* No adjustsFontSizeToFit: on iOS it shrank a lone "0" to a dot. */}
@@ -146,8 +148,9 @@ function VolumeChart({
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 100).duration(400)}
-      style={[styles.chartContainer, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.chartContainer, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.chartHeader}>
         <View>
           <ThemedText style={styles.chartTitle}>{t("progress.weeklyVolume")}</ThemedText>
@@ -170,7 +173,11 @@ function VolumeChart({
                   <View
                     style={[
                       styles.barFill,
-                      { height: `${heightPercent}%`, backgroundColor: theme.primary },
+                      // This week (the last bar) is "now" and takes the signal colour.
+                      {
+                        height: `${heightPercent}%`,
+                        backgroundColor: idx === data.length - 1 ? theme.signal : theme.primary,
+                      },
                     ]}
                   />
                 </Animated.View>
@@ -212,8 +219,9 @@ function MuscleBalance({
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 100).duration(400)}
-      style={[styles.muscleContainer, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.muscleContainer, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.muscleHeader}>
         <ThemedText style={styles.chartTitle}>{t("progress.muscleBalanceTitle")}</ThemedText>
         <ThemedText style={[styles.musclePeriod, { color: theme.textSecondary }]}>
@@ -287,8 +295,9 @@ function OneRMChart({
     return (
       <Animated.View
         entering={FadeInDown.delay(index * 100).duration(400)}
-        style={[styles.oneRMContainer, { backgroundColor: theme.backgroundDefault }]}
+        style={[styles.oneRMContainer, panelFrame(theme)]}
       >
+        <PanelFill />
         <View style={styles.chartHeader}>
           <View>
             <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
@@ -309,8 +318,9 @@ function OneRMChart({
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 100).duration(400)}
-      style={[styles.oneRMContainer, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.oneRMContainer, panelFrame(theme)]}
     >
+      <PanelFill />
       <View style={styles.chartHeader}>
         <View>
           <ThemedText style={styles.chartTitle}>{t("progress.est1RM")}</ThemedText>
@@ -440,9 +450,10 @@ function RecordsCard({ records, index }: { records: PersonalRecord[]; index: num
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 100).duration(400)}
-      style={[styles.chartContainer, { backgroundColor: theme.backgroundDefault }]}
+      style={[styles.chartContainer, panelFrame(theme)]}
       testID="card-records"
     >
+      <PanelFill />
       <View style={styles.chartHeader}>
         <ThemedText style={styles.chartTitle}>{t("progress.recordsTitle")}</ThemedText>
         <ThemedText style={[styles.musclePeriod, { color: theme.textSecondary }]}>
@@ -462,7 +473,7 @@ function RecordsCard({ records, index }: { records: PersonalRecord[]; index: num
               i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline },
             ]}
           >
-            <View style={[styles.recordIcon, { backgroundColor: theme.ironElevated3 }]}>
+            <View style={[styles.recordIcon, { backgroundColor: theme.chipIdle }]}>
               <Feather name="award" size={16} color={theme.text} />
             </View>
             <View style={styles.recordText}>
@@ -550,9 +561,10 @@ function WorkoutHistoryItem({
         style={[
           animatedStyle,
           styles.historyItem,
-          { backgroundColor: theme.backgroundDefault },
+          panelFrame(theme),
         ]}
       >
+        <PanelFill />
         <View
           style={[
             styles.historyIcon,
@@ -767,7 +779,8 @@ function ExerciseDetailModal({
         >
           {/* Summary stat chips */}
           <View style={styles.modalStatsRow}>
-            <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.modalStatCard, panelFrame(theme)]}>
+              <PanelFill />
               <ThemedText style={[styles.modalStatValue, { color: theme.primary }]}>
                 {exercise.totalSessions}
               </ThemedText>
@@ -775,7 +788,8 @@ function ExerciseDetailModal({
                 {t("exerciseChart.sessions")}
               </ThemedText>
             </View>
-            <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.modalStatCard, panelFrame(theme)]}>
+              <PanelFill />
               <ThemedText style={[styles.modalStatValue, { color: "#10B981" }]}>
                 {exercise.bestSession.maxWeight} kg
               </ThemedText>
@@ -783,7 +797,8 @@ function ExerciseDetailModal({
                 {t("exerciseChart.bestWeight")}
               </ThemedText>
             </View>
-            <View style={[styles.modalStatCard, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.modalStatCard, panelFrame(theme)]}>
+              <PanelFill />
               <ThemedText style={[styles.modalStatValue, { color: SERIES_BLUE }]}>
                 {exercise.bestSession.estimated1RM} kg
               </ThemedText>
@@ -796,7 +811,8 @@ function ExerciseDetailModal({
           {hasChartData ? (
             <>
               {/* Max Weight chart */}
-              <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={[styles.modalChartCard, panelFrame(theme)]}>
+                <PanelFill />
                 <View style={styles.modalChartHeader}>
                   <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.maxWeight")}</ThemedText>
                   <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
@@ -813,7 +829,8 @@ function ExerciseDetailModal({
               </View>
 
               {/* Est. 1RM chart */}
-              <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={[styles.modalChartCard, panelFrame(theme)]}>
+                <PanelFill />
                 <View style={styles.modalChartHeader}>
                   <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.estimated1RM")}</ThemedText>
                   <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>kg</ThemedText>
@@ -831,7 +848,8 @@ function ExerciseDetailModal({
             </>
           ) : (
             /* 1 session: show stats card + prompt to log again */
-            <View style={[styles.modalChartCard, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.modalChartCard, panelFrame(theme)]}>
+              <PanelFill />
               <View style={styles.modalChartHeader}>
                 <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.firstSession")}</ThemedText>
                 <ThemedText style={[styles.modalChartUnit, { color: theme.textSecondary }]}>
@@ -881,7 +899,8 @@ function ExerciseDetailModal({
           )}
 
           {/* Best session card with Personal Best badge */}
-          <View style={[styles.modalBestSession, { backgroundColor: theme.backgroundDefault }]}>
+          <View style={[styles.modalBestSession, panelFrame(theme)]}>
+            <PanelFill />
             <View style={[styles.bestSessionIcon, { backgroundColor: theme.primary + "15" }]}>
               <Feather name="award" size={20} color={theme.primary} />
             </View>
@@ -934,8 +953,9 @@ function ExerciseProgressSection({
 
       <Animated.View
         entering={FadeInDown.delay(index * 100 + 50).duration(400)}
-        style={[styles.exerciseProgressList, { backgroundColor: theme.backgroundDefault }]}
+        style={[styles.exerciseProgressList, panelFrame(theme)]}
       >
+        <PanelFill />
         {data.map((exercise, idx) => (
           <ExerciseProgressRow
             key={exercise.exerciseName}
