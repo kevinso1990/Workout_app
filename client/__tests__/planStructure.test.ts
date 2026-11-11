@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatRest, isTimedTarget, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
+import { formatRest, isTimedTarget, planDaySummary, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
 
 describe("plan structure helpers", () => {
   it("labels superset members A1/A2 and ignores single-member blocks", () => {
@@ -26,5 +26,24 @@ describe("plan structure helpers", () => {
     expect(weekStripCaption("Ganzkörper A")).toEqual(["Ganzkörper", "A"]);
     expect(weekStripCaption("GK A kurz – Bein / Hinge")).toEqual(["GK A", "kurz"]);
     expect(weekStripCaption("Push")).toEqual(["Push", null]);
+  });
+});
+
+describe("planDaySummary", () => {
+  it("shortens session names and drops long/short variants of the same session", () => {
+    expect(
+      planDaySummary([
+        "Mobility + Hüftkraft",
+        "GK A kurz – Bein / Hinge",
+        "GK B kurz – Pull",
+        "GK A lang – Bein / Hinge",
+        "GK B lang – Pull",
+      ]),
+    ).toBe("Mobility + Hüftkraft · GK A · B");
+  });
+
+  it("keeps plain names and removes weekday notes in brackets", () => {
+    expect(planDaySummary(["Push (Mo)", "Pull", "Beine"])).toBe("Push · Pull · Beine");
+    expect(planDaySummary(["Ganzkörper A", "Ganzkörper B", "Ganzkörper C"])).toBe("Ganzkörper A · B · C");
   });
 });

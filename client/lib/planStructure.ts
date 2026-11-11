@@ -55,3 +55,33 @@ export function weekStripCaption(label: string): [string, string | null] {
   if (words.length >= 2) return [words.slice(0, -1).join(" "), words[words.length - 1]];
   return [head, null];
 }
+
+/**
+ * "GK A · GK B · Mobility" — what a plan trains, short enough for one line
+ * under its name. Plan names alone ("Mein Trainingsplan", "Wochenplan")
+ * rarely tell two plans apart; their sessions do.
+ */
+export function planDaySummary(dayNames: string[]): string {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of dayNames) {
+    const short = name
+      .split(/\s[–—-]\s|:/)[0]
+      .replace(/\s*\([^)]*\)\s*/g, " ")
+      .replace(/\s+(kurz|lang|short|long)$/i, "")
+      .trim();
+    const key = short.toLowerCase();
+    if (!short || seen.has(key)) continue;
+    seen.add(key);
+    out.push(short);
+  }
+  // "Ganzkörper A · Ganzkörper B" → "Ganzkörper A · B": a run of lettered
+  // sessions shares its name once.
+  return out
+    .map((name, i) => {
+      const m = name.match(/^(.+) ([A-Z])$/);
+      const prev = i > 0 ? out[i - 1].match(/^(.+) ([A-Z])$/) : null;
+      return m && prev && prev[1] === m[1] ? m[2] : name;
+    })
+    .join(" · ");
+}

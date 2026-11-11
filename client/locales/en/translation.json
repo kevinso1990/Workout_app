@@ -168,7 +168,9 @@
     "suggestions_other": "{{count}} suggestions",
     "suggestionsNone": "Suggestions",
     "activeShort": "active",
-    "yourPlans": "Plans"
+    "yourPlans": "Plans",
+    "activePlan": "Active plan",
+    "otherPlans": "Other plans"
   },
   "createPlan": {
     "back": "Back",

@@ -55,6 +55,7 @@ import { TodayCard } from "@/components/workout/TodayCard";
 import { MobilityDayQuestion, useMobilitySplitAnswers } from "@/components/workout/MobilityDayQuestion";
 import { findMobilityDayToSplit } from "@/lib/mobilitySplit";
 import { translateDayName } from "@/lib/dayNameLabel";
+import { planDaySummary } from "@/lib/planStructure";
 import { primaryPlan } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
@@ -84,6 +85,7 @@ function PlanCard({
   onViewPlan,
   onOpenMenu,
   mobilityDaysPerWeek = 0,
+  activeHeading = false,
 }: {
   plan: WorkoutPlan;
   index: number;
@@ -97,11 +99,18 @@ function PlanCard({
   onOpenMenu: () => void;
   /** Chosen Mobility-Session weekdays; only used for that plan's card. */
   mobilityDaysPerWeek?: number;
+  /** The row sits under its own "Aktiver Plan" heading. */
+  activeHeading?: boolean;
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(1);
+  const planName = displayPlanName(t, plan.name);
+  const summary =
+    plan.id === MOBILITY_PLAN_ID ? "" : planDaySummary(plan.days.map((d) => translateDayName(t, d.dayName)));
+  // A one-session plan's summary is just its name again.
+  const daySummary = summary.toLowerCase() === planName.toLowerCase() ? "" : summary;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -147,10 +156,15 @@ function PlanCard({
           style={animatedStyle}
         >
           <View style={styles.planRowTitle}>
-            <ThemedText style={styles.planRowName} numberOfLines={1}>
-              {displayPlanName(t, plan.name)}
+            <ThemedText
+              style={active ? styles.planRowNameActive : styles.planRowName}
+              numberOfLines={active ? 2 : 1}
+            >
+              {planName}
             </ThemedText>
-            {active ? (
+            {/* Under the "Aktiver Plan" heading the tag only repeats it; it
+                stays for a list without that heading. */}
+            {active && !activeHeading ? (
               <View style={styles.activeTag}>
                 <View style={[styles.activeDot, { backgroundColor: theme.signal }]} />
                 <ThemedText style={[styles.activeTagText, { color: theme.signalText }]}>
@@ -193,6 +207,11 @@ function PlanCard({
                   }),
                 })}
           </ThemedText>
+          {daySummary ? (
+            <ThemedText style={[styles.planDays, { color: theme.textSecondary }]} numberOfLines={1}>
+              {daySummary}
+            </ThemedText>
+          ) : null}
         </AnimatedPressable>
       </View>
     </Animated.View>
@@ -734,13 +753,23 @@ export default function MyPlansScreen() {
     (pendingRefinement || adaptPlan || splitRefreshOffer || coachBrief ? 1 : 0);
 
   const activePlanId = primaryPlan(plans)?.id ?? null;
+  const orderedPlans = useMemo(() => {
+    const active = plans.find((p) => p.id === activePlanId);
+    return active ? [active, ...plans.filter((p) => p !== active)] : plans;
+  }, [plans, activePlanId]);
 
   const renderPlan = useCallback(
     ({ item, index }: { item: WorkoutPlan; index: number }) => (
       <>
+      {/* The active plan leads under its own heading; the rest are a quieter
+          list. Six rows drawn alike gave no hint which one you train by. */}
       {index === 0 ? (
         <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-          {t("plans.yourPlans")}
+          {item.id === activePlanId ? t("plans.activePlan") : t("plans.yourPlans")}
+        </ThemedText>
+      ) : index === 1 && orderedPlans[0]?.id === activePlanId ? (
+        <ThemedText style={[styles.sectionTitle, styles.sectionTitleSpaced, { color: theme.textSecondary }]}>
+          {t("plans.otherPlans")}
         </ThemedText>
       ) : null}
       {/* Swipe is the shortcut, not the only route: the "..." menu stays for
@@ -765,6 +794,7 @@ export default function MyPlansScreen() {
           plan={item}
           index={index}
           active={item.id === activePlanId}
+          activeHeading={index === 0 && item.id === activePlanId}
           onViewPlan={() => handleViewPlan(item)}
           onOpenMenu={() => setMenuPlan(item)}
           mobilityDaysPerWeek={mobilityWeekdays.length}
@@ -772,7 +802,7 @@ export default function MyPlansScreen() {
       </SwipeRowActions>
       </>
     ),
-    [t, theme, styles, plans.length, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId],
+    [t, theme, styles, orderedPlans, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they
@@ -826,7 +856,7 @@ export default function MyPlansScreen() {
         keyboardDismissMode="on-drag"
         onScroll={handleListScroll}
         scrollEventThrottle={32}
-        data={plans}
+        data={orderedPlans}
         keyExtractor={(p) => p.id}
         renderItem={renderPlan}
         contentContainerStyle={[
@@ -1087,11 +1117,26 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   planRowName: {
     flexShrink: 1,
-    fontSize: 17,
+    fontSize: 16,
     lineHeight: 22,
+    fontWeight: "700",
+    color: c.chalk,
+    marginBottom: 2,
+  },
+  planRowNameActive: {
+    flexShrink: 1,
+    fontSize: 24,
+    lineHeight: 30,
     fontFamily: "Oswald_600SemiBold",
     color: c.chalk,
     marginBottom: 2,
+  },
+  planDays: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  sectionTitleSpaced: {
+    marginTop: Spacing.xl,
   },
   planMeta: {
     fontSize: 13,
