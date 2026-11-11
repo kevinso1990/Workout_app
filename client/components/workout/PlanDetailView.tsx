@@ -22,6 +22,8 @@ type PlanDetailViewProps = {
   days: WorkoutDay[];
   /** The plan's weekday schedule, if it has one — shown per session. */
   schedule?: PlanSchedule;
+  /** Drop the side padding when the parent already provides it. */
+  flush?: boolean;
   onExercisePress?: (exercise: Exercise) => void;
   onStartDay?: (dayIndex: number) => void;
 };
@@ -213,6 +215,7 @@ function SessionRow({
 export function PlanDetailView({
   days,
   schedule,
+  flush = false,
   onExercisePress,
   onStartDay,
 }: PlanDetailViewProps) {
@@ -221,7 +224,7 @@ export function PlanDetailView({
   // A short plan reads fine opened up; a longer one starts as its overview.
   const openAll = days.length <= 2;
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, flush && styles.rootFlush]}>
       {days.map((day, dayIndex) => (
         <SessionRow
           key={day.id ?? `${day.dayName}-${dayIndex}`}
@@ -242,6 +245,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: HEVY.pad,
     paddingTop: 8,
     paddingBottom: 4,
+  },
+  rootFlush: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
   },
   // Rows on the page, not cards: hairlines separate the sessions.
   session: {

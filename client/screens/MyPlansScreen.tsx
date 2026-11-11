@@ -56,6 +56,7 @@ import { MobilityDayQuestion, useMobilitySplitAnswers } from "@/components/worko
 import { findMobilityDayToSplit } from "@/lib/mobilitySplit";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { planDaySummary } from "@/lib/planStructure";
+import { PlanDetailView } from "@/components/workout/PlanDetailView";
 import { primaryPlan } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
@@ -109,8 +110,10 @@ function PlanCard({
   const planName = displayPlanName(t, plan.name);
   const summary =
     plan.id === MOBILITY_PLAN_ID ? "" : planDaySummary(plan.days.map((d) => translateDayName(t, d.dayName)));
-  // A one-session plan's summary is just its name again.
-  const daySummary = summary.toLowerCase() === planName.toLowerCase() ? "" : summary;
+  // A one-session plan's summary is just its name again; the active plan
+  // lists its sessions right under it instead.
+  const daySummary =
+    activeHeading || summary.toLowerCase() === planName.toLowerCase() ? "" : summary;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -800,9 +803,26 @@ export default function MyPlansScreen() {
           mobilityDaysPerWeek={mobilityWeekdays.length}
         />
       </SwipeRowActions>
+      {/* The plan you train by shows its sessions right here — the same
+          rows as the plan screen, to check or start one without a detour. */}
+      {index === 0 && item.id === activePlanId ? (
+        <PlanDetailView
+          flush
+          days={item.days}
+          schedule={item.schedule}
+          onStartDay={(dayIndex) => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate("ActiveWorkout", {
+              planId: item.id,
+              planName: item.name,
+              dayIndex,
+            });
+          }}
+        />
+      ) : null}
       </>
     ),
-    [t, theme, styles, orderedPlans, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId],
+    [t, theme, styles, orderedPlans, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId, navigation],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they
