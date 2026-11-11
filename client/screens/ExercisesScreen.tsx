@@ -28,6 +28,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getWorkoutHistory, WorkoutSession } from "@/lib/storage";
@@ -228,7 +229,7 @@ function FilterChip({
         {
           backgroundColor: selected
             ? theme.primary
-            : theme.backgroundDefault,
+            : theme.chipIdle,
         },
       ]}
     >
@@ -293,10 +294,10 @@ function ExerciseCardBase({
         style={[
           animatedStyle,
           styles.exerciseCard,
-          { backgroundColor: theme.backgroundDefault },
         ]}
         testID={`card-exercise-${exercise.id}`}
       >
+        <PanelFill radius={18} />
         <View style={styles.imageContainer}>
           <ServerExerciseThumb
             exerciseName={exercise.name}
@@ -311,7 +312,7 @@ function ExerciseCardBase({
         <View
           style={[
             styles.muscleTag,
-            { backgroundColor: theme.ironElevated2 },
+            { backgroundColor: theme.chipIdle },
           ]}
         >
           <ThemedText
@@ -1132,7 +1133,10 @@ export default function ExercisesScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowAPIModal(true);
                 }}
-                style={[styles.actionButton, { backgroundColor: theme.backgroundDefault }]}
+                style={[
+                  styles.actionButton,
+                  { borderWidth: 1, borderColor: theme.controlOutline },
+                ]}
                 testID="button-search-database"
               >
                 <Feather name="globe" size={18} color={theme.primary} />
@@ -1144,7 +1148,7 @@ export default function ExercisesScreen() {
             <View
               style={[
                 styles.searchContainer,
-                { backgroundColor: theme.backgroundDefault },
+                { backgroundColor: theme.well, borderColor: theme.hairline },
               ]}
             >
               <Feather name="search" size={20} color={theme.textSecondary} />
@@ -1225,7 +1229,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     height: Spacing.inputHeight,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
@@ -1259,12 +1264,15 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flex: 1,
     maxWidth: "50%",
   },
+  // Floating panels like every other section; a lighter shadow, since a
+  // catalogue grid draws many of them at once.
   exerciseCard: {
     padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: c.border,
+    ...panelFrame(c, 18),
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
   },
   exerciseIcon: {
     width: 56,

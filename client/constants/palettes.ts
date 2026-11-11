@@ -59,6 +59,10 @@ const groundBottom = "#111316";
 const panelTop = "#2A2F37";
 const panelBottom = "#20242A";
 const panelEdge = "rgba(255,255,255,0.09)";
+/** An inset well on the ground or a panel — search fields, inputs. */
+const well = "rgba(0,0,0,0.25)";
+/** An idle chip or secondary pill: a faint chalk wash, not a grey block. */
+const chipIdle = "rgba(236,233,225,0.07)";
 /** Today's panel leans warm toward the signal colour at its top-left. */
 const panelWarm = "#3D2B22";
 
@@ -119,6 +123,8 @@ const palette = {
   panelBottom,
   panelEdge,
   panelWarm,
+  well,
+  chipIdle,
   onSessionHue,
 };
 
@@ -224,6 +230,8 @@ const lightPalette = {
   panelBottom: "#F7F5F1",
   panelEdge: "rgba(255,255,255,0.9)",
   panelWarm: "#FFF1E8",
+  well: "rgba(23,25,27,0.06)",
+  chipIdle: "rgba(23,25,27,0.06)",
   onSessionHue,
 };
 

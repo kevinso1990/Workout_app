@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
   clearActiveWorkoutDraft,
@@ -80,7 +81,10 @@ export function ResumeWorkoutCard() {
   };
 
   return (
+    // The workout you're in the middle of is the most "now" thing there is:
+    // a warm panel with the signal colour on its edge and its button.
     <View style={styles.card} testID="card-resume-workout">
+      <PanelFill warm />
       <View style={styles.textCol}>
         <ThemedText style={styles.title}>{t("plans.resume.title")}</ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
@@ -96,12 +100,12 @@ export function ResumeWorkoutCard() {
       <View style={styles.actions}>
         <Pressable
           onPress={resume}
-          style={[styles.resumeBtn, { backgroundColor: theme.primary }]}
+          style={[styles.resumeBtn, { backgroundColor: theme.signal }]}
           accessibilityRole="button"
           testID="button-resume-workout"
         >
-          <Feather name="play" size={14} color={theme.onChalk} />
-          <ThemedText style={[styles.resumeText, { color: theme.onChalk }]}>
+          <Feather name="play" size={14} color={theme.onSignal} />
+          <ThemedText style={[styles.resumeText, { color: theme.onSignal }]}>
             {t("plans.resume.continue")}
           </ThemedText>
         </Pressable>
@@ -128,10 +132,11 @@ const makeStyles = (c: Palette) =>
       gap: Spacing.md,
       padding: Spacing.lg,
       marginBottom: Spacing.lg,
-      borderRadius: BorderRadius.lg,
+      ...panelFrame(c),
       borderWidth: 1.5,
-      borderColor: c.primary,
-      backgroundColor: c.ironElevated2,
+      borderTopWidth: 1.5,
+      borderColor: c.signal,
+      borderTopColor: c.signal,
     },
     textCol: {
       flex: 1,

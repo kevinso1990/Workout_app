@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { useTheme } from "@/hooks/useTheme";
 import type { DaySessionSummary } from "@/lib/workoutCalendar";
 import { dateKeyFromIso } from "@/lib/workoutCalendar";
@@ -67,6 +68,7 @@ export function HybridCalendar({
 
   return (
     <View style={styles.wrap}>
+      <PanelFill />
       <View style={styles.weekRow}>
         {WEEKDAY_KEYS.map((key) => (
           <ThemedText key={key} style={styles.weekday}>
@@ -144,8 +146,7 @@ export function HybridCalendar({
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   wrap: {
-    backgroundColor: c.backgroundDefault,
-    borderRadius: BorderRadius.lg,
+    ...panelFrame(c),
     padding: Spacing.md,
   },
   weekRow: {
@@ -177,7 +178,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: BorderRadius.sm,
-    backgroundColor: c.ironElevated2,
+    backgroundColor: c.chipIdle,
     borderWidth: 1,
     borderColor: "transparent",
     gap: 3,
@@ -191,8 +192,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   cellCardio: {
     borderColor: c.hairlineStrong,
   },
+  // Today is "now": edged in the signal colour.
   cellToday: {
-    borderColor: c.chalkDim,
+    borderColor: c.signal,
   },
   cellSelected: {
     borderColor: c.chalk,
@@ -242,7 +244,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 4,
-    backgroundColor: c.ironElevated2,
+    backgroundColor: c.chipIdle,
     borderWidth: 1,
     borderColor: c.hairlineStrong,
     alignItems: "center",

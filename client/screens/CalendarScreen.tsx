@@ -23,6 +23,7 @@ import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
 import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { useTheme } from "@/hooks/useTheme";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import {
@@ -62,7 +63,7 @@ function SessionRow({ session }: { session: WorkoutSession }) {
       <View
         style={[
           styles.sessionIcon,
-          { backgroundColor: theme.ironElevated2 },
+          { backgroundColor: theme.chipIdle },
         ]}
       >
         <ActivityIcon
@@ -249,6 +250,7 @@ export default function CalendarScreen() {
 
             {weekSessions.length === 0 ? (
               <View style={styles.emptyWeek}>
+                <PanelFill radius={16} />
                 <ThemedText style={styles.emptyWeekText}>
                   {t("calendar.weekEmpty", {
                     defaultValue: "Noch nichts geloggt — der erste Satz zählt.",
@@ -265,6 +267,7 @@ export default function CalendarScreen() {
                   style={styles.weekSessionRow}
                   testID={`calendar-week-session-${session.id}`}
                 >
+                  <PanelFill radius={16} />
                   <View style={styles.sessionMark}>
                     <ActivityIcon
                       sport={isCardioSession(session) ? "running" : undefined}
@@ -317,18 +320,21 @@ export default function CalendarScreen() {
 
             <View style={styles.statsRow}>
               <View style={styles.statCard}>
+                <PanelFill radius={16} />
                 <ThemedText style={styles.statValue}>{monthStats.strength}</ThemedText>
                 <ThemedText style={styles.statLabel}>
                   {t("calendar.statStrength", { defaultValue: "Kraft" })}
                 </ThemedText>
               </View>
               <View style={styles.statCard}>
+                <PanelFill radius={16} />
                 <ThemedText style={styles.statValue}>{monthStats.cardio}</ThemedText>
                 <ThemedText style={styles.statLabel}>
                   {t("calendar.statCardio", { defaultValue: "Cardio" })}
                 </ThemedText>
               </View>
               <View style={styles.statCard}>
+                <PanelFill radius={16} />
                 <ThemedText style={styles.statValue}>{monthStats.activeDays}</ThemedText>
                 <ThemedText style={styles.statLabel}>
                   {t("calendar.statActiveDays", { defaultValue: "Aktive Tage" })}
@@ -421,14 +427,14 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: c.backgroundDefault,
+    backgroundColor: c.chipIdle,
     alignItems: "center",
     justifyContent: "center",
   },
   monthLabel: { fontSize: 17, fontWeight: "600" },
   segmented: {
     flexDirection: "row",
-    backgroundColor: c.ironElevated,
+    backgroundColor: c.well,
     borderRadius: BorderRadius.md,
     padding: 3,
     gap: 3,
@@ -460,8 +466,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   emptyWeek: {
-    backgroundColor: c.backgroundDefault,
-    borderRadius: BorderRadius.md,
+    ...panelFrame(c, 16),
     padding: Spacing.lg,
     alignItems: "center",
   },
@@ -474,8 +479,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
-    backgroundColor: c.backgroundDefault,
-    borderRadius: BorderRadius.md,
+    ...panelFrame(c, 16),
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
@@ -483,7 +487,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: BorderRadius.sm,
-    backgroundColor: c.ironElevated2,
+    backgroundColor: c.chipIdle,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -497,8 +501,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: c.backgroundDefault,
-    borderRadius: BorderRadius.md,
+    ...panelFrame(c, 16),
     paddingVertical: Spacing.md,
     alignItems: "center",
     gap: 2,
@@ -519,7 +522,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: c.backgroundDefault,
+    backgroundColor: c.chipIdle,
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
   },
