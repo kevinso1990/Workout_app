@@ -85,3 +85,40 @@ export function planDaySummary(dayNames: string[]): string {
     })
     .join(" · ");
 }
+
+/**
+ * Where a session sits in the plan's week: its weekdays, each with the cycle
+ * week (1-based) when the plan rotates. A weekday the session has in every
+ * week of the cycle needs no week, so it gets null — as in a fixed week.
+ */
+export function sessionSlots(
+  schedule: { weeks: { weekday: number; dayId: string }[][] } | undefined,
+  dayId: string | undefined,
+): { week: number | null; weekday: number }[] {
+  if (!schedule || !dayId) return [];
+  const total = schedule.weeks.length;
+  const slots = schedule.weeks.flatMap((week, w) =>
+    week.filter((e) => e.dayId === dayId).map((e) => ({ week: w + 1, weekday: e.weekday })),
+  );
+  const everyWeek = new Set(
+    [...new Set(slots.map((s) => s.weekday))].filter(
+      (d) => slots.filter((s) => s.weekday === d).length === total,
+    ),
+  );
+  const seen = new Set<number>();
+  const out: { week: number | null; weekday: number }[] = [];
+  for (const s of slots) {
+    if (!everyWeek.has(s.weekday)) out.push(s);
+    else if (!seen.has(s.weekday)) {
+      seen.add(s.weekday);
+      out.push({ week: null, weekday: s.weekday });
+    }
+  }
+  return out;
+}
+
+/** The session's letter as the plan names it ("GK A kurz – Bein" → "A"), else null. */
+export function sessionLetter(name: string): string | null {
+  const head = name.split(/\s[–—-]\s|:/)[0];
+  return head.match(/(?:^|\s)([A-Z])(?=\s|$)/)?.[1] ?? null;
+}

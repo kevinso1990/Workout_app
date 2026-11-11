@@ -1,31 +1,30 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, StyleSheet, Text, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { HEVY } from "@/constants/hevyLayout";
-import { Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
-import type { Exercise, WorkoutDay } from "@/lib/storage";
+import type { Exercise, PlanSchedule, WorkoutDay } from "@/lib/storage";
 import { translateDayName } from "@/lib/dayNameLabel";
-import { supersetLabels } from "@/lib/planStructure";
+import { sessionLetter, sessionSlots, supersetLabels } from "@/lib/planStructure";
+import { isMobilityDay } from "@/lib/mobilitySplit";
+import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 
 
 type PlanDetailViewProps = {
   days: WorkoutDay[];
+  /** The plan's weekday schedule, if it has one — shown per session. */
+  schedule?: PlanSchedule;
   onExercisePress?: (exercise: Exercise) => void;
   onStartDay?: (dayIndex: number) => void;
 };
-
-function dayLetter(index: number): string {
-  // A, B, C … then fall back to numbers beyond Z.
-  return index < 26 ? String.fromCharCode(65 + index) : String(index + 1);
-}
 
 function PlanExerciseRow({
   exercise,
@@ -95,112 +94,141 @@ function PlanExerciseRow({
   );
 }
 
-function DayCard({
+function SessionRow({
   day,
   dayIndex,
+  schedule,
+  initiallyOpen,
   onExercisePress,
   onStartDay,
 }: {
   day: WorkoutDay;
   dayIndex: number;
+  schedule?: PlanSchedule;
+  initiallyOpen: boolean;
   onExercisePress?: (exercise: Exercise) => void;
   onStartDay?: (dayIndex: number) => void;
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
-  const letter = dayLetter(dayIndex);
-  const canStart = typeof onStartDay === "function";
+  const { dayLabel } = useCommitmentLabels();
+  const [open, setOpen] = useState(initiallyOpen);
+  const name = translateDayName(t, day.dayName);
+  const mobility = isMobilityDay(day);
+  const marker = sessionLetter(day.dayName) ?? String(dayIndex + 1);
   const labels = supersetLabels(day.exercises);
-
-  const headerInner = (
-    <>
-      <View style={styles.dayBadge}>
-        <Text style={styles.dayBadgeText}>{letter}</Text>
-      </View>
-      <View style={styles.headerTextCol}>
-        <Text style={styles.dayOverline}>
-          {t("planDetail.dayLabel")} {letter}
-        </Text>
-        <Text style={styles.dayName} numberOfLines={1}>
-          {translateDayName(t, day.dayName)}
-        </Text>
-        <Text style={styles.exerciseCountMeta}>
-          {t("planDetail.exerciseCount", { count: day.exercises.length })}
-        </Text>
-      </View>
-      {canStart ? (
-        <View style={styles.startBtn}>
-          <Feather name="play" size={14} color={theme.onChalk} />
-          <Text style={styles.startBtnText}>{t("plans.start")}</Text>
-        </View>
-      ) : (
-        <Text style={styles.exerciseCount}>
-          {t("planDetail.exerciseCount", { count: day.exercises.length })}
-        </Text>
-      )}
-    </>
-  );
+  const slots = sessionSlots(schedule, day.id)
+    .map((s) => (s.week ? `${t("planDetail.weekShort", { n: s.week })} ${dayLabel(s.weekday)}` : dayLabel(s.weekday)))
+    .join(" · ");
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(dayIndex * 70).duration(300)}
-      style={styles.card}
+      entering={FadeInDown.delay(dayIndex * 50).duration(260)}
+      style={styles.session}
     >
-      {canStart ? (
+      <View style={styles.sessionHeader}>
         <Pressable
-          onPress={() => onStartDay?.(dayIndex)}
-          android_ripple={{ color: "rgba(0,0,0,0.06)" }}
-          style={({ pressed }) => [
-            styles.cardHeader,
-            pressed && styles.cardHeaderPressed,
-          ]}
+          onPress={() => {
+            Haptics.selectionAsync();
+            setOpen((o) => !o);
+          }}
+          style={styles.sessionToggle}
           accessibilityRole="button"
-          accessibilityLabel={`${t("planDetail.dayLabel")} ${letter}: ${translateDayName(t, day.dayName)}`}
-          testID={`button-start-day-${dayIndex}`}
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={name}
+          testID={`button-toggle-day-${dayIndex}`}
         >
-          {headerInner}
+          <View style={[styles.marker, { borderColor: theme.controlOutline }]}>
+            {mobility ? (
+              <Feather name="wind" size={16} color={theme.chalk} />
+            ) : (
+              <Text style={styles.markerText}>{marker}</Text>
+            )}
+          </View>
+          <View style={styles.headerTextCol}>
+            <Text style={styles.dayName} numberOfLines={2}>
+              {name}
+            </Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.exerciseCountMeta} numberOfLines={1}>
+                {[t("planDetail.exerciseCount", { count: day.exercises.length }), slots]
+                  .filter(Boolean)
+                  .join("  ·  ")}
+              </Text>
+              <Feather
+                name={open ? "chevron-up" : "chevron-down"}
+                size={14}
+                color={theme.chalkDim}
+              />
+            </View>
+          </View>
         </Pressable>
-      ) : (
-        <View style={styles.cardHeader}>{headerInner}</View>
-      )}
-
-      <View style={styles.cardBody}>
-        {day.warmup ? (
-          <Text style={styles.warmupLine}>
-            {t("planDetail.warmup", { text: day.warmup })}
-          </Text>
-        ) : null}
-        {day.exercises.map((exercise, index) => (
-          <PlanExerciseRow
-            key={exercise.id}
-            exercise={exercise}
-            index={index}
-            isLast={index === day.exercises.length - 1}
-            supersetLabel={labels[index]}
-            onExercisePress={onExercisePress}
-          />
-        ))}
       </View>
+
+      {open ? (
+        <View style={styles.sessionBody}>
+          {onStartDay ? (
+            <Pressable
+              onPress={() => onStartDay(dayIndex)}
+              style={({ pressed }) => [
+                styles.startBtn,
+                { borderColor: theme.controlOutline, opacity: pressed ? 0.7 : 1 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${t("plans.start")}: ${name}`}
+              testID={`button-start-day-${dayIndex}`}
+            >
+              <Feather name="play" size={12} color={theme.chalk} />
+              <Text style={styles.startBtnText}>{t("plans.start")}</Text>
+            </Pressable>
+          ) : null}
+          {day.warmup ? (
+            <Text style={styles.warmupLine}>
+              {t("planDetail.warmup", { text: day.warmup })}
+            </Text>
+          ) : null}
+          {day.exercises.map((exercise, index) => (
+            <PlanExerciseRow
+              key={exercise.id}
+              exercise={exercise}
+              index={index}
+              isLast={index === day.exercises.length - 1}
+              supersetLabel={labels[index]}
+              onExercisePress={onExercisePress}
+            />
+          ))}
+        </View>
+      ) : null}
     </Animated.View>
   );
 }
 
-/** Plan routine list — each training day is a clearly separated card. */
+/**
+ * A plan's sessions as a list you can scan: one row each — its letter, name,
+ * size and weekdays — opening to the exercises on tap. Drawn as stacked open
+ * cards, an 8-session plan was 70 exercises of scrolling, and "GK A kurz"
+ * and "GK A lang" only differed somewhere in the middle.
+ */
 export function PlanDetailView({
   days,
+  schedule,
   onExercisePress,
   onStartDay,
 }: PlanDetailViewProps) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  // A short plan reads fine opened up; a longer one starts as its overview.
+  const openAll = days.length <= 2;
   return (
     <View style={styles.root}>
       {days.map((day, dayIndex) => (
-        <DayCard
-          key={`${day.dayName}-${dayIndex}`}
+        <SessionRow
+          key={day.id ?? `${day.dayName}-${dayIndex}`}
           day={day}
           dayIndex={dayIndex}
+          schedule={schedule}
+          initiallyOpen={openAll}
           onExercisePress={onExercisePress}
           onStartDay={onStartDay}
         />
@@ -215,82 +243,79 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  card: {
-    backgroundColor: c.ironElevated2,
-    borderRadius: 18,
-    marginBottom: 16,
-    overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.hairline,
-    // Soft elevation so each day reads as its own block.
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 12,
+  // Rows on the page, not cards: hairlines separate the sessions.
+  session: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.hairline,
   },
-  cardHeaderPressed: {
-    backgroundColor: c.iron,
-  },
-  startBtn: {
+  sessionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: c.primary,
-    paddingHorizontal: 14,
-    flexShrink: 0,
+    gap: 12,
+    paddingVertical: 14,
   },
-  startBtnText: {
-    color: c.onChalk,
-    fontSize: 13,
-    fontWeight: "700",
+  sessionToggle: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  exerciseCountMeta: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: c.chalkDim,
-    marginTop: 2,
+  sessionBody: {
+    paddingBottom: 8,
+    paddingLeft: 52,
   },
-  dayBadge: {
+  marker: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: c.primary,
+    borderRadius: 20,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  dayBadgeText: {
-    color: c.onChalk,
-    fontSize: 18,
-    lineHeight: 22,
+  markerText: {
+    color: c.chalk,
+    fontSize: 16,
     fontWeight: "800",
     fontFamily: "Archivo_700Bold",
+  },
+  // Inside the opened session: one start per screen-full instead of a
+  // column of identical pills down every row.
+  startBtn: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    marginBottom: 4,
+  },
+  startBtnText: {
+    color: c.chalk,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 3,
+  },
+  exerciseCountMeta: {
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "500",
+    color: c.chalkDim,
   },
   headerTextCol: {
     flex: 1,
     minWidth: 0,
   },
-  dayOverline: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    color: c.primary,
-    marginBottom: 1,
-  },
   dayName: {
-    fontSize: 17,
+    fontSize: 16,
+    lineHeight: 21,
     fontWeight: "700",
     fontFamily: "Archivo_700Bold",
     color: c.chalk,
@@ -308,7 +333,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-    backgroundColor: c.ironElevated2,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.hairline,
   },

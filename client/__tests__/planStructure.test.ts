@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatRest, isTimedTarget, planDaySummary, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
+import { formatRest, isTimedTarget, planDaySummary, sessionLetter, sessionSlots, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
 
 describe("plan structure helpers", () => {
   it("labels superset members A1/A2 and ignores single-member blocks", () => {
@@ -45,5 +45,52 @@ describe("planDaySummary", () => {
   it("keeps plain names and removes weekday notes in brackets", () => {
     expect(planDaySummary(["Push (Mo)", "Pull", "Beine"])).toBe("Push · Pull · Beine");
     expect(planDaySummary(["Ganzkörper A", "Ganzkörper B", "Ganzkörper C"])).toBe("Ganzkörper A · B · C");
+  });
+});
+
+describe("sessionSlots", () => {
+  const schedule = {
+    weeks: [
+      [{ weekday: 1, dayId: "b" }, { weekday: 5, dayId: "a" }],
+      [{ weekday: 1, dayId: "a" }],
+    ],
+  };
+
+  it("lists weekdays with their cycle week in a rotation", () => {
+    expect(sessionSlots(schedule, "a")).toEqual([
+      { week: 1, weekday: 5 },
+      { week: 2, weekday: 1 },
+    ]);
+  });
+
+  it("drops the week for a weekday the session has in every week", () => {
+    const everyMonday = {
+      weeks: [
+        [{ weekday: 0, dayId: "m" }],
+        [{ weekday: 0, dayId: "m" }, { weekday: 3, dayId: "m" }],
+      ],
+    };
+    expect(sessionSlots(everyMonday, "m")).toEqual([
+      { week: null, weekday: 0 },
+      { week: 2, weekday: 3 },
+    ]);
+  });
+
+  it("leaves the week out for a fixed week and is empty without a schedule", () => {
+    expect(sessionSlots({ weeks: [schedule.weeks[0]] }, "b")).toEqual([{ week: null, weekday: 1 }]);
+    expect(sessionSlots(undefined, "a")).toEqual([]);
+    expect(sessionSlots(schedule, undefined)).toEqual([]);
+  });
+});
+
+describe("sessionLetter", () => {
+  it("reads the letter the plan gives a session", () => {
+    expect(sessionLetter("GK A kurz – Bein / Hinge")).toBe("A");
+    expect(sessionLetter("Ganzkörper C")).toBe("C");
+  });
+
+  it("is null when the name has no letter", () => {
+    expect(sessionLetter("Push")).toBeNull();
+    expect(sessionLetter("Mobility – A-Skip")).toBeNull();
   });
 });

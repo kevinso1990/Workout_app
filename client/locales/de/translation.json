@@ -9,7 +9,9 @@
     "profile": "Profil"
   },
   "planDetail": {
-    "dayLabel": "Tag",
+    "weekShort": "W{{n}}",
+    "sessionCount_one": "{{count}} Einheit",
+    "sessionCount_other": "{{count}} Einheiten",
     "exerciseCount_one": "{{count}} Übung",
     "exerciseCount_other": "{{count}} Übungen",
     "daysPerWeekCount_one": "{{count}} Tag pro Woche",

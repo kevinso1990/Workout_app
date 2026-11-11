@@ -191,9 +191,20 @@ export default function PlanDetailScreen() {
               ? `${t("planDetail.daysPerWeekCount", { count: mobilityDays.length })} · `
               : ""
             : `${t("planDetail.daysPerWeekCount", { count: plan.daysPerWeek })} · `}
-          {t("planDetail.exerciseCount", {
-            count: plan.days.reduce((acc, day) => acc + day.exercises.length, 0),
-          })}
+          {/* A scheduled plan lists more sessions than you train in a week;
+              "70 Übungen" across all of them described nothing you do. */}
+          {plan.schedule && plan.schedule.weeks.length > 0
+            ? [
+                plan.schedule.weeks.length > 1
+                  ? t("plans.rotationWeeks", { count: plan.schedule.weeks.length })
+                  : null,
+                t("planDetail.sessionCount", { count: plan.days.length }),
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : t("planDetail.exerciseCount", {
+                count: plan.days.reduce((acc, day) => acc + day.exercises.length, 0),
+              })}
         </ThemedText>
       </View>
 
@@ -209,6 +220,7 @@ export default function PlanDetailScreen() {
 
         <PlanDetailView
           days={plan.days}
+          schedule={plan.schedule}
           onExercisePress={(exercise) => setDetailExercise(exercise)}
           onStartDay={handleStartDay}
         />
