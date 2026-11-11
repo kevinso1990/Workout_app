@@ -34,6 +34,8 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { displayPlanName } from "@/lib/defaultPlanName";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { MobilityDaysCard } from "@/components/workout/MobilityDaysCard";
+import { ScreenGradient } from "@/components/surface/ScreenGradient";
+import { Panel } from "@/components/surface/Panel";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PlanDetail">;
 
@@ -145,6 +147,7 @@ export default function PlanDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenGradient />
       <ExerciseDetailModal
         visible={detailExercise !== null}
         exerciseName={detailExercise?.name ?? ""}
@@ -218,12 +221,15 @@ export default function PlanDetailScreen() {
       >
         {plan.id === MOBILITY_PLAN_ID ? <MobilityDaysCard onChange={setMobilityDays} /> : null}
 
+        <Panel padded={false} style={styles.sessionsPanel}>
         <PlanDetailView
+          flush
           days={plan.days}
           schedule={plan.schedule}
           onExercisePress={(exercise) => setDetailExercise(exercise)}
           onStartDay={handleStartDay}
         />
+        </Panel>
 
         <Animated.View
           entering={FadeInDown.delay(500).duration(400)}
@@ -268,8 +274,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     justifyContent: "center",
     backgroundColor: c.iron,
   },
-  screenHeader: {
-    backgroundColor: c.ironElevated2,
+  // The header sits on the page gradient; the sessions float below it.
+  screenHeader: {},
+  sessionsPanel: {
+    marginHorizontal: HEVY.pad,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
   editBtn: {
     position: "absolute",

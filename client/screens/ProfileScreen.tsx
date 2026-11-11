@@ -1010,7 +1010,7 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAwareScrollViewCompat
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+      style={styles.container}
       contentContainerStyle={[
         styles.content,
         {

@@ -1067,7 +1067,7 @@ export default function ExercisesScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={styles.container}>
       <ExerciseDetailModal
         visible={detailExercise !== null}
         exerciseName={detailExercise?.name ?? ""}

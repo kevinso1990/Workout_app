@@ -408,7 +408,7 @@ export default function CalendarScreen() {
 }
 
 const makeStyles = (c: Palette) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.backgroundRoot },
+  screen: { flex: 1 },
   heading: { fontSize: 28, lineHeight: 34, fontWeight: "700", marginBottom: 4 },
   subtitle: { fontSize: 14, opacity: 0.65, marginBottom: Spacing.lg },
   monthNav: {

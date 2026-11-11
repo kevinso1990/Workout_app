@@ -122,3 +122,14 @@ export function sessionLetter(name: string): string | null {
   const head = name.split(/\s[–—-]\s|:/)[0];
   return head.match(/(?:^|\s)([A-Z])(?=\s|$)/)?.[1] ?? null;
 }
+
+/**
+ * Which session hue a session wears: its letter's place in the alphabet
+ * (A → 0, B → 1 …), so "GK A kurz" and "GK A lang" share one; without a
+ * letter, its position in the plan.
+ */
+export function sessionHueIndex(name: string, index: number, count: number): number {
+  const letter = sessionLetter(name);
+  const n = letter ? letter.charCodeAt(0) - 65 : index;
+  return ((n % count) + count) % count;
+}

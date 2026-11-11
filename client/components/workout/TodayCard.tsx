@@ -23,6 +23,9 @@ import { confirmAlert } from "@/lib/confirmAlert";
 import { todayOverview, type TodaySession } from "@/lib/todayPlan";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
+import { Panel } from "@/components/surface/Panel";
+import { sessionHues } from "@/constants/palettes";
+import { sessionHueIndex } from "@/lib/planStructure";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 
 /**
@@ -109,11 +112,10 @@ export function TodayCard({
     month: "short",
   });
 
-  // Today is the one thing on this tab that wants a decision, so it is the
-  // only element drawn big — no box, a headline and one chalk button. The
-  // notices, the week and the plans around it stay quiet.
+  // Today is the one thing on this tab that wants a decision: the only panel
+  // tinted warm, drawn big, with the one signal button.
   return (
-    <View style={styles.hero} testID="card-today">
+    <Panel warm style={styles.hero} testID="card-today">
       <ThemedText style={[styles.overline, { color: strength ? theme.signalText : theme.textSecondary }]}>
         {t("plans.today.title")} · {dateLabel}
       </ThemedText>
@@ -166,8 +168,19 @@ export function TodayCard({
           </View>
           {next ? (
             <View style={[styles.sessionRow, { borderTopColor: theme.hairline }]} testID="row-today-next">
-              <View style={[styles.weekdayBadge, { borderColor: theme.controlOutline }]}>
-                <ThemedText style={styles.weekdayBadgeText}>{dayLabel(next.weekday)}</ThemedText>
+              {/* In the session's plan colour, as in the week and the plan. */}
+              <View
+                style={[
+                  styles.weekdayBadge,
+                  {
+                    backgroundColor:
+                      sessionHues[sessionHueIndex(next.dayName, next.dayIndex, sessionHues.length)],
+                  },
+                ]}
+              >
+                <ThemedText style={[styles.weekdayBadgeText, { color: theme.onSessionHue }]}>
+                  {dayLabel(next.weekday)}
+                </ThemedText>
               </View>
               <View style={styles.statusText}>
                 <ThemedText style={[styles.rowOverline, { color: theme.textSecondary }]}>
@@ -225,14 +238,14 @@ export function TodayCard({
           </Pressable>
         </View>
       ) : null}
-    </View>
+    </Panel>
   );
 }
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
     hero: {
-      marginBottom: Spacing.xl,
+      marginBottom: Spacing.lg,
       gap: Spacing.sm,
     },
     overline: {
@@ -296,7 +309,6 @@ const makeStyles = (c: Palette) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      borderWidth: 1,
       alignItems: "center",
       justifyContent: "center",
     },

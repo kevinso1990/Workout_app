@@ -48,6 +48,30 @@ export const signal = "#FF6B2C";
 const signalText = "#FF8A55"; // signal as text/strokes on iron — a touch lighter to read
 const onSignal = "#1D0D05"; // text on a signal-filled surface
 
+/**
+ * Layers — depth instead of flat black. The page is a graphite gradient
+ * (lighter at the top, falling away below); sections float on it as panels:
+ * a gradient one step lighter, a light catch on the top edge and a soft drop
+ * shadow. "Alles schwarz und ohne Übergänge" was the problem these solve.
+ */
+const groundTop = "#20252C";
+const groundBottom = "#111316";
+const panelTop = "#2A2F37";
+const panelBottom = "#20242A";
+const panelEdge = "rgba(255,255,255,0.09)";
+/** Today's panel leans warm toward the signal colour at its top-left. */
+const panelWarm = "#3D2B22";
+
+/**
+ * One hue per session of a plan (A, B, C …), so a session reads the same in
+ * the plan, the week strip and its row. Distinct from the plate colours,
+ * which stay reserved for load.
+ */
+export const sessionHues = ["#F0A93B", "#3BB3A0", "#9182F2", "#E0679A", "#7FB24A", "#E3845A"];
+/** Mobility sessions — calm blue, never one of the lettered hues. */
+export const mobilityHue = "#5FA8E6";
+const onSessionHue = "#14161A";
+
 /** The primary action colour is chalk itself. */
 const primaryColor = chalk;
 /** Completed-set indicator fills with chalk (was a bright orange tick). */
@@ -89,6 +113,13 @@ const palette = {
   signal,
   signalText,
   onSignal,
+  groundTop,
+  groundBottom,
+  panelTop,
+  panelBottom,
+  panelEdge,
+  panelWarm,
+  onSessionHue,
 };
 
 
@@ -187,6 +218,13 @@ const lightPalette = {
   signal: "#F2601F",
   signalText: "#B8430F",
   onSignal,
+  groundTop: "#EDE9E2",
+  groundBottom: "#DCD7CE",
+  panelTop: "#FFFFFF",
+  panelBottom: "#F7F5F1",
+  panelEdge: "rgba(255,255,255,0.9)",
+  panelWarm: "#FFF1E8",
+  onSessionHue,
 };
 
 /**

@@ -57,6 +57,7 @@ import { findMobilityDayToSplit } from "@/lib/mobilitySplit";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { planDaySummary } from "@/lib/planStructure";
 import { PlanDetailView } from "@/components/workout/PlanDetailView";
+import { Panel } from "@/components/surface/Panel";
 import { primaryPlan } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
@@ -793,33 +794,38 @@ export default function MyPlansScreen() {
           },
         ]}
       >
-        <PlanCard
-          plan={item}
-          index={index}
-          active={item.id === activePlanId}
-          activeHeading={index === 0 && item.id === activePlanId}
-          onViewPlan={() => handleViewPlan(item)}
-          onOpenMenu={() => setMenuPlan(item)}
-          mobilityDaysPerWeek={mobilityWeekdays.length}
-        />
+        {/* Each plan floats as its own panel on the ground. */}
+        <Panel padded={false} style={styles.planPanel}>
+          <PlanCard
+            plan={item}
+            index={index}
+            active={item.id === activePlanId}
+            activeHeading={index === 0 && item.id === activePlanId}
+            onViewPlan={() => handleViewPlan(item)}
+            onOpenMenu={() => setMenuPlan(item)}
+            mobilityDaysPerWeek={mobilityWeekdays.length}
+          />
+          {/* The plan you train by shows its sessions right here — the same
+              rows as the plan screen, to check or start one without a detour. */}
+          {index === 0 && item.id === activePlanId ? (
+            <View style={[styles.planSessions, { borderTopColor: theme.hairline }]}>
+              <PlanDetailView
+                flush
+                days={item.days}
+                schedule={item.schedule}
+                onStartDay={(dayIndex) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate("ActiveWorkout", {
+                    planId: item.id,
+                    planName: item.name,
+                    dayIndex,
+                  });
+                }}
+              />
+            </View>
+          ) : null}
+        </Panel>
       </SwipeRowActions>
-      {/* The plan you train by shows its sessions right here — the same
-          rows as the plan screen, to check or start one without a detour. */}
-      {index === 0 && item.id === activePlanId ? (
-        <PlanDetailView
-          flush
-          days={item.days}
-          schedule={item.schedule}
-          onStartDay={(dayIndex) => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate("ActiveWorkout", {
-              planId: item.id,
-              planName: item.name,
-              dayIndex,
-            });
-          }}
-        />
-      ) : null}
       </>
     ),
     [t, theme, styles, orderedPlans, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId, navigation],
@@ -831,7 +837,7 @@ export default function MyPlansScreen() {
   const showImportBanner = !bannerDismissed && plans.length === 0;
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.iron }]}>
+    <View style={styles.screen}>
       {showImportBanner ? (
         <View
           onLayout={(e) => setBannerHeight(e.nativeEvent.layout.height)}
@@ -915,7 +921,7 @@ export default function MyPlansScreen() {
             {/* Suggestions fold into one line under Today: they're offers,
                 not the day's task, and as open cards they buried it. */}
             {suggestionCount > 0 || suggestionsOpen ? (
-              <View style={styles.suggestions}>
+              <Panel padded={false} style={styles.suggestions}>
                 <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();
@@ -1023,7 +1029,7 @@ export default function MyPlansScreen() {
                     ) : null}
                   </View>
                 ) : null}
-              </View>
+              </Panel>
             ) : null}
             <WeekScheduleStrip
               commitments={commitments}
@@ -1083,15 +1089,14 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: HEVY.pad,
   },
   suggestions: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
   suggestionsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
     paddingVertical: Spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   suggestionsText: {
     flex: 1,
@@ -1130,7 +1135,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   planRow: {
     paddingVertical: Spacing.md,
     paddingRight: 44,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     justifyContent: "center",
     minHeight: 64,
     position: "relative",
@@ -1145,8 +1149,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   planRowNameActive: {
     flexShrink: 1,
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 22,
+    lineHeight: 27,
     fontFamily: "Oswald_600SemiBold",
     color: c.chalk,
     marginBottom: 2,
@@ -1154,6 +1158,13 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   planDays: {
     fontSize: 13,
     marginTop: 2,
+  },
+  planPanel: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  planSessions: {
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   sectionTitleSpaced: {
     marginTop: Spacing.xl,

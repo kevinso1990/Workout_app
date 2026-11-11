@@ -11,6 +11,7 @@ import CalendarScreen from "@/screens/CalendarScreen";
 import ProgressScreen from "@/screens/ProgressScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
+import { ScreenGradient } from "@/components/surface/ScreenGradient";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { CoachHeaderButton } from "@/components/CoachHeaderButton";
 import { Colors } from "@/constants/theme";
@@ -79,6 +80,9 @@ export default function MainTabNavigator() {
 
   return (
     <View style={styles.container}>
+      {/* One graphite ground behind every tab; the scenes stay transparent so
+          their panels float on it instead of sitting on flat black. */}
+      <ScreenGradient />
       <Tab.Navigator
         initialRouteName="MyPlans"
         screenOptions={{
@@ -123,7 +127,7 @@ export default function MainTabNavigator() {
             }),
           },
           sceneStyle: {
-            backgroundColor: theme.backgroundRoot,
+            backgroundColor: "transparent",
           },
         }}
       >

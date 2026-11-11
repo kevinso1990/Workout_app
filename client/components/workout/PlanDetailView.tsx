@@ -13,7 +13,8 @@ import type { Palette } from "@/constants/palettes";
 import { useTheme } from "@/hooks/useTheme";
 import type { Exercise, PlanSchedule, WorkoutDay } from "@/lib/storage";
 import { translateDayName } from "@/lib/dayNameLabel";
-import { sessionLetter, sessionSlots, supersetLabels } from "@/lib/planStructure";
+import { sessionHueIndex, sessionLetter, sessionSlots, supersetLabels } from "@/lib/planStructure";
+import { mobilityHue, sessionHues } from "@/constants/palettes";
 import { isMobilityDay } from "@/lib/mobilitySplit";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 
@@ -101,10 +102,12 @@ function SessionRow({
   dayIndex,
   schedule,
   initiallyOpen,
+  isLast,
   onExercisePress,
   onStartDay,
 }: {
   day: WorkoutDay;
+  isLast: boolean;
   dayIndex: number;
   schedule?: PlanSchedule;
   initiallyOpen: boolean;
@@ -119,6 +122,9 @@ function SessionRow({
   const name = translateDayName(t, day.dayName);
   const mobility = isMobilityDay(day);
   const marker = sessionLetter(day.dayName) ?? String(dayIndex + 1);
+  const hue = mobility
+    ? mobilityHue
+    : sessionHues[sessionHueIndex(day.dayName, dayIndex, sessionHues.length)];
   const labels = supersetLabels(day.exercises);
   const slots = sessionSlots(schedule, day.id)
     .map((s) => (s.week ? `${t("planDetail.weekShort", { n: s.week })} ${dayLabel(s.weekday)}` : dayLabel(s.weekday)))
@@ -127,7 +133,7 @@ function SessionRow({
   return (
     <Animated.View
       entering={FadeInDown.delay(dayIndex * 50).duration(260)}
-      style={styles.session}
+      style={[styles.session, isLast && styles.sessionLast]}
     >
       <View style={styles.sessionHeader}>
         <Pressable
@@ -141,11 +147,13 @@ function SessionRow({
           accessibilityLabel={name}
           testID={`button-toggle-day-${dayIndex}`}
         >
-          <View style={[styles.marker, { borderColor: theme.controlOutline }]}>
+          {/* Filled in the session's own colour — the same one its dots
+              wear in the week strip. */}
+          <View style={[styles.marker, { backgroundColor: hue }]}>
             {mobility ? (
-              <Feather name="wind" size={16} color={theme.chalk} />
+              <Feather name="wind" size={17} color={theme.onSessionHue} />
             ) : (
-              <Text style={styles.markerText}>{marker}</Text>
+              <Text style={[styles.markerText, { color: theme.onSessionHue }]}>{marker}</Text>
             )}
           </View>
           <View style={styles.headerTextCol}>
@@ -232,6 +240,7 @@ export function PlanDetailView({
           dayIndex={dayIndex}
           schedule={schedule}
           initiallyOpen={openAll}
+          isLast={dayIndex === days.length - 1}
           onExercisePress={onExercisePress}
           onStartDay={onStartDay}
         />
@@ -255,6 +264,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.hairline,
   },
+  sessionLast: {
+    borderBottomWidth: 0,
+  },
   sessionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -276,12 +288,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   markerText: {
-    color: c.chalk,
     fontSize: 16,
     fontWeight: "800",
     fontFamily: "Archivo_700Bold",

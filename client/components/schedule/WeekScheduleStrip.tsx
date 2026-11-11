@@ -8,14 +8,15 @@ import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
-import type { Palette } from "@/constants/palettes";
+import { mobilityHue, sessionHues, type Palette } from "@/constants/palettes";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { planTrainingWeek } from "@shared/planSchedule";
 import { getWorkoutHistory, type WorkoutPlan } from "@/lib/storage";
 import { isMobilitySession, mondayBasedWeekday } from "@/lib/mobilitySchedule";
 import { mondayOf } from "@shared/planSchedule";
 import { isMobilityDay } from "@/lib/mobilitySplit";
-import { weekStripCaption } from "@/lib/planStructure";
+import { sessionHueIndex, weekStripCaption } from "@/lib/planStructure";
+import { Panel } from "@/components/surface/Panel";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 
@@ -118,6 +119,7 @@ export function WeekScheduleStrip({
       accessibilityRole={onPress ? "button" : undefined}
       style={styles.card}
     >
+      <Panel>
       <View style={styles.header}>
         <ThemedText style={[styles.title, { color: theme.textSecondary }]} numberOfLines={1}>
           {t("plans.weekStrip.title", { defaultValue: "Deine Woche" })}
@@ -180,16 +182,27 @@ export function WeekScheduleStrip({
                     <Feather name="check" size={11} color={theme.onSignal} />
                   </View>
                 ) : isGym ? (
+                  // Each session in its plan colour, the same one its row in
+                  // the plan wears.
                   <View
                     style={[
                       styles.dot,
-                      { backgroundColor: isToday ? theme.signal : theme.chalk },
+                      {
+                        backgroundColor:
+                          sessionHues[
+                            sessionHueIndex(
+                              slot.dayName ?? "",
+                              schedule.dayIndexByWeekday.get(slot.weekday) ?? 0,
+                              sessionHues.length,
+                            )
+                          ],
+                      },
                     ]}
                   />
                 ) : slot.kind === "sport" ? (
                   <ActivityIcon sport={slot.commitment!.sport} size={13} color={theme.textSecondary} />
                 ) : isMobility ? (
-                  <View style={[styles.ring, { borderColor: theme.textSecondary }]} />
+                  <View style={[styles.ring, { borderColor: mobilityHue }]} />
                 ) : null}
               </View>
               <ThemedText
@@ -230,6 +243,7 @@ export function WeekScheduleStrip({
           })}
         </ThemedText>
       ) : null}
+      </Panel>
     </Card>
   );
 }
@@ -237,7 +251,7 @@ export function WeekScheduleStrip({
 const makeStyles = (c: Palette) => StyleSheet.create({
   // A section of the page, not another box.
   card: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   header: {
     flexDirection: "row",

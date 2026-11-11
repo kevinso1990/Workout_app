@@ -1155,7 +1155,7 @@ export default function ProgressScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+      style={styles.container}
       contentContainerStyle={[
         styles.content,
         {

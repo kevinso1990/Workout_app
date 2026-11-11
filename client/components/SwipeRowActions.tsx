@@ -45,6 +45,9 @@ export function SwipeRowActions({ actions, children }: Props) {
     <Swipeable
       ref={ref}
       overshootRight={false}
+      // Rows can be floating panels; clipping here cut their shadow off
+      // in a hard band below them.
+      containerStyle={{ overflow: "visible" }}
       rightThreshold={40}
       friction={2}
       onSwipeableWillOpen={() => {

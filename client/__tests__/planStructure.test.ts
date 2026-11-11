@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatRest, isTimedTarget, planDaySummary, sessionLetter, sessionSlots, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
+import { formatRest, isTimedTarget, planDaySummary, sessionHueIndex, sessionLetter, sessionSlots, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
 
 describe("plan structure helpers", () => {
   it("labels superset members A1/A2 and ignores single-member blocks", () => {
@@ -92,5 +92,18 @@ describe("sessionLetter", () => {
   it("is null when the name has no letter", () => {
     expect(sessionLetter("Push")).toBeNull();
     expect(sessionLetter("Mobility – A-Skip")).toBeNull();
+  });
+});
+
+describe("sessionHueIndex", () => {
+  it("gives the short and long variant of a session the same hue", () => {
+    expect(sessionHueIndex("GK A kurz – Bein", 1, 6)).toBe(0);
+    expect(sessionHueIndex("GK A lang – Bein", 4, 6)).toBe(0);
+    expect(sessionHueIndex("GK C kurz", 3, 6)).toBe(2);
+  });
+
+  it("falls back to the position and wraps around", () => {
+    expect(sessionHueIndex("Push", 1, 6)).toBe(1);
+    expect(sessionHueIndex("Beine", 7, 6)).toBe(1);
   });
 });
