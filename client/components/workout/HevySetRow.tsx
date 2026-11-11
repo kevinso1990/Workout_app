@@ -779,10 +779,10 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
   );
 }
 
+// Set rows sit on the exercise's floating panel, so they stay transparent and
+// let its gradient through; tints are alpha washes, not flat iron blocks.
 const makeStyles = (c: Palette) => StyleSheet.create({
-  setBlock: {
-    backgroundColor: c.ironElevated2,
-  },
+  setBlock: {},
   setBlockActive: {
     // The row you are on and the kg/reps editor under it are one unit — the set
     // being worked. Until now they were two loose pieces stacked on the same
@@ -799,7 +799,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: HEVY.pad,
-    backgroundColor: c.ironElevated2,
     borderBottomWidth: 0.5,
     borderBottomColor: c.hairline,
     minHeight: 36,
@@ -811,7 +810,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderBottomWidth: 0,
   },
   headerRow: {
-    backgroundColor: c.iron,
+    backgroundColor: "rgba(0,0,0,0.14)",
     paddingVertical: 5,
     minHeight: 28,
     borderBottomWidth: 0.5,
@@ -948,7 +947,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: c.ironElevated2,
   },
   checkBoxIdle: {
     borderColor: c.hairlineStrong,
@@ -976,7 +974,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: HEVY.pad,
     paddingTop: 4,
     paddingBottom: 10,
-    backgroundColor: c.ironElevated2,
     borderBottomWidth: 0.5,
     borderBottomColor: c.hairline,
   },
@@ -1002,14 +999,13 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderColor: c.chalkDim,
     borderRadius: 10,
     overflow: "hidden",
-    backgroundColor: c.ironElevated2,
   },
   stepBtn: {
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: c.ironElevated3,
+    backgroundColor: "rgba(236,233,225,0.07)",
   },
   stepInput: {
     flex: 1,
@@ -1022,6 +1018,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     // Recessed well between two raised buttons: the field was previously the
     // same tone as the card and therefore darker than the +/- buttons flanking
     // it, which read as "the buttons are the control, this gap is nothing".
-    backgroundColor: c.iron,
+    backgroundColor: "rgba(0,0,0,0.22)",
   },
 });

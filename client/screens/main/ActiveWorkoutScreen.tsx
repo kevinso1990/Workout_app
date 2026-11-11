@@ -60,6 +60,8 @@ import { useLocalizeExerciseName } from "@/hooks/useLocalizeExerciseName";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { ScreenGradient } from "@/components/surface/ScreenGradient";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
@@ -2223,6 +2225,7 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ScreenGradient />
       <WorkoutWebStyles />
       {/* This screen presents as a native fullScreenModal, a separate iOS
           view-controller layer above the app root — the root-mounted
@@ -2292,7 +2295,6 @@ export default function ActiveWorkoutScreen() {
               paddingTop: workoutHeaderPaddingTop,
               marginTop: HEADER_SAFE_MARGIN_TOP,
               paddingBottom: Spacing.md,
-              backgroundColor: theme.backgroundRoot,
             },
           ]}
         >
@@ -2563,6 +2565,18 @@ export default function ActiveWorkoutScreen() {
                   sectionOffsetsRef.current[exIdx] = e.nativeEvent.layout.y;
                 }}
               >
+                {/* A floating panel; the exercise you're on leans warm. */}
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={
+                    isCurrentExercise
+                      ? [theme.panelWarm, theme.panelTop, theme.panelBottom]
+                      : [theme.panelTop, theme.panelBottom]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={isCurrentExercise ? { x: 1, y: 1 } : { x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
                 {/* Swipe the header right to call the exercise done with sets
                     left over — or to skip it when none were done. Right-swipe
                     keeps it apart from the left-swipe that deletes a set. */}
@@ -2594,9 +2608,6 @@ export default function ActiveWorkoutScreen() {
                       // Padding, not margin: the gap has to slide with the header.
                       marginBottom: 0,
                       paddingBottom: Spacing.sm,
-                      backgroundColor: isCurrentExercise
-                        ? theme.ironElevated3
-                        : theme.ironElevated2,
                     },
                   ]}
                   accessibilityActions={
@@ -2765,7 +2776,7 @@ export default function ActiveWorkoutScreen() {
                 <View
                   style={[
                     styles.setsContainer,
-                    { backgroundColor: theme.ironElevated2, overflow: "hidden" },
+                    { overflow: "hidden" },
                   ]}
                 >
                   <HevySetGridHeader isBodyweight={isBodyweight} isHold={isHold} />
@@ -2902,7 +2913,7 @@ export default function ActiveWorkoutScreen() {
           style={[
             styles.bottomBar,
             {
-              backgroundColor: theme.backgroundRoot,
+              borderTopColor: theme.hairline,
               paddingBottom: insets.bottom + Spacing.lg,
             },
           ]}
@@ -3073,20 +3084,21 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   exerciseSection: {
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    borderRadius: 20,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.hairlineStrong,
-    backgroundColor: c.ironElevated2,
+    borderColor: c.hairline,
+    borderTopWidth: 1,
+    borderTopColor: c.panelEdge,
+    backgroundColor: c.panelBottom,
   },
   exerciseSectionActive: {
-    // A 33%-alpha hairline was not enough to answer "which exercise am I on?"
-    // at a glance. The current card is now outlined in full chalk and sits on
-    // the raised control surface, while the others keep the plain card colour
-    // and recede — the difference has to be readable in peripheral vision.
-    borderColor: c.chalk,
-    borderWidth: 2,
-    backgroundColor: c.ironElevated3,
+    // "Which exercise am I on?" has to read in peripheral vision: the current
+    // panel is warm and edged in the signal colour; the others recede.
+    borderColor: c.signal,
+    borderTopColor: c.signal,
+    borderWidth: 1.5,
+    borderTopWidth: 1.5,
   },
   exerciseSectionIdle: {
     opacity: 0.72,
@@ -3686,6 +3698,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   bottomBar: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   restBar: {
     borderWidth: StyleSheet.hairlineWidth,
