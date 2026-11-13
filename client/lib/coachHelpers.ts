@@ -104,8 +104,8 @@ export function buildBriefingTimeline(input: {
   dayLabel: (dayName: string) => string;
   /** Strength session the plan has for today and not yet done. */
   plannedToday?: string | null;
-  /** Next planned strength session after today. */
-  next?: { date: Date; dayName: string } | null;
+  /** Next planned strength session after today (weekday Monday-based, 0 = Mo). */
+  next?: { weekday: number; dayName: string } | null;
 }): string {
   const { sessions, now, dayLabel } = input;
   const day = (d: Date) =>
@@ -115,13 +115,31 @@ export function buildBriefingTimeline(input: {
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
   )[0];
   if (latest) {
+    // The exercises, not just the day name: "Ganzkörper B" says nothing about
+    // which muscles are tired.
+    const names = latest.exercises.map((e) => e.name).slice(0, 8).join(", ");
+    // Spelled out: given only two dates the model called a workout from an
+    // hour ago "yesterday".
+    const done = new Date(latest.completedAt);
+    const daysAgo = Math.round(
+      (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
+        new Date(done.getFullYear(), done.getMonth(), done.getDate()).getTime()) /
+        86_400_000,
+    );
+    const when = daysAgo <= 0 ? "TODAY" : daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`;
     lines.push(
-      `Most recent workout: ${day(new Date(latest.completedAt))} — ${dayLabel(latest.dayName)}. ` +
-        "Anything about recovery or what the athlete is coming off refers to THIS session only.",
+      `Most recent workout (${when}): ${day(done)} — ${dayLabel(latest.dayName)}` +
+        (names ? ` (${names})` : "") +
+        ". Anything about recovery or what the athlete is coming off refers to THIS session only.",
     );
   }
   if (input.plannedToday) lines.push(`Planned for today (not done yet): ${dayLabel(input.plannedToday)}.`);
-  else if (input.next) lines.push(`Next planned session: ${day(input.next.date)} — ${dayLabel(input.next.dayName)}.`);
+  else if (input.next) {
+    const todayWd = (now.getDay() + 6) % 7;
+    const ahead = (input.next.weekday - todayWd + 7) % 7 || 7;
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ahead);
+    lines.push(`Next planned session: ${day(date)} — ${dayLabel(input.next.dayName)}.`);
+  }
   return lines.join("\n");
 }
 

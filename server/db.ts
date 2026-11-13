@@ -365,13 +365,14 @@ function migrateFreeExerciseDbCatalog() {
   const insertExercise = db.prepare(
     "INSERT OR IGNORE INTO exercises (name, muscle_group, equipment, is_custom, gif_url) VALUES (?, ?, ?, 0, ?)",
   );
-  // Fill in the German name, and replace a "translation" that is just the
-  // English name copied over (an earlier import did that for ~200 rows).
-  // A real German name already in place is left alone — users have seen it.
+  // The snapshot's German names are the reviewed ones and win. Earlier imports
+  // left ~650 machine translations behind ("Zuckungen" for shrugs, the
+  // abductor machine as "Beinadduktion"). Plans and history store the English
+  // name, so replacing a translation only changes what is displayed.
   const insertTranslation = db.prepare(
     `INSERT INTO exercise_translations (exercise_id, lang, name) VALUES (?, 'de', ?)
      ON CONFLICT(exercise_id, lang) DO UPDATE SET name = excluded.name
-     WHERE exercise_translations.name = (SELECT name FROM exercises WHERE id = excluded.exercise_id)`,
+     WHERE exercise_translations.name IS NOT excluded.name`,
   );
   const findId = db.prepare("SELECT id FROM exercises WHERE name = ?");
 

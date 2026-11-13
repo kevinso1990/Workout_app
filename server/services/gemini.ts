@@ -30,7 +30,9 @@ function modelChain(): string[] {
   if (raw) {
     return raw.split(",").map((s) => s.trim()).filter(Boolean);
   }
-  return ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+  // The 2.0 models were shut down (404), which took every AI feature down
+  // wherever GEMINI_MODEL_CHAIN wasn't set.
+  return ["gemini-3.8-flash", "gemini-3.5-flash-lite"];
 }
 
 function extractTextFromRestResponse(data: unknown): string | null {

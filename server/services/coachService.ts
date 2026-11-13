@@ -168,8 +168,9 @@ ${input.performanceDetail || "(no logged sets yet)"}
 ${input.signalsText || ""}
 
 Rules:
+- The "Most recent workout" line is the truth about what the athlete just did, including when (today / yesterday / N days ago — use exactly that). Never describe them as coming off, recovering from or having just done any other session; if there is no such line, don't claim what they last trained.
 - If a detected performance signal or a concrete recent number (weight, reps, or green/yellow/red feedback) is available above, reference it specifically — do not write generic filler when real data exists.
-- Mention today’s focus if inferable (e.g. pull / push / legs) OR the next logical session.
+- Mention today’s focus if inferable (e.g. pull / push / legs) OR the next logical session — take it from the "Planned for today" / "Next planned session" line when present, never guess it from older sessions.
 - If the athlete was strong (green feedback) on a lift recently, suggest a small, concrete progression there (e.g. "+2.5kg on X").
 - If a signal indicates overreach, plateau, or missed sessions, acknowledge it supportively instead of pushing more load.
 - No markdown, no quotes, no bullet points — plain sentence only.`;
@@ -221,7 +222,7 @@ Rules:
 - Use their real data above (exercises, weights, feedback, schedule) when it answers the question. Do not bring up unrelated data (e.g. missed sessions) unless they ask about it.
 - Pain or injury: no diagnosis. Suggest pain-free alternatives and lowering the load, and recommend a physio or doctor if pain is sharp, persists, or worsens.
 - If the athlete asks to change their plan (swap, add, remove exercises or days, shorter sessions, different focus), or clearly agrees to a change you proposed, set "planChange" to one precise imperative instruction in English for the plan editor (e.g. "Replace Barbell Back Squat with Leg Press on all days"). Mention in your reply that they can review the change below. Otherwise "planChange" is null.
-- Never invent workouts the athlete logged.
+- Never invent workouts the athlete logged. The "Most recent workout" line is what they did last — never call an older session their last one.
 
 Respond with JSON only: {"reply": "...", "planChange": null}`;
 

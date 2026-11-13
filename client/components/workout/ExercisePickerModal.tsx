@@ -22,7 +22,8 @@ import type { Palette } from "@/constants/palettes";
 import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { nativeRequest } from "@/lib/nativeApi";
 import { toast } from "@/lib/toast";
-import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise, isHoldExercise } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, isMobilityExercise, isHoldExercise } from "@/lib/exerciseTaxonomy";
+import { ScreenGradient } from "@/components/surface/ScreenGradient";
 import {
   addCustomExercise,
   loadCustomExercises,
@@ -95,6 +96,10 @@ export function ExercisePickerModal({
   }, [visible]);
   const catalog = useMemo<CatalogRow[]>(() => {
     const customNames = new Set(customs.map((c) => c.name.toLowerCase()));
+    // A-Z by the name on screen, as in the Exercises tab.
+    const collator = new Intl.Collator(i18n.language, { sensitivity: "base" });
+    const label = (c: { name: string; nameDe?: string | null }) =>
+      getExerciseDisplayName(c, i18n.language);
     return [
       ...customs.map((c, i) => ({
         id: -(i + 1),
@@ -105,6 +110,7 @@ export function ExercisePickerModal({
       })),
       ...cachedCatalog
         .filter((c) => !customNames.has(c.name.toLowerCase()))
+        .sort((a, b) => collator.compare(label(a), label(b)))
         .map((c) => ({
           id: Number(c.id),
           name: c.name,
@@ -113,7 +119,7 @@ export function ExercisePickerModal({
           equipment: c.equipment.toLowerCase(),
         })),
     ];
-  }, [cachedCatalog, customs]);
+  }, [cachedCatalog, customs, i18n.language]);
   const loading = catalogLoading && catalog.length === 0;
   const [mobilityOnly, setMobilityOnly] = useState(false);
   // Active muscle-group filter — seeded from initialMuscleGroup on open so a
@@ -268,13 +274,14 @@ export function ExercisePickerModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        style={[styles.modalRoot, { backgroundColor: theme.backgroundRoot }]}
+        style={[styles.modalRoot, { backgroundColor: theme.groundBottom }]}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
+        <ScreenGradient />
         <View
           style={[
             styles.modalHeader,
-            { borderBottomColor: theme.border, paddingTop: insets.top || Spacing.lg },
+            { borderBottomColor: theme.hairline, paddingTop: insets.top || Spacing.lg },
           ]}
         >
           <ThemedText style={styles.modalTitle}>{title}</ThemedText>
@@ -303,7 +310,7 @@ export function ExercisePickerModal({
         <View
           style={[
             styles.searchRow,
-            { backgroundColor: theme.backgroundDefault, borderColor: theme.border },
+            { backgroundColor: theme.well, borderColor: theme.hairline },
           ]}
         >
           <Feather name="search" size={16} color={theme.textSecondary} />
@@ -332,21 +339,14 @@ export function ExercisePickerModal({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setMuscleFilter(null);
               }}
-              style={[
-                styles.filterChip,
-                {
-                  borderColor: getMuscleGroupColor(activeMuscleFilter),
-                  backgroundColor: getMuscleGroupColor(activeMuscleFilter) + "1A",
-                },
-              ]}
+              // Same chips as the Exercises tab: chalk when on, no per-muscle colours.
+              style={[styles.filterChip, { backgroundColor: theme.primary }]}
               testID="chip-picker-muscle"
             >
-              <ThemedText
-                style={[styles.filterChipText, { color: getMuscleGroupColor(activeMuscleFilter) }]}
-              >
+              <ThemedText style={[styles.filterChipText, { color: theme.onChalk }]}>
                 {translateMuscleGroup(t, activeMuscleFilter)}
               </ThemedText>
-              <Feather name="x" size={13} color={getMuscleGroupColor(activeMuscleFilter)} />
+              <Feather name="x" size={13} color={theme.onChalk} />
             </Pressable>
           ) : null}
           <Pressable
@@ -356,31 +356,13 @@ export function ExercisePickerModal({
             }}
             style={[
               styles.filterChip,
-              {
-                borderColor: mobilityOnly
-                  ? getMuscleGroupColor("Mobility")
-                  : theme.border,
-                backgroundColor: mobilityOnly
-                  ? getMuscleGroupColor("Mobility") + "1A"
-                  : "transparent",
-              },
+              { backgroundColor: mobilityOnly ? theme.primary : theme.chipIdle },
             ]}
             testID="chip-picker-mobility"
           >
-            <Feather
-              name="wind"
-              size={13}
-              color={mobilityOnly ? getMuscleGroupColor("Mobility") : theme.textSecondary}
-            />
+            <Feather name="wind" size={13} color={mobilityOnly ? theme.onChalk : theme.text} />
             <ThemedText
-              style={[
-                styles.filterChipText,
-                {
-                  color: mobilityOnly
-                    ? getMuscleGroupColor("Mobility")
-                    : theme.textSecondary,
-                },
-              ]}
+              style={[styles.filterChipText, { color: mobilityOnly ? theme.onChalk : theme.text }]}
             >
               {translateMuscleGroup(t, "Mobility")}
             </ThemedText>
@@ -491,8 +473,8 @@ export function ExercisePickerModal({
                 }
                 style={({ pressed }) => [
                   styles.row,
-                  { borderBottomColor: theme.border },
-                  pressed && { backgroundColor: theme.backgroundDefault },
+                  { borderBottomColor: theme.hairline },
+                  pressed && { backgroundColor: theme.chipIdle },
                 ]}
                 testID={`row-picker-exercise-${item.id}`}
               >
@@ -631,7 +613,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     borderRadius: BorderRadius.full,
-    borderWidth: 1,
   },
   filterChipText: {
     fontSize: 13,

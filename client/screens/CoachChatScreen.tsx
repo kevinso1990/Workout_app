@@ -28,7 +28,7 @@ import {
   getWorkoutPlans,
   saveWorkoutPlan,
 } from "@/lib/storage";
-import { buildDailyBriefingPayload } from "@/lib/coachHelpers";
+import { buildBriefingTimeline, buildDailyBriefingPayload } from "@/lib/coachHelpers";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { primaryPlan, todayOverview } from "@/lib/todayPlan";
 import { recentRecords } from "@/lib/strengthProgress";
@@ -134,24 +134,34 @@ export default function CoachChatScreen() {
       getWorkoutHistory(),
       getUserPreferences(),
     ]);
-    const payload = buildDailyBriefingPayload(plans, history, i18n.language, (n) => translateDayName(t, n));
     const commitments = prefs?.weeklyCommitments ?? [];
     const mobilityDays = prefs?.mobilityWeekdays ?? [];
+    const now = new Date();
     const today = todayOverview({
       plans,
       commitments,
       mobilityWeekdays: mobilityDays,
       history,
-      now: new Date(),
+      now,
     });
-    const records = recentRecords(history, new Date());
+    // Same timeline as the home brief: without it the chat also guessed which
+    // workout was the last one.
+    const timeline = buildBriefingTimeline({
+      sessions: history,
+      now,
+      dayLabel: (n) => translateDayName(t, n),
+      plannedToday: today.strength?.dayName ?? null,
+      next: today.next,
+    });
+    const payload = buildDailyBriefingPayload(
+      plans,
+      history,
+      i18n.language,
+      (n) => translateDayName(t, n),
+      timeline,
+    );
+    const records = recentRecords(history, now);
     const lines = [
-      `Today: ${new Date().toISOString().slice(0, 10)} (${dayLabel((new Date().getDay() + 6) % 7)})`,
-      today.strength
-        ? `Scheduled today: ${translateDayName(t, today.strength.dayName)}`
-        : today.next
-          ? `Rest day today; next: ${translateDayName(t, today.next.dayName)} on ${dayLabel(today.next.weekday)}`
-          : "",
       prefs?.fitnessLevel ? `Level: ${prefs.fitnessLevel}` : "",
       prefs?.fitnessGoals?.length ? `Goals: ${prefs.fitnessGoals.join(", ")}` : "",
       prefs?.equipment ? `Equipment: ${prefs.equipment}` : "",

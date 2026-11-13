@@ -119,9 +119,11 @@ function ExerciseDbHeroGifBase({
     // there is no start/end pair to alternate between.
     const custom = getCustomExerciseImageSync(exerciseName);
     if (custom) return [custom];
+    // Curated map first, as in the list thumbnail.
+    const mapped = getExerciseImageFrames(exerciseName);
+    if (mapped.length > 0) return mapped;
     const catalog = catalogImageUrl(exerciseName);
-    if (catalog) return [catalog, catalog.replace(/\/0\.jpg$/, "/1.jpg")];
-    return getExerciseImageFrames(exerciseName);
+    return catalog ? [catalog, catalog.replace(/\/0\.jpg$/, "/1.jpg")] : [];
   }, [exerciseName]);
   const hasFrames = frames.length > 0;
 

@@ -60,7 +60,7 @@ import { PlanDetailView } from "@/components/workout/PlanDetailView";
 import { Panel } from "@/components/surface/Panel";
 import { primaryPlan, todayOverview } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
-import { MOBILITY_PLAN_ID, mondayBasedWeekday } from "@/lib/mobilitySchedule";
+import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
@@ -574,7 +574,7 @@ export default function MyPlansScreen() {
       // refocused constantly (that hammered the AI API), but a brief written
       // before today's session is stale the moment it's logged — it was still
       // talking about the previous workout after a new one was done.
-      const today = now.toISOString().slice(0, 10);
+      const today = now.toDateString();
       const lastWorkout = history.reduce<string | null>(
         (latest, s) => (!latest || s.completedAt > latest ? s.completedAt : latest),
         null,
@@ -606,15 +606,12 @@ export default function MyPlansScreen() {
           history,
           now,
         });
-        const nextDate = overview.next
-          ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((overview.next.weekday - mondayBasedWeekday(now) + 7) % 7 || 7))
-          : null;
         const timeline = buildBriefingTimeline({
           sessions: history,
           now,
           dayLabel: (n) => translateDayName(t, n),
           plannedToday: overview.strength?.dayName ?? null,
-          next: overview.next && nextDate ? { date: nextDate, dayName: overview.next.dayName } : null,
+          next: overview.next,
         });
         const body = buildDailyBriefingPayload(
           loadedPlans,

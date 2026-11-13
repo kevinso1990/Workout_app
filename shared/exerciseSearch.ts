@@ -167,7 +167,25 @@ const SYNONYMS: Record<string, string[]> = {
   plank: ["unterarmstutz"],
   unterarmstutz: ["plank"],
   dip: ["dip"],
+  abduction: ["abductor", "abduktion"],
+  abduktion: ["abduction", "abductor"],
+  abduktor: ["abductor"],
+  abduktoren: ["abductor"],
+  adduction: ["adductor", "adduktion"],
+  adduktion: ["adduction", "adductor"],
+  adduktor: ["adductor"],
 };
+
+/**
+ * Words one letter apart that mean the opposite movement — a typo match
+ * between them sends someone looking for abduction to the adduction machine.
+ */
+function oppositeMovement(q: string, h: string): boolean {
+  const kind = (w: string) => (/^abdu[ck]t/.test(w) ? "ab" : /^addu[ck]t/.test(w) ? "ad" : null);
+  const a = kind(q);
+  const b = kind(h);
+  return !!a && !!b && a !== b;
+}
 
 /**
  * Edit distance where swapping two neighbouring letters counts as one edit
@@ -215,6 +233,7 @@ function wordScore(q: string, h: string): number {
   if (q.length >= 3 && h.includes(q)) return 2;
   // A typo, in the whole word or in its start ("dumbel" → "dumbbell").
   const typos = q.length >= 7 ? 2 : 1;
+  if (oppositeMovement(q, h)) return 0;
   if (q.length >= 4 && (editDistanceWithin(q, h, typos) || editDistanceWithin(q, h.slice(0, q.length + 1), typos))) {
     return 1.5;
   }

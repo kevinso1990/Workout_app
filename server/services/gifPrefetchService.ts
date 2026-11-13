@@ -19,6 +19,7 @@
 import db from "../db";
 import { getExerciseDbApiKey } from "../lib/exerciseDbConfig";
 import { searchMuscleWiki } from "./muscleWikiService";
+import { EXERCISE_IMAGE_IDS, exerciseImageFile } from "../../shared/exerciseImageIds";
 
 const GITHUB_CDN =
   "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises";
@@ -26,181 +27,12 @@ const GITHUB_CDN =
 const RAPIDAPI_HOST = "exercisedb.p.rapidapi.com";
 const BASE_URL = `https://${RAPIDAPI_HOST}`;
 
-/**
- * Maps exercise display names → free-exercise-db folder IDs (verified to exist).
- * Covers every exercise seeded in server/db.ts plus common alternates.
- */
-const EXERCISE_IMAGE_IDS: Record<string, string> = {
-  // ── Chest ──────────────────────────────────────────────────────────
-  "Bench Press":                   "Barbell_Bench_Press_-_Medium_Grip",
-  "Barbell Bench Press":           "Barbell_Bench_Press_-_Medium_Grip",
-  "Incline Barbell Bench Press":   "Barbell_Incline_Bench_Press_-_Medium_Grip",
-  "Decline Barbell Bench Press":   "Barbell_Bench_Press_-_Medium_Grip",
-  "Dumbbell Bench Press":          "Dumbbell_Bench_Press",
-  "Incline Dumbbell Press":        "Incline_Dumbbell_Press",
-  "Dumbbell Flyes":                "Dumbbell_Flyes",
-  "Cable Flyes":                   "Cable_Crossover",
-  "Machine Chest Press":           "Dumbbell_Bench_Press",
-  "Pec Deck":                      "Dumbbell_Bench_Press",
-  "Push-Ups":                      "Decline_Push-Up",
-  "Chest Dips":                    "Dips_-_Chest_Version",
-  "Landmine Press":                "Barbell_Shoulder_Press",
-  "Diamond Push-Ups":              "Close-Grip_Push-Up_off_of_a_Dumbbell",
-  "Dips":                          "Dips_-_Triceps_Version",
 
-  // ── Back ───────────────────────────────────────────────────────────
-  "Deadlift":                      "Barbell_Deadlift",
-  "Barbell Row":                   "Bent_Over_Barbell_Row",
-  "Barbell Rows":                  "Bent_Over_Barbell_Row",
-  "Dumbbell Row":                  "Bent_Over_Two-Dumbbell_Row",
-  "One-Arm Dumbbell Row":          "One-Arm_Dumbbell_Row",
-  "Pendlay Row":                   "Bent_Over_Barbell_Row",
-  "T-Bar Row":                     "Lying_T-Bar_Row",
-  "Meadows Row":                   "Bent_Over_Barbell_Row",
-  "Seated Cable Row":              "Elevated_Cable_Rows",
-  "Seated Cable Rows":             "Elevated_Cable_Rows",
-  "Lat Pulldown":                  "Close-Grip_Front_Lat_Pulldown",
-  "Lat Pulldowns":                 "Close-Grip_Front_Lat_Pulldown",
-  "Wide Grip Lat Pulldown":        "Full_Range-Of-Motion_Lat_Pulldown",
-  "Wide-Grip Lat Pulldown":        "Full_Range-Of-Motion_Lat_Pulldown",
-  "Pull-Ups":                      "Band_Assisted_Pull-Up",
-  "Pull Ups":                      "Band_Assisted_Pull-Up",
-  "Chin-Ups":                      "Band_Assisted_Pull-Up",
-  "Cable Pullover":                "Barbell_Deadlift",
-  "Straight Arm Pulldown":         "Barbell_Deadlift",
-  "Machine Row":                   "Elevated_Cable_Rows",
-  "Chest Supported Row":           "Dumbbell_Incline_Row",
-  "Hyperextension":                "Hyperextensions_With_No_Hyperextension_Bench",
-  "Trap Bar Deadlift":             "Barbell_Deadlift",
-  "Rack Pull":                     "Barbell_Deadlift",
-  "Good Morning":                  "Barbell_Deadlift",
-
-  // ── Shoulders ──────────────────────────────────────────────────────
-  "Overhead Press":                "Barbell_Shoulder_Press",
-  "Dumbbell Shoulder Press":       "Dumbbell_Shoulder_Press",
-  "Arnold Press":                  "Arnold_Dumbbell_Press",
-  "Lateral Raise":                 "Cable_Seated_Lateral_Raise",
-  "Lateral Raises":                "Cable_Seated_Lateral_Raise",
-  "Cable Lateral Raise":           "Cable_Seated_Lateral_Raise",
-  "Machine Lateral Raise":         "Cable_Seated_Lateral_Raise",
-  "Front Raise":                   "Front_Dumbbell_Raise",
-  "Front Raises":                  "Front_Dumbbell_Raise",
-  "Rear Delt Fly":                 "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
-  "Rear Delt Flyes":               "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
-  "Face Pull":                     "Face_Pull",
-  "Face Pulls":                    "Face_Pull",
-  "Upright Row":                   "Barbell_Rear_Delt_Row",
-  "Behind The Neck Press":         "Barbell_Shoulder_Press",
-  "Machine Shoulder Press":        "Dumbbell_Shoulder_Press",
-  "Barbell Shrug":                 "Barbell_Shrug",
-  "Dumbbell Shrug":                "Dumbbell_Shrug",
-  "Farmer's Walk":                 "Barbell_Shrug",
-
-  // ── Biceps ─────────────────────────────────────────────────────────
-  "Bicep Curls":                   "Barbell_Curl",
-  "Barbell Curl":                  "Barbell_Curl",
-  "Dumbbell Curl":                 "Dumbbell_Bicep_Curl",
-  "Hammer Curl":                   "Hammer_Curls",
-  "Hammer Curls":                  "Hammer_Curls",
-  "Preacher Curl":                 "Machine_Preacher_Curls",
-  "Incline Dumbbell Curl":         "Incline_Dumbbell_Curl",
-  "Cable Curl":                    "High_Cable_Curls",
-  "Concentration Curl":            "Concentration_Curls",
-  "EZ-Bar Curl":                   "EZ-Bar_Curl",
-  "Spider Curl":                   "Lying_Cable_Curl",
-  "Reverse Curl":                  "Barbell_Curl",
-  "Bayesian Curl":                 "High_Cable_Curls",
-
-  // ── Triceps ────────────────────────────────────────────────────────
-  "Tricep Pushdown":               "Cable_Incline_Pushdown",
-  "Tricep Pushdowns":              "Cable_Incline_Pushdown",
-  "Skull Crushers":                "EZ-Bar_Skullcrusher",
-  "Overhead Tricep Extension":     "Dumbbell_One-Arm_Triceps_Extension",
-  "Tricep Dips":                   "Dips_-_Triceps_Version",
-  "Tricep Kickback":               "Dumbbell_One-Arm_Triceps_Extension",
-  "Close Grip Bench Press":        "Close-Grip_Barbell_Bench_Press",
-  "Cable Overhead Extension":      "Dumbbell_One-Arm_Triceps_Extension",
-  "JM Press":                      "Close-Grip_Barbell_Bench_Press",
-
-  // ── Legs ───────────────────────────────────────────────────────────
-  "Squats":                        "Barbell_Full_Squat",
-  "Barbell Squat":                 "Barbell_Full_Squat",
-  "Front Squat":                   "Barbell_Full_Squat",
-  "Goblet Squat":                  "Goblet_Squat",
-  "Hack Squat":                    "Hack_Squat",
-  "Leg Press":                     "Leg_Press",
-  "Leg Extension":                 "Leg_Extensions",
-  "Leg Curl":                      "Lying_Leg_Curls",
-  "Leg Curls":                     "Lying_Leg_Curls",
-  "Seated Leg Curl":               "Lying_Leg_Curls",
-  "Romanian Deadlift":             "Barbell_Deadlift",
-  "Stiff Leg Deadlift":            "Barbell_Deadlift",
-  "Sumo Deadlift":                 "Barbell_Deadlift",
-  "Bulgarian Split Squat":         "Barbell_Side_Split_Squat",
-  "Walking Lunges":                "Dumbbell_Lunges",
-  "Reverse Lunges":                "Dumbbell_Lunges",
-  "Hip Thrust":                    "Barbell_Hip_Thrust",
-  "Glute Bridge":                  "Barbell_Glute_Bridge",
-  "Step Ups":                      "Barbell_Step_Ups",
-  "Sissy Squat":                   "Barbell_Full_Squat",
-  "Standing Calf Raise":           "Donkey_Calf_Raises",
-  "Seated Calf Raise":             "Barbell_Seated_Calf_Raise",
-  "Leg Press Calf Raise":          "Calf_Press_On_The_Leg_Press_Machine",
-
-  // ── Core ───────────────────────────────────────────────────────────
-  "Plank":                         "Dead_Bug",
-  "Side Plank":                    "Dead_Bug",
-  "Russian Twist":                 "Cable_Russian_Twists",
-  "Russian Twists":                "Cable_Russian_Twists",
-  "Hanging Leg Raise":             "Hanging_Leg_Raise",
-  "Cable Crunch":                  "Cable_Crunch",
-  "Ab Wheel Rollout":              "Ab_Roller",
-  "Mountain Climbers":             "Mountain_Climbers",
-  "Dead Bug":                      "Dead_Bug",
-  "Crunches":                      "Crunches",
-  "Sit-Ups":                       "3_4_Sit-Up",
-  "Decline Sit-Ups":               "3_4_Sit-Up",
-  "Dragon Flag":                   "Hanging_Leg_Raise",
-  "Pallof Press":                  "Cable_Crunch",
-  "Woodchoppers":                  "Cable_Crunch",
-
-  // ── Forearms ───────────────────────────────────────────────────────
-  "Wrist Curl":                    "Barbell_Curl",
-  "Reverse Wrist Curl":            "Barbell_Curl",
-  "Plate Pinch":                   "Barbell_Shrug",
-
-  // ── Kettlebell ─────────────────────────────────────────────────────
-  "KB Goblet Squat":               "Goblet_Squat",
-  "KB Swing":                      "Barbell_Deadlift",
-  "KB Romanian Deadlift":          "Barbell_Deadlift",
-  "KB Lunges":                     "Dumbbell_Lunges",
-  "KB Bulgarian Split Squat":      "Barbell_Side_Split_Squat",
-  "KB Calf Raise":                 "Donkey_Calf_Raises",
-  "KB Press":                      "Barbell_Shoulder_Press",
-  "KB Push Press":                 "Barbell_Shoulder_Press",
-  "KB Lateral Raise":              "Cable_Seated_Lateral_Raise",
-  "KB Halo":                       "Cable_Seated_Lateral_Raise",
-  "KB Floor Press":                "Dumbbell_Bench_Press",
-  "KB Squeeze Press":              "Dumbbell_Bench_Press",
-  "KB Row":                        "Bent_Over_Two-Dumbbell_Row",
-  "KB Renegade Row":               "Bent_Over_Two-Dumbbell_Row",
-  "KB High Pull":                  "Barbell_Rear_Delt_Row",
-  "KB Clean":                      "Barbell_Deadlift",
-  "KB Snatch":                     "Barbell_Deadlift",
-  "KB Curl":                       "Dumbbell_Bicep_Curl",
-  "KB Hammer Curl":                "Hammer_Curls",
-  "KB Overhead Tricep Extension":  "Dumbbell_One-Arm_Triceps_Extension",
-  "KB Skull Crusher":              "EZ-Bar_Skullcrusher",
-  "KB Turkish Get-Up":             "Dead_Bug",
-  "KB Windmill":                   "Cable_Seated_Lateral_Raise",
-  "KB Russian Twist":              "Cable_Russian_Twists",
-  "KB Farmer's Walk":              "Barbell_Shrug",
-};
 
 function getGithubImageUrl(exerciseName: string): string | null {
   const id = EXERCISE_IMAGE_IDS[exerciseName];
   if (!id) return null;
-  return `${GITHUB_CDN}/${id}/0.jpg`;
+  return `${GITHUB_CDN}/${exerciseImageFile(id)}`;
 }
 
 interface ExerciseDBEntry {
@@ -317,6 +149,27 @@ export async function prefetchSingleExercise(id: number, name: string): Promise<
   }
 }
 
+const folderKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** Points rows at their mapped image where an older mapping left a wrong one. */
+export function correctMappedImages(exercises: { id: number; name: string }[]): number {
+  const read = db.prepare("SELECT gif_url FROM exercises WHERE id = ?");
+  const update = db.prepare("UPDATE exercises SET gif_url = ? WHERE id = ?");
+  let fixed = 0;
+  for (const ex of exercises) {
+    const want = getGithubImageUrl(ex.name);
+    if (!want) continue;
+    const row = read.get(ex.id) as { gif_url: string | null } | undefined;
+    const current = row?.gif_url;
+    if (!current || current === want || !current.startsWith(GITHUB_CDN)) continue;
+    const folder = current.slice(GITHUB_CDN.length + 1).split("/")[0] ?? "";
+    if (folderKey(folder) === folderKey(ex.name)) continue;
+    update.run(want, ex.id);
+    fixed++;
+  }
+  return fixed;
+}
+
 export async function runGifPrefetch(): Promise<void> {
   const allExercises = db
     .prepare("SELECT id, name FROM exercises")
@@ -327,7 +180,13 @@ export async function runGifPrefetch(): Promise<void> {
   // can serve animated GIFs and MP4 video clips.
   await runMuscleWikiPrefetch(allExercises);
 
-  // Step 2: Populate the fallback gif_url column with static GitHub CDN images
+  // Step 2a: Correct images set from an older version of the mapping (Plank
+  // showed Dead Bug, Good Morning a deadlift). A row whose image is already
+  // its own free-exercise-db folder is left alone.
+  const fixed = correctMappedImages(allExercises);
+  if (fixed > 0) console.log(`[GIF prefetch] Corrected ${fixed} exercise images.`);
+
+  // Step 2b: Populate the fallback gif_url column with static GitHub CDN images
   // for exercises that still need a static image fallback.
   const exercises = allExercises.filter((ex) => {
     const row = db

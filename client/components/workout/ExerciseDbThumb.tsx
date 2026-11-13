@@ -38,6 +38,8 @@ function ExerciseDbThumbBase({
   const [imageReady, setImageReady] = useState(false);
   const [fetchDone, setFetchDone] = useState(false);
   const [gifFailed, setGifFailed] = useState(false);
+  // Every source failed to load — show the placeholder, not an empty frame.
+  const [allFailed, setAllFailed] = useState(false);
   const requestRef = useRef(0);
 
   // Static GitHub-CDN still image (no API key needed). Used as a reliable
@@ -45,10 +47,12 @@ function ExerciseDbThumbBase({
   const staticUrl = useMemo(
     // An image the athlete supplied for this exercise outranks every catalog
     // source: they added it precisely because the catalog had nothing useful.
+    // The curated map comes before the server's catalog URL, which can still
+    // hold an image from an older, wrong mapping.
     () =>
       getCustomExerciseImageSync(exerciseName) ??
-      catalogImageUrl(exerciseName) ??
-      getExerciseImageUrl(exerciseName),
+      getExerciseImageUrl(exerciseName) ??
+      catalogImageUrl(exerciseName),
     [exerciseName],
   );
 
@@ -57,6 +61,7 @@ function ExerciseDbThumbBase({
     setFetchDone(false);
     setImageReady(false);
     setGifFailed(false);
+    setAllFailed(false);
     setGifUrl(null);
 
     void (async () => {
@@ -83,7 +88,7 @@ function ExerciseDbThumbBase({
   // Prefer the animated GIF; fall back to the static image if it's missing or
   // errored. Only wait on the network fetch when there's no static image.
   const animatedUri = gifUrl && !gifFailed ? gifUrl : null;
-  const displayUri = animatedUri ?? staticUrl;
+  const displayUri = allFailed ? null : animatedUri ?? staticUrl;
   const showSkeleton =
     (!fetchDone && !staticUrl) || (displayUri !== null && !imageReady);
 
@@ -105,11 +110,12 @@ function ExerciseDbThumbBase({
               setGifFailed(true);
               setImageReady(false);
             } else {
+              setAllFailed(true);
               setImageReady(true);
             }
           }}
         />
-      ) : fetchDone ? (
+      ) : fetchDone || allFailed ? (
         // No animation and no static image for this exercise (e.g. custom or
         // newly-added moves like Dead Hang) — show a neutral dumbbell glyph so
         // the tile looks intentional instead of blank or leaking a config hint.

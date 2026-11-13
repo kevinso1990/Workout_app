@@ -120,6 +120,8 @@ describe("searchExercises — forgiving matching", () => {
     { name: "Push-Ups", de: "Liegestütze", muscle: "Chest", equipment: "body only" },
     { name: "Hammer Curls", de: "Hammer-Curls", muscle: "Biceps", equipment: "dumbbell" },
     { name: "Hollow Hold", de: null, muscle: "Abdominals", equipment: "body only" },
+    { name: "Thigh Abductor", de: "Abduktorenmaschine", muscle: "Abductors", equipment: "machine" },
+    { name: "Cable Hip Adduction", de: "Hüftadduktion am Kabel", muscle: "Adductors", equipment: "cable" },
   ];
   const search = (q: string) =>
     searchExercises(catalog, q, (e) => [e.name, e.de], (e) => [e.muscle, e.equipment]).map((e) => e.name);
@@ -167,6 +169,12 @@ describe("searchExercises — forgiving matching", () => {
   it("puts the plain lift before variants", () => {
     expect(search("squat")[0]).toBe("Barbell Squat");
     expect(search("push up")[0]).toBe("Push-Ups");
+  });
+
+  it("never treats abduction and adduction as typos of each other", () => {
+    expect(search("hip abduction")[0]).toBe("Thigh Abductor");
+    expect(search("abduktion")).toEqual(["Thigh Abductor"]);
+    expect(search("hip adduction")).toEqual(["Cable Hip Adduction"]);
   });
 
   it("returns everything in order for an empty query", () => {

@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   ViewToken,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -174,52 +173,6 @@ const MUSCLE_GROUPS = ["All", "Chest", "Back", "Shoulders", "Legs", "Arms", "Cor
 // in the create-custom-exercise modal, which only uses real muscle groups.
 const FILTER_GROUPS = [...MUSCLE_GROUPS, "Mobility"];
 const EQUIPMENT_OPTIONS = ["Barbell", "Dumbbells", "Cable", "Machine", "Bodyweight", "Kettlebell", "Other"];
-
-const EXERCISE_IMAGE_MAP: Record<string, string> = {
-  "Bench Press": "Barbell-Bench-Press",
-  "Incline Dumbbell Press": "Incline-Dumbbell-Press",
-  "Decline Bench Press": "Decline-Barbell-Bench-Press",
-  "Cable Flyes": "Cable-Crossover",
-  "Push-ups": "Push-Up",
-  "Dumbbell Flyes": "Dumbbell-Fly",
-  "Squat": "Barbell-Squat",
-  "Front Squat": "Barbell-Front-Squat",
-  "Leg Press": "Sled-45-Leg-Press",
-  "Lunges": "Dumbbell-Lunge",
-  "Leg Extension": "Lever-Leg-Extension",
-  "Leg Curl": "Lever-Lying-Leg-Curl",
-  "Romanian Deadlift": "Barbell-Romanian-Deadlift",
-  "Deadlift": "Barbell-Deadlift",
-  "Barbell Rows": "Barbell-Bent-Over-Row",
-  "Dumbbell Rows": "Dumbbell-Row",
-  "Lat Pulldown": "Cable-Bar-Lateral-Pulldown",
-  "Pull-ups": "Pull-Up",
-  "Chin-ups": "Chin-Up",
-  "Seated Cable Row": "Cable-Seated-Row",
-  "Overhead Press": "Barbell-Standing-Military-Press",
-  "Dumbbell Shoulder Press": "Dumbbell-Shoulder-Press",
-  "Lateral Raises": "Dumbbell-Lateral-Raise",
-  "Front Raises": "Dumbbell-Front-Raise",
-  "Face Pulls": "Cable-Face-Pull",
-  "Bicep Curls": "Dumbbell-Bicep-Curl",
-  "Barbell Curls": "Barbell-Curl",
-  "Hammer Curls": "Dumbbell-Hammer-Curl",
-  "Tricep Pushdowns": "Cable-Pushdown",
-  "Skull Crushers": "Barbell-Lying-Triceps-Extension",
-  "Overhead Tricep Extension": "Dumbbell-Seated-Tricep-Extension",
-  "Crunches": "Crunch",
-  "Plank": "Front-Plank",
-  "Leg Raises": "Lying-Leg-Raise",
-  "Hip Thrust": "Barbell-Hip-Thrust",
-  "Calf Raises": "Standing-Calf-Raise",
-  "Shrugs": "Dumbbell-Shrug",
-};
-
-function getExerciseImageUrl(exerciseName: string): string | null {
-  const imageId = EXERCISE_IMAGE_MAP[exerciseName];
-  if (!imageId) return null;
-  return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${imageId}/0.jpg`;
-}
 
 function FilterChip({
   label,
@@ -778,17 +731,9 @@ function ExerciseProgressModal({
             </Pressable>
           </View>
 
-          {getExerciseImageUrl(exercise.name) ? (
-            <Image
-              source={{ uri: getExerciseImageUrl(exercise.name)! }}
-              style={styles.progressModalImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.progressModalImagePlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
-              <Feather name="image" size={32} color={theme.textSecondary} />
-            </View>
-          )}
+          {/* Same image source as the grid card; this modal had its own map
+              of ids that don't exist upstream, so it mostly showed nothing. */}
+          <ServerExerciseThumb exerciseName={exercise.name} style={styles.progressModalImage} />
 
           {stats ? (
             <ScrollView
@@ -1067,9 +1012,16 @@ export default function ExercisesScreen() {
     const catalog: ExerciseItem[] =
       catalogExercises.length > 0 ? catalogExercises : EXERCISE_LIBRARY;
     const customNames = new Set(customExercises.map((c) => c.name.toLowerCase()));
-    const dedupedCatalog = catalog.filter((c) => !customNames.has(c.name.toLowerCase()));
+    // A-Z by the name on screen — sorted by the English name, the German list
+    // looked unordered.
+    const collator = new Intl.Collator(i18n.language, { sensitivity: "base" });
+    const dedupedCatalog = catalog
+      .filter((c) => !customNames.has(c.name.toLowerCase()))
+      .map((c) => ({ c, label: getExerciseDisplayName(c, i18n.language) }))
+      .sort((a, b) => collator.compare(a.label, b.label))
+      .map(({ c }) => c);
     return [...customExercises, ...dedupedCatalog];
-  }, [customExercises, catalogExercises]);
+  }, [customExercises, catalogExercises, i18n.language]);
 
   const filteredExercises = useMemo(() => {
     const armGroups = new Set(["Biceps", "Triceps", "Forearms", "Arms"]);
@@ -1642,14 +1594,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.lg,
     backgroundColor: c.backgroundSecondary,
-  },
-  progressModalImagePlaceholder: {
-    width: "100%",
-    height: 100,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
   },
   imageContainer: {
     width: "100%",
