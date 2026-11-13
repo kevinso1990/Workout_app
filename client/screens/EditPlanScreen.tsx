@@ -31,11 +31,9 @@ import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { HEVY } from "@/constants/hevyLayout";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
-import {
-  translateMuscleGroup,
-  isHoldExercise,
-  isMobilityExercise,
-} from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
+import { defaultTargetFor } from "@/lib/customExercises";
+import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import {
   WorkoutPlan,
   WorkoutDay,
@@ -346,6 +344,7 @@ export default function EditPlanScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<Props["route"]>();
   const { planId } = route.params;
+  const { overrides: measureOverrides, setMeasure } = useMeasureOverrides();
 
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [planName, setPlanName] = useState("");
@@ -550,13 +549,14 @@ export default function EditPlanScreen() {
   const addExercise = (dayIdx: number, picked: PickerExercise) => {
     // Holds (planks, stretches) are logged in seconds, so give them a seconds
     // target instead of "8-12" reps.
-    const hold = isHoldExercise(picked.name);
+    if (picked.measure) void setMeasure(picked.name, picked.measure);
+    const target = defaultTargetFor(picked.name, measureOverrides, picked.measure);
     const newExercise: Exercise = {
       id: `${picked.id}-${Date.now()}`,
       name: picked.name,
       muscleGroup: picked.muscle_group,
-      sets: hold && isMobilityExercise(picked.name) ? 2 : 3,
-      reps: hold ? "30-45s" : "8-12",
+      sets: target.sets,
+      reps: target.reps,
       equipment: picked.equipment || null,
     };
     mutateDays((days) =>

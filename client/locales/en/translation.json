@@ -481,10 +481,12 @@
       "createCustom": "Create custom exercise: \"{{name}}\"",
       "measureWeight": "Weight × reps",
       "measureTime": "Seconds",
-      "chooseMuscleGroup": "Which muscle group?",
+      "chooseMuscleGroup": "Pick a muscle group to create it",
       "createFailed": "Couldn't create the exercise. Please try again.",
       "done": "Done",
-      "added": "Added"
+      "added": "Added",
+      "newCustom": "New custom exercise",
+      "measureLabel": "Log in"
     },
     "shareText": {
       "complete": "💪 Workout Complete — {{name}}",

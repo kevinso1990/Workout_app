@@ -14,8 +14,9 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { isHoldExercise } from "@/lib/exerciseTaxonomy";
+import { isHoldExercise, isMobilityExercise } from "@/lib/exerciseTaxonomy";
 import { isTimedTarget } from "@/lib/planStructure";
+import { loadActiveWorkoutDraft, saveActiveWorkoutDraft } from "@/lib/activeWorkoutPersistence";
 import { STORAGE_KEYS, type WorkoutPlan, type WorkoutSession } from "@/lib/storage";
 
 export const CUSTOM_EXERCISES_KEY = "@fitplan_custom_exercises";
@@ -46,6 +47,21 @@ export function isTimedExercise(
   const chosen = overrides[nameKey(name)];
   if (chosen) return chosen === "time";
   return isHoldExercise(name) || isTimedTarget(reps);
+}
+
+/**
+ * Sets and target for an exercise just added to a plan or workout: seconds
+ * for a hold ("30-45s"), never "8-12" read as seconds. `measure` is the
+ * choice made while creating it, which the overrides may not hold yet.
+ */
+export function defaultTargetFor(
+  name: string,
+  overrides: MeasureOverrides,
+  measure?: ExerciseMeasure,
+): { sets: number; reps: string } {
+  const timed = measure ? measure === "time" : isTimedExercise(name, null, overrides);
+  if (!timed) return { sets: 3, reps: "8-12" };
+  return { sets: isMobilityExercise(name) ? 2 : 3, reps: "30-45s" };
 }
 
 export async function loadCustomExercises(): Promise<CustomExercise[]> {
@@ -166,6 +182,13 @@ export async function renameCustomExercise(
     const history = JSON.parse(historyRaw) as WorkoutSession[];
     const renamed = renameExerciseInHistory(history, from, to);
     if (renamed !== history) await AsyncStorage.setItem(STORAGE_KEYS.WORKOUT_HISTORY, JSON.stringify(renamed));
+  }
+  // A paused workout holds its own copy of the plan; resumed under the old
+  // name it would lose the measure choice that just moved to the new one.
+  const draft = await loadActiveWorkoutDraft();
+  if (draft) {
+    const [plan] = renameExerciseInPlans([draft.plan], from, to);
+    if (plan !== draft.plan) await saveActiveWorkoutDraft({ ...draft, plan });
   }
   return { ok: true };
 }

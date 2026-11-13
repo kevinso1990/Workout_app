@@ -1,8 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: {} }));
+vi.mock("@/lib/activeWorkoutPersistence", () => ({
+  loadActiveWorkoutDraft: vi.fn(),
+  saveActiveWorkoutDraft: vi.fn(),
+}));
 
-import { isTimedExercise, renameExerciseInHistory, renameExerciseInPlans } from "@/lib/customExercises";
+import { defaultTargetFor, isTimedExercise, renameExerciseInHistory, renameExerciseInPlans } from "@/lib/customExercises";
 import type { WorkoutPlan, WorkoutSession } from "@/lib/storage";
 
 describe("isTimedExercise", () => {
@@ -43,5 +47,20 @@ describe("renameExerciseInHistory", () => {
   it("keeps one exercise's history under its new name", () => {
     const session = { id: "s", planId: "p", planName: "P", dayName: "A", completedAt: "", exercises: plan(["Old"]).days[0].exercises } as WorkoutSession;
     expect(renameExerciseInHistory([session], "old", "New")[0].exercises[0].name).toBe("New");
+  });
+});
+
+describe("defaultTargetFor", () => {
+  it("gives a hold a seconds target, not 8-12 read as seconds", () => {
+    expect(defaultTargetFor("Hyperextension Hold", {})).toEqual({ sets: 3, reps: "30-45s" });
+  });
+
+  it("follows the measure chosen while creating the exercise", () => {
+    expect(defaultTargetFor("Superman", {}, "time").reps).toBe("30-45s");
+    expect(defaultTargetFor("Plank", {}, "weight").reps).toBe("8-12");
+  });
+
+  it("follows a saved override", () => {
+    expect(defaultTargetFor("Hyperextension", { hyperextension: "time" }).reps).toBe("30-45s");
   });
 });

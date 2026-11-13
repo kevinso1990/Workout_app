@@ -33,7 +33,7 @@ import {
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import type { CatalogRow } from "@/lib/importCatalog";
-import { searchExercises } from "@shared/exerciseSearch";
+import { searchExercisesDetailed } from "@shared/exerciseSearch";
 
 /** Muscle groups a user can file a self-defined exercise under. */
 const CUSTOM_MUSCLE_GROUPS = [
@@ -48,7 +48,8 @@ const CUSTOM_MUSCLE_GROUPS = [
   "Mobility",
 ] as const;
 
-export type PickerExercise = CatalogRow;
+/** A catalogue row; `measure` is set when the user just created it and chose one. */
+export type PickerExercise = CatalogRow & { measure?: ExerciseMeasure };
 
 interface ExercisePickerModalProps {
   visible: boolean;
@@ -157,7 +158,7 @@ export function ExercisePickerModal({
     }
   };
 
-  const results = useMemo(() => {
+  const { items: results, partial: partialResults } = useMemo(() => {
     const filtered = catalog.filter((e) => {
       if (excludeNames?.has(e.name)) return false;
       if (mobilityOnly && !isMobilityExercise(e.name)) return false;
@@ -167,7 +168,7 @@ export function ExercisePickerModal({
     // Word by word, in any order, with plurals, typos, abbreviations ("kh")
     // and the other language forgiven: "curls dum" finds "Dumbbell Curl".
     // Names (English or German) outrank equipment/muscle-only matches.
-    return searchExercises(
+    return searchExercisesDetailed(
       filtered,
       query,
       (e) => [e.name, e.name_de],
@@ -213,12 +214,13 @@ export function ExercisePickerModal({
       })
         .then((r) => r.id)
         .catch(() => -Date.now());
-      const row: CatalogRow = {
+      const row: PickerExercise = {
         id: serverId,
         name,
         name_de: null,
         muscle_group: muscleGroup,
         equipment: "other",
+        measure: customMeasure,
       };
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onSelect(row);
@@ -236,6 +238,27 @@ export function ExercisePickerModal({
       setCreating(false);
     }
   };
+
+  const createCustomRow = canOfferCustom ? (
+    <Pressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setCustomMeasure(isHoldExercise(trimmedQuery) ? "time" : "weight");
+        setPendingCustomName(trimmedQuery);
+      }}
+      style={({ pressed }) => [
+        styles.createRow,
+        { borderColor: theme.primary },
+        pressed && { backgroundColor: theme.primary + "10" },
+      ]}
+      testID="row-create-custom-exercise"
+    >
+      <Feather name="plus-circle" size={18} color={theme.primary} />
+      <ThemedText style={[styles.createRowText, { color: theme.primary }]} numberOfLines={2}>
+        {t("activeWorkout.picker.createCustom", { name: trimmedQuery })}
+      </ThemedText>
+    </Pressable>
+  ) : null;
 
   return (
     <Modal
@@ -285,7 +308,6 @@ export function ExercisePickerModal({
         >
           <Feather name="search" size={16} color={theme.textSecondary} />
           <TextInput
-            clearButtonMode="while-editing"
             returnKeyType="search"
             autoCapitalize="none"
             style={[styles.searchInput, { color: theme.text }]}
@@ -368,7 +390,7 @@ export function ExercisePickerModal({
         {pendingCustomName !== null ? (
           <View style={styles.customPanel}>
             <ThemedText style={[styles.customPanelLabel, { color: theme.textSecondary }]}>
-              {t("activeWorkout.picker.chooseMuscleGroup")}
+              {t("activeWorkout.picker.newCustom")}
             </ThemedText>
             <ThemedText style={styles.customPanelName} numberOfLines={2}>
               {pendingCustomName}
@@ -377,6 +399,9 @@ export function ExercisePickerModal({
               <ActivityIndicator color={theme.primary} style={{ marginTop: Spacing.xl }} />
             ) : (
               <>
+                <ThemedText style={[styles.customPanelLabel, { color: theme.textSecondary }]}>
+                  {t("activeWorkout.picker.measureLabel")}
+                </ThemedText>
                 <View style={styles.measureRow}>
                   {(["weight", "time"] as const).map((m) => {
                     const on = customMeasure === m;
@@ -405,6 +430,10 @@ export function ExercisePickerModal({
                     );
                   })}
                 </View>
+                {/* Picking the muscle group is the last step and creates it. */}
+                <ThemedText style={[styles.customPanelLabel, styles.customStepLabel, { color: theme.textSecondary }]}>
+                  {t("activeWorkout.picker.chooseMuscleGroup")}
+                </ThemedText>
                 <View style={styles.muscleGrid}>
                   {CUSTOM_MUSCLE_GROUPS.map((mg) => (
                     <Pressable
@@ -413,13 +442,13 @@ export function ExercisePickerModal({
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         void createCustomExercise(mg);
                       }}
-                      style={[
+                      style={({ pressed }) => [
                         styles.muscleOption,
-                        { borderColor: getMuscleGroupColor(mg), backgroundColor: getMuscleGroupColor(mg) + "12" },
+                        { backgroundColor: pressed ? theme.controlOutline : theme.chipIdle },
                       ]}
                       testID={`option-custom-muscle-${mg}`}
                     >
-                      <ThemedText style={[styles.muscleOptionText, { color: getMuscleGroupColor(mg) }]}>
+                      <ThemedText style={[styles.muscleOptionText, { color: theme.text }]}>
                         {translateMuscleGroup(t, mg)}
                       </ThemedText>
                     </Pressable>
@@ -479,18 +508,8 @@ export function ExercisePickerModal({
                       i18n.language,
                     )}
                   </ThemedText>
-                  <View
-                    style={[
-                      styles.muscleTag,
-                      { backgroundColor: getMuscleGroupColor(item.muscle_group) + "1A" },
-                    ]}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.muscleTagText,
-                        { color: getMuscleGroupColor(item.muscle_group) },
-                      ]}
-                    >
+                  <View style={[styles.muscleTag, { backgroundColor: theme.chipIdle }]}>
+                    <ThemedText style={[styles.muscleTagText, { color: theme.textSecondary }]}>
                       {translateMuscleGroup(t, item.muscle_group)}
                     </ThemedText>
                   </View>
@@ -516,28 +535,11 @@ export function ExercisePickerModal({
                 </ThemedText>
               </View>
             }
-            ListFooterComponent={
-              canOfferCustom ? (
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    setCustomMeasure(isHoldExercise(trimmedQuery) ? "time" : "weight");
-                    setPendingCustomName(trimmedQuery);
-                  }}
-                  style={({ pressed }) => [
-                    styles.createRow,
-                    { borderColor: theme.primary },
-                    pressed && { backgroundColor: theme.primary + "10" },
-                  ]}
-                  testID="row-create-custom-exercise"
-                >
-                  <Feather name="plus-circle" size={18} color={theme.primary} />
-                  <ThemedText style={[styles.createRowText, { color: theme.primary }]} numberOfLines={1}>
-                    {t("activeWorkout.picker.createCustom", { name: trimmedQuery })}
-                  </ThemedText>
-                </Pressable>
-              ) : null
-            }
+            // Nothing matches every typed word: the user is most likely after
+            // an exercise the catalogue doesn't have ("hyperextension hold"),
+            // so creating it comes first instead of below the near-misses.
+            ListHeaderComponent={partialResults ? createCustomRow : null}
+            ListFooterComponent={partialResults ? null : createCustomRow}
           />
         )}
       </KeyboardAvoidingView>
@@ -582,7 +584,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   measureRow: {
     flexDirection: "row",
     gap: Spacing.sm,
-    marginTop: Spacing.lg,
+  },
+  customStepLabel: {
+    marginTop: Spacing.xl,
   },
   measureOption: {
     flex: 1,
@@ -715,7 +719,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: 12,
     borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
   },
   muscleOptionText: {
     fontSize: 15,

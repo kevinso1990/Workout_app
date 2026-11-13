@@ -103,7 +103,8 @@ export function normalizeSearchText(s: string): string {
 /** Plural/inflection ending off, so "curls" and "curl" meet. Both sides use it. */
 function stem(token: string): string {
   if (token.length > 4 && token.endsWith("es") && !token.endsWith("ses")) return token.slice(0, -1);
-  if (token.length > 3 && token.endsWith("s") && !token.endsWith("ss")) return token.slice(0, -1);
+  // From three letters, so "Push-Ups" meets "push up".
+  if (token.length > 2 && token.endsWith("s") && !token.endsWith("ss")) return token.slice(0, -1);
   return token;
 }
 
@@ -153,7 +154,8 @@ const SYNONYMS: Record<string, string[]> = {
   row: ["rudern"],
   ohp: ["overhead press"],
   schulterdrucken: ["shoulder press", "overhead press"],
-  seitheben: ["lateral raise"],
+  seitheben: ["seitenheben", "lateral raise"],
+  beinbeuger: ["beincurl", "leg curl"],
   latzug: ["lat pulldown", "pulldown"],
   beinpresse: ["leg press"],
   ausfallschritt: ["lunge"],
@@ -167,23 +169,41 @@ const SYNONYMS: Record<string, string[]> = {
   dip: ["dip"],
 };
 
-/** Levenshtein distance, giving up early once it exceeds `max`. */
+/**
+ * Edit distance where swapping two neighbouring letters counts as one edit
+ * ("sqaut" → "squat"), giving up early once it exceeds `max`.
+ */
 function editDistanceWithin(a: string, b: string, max: number): boolean {
   if (Math.abs(a.length - b.length) > max) return false;
+  let prevPrev: number[] = [];
   let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) {
     const cur = [i];
     let rowMin = i;
     for (let j = 1; j <= b.length; j++) {
-      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        v = Math.min(v, prevPrev[j - 2] + 1);
+      }
       cur.push(v);
       if (v < rowMin) rowMin = v;
     }
     if (rowMin > max) return false;
+    prevPrev = prev;
     prev = cur;
   }
   return prev[b.length] <= max;
 }
+
+/** The words of a name plus each neighbouring pair run together, so "benchpress" finds "Bench Press". */
+function withJoinedPairs(words: string[]): string[] {
+  const pairs: string[] = [];
+  for (let i = 0; i + 1 < words.length; i++) pairs.push(stem(words[i] + words[i + 1]));
+  return pairs.length ? [...words, ...pairs] : words;
+}
+
+/** The implement a plain lift is assumed to use: "Barbell Squat" is what "squat" means. */
+const DEFAULT_IMPLEMENTS = new Set(["barbell", "langhantel", "dumbbell", "kurzhantel"]);
 
 /** How well one typed word matches one word of the exercise; 0 = not at all. */
 function wordScore(q: string, h: string): number {
@@ -230,7 +250,9 @@ function queryWordScore(q: string, words: string[], joined: string): number {
  * Exercises matching `query`, best first. `names` are the exercise's names
  * (English and German, equally weighted); `extra` are secondary fields
  * (equipment, muscle group) a word may also be found in, at half weight.
- * Every typed word must match somewhere, or the exercise is left out.
+ * Every typed word must match somewhere. Only when no exercise matches them
+ * all are the exercises matching the most words returned, so "hyperextension
+ * hold" still offers Hyperextension instead of an empty list.
  */
 export function searchExercises<T>(
   items: T[],
@@ -238,36 +260,72 @@ export function searchExercises<T>(
   names: (item: T) => (string | null | undefined)[],
   extra: (item: T) => (string | null | undefined)[] = () => [],
 ): T[] {
-  const qWords = tokenize(query);
-  if (qWords.length === 0) return items;
-  const qJoined = normalizeSearchText(query).trim();
+  return searchExercisesDetailed(items, query, names, extra).items;
+}
 
-  const scored: { item: T; score: number; index: number }[] = [];
+/**
+ * `searchExercises`, also telling whether the results only match part of the
+ * query — then the exercise the user means probably isn't in the list yet.
+ */
+export function searchExercisesDetailed<T>(
+  items: T[],
+  query: string,
+  names: (item: T) => (string | null | undefined)[],
+  extra: (item: T) => (string | null | undefined)[] = () => [],
+): { items: T[]; partial: boolean } {
+  const qWords = tokenize(query);
+  if (qWords.length === 0) return { items, partial: false };
+  const qPhrase = qWords.join(" ");
+  const qCompact = qWords.join("");
+
+  const scored: { item: T; score: number; matched: number; weighted: number; index: number }[] = [];
+  let bestMatched = 0;
   items.forEach((item, index) => {
     const nameStrings = names(item).filter((n): n is string => !!n);
-    const nameWords = nameStrings.flatMap(tokenize);
-    const nameJoined = nameWords.join(" ");
+    const nameTokens = nameStrings.map(tokenize);
+    const nameWords = withJoinedPairs(nameTokens.flat());
+    const nameJoined = nameTokens.map((t) => t.join(" ")).join(" ");
     const extraWords = extra(item).filter((n): n is string => !!n).flatMap(tokenize);
     const extraJoined = extraWords.join(" ");
 
     let score = 0;
+    let matched = 0;
+    // For the partial-match fallback: a long word says more about the exercise
+    // than a short add-on, so "hyperextension hold" ranks Hyperextension above
+    // Hollow Hold even when "hyperextension" was mistyped.
+    let weighted = 0;
     for (const q of qWords) {
       const inName = queryWordScore(q, nameWords, nameJoined);
       const inExtra = queryWordScore(q, extraWords, extraJoined) / 2;
       const s = Math.max(inName, inExtra);
-      if (s === 0) return;
+      if (s > 0) matched++;
       score += s;
+      weighted += s * q.length;
     }
-    // Prefer the exercise the user most likely means: the exact name, then a
-    // name that starts with what was typed, then the shortest (plainest) one —
-    // "Dumbbell Curl" over "Seated Dumbbell Inner Biceps Curl".
-    const normalizedNames = nameStrings.map(normalizeSearchText);
-    if (normalizedNames.some((n) => n === qJoined)) score += 10;
-    else if (normalizedNames.some((n) => n.startsWith(qJoined))) score += 3;
-    const shortest = Math.min(...nameStrings.map((n) => tokenize(n).length), 99);
+    if (matched === 0 || matched < bestMatched) return;
+    bestMatched = matched;
+    // Prefer the exercise the user most likely means: the exact name, then
+    // the plain barbell/dumbbell version of it, then a name that starts with
+    // what was typed, then the shortest (plainest) one — "Dumbbell Curl" over
+    // "Seated Dumbbell Inner Biceps Curl".
+    if (nameTokens.some((t) => t.join(" ") === qPhrase || t.join("") === qCompact)) score += 10;
+    else if (
+      nameTokens.some(
+        (t) => t.length > qWords.length && DEFAULT_IMPLEMENTS.has(t[0]) && t.slice(1).join("") === qCompact,
+      )
+    ) score += 6;
+    else if (nameTokens.some((t) => t.join(" ").startsWith(qPhrase) || t.join("").startsWith(qCompact))) score += 3;
+    const shortest = Math.min(...nameTokens.map((t) => t.length), 99);
     score -= Math.max(0, shortest - qWords.length) * 0.3;
-    scored.push({ item, score, index });
+    scored.push({ item, score, matched, weighted, index });
   });
 
-  return scored.sort((a, b) => b.score - a.score || a.index - b.index).map((s) => s.item);
+  const partial = bestMatched < qWords.length;
+  return {
+    items: scored
+      .filter((s) => s.matched === bestMatched)
+      .sort((a, b) => (partial ? b.weighted - a.weighted : 0) || b.score - a.score || a.index - b.index)
+      .map((s) => s.item),
+    partial,
+  };
 }

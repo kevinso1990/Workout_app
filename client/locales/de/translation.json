@@ -384,10 +384,12 @@
       "createCustom": "Eigene Übung erstellen: „{{name}}“",
       "measureWeight": "Gewicht × Wdh.",
       "measureTime": "Sekunden",
-      "chooseMuscleGroup": "Welche Muskelgruppe?",
+      "chooseMuscleGroup": "Muskelgruppe wählen – erstellt die Übung",
       "createFailed": "Übung konnte nicht erstellt werden. Bitte erneut versuchen.",
       "done": "Fertig",
-      "added": "Hinzugefügt"
+      "added": "Hinzugefügt",
+      "newCustom": "Neue eigene Übung",
+      "measureLabel": "Erfassen in"
     },
     "shareText": {
       "complete": "💪 Training abgeschlossen — {{name}}",

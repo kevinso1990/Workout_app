@@ -114,6 +114,12 @@ describe("searchExercises — forgiving matching", () => {
     { name: "Hyperextensions (Back Extensions)", de: "Rückenstrecken", muscle: "Lower Back", equipment: "other" },
     { name: "Pullups", de: "Klimmzüge", muscle: "Lats", equipment: "body only" },
     { name: "Barbell Bench Press", de: "Bankdrücken mit Langhantel", muscle: "Chest", equipment: "barbell" },
+    { name: "Squat Jerk", de: null, muscle: "Quadriceps", equipment: "barbell" },
+    { name: "Barbell Squat", de: "Kniebeugen", muscle: "Quadriceps", equipment: "barbell" },
+    { name: "Push Up to Side Plank", de: null, muscle: "Chest", equipment: "body only" },
+    { name: "Push-Ups", de: "Liegestütze", muscle: "Chest", equipment: "body only" },
+    { name: "Hammer Curls", de: "Hammer-Curls", muscle: "Biceps", equipment: "dumbbell" },
+    { name: "Hollow Hold", de: null, muscle: "Abdominals", equipment: "body only" },
   ];
   const search = (q: string) =>
     searchExercises(catalog, q, (e) => [e.name, e.de], (e) => [e.muscle, e.equipment]).map((e) => e.name);
@@ -141,8 +147,26 @@ describe("searchExercises — forgiving matching", () => {
     expect(search("hyperextension")).toContain("Hyperextensions (Back Extensions)");
   });
 
-  it("requires every typed word to match", () => {
-    expect(search("dumbbell squat")).toEqual([]);
+  it("requires every typed word to match when something matches them all", () => {
+    expect(search("hammer curls")).toEqual(["Hammer Curls"]);
+  });
+
+  it("falls back to the closest exercises instead of nothing", () => {
+    // No "hold" variant in the catalogue: offer the exercise itself.
+    expect(search("hyperextension hold")[0]).toBe("Hyperextensions (Back Extensions)");
+    // Even mistyped (QWERTZ "z" for "y"), the long word outweighs "hold".
+    expect(search("hzperextension hold")[0]).toBe("Hyperextensions (Back Extensions)");
+  });
+
+  it("finds words typed together and swapped letters", () => {
+    expect(search("benchpress")[0]).toBe("Barbell Bench Press");
+    expect(search("hammercurls")[0]).toBe("Hammer Curls");
+    expect(search("sqaut")[0]).toBe("Barbell Squat");
+  });
+
+  it("puts the plain lift before variants", () => {
+    expect(search("squat")[0]).toBe("Barbell Squat");
+    expect(search("push up")[0]).toBe("Push-Ups");
   });
 
   it("returns everything in order for an empty query", () => {

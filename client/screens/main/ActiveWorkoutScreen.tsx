@@ -61,7 +61,7 @@ import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenGradient } from "@/components/surface/ScreenGradient";
-import { isTimedExercise } from "@/lib/customExercises";
+import { defaultTargetFor, isTimedExercise } from "@/lib/customExercises";
 import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
@@ -1597,15 +1597,18 @@ export default function ActiveWorkoutScreen() {
   );
 
   const buildExerciseFromCatalog = useCallback(
-    (item: PickerExercise, keepSetsFrom?: Exercise): Exercise => ({
-      id: `${item.id}-${Date.now()}`,
-      name: item.name,
-      muscleGroup: item.muscle_group,
-      equipment: item.equipment,
-      sets: keepSetsFrom?.sets ?? 3,
-      reps: keepSetsFrom?.reps ?? "8-12",
-    }),
-    [],
+    (item: PickerExercise, keepSetsFrom?: Exercise): Exercise => {
+      const target = defaultTargetFor(item.name, measureOverrides, item.measure);
+      return {
+        id: `${item.id}-${Date.now()}`,
+        name: item.name,
+        muscleGroup: item.muscle_group,
+        equipment: item.equipment,
+        sets: keepSetsFrom?.sets ?? target.sets,
+        reps: keepSetsFrom?.reps ?? target.reps,
+      };
+    },
+    [measureOverrides],
   );
 
   const buildEmptyProgressSets = (count: number): SetData[] =>
@@ -1716,13 +1719,15 @@ export default function ActiveWorkoutScreen() {
 
   const handlePickerSelect = useCallback(
     (item: PickerExercise) => {
+      // Just created with "seconds": the set rows must know before they render.
+      if (item.measure) void setMeasure(item.name, item.measure);
       if (swapTargetIndex !== null) {
         handleSwapExercise(swapTargetIndex, item);
       } else {
         handleAddExercise(item);
       }
     },
-    [swapTargetIndex, handleSwapExercise, handleAddExercise],
+    [swapTargetIndex, handleSwapExercise, handleAddExercise, setMeasure],
   );
 
   const persistRestTimerPreference = async (value: boolean) => {
