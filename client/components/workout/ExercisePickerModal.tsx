@@ -22,11 +22,18 @@ import type { Palette } from "@/constants/palettes";
 import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { nativeRequest } from "@/lib/nativeApi";
 import { toast } from "@/lib/toast";
-import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise } from "@/lib/exerciseTaxonomy";
+import { translateMuscleGroup, getMuscleGroupColor, isMobilityExercise, isHoldExercise } from "@/lib/exerciseTaxonomy";
+import {
+  addCustomExercise,
+  loadCustomExercises,
+  setMeasureOverride,
+  type CustomExercise,
+  type ExerciseMeasure,
+} from "@/lib/customExercises";
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import type { CatalogRow } from "@/lib/importCatalog";
-import { sortByRelevance } from "@shared/exerciseSearch";
+import { searchExercises } from "@shared/exerciseSearch";
 
 /** Muscle groups a user can file a self-defined exercise under. */
 const CUSTOM_MUSCLE_GROUPS = [
@@ -79,17 +86,33 @@ export function ExercisePickerModal({
   // The cached catalog (works offline, opens instantly) rather than a fresh
   // fetch on every open, which came back empty without a connection.
   const { catalog: cachedCatalog, loading: catalogLoading } = useExerciseCatalog();
-  const catalog = useMemo<CatalogRow[]>(
-    () =>
-      cachedCatalog.map((c) => ({
-        id: Number(c.id),
+  // The user's own exercises first, so one made last week is found again —
+  // the server keeps them but never lists them back in the catalogue.
+  const [customs, setCustoms] = useState<CustomExercise[]>([]);
+  useEffect(() => {
+    if (visible) void loadCustomExercises().then(setCustoms);
+  }, [visible]);
+  const catalog = useMemo<CatalogRow[]>(() => {
+    const customNames = new Set(customs.map((c) => c.name.toLowerCase()));
+    return [
+      ...customs.map((c, i) => ({
+        id: -(i + 1),
         name: c.name,
         name_de: c.nameDe ?? null,
         muscle_group: c.muscleGroup,
-        equipment: c.equipment.toLowerCase(),
+        equipment: (c.equipment || "other").toLowerCase(),
       })),
-    [cachedCatalog],
-  );
+      ...cachedCatalog
+        .filter((c) => !customNames.has(c.name.toLowerCase()))
+        .map((c) => ({
+          id: Number(c.id),
+          name: c.name,
+          name_de: c.nameDe ?? null,
+          muscle_group: c.muscleGroup,
+          equipment: c.equipment.toLowerCase(),
+        })),
+    ];
+  }, [cachedCatalog, customs]);
   const loading = catalogLoading && catalog.length === 0;
   const [mobilityOnly, setMobilityOnly] = useState(false);
   // Active muscle-group filter — seeded from initialMuscleGroup on open so a
@@ -105,6 +128,8 @@ export function ExercisePickerModal({
   }, [visible, initialMuscleGroup]);
   /** Name pending a muscle-group choice before it's created as a custom exercise. */
   const [pendingCustomName, setPendingCustomName] = useState<string | null>(null);
+  /** Weight × reps or seconds for the exercise being created; guessed from its name. */
+  const [customMeasure, setCustomMeasure] = useState<ExerciseMeasure>("weight");
   const [creating, setCreating] = useState(false);
 
   // Older plans file exercises under coarse groups ("Legs", "Arms") the
@@ -133,30 +158,19 @@ export function ExercisePickerModal({
   };
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
     const filtered = catalog.filter((e) => {
       if (excludeNames?.has(e.name)) return false;
       if (mobilityOnly && !isMobilityExercise(e.name)) return false;
       if (activeMuscleFilter && e.muscle_group !== activeMuscleFilter) return false;
-      if (!q) return true;
-      return (
-        e.name.toLowerCase().includes(q) ||
-        // Match the German label too, so a German user can type "Bankdrücken".
-        (e.name_de?.toLowerCase().includes(q) ?? false) ||
-        e.muscle_group.toLowerCase().includes(q) ||
-        e.equipment.toLowerCase().includes(q)
-      );
+      return true;
     });
-    if (!q) return filtered;
-    // A name match (English OR German — either counts equally) always
-    // outranks an equipment/muscle-group-only match. Without this, searching
-    // "kettlebell" buried exercises actually NAMED "Kettlebell ..." among
-    // every other exercise that merely USES one (e.g. "Goblet Squat"), in
-    // raw catalog order (muscle_group, then name).
-    return sortByRelevance(
+    // Word by word, in any order, with plurals, typos, abbreviations ("kh")
+    // and the other language forgiven: "curls dum" finds "Dumbbell Curl".
+    // Names (English or German) outrank equipment/muscle-only matches.
+    return searchExercises(
       filtered,
-      q,
-      (e) => [e.name, e.name_de ?? e.name],
+      query,
+      (e) => [e.name, e.name_de],
       (e) => [e.muscle_group, e.equipment],
     );
   }, [catalog, query, excludeNames, mobilityOnly, activeMuscleFilter]);
@@ -189,21 +203,22 @@ export function ExercisePickerModal({
     if (!name || creating) return;
     setCreating(true);
     try {
-      const created = await nativeRequest<{
-        id: number;
-        name: string;
-        muscle_group: string;
-        equipment?: string;
-      }>("/api/exercises", {
+      // Kept locally first, so it can be found, renamed and measured in
+      // seconds without a connection; the server copy is best effort.
+      await addCustomExercise({ name, muscleGroup, equipment: "other" });
+      await setMeasureOverride(name, customMeasure);
+      const serverId = await nativeRequest<{ id: number }>("/api/exercises", {
         method: "POST",
         body: JSON.stringify({ name, muscle_group: muscleGroup }),
-      });
+      })
+        .then((r) => r.id)
+        .catch(() => -Date.now());
       const row: CatalogRow = {
-        id: created.id,
-        name: created.name,
+        id: serverId,
+        name,
         name_de: null,
-        muscle_group: created.muscle_group,
-        equipment: created.equipment ?? "barbell",
+        muscle_group: muscleGroup,
+        equipment: "other",
       };
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onSelect(row);
@@ -362,6 +377,34 @@ export function ExercisePickerModal({
               <ActivityIndicator color={theme.primary} style={{ marginTop: Spacing.xl }} />
             ) : (
               <>
+                <View style={styles.measureRow}>
+                  {(["weight", "time"] as const).map((m) => {
+                    const on = customMeasure === m;
+                    return (
+                      <Pressable
+                        key={m}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setCustomMeasure(m);
+                        }}
+                        style={[
+                          styles.measureOption,
+                          on
+                            ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                            : { borderColor: theme.controlOutline },
+                        ]}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: on }}
+                        testID={`option-custom-measure-${m}`}
+                      >
+                        <Feather name={m === "time" ? "clock" : "hash"} size={14} color={on ? theme.onChalk : theme.text} />
+                        <ThemedText style={[styles.measureOptionText, { color: on ? theme.onChalk : theme.text }]}>
+                          {t(m === "time" ? "activeWorkout.picker.measureTime" : "activeWorkout.picker.measureWeight")}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
                 <View style={styles.muscleGrid}>
                   {CUSTOM_MUSCLE_GROUPS.map((mg) => (
                     <Pressable
@@ -478,6 +521,7 @@ export function ExercisePickerModal({
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setCustomMeasure(isHoldExercise(trimmedQuery) ? "time" : "weight");
                     setPendingCustomName(trimmedQuery);
                   }}
                   style={({ pressed }) => [
@@ -534,6 +578,25 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   addedText: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  measureRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+  },
+  measureOption: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 40,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  measureOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   searchRow: {
     flexDirection: "row",

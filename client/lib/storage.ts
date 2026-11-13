@@ -8,7 +8,7 @@ import { defaultPlanName } from "@/lib/defaultPlanName";
 export type { WeeklyCommitment, Weekday } from "@shared/weeklySchedule";
 export type { PlanSchedule, PlanScheduleEntry } from "@shared/planSchedule";
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   /** Legal disclaimer accepted (v1 — bump key if disclaimer text materially changes). */
   DISCLAIMER_ACCEPTED_V1: "disclaimer_accepted_v1",
   ONBOARDING_COMPLETE: "onboarding_complete",

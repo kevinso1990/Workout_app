@@ -330,6 +330,10 @@
     "chooseDay": "Wähle ein Training zum Starten"
   },
   "activeWorkout": {
+    "measure": {
+      "toWeight": "Mit Gewicht loggen",
+      "toTime": "In Sekunden loggen"
+    },
     "setsLogged": "{{count}} Sätze erfasst",
     "restTimer": "Pausentimer",
     "restTimerHint": "Schaltet den automatischen Countdown nach jedem abgeschlossenen Satz ein oder aus.",
@@ -378,6 +382,8 @@
       "searchPlaceholder": "Übungen suchen...",
       "noResults": "Keine Übungen gefunden",
       "createCustom": "Eigene Übung erstellen: „{{name}}“",
+      "measureWeight": "Gewicht × Wdh.",
+      "measureTime": "Sekunden",
       "chooseMuscleGroup": "Welche Muskelgruppe?",
       "createFailed": "Übung konnte nicht erstellt werden. Bitte erneut versuchen.",
       "done": "Fertig",
@@ -945,6 +951,20 @@
     }
   },
   "exercises": {
+    "custom": {
+      "renameTitle": "Übung umbenennen",
+      "renameMessage": "Der neue Name gilt auch in deinen Plänen und im Verlauf.",
+      "rename": "Umbenennen",
+      "measureWeight": "Mit Gewicht × Wdh. loggen",
+      "measureTime": "In Sekunden loggen",
+      "nowWeight": "Wird jetzt mit Gewicht × Wdh. geloggt",
+      "nowTime": "Wird jetzt in Sekunden geloggt",
+      "delete": "Löschen",
+      "deleteTitle": "„{{name}}“ löschen?",
+      "deleteMessage": "Die Übung verschwindet aus deiner Liste. Pläne und Verlauf bleiben unverändert.",
+      "nameTaken": "Diesen Namen gibt es schon.",
+      "nameEmpty": "Bitte einen Namen eingeben."
+    },
     "swapBadge": "Tauschen",
     "exerciseCount_one": "{{count}} Übung",
     "exerciseCount_other": "{{count}} Übungen",

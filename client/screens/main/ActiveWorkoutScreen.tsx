@@ -61,6 +61,8 @@ import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenGradient } from "@/components/surface/ScreenGradient";
+import { isTimedExercise } from "@/lib/customExercises";
+import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
@@ -871,6 +873,7 @@ export default function ActiveWorkoutScreen() {
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const localizeName = useLocalizeExerciseName();
+  const { overrides: measureOverrides, setMeasure } = useMeasureOverrides();
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
   const [lastWeekProgress, setLastWeekProgress] = useState<ExerciseProgress[]>(
@@ -1996,7 +1999,7 @@ export default function ActiveWorkoutScreen() {
     const reps = set?.reps || exercise.reps;
     // A bare "30" on the lock screen doesn't say whether it's reps or seconds.
     const unit = t(
-      isHoldExercise(exercise.name) || isTimedTarget(exercise.reps)
+      isTimedExercise(exercise.name, exercise.reps, measureOverrides)
         ? "activeWorkout.liveActivity.seconds"
         : "activeWorkout.liveActivity.reps",
     );
@@ -2545,8 +2548,13 @@ export default function ActiveWorkoutScreen() {
               (lep) => lep.exerciseId === ep.exerciseId,
             );
             const progression = getProgressionForExercise(exIdx);
-            const isBodyweight = isBodyweightExercise(exercise);
-            const isHold = isHoldExercise(exercise.name) || isTimedTarget(exercise.reps);
+            // "Log with weight" chosen explicitly means a kg field, even for a
+            // move the catalogue files as bodyweight (weighted hyperextension).
+            const isBodyweight =
+              measureOverrides[exercise.name.trim().toLowerCase()] === "weight"
+                ? false
+                : isBodyweightExercise(exercise);
+            const isHold = isTimedExercise(exercise.name, exercise.reps, measureOverrides);
             const isCurrentExercise = exIdx === currentExerciseIndex;
             const doneCount = ep.sets.filter((s) => s.completed).length;
             const exerciseDone = isExerciseDone(ep);
@@ -2662,6 +2670,24 @@ export default function ActiveWorkoutScreen() {
                           )}
                           {exercise.perSide ? t("activeWorkout.perSideSuffix") : ""}
                         </ThemedText>
+                        {/* Reps with weight or a hold in seconds — the name
+                            only guesses, and a hyperextension can be either.
+                            The choice is remembered for this exercise. */}
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            void setMeasure(exercise.name, isHold ? "weight" : "time");
+                          }}
+                          hitSlop={6}
+                          style={[styles.measureToggle, { borderColor: theme.controlOutline }]}
+                          accessibilityRole="button"
+                          testID={`button-measure-${exIdx}`}
+                        >
+                          <Feather name={isHold ? "hash" : "clock"} size={12} color={theme.textSecondary} />
+                          <ThemedText style={[styles.measureToggleText, { color: theme.textSecondary }]}>
+                            {t(isHold ? "activeWorkout.measure.toWeight" : "activeWorkout.measure.toTime")}
+                          </ThemedText>
+                        </Pressable>
                         {exercise.notes ? (
                           <ThemedText style={[styles.exerciseCue, { color: theme.chalkDim }]}>
                             {exercise.notes}
@@ -3080,6 +3106,21 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexGrow: 1,
     paddingBottom: Spacing["2xl"],
     paddingTop: Spacing.sm,
+  },
+  measureToggle: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 6,
+    paddingHorizontal: 10,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+  },
+  measureToggleText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   exerciseSection: {
     marginHorizontal: Spacing.lg,

@@ -262,6 +262,20 @@
     }
   },
   "exercises": {
+    "custom": {
+      "renameTitle": "Rename exercise",
+      "renameMessage": "The new name also applies in your plans and history.",
+      "rename": "Rename",
+      "measureWeight": "Log weight × reps",
+      "measureTime": "Log in seconds",
+      "nowWeight": "Now logged as weight × reps",
+      "nowTime": "Now logged in seconds",
+      "delete": "Delete",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteMessage": "The exercise leaves your list. Plans and history stay as they are.",
+      "nameTaken": "That name already exists.",
+      "nameEmpty": "Please enter a name."
+    },
     "swapBadge": "Swap",
     "exerciseCount_one": "{{count}} exercise",
     "exerciseCount_other": "{{count}} exercises",
@@ -411,6 +425,10 @@
     "chooseDay": "Choose a workout to start"
   },
   "activeWorkout": {
+    "measure": {
+      "toWeight": "Log weight × reps",
+      "toTime": "Log in seconds"
+    },
     "setsLogged": "{{count}} sets logged",
     "restTimer": "Rest Timer",
     "restTimerHint": "Turns the automatic countdown after each completed set on or off.",
@@ -461,6 +479,8 @@
       "searchPlaceholder": "Search exercises...",
       "noResults": "No exercises found",
       "createCustom": "Create custom exercise: \"{{name}}\"",
+      "measureWeight": "Weight × reps",
+      "measureTime": "Seconds",
       "chooseMuscleGroup": "Which muscle group?",
       "createFailed": "Couldn't create the exercise. Please try again.",
       "done": "Done",

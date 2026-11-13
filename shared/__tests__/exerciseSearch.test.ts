@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { textMatchRank, sortByRelevance } from "../exerciseSearch";
+import { textMatchRank, sortByRelevance, searchExercises } from "../exerciseSearch";
 
 describe("textMatchRank", () => {
   it("ranks exact match best", () => {
@@ -101,5 +101,51 @@ describe("sortByRelevance — the reported bug", () => {
     const items = ["Lunge A", "Lunge B", "Lunge C"];
     const results = sortByRelevance(items, "lunge", (s) => s);
     expect(results).toEqual(["Lunge A", "Lunge B", "Lunge C"]);
+  });
+});
+
+describe("searchExercises — forgiving matching", () => {
+  type Ex = { name: string; de: string | null; muscle: string; equipment: string };
+  const catalog: Ex[] = [
+    { name: "Seated Dumbbell Inner Biceps Curl", de: "Sitzende Kurzhantel innere Bizepslocke", muscle: "Biceps", equipment: "dumbbell" },
+    { name: "Barbell Curl", de: "Langhantel-Curl", muscle: "Biceps", equipment: "barbell" },
+    { name: "Dumbbell Bicep Curl", de: "Kurzhantel-Bizeps-Curl", muscle: "Biceps", equipment: "dumbbell" },
+    { name: "Dumbbell Curl", de: "Kurzhantel-Curl", muscle: "Biceps", equipment: "dumbbell" },
+    { name: "Hyperextensions (Back Extensions)", de: "Rückenstrecken", muscle: "Lower Back", equipment: "other" },
+    { name: "Pullups", de: "Klimmzüge", muscle: "Lats", equipment: "body only" },
+    { name: "Barbell Bench Press", de: "Bankdrücken mit Langhantel", muscle: "Chest", equipment: "barbell" },
+  ];
+  const search = (q: string) =>
+    searchExercises(catalog, q, (e) => [e.name, e.de], (e) => [e.muscle, e.equipment]).map((e) => e.name);
+
+  it("finds dumbbell curls despite the plural, plainest name first", () => {
+    const r = search("dumbbell curls");
+    expect(r[0]).toBe("Dumbbell Curl");
+    expect(r).toContain("Dumbbell Bicep Curl");
+    expect(r).not.toContain("Barbell Curl");
+  });
+
+  it("ignores word order and accepts word starts", () => {
+    expect(search("curls dum")[0]).toBe("Dumbbell Curl");
+  });
+
+  it("tolerates a typo", () => {
+    expect(search("dumbel curl")[0]).toBe("Dumbbell Curl");
+  });
+
+  it("understands abbreviations and the other language", () => {
+    expect(search("kh curl")[0]).toBe("Dumbbell Curl");
+    expect(search("klimmzug")).toContain("Pullups");
+    expect(search("bankdrucken")).toContain("Barbell Bench Press");
+    expect(search("rückenstrecker")).toContain("Hyperextensions (Back Extensions)");
+    expect(search("hyperextension")).toContain("Hyperextensions (Back Extensions)");
+  });
+
+  it("requires every typed word to match", () => {
+    expect(search("dumbbell squat")).toEqual([]);
+  });
+
+  it("returns everything in order for an empty query", () => {
+    expect(search("  ")).toHaveLength(catalog.length);
   });
 });

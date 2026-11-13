@@ -44,7 +44,7 @@ import {
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { getApiUrl } from "@/lib/query-client";
-import { buildDailyBriefingPayload } from "@/lib/coachHelpers";
+import { buildBriefingTimeline, buildDailyBriefingPayload } from "@/lib/coachHelpers";
 import { isCoachTipRenderable } from "@/lib/coachTip";
 import { WeekScheduleStrip } from "@/components/schedule/WeekScheduleStrip";
 import { getUserPreferences } from "@/lib/storage";
@@ -58,9 +58,9 @@ import { translateDayName } from "@/lib/dayNameLabel";
 import { planDaySummary } from "@/lib/planStructure";
 import { PlanDetailView } from "@/components/workout/PlanDetailView";
 import { Panel } from "@/components/surface/Panel";
-import { primaryPlan } from "@/lib/todayPlan";
+import { primaryPlan, todayOverview } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
-import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
+import { MOBILITY_PLAN_ID, mondayBasedWeekday } from "@/lib/mobilitySchedule";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { scheduleDataSync } from "@/lib/dataSync";
 import { evaluatePlanAdaptationOffer } from "@/lib/planAdaptation";
@@ -558,22 +558,38 @@ export default function MyPlansScreen() {
   }, []);
 
   const fetchCoachBrief = useCallback(
-    async (loadedPlans: WorkoutPlan[]) => {
+    async (
+      loadedPlans: WorkoutPlan[],
+      loadedCommitments: WeeklyCommitment[],
+      loadedMobilityWeekdays: number[],
+    ) => {
       if (loadedPlans.length === 0) {
         setCoachBrief(null);
         return;
       }
 
-      // Daily briefing only needs to be generated once per calendar day —
-      // this screen is the home tab, refetching on every focus was hammering the AI API.
-      const today = new Date().toISOString().slice(0, 10);
-      // v2: day names are now sent translated; older cached briefs quote "Full Body B".
-      const cacheKey = "coachBriefCache:v2";
+      const history = await getWorkoutHistory();
+      const now = new Date();
+      // Generated once per day AND per finished workout: the home tab is
+      // refocused constantly (that hammered the AI API), but a brief written
+      // before today's session is stale the moment it's logged — it was still
+      // talking about the previous workout after a new one was done.
+      const today = now.toISOString().slice(0, 10);
+      const lastWorkout = history.reduce<string | null>(
+        (latest, s) => (!latest || s.completedAt > latest ? s.completedAt : latest),
+        null,
+      );
+      const cacheKey = "coachBriefCache:v3";
       try {
         const cachedRaw = await AsyncStorage.getItem(cacheKey);
         if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw) as { date: string; lang: string; brief: string | null };
-          if (cached.date === today && cached.lang === i18n.language) {
+          const cached = JSON.parse(cachedRaw) as {
+            date: string;
+            lang: string;
+            lastWorkout: string | null;
+            brief: string | null;
+          };
+          if (cached.date === today && cached.lang === i18n.language && cached.lastWorkout === lastWorkout) {
             setCoachBrief(cached.brief);
             return;
           }
@@ -583,9 +599,29 @@ export default function MyPlansScreen() {
       }
 
       try {
-        const history = await getWorkoutHistory();
-        const body = buildDailyBriefingPayload(loadedPlans, history, i18n.language, (n) =>
-          translateDayName(t, n),
+        const overview = todayOverview({
+          plans: loadedPlans,
+          commitments: loadedCommitments,
+          mobilityWeekdays: loadedMobilityWeekdays,
+          history,
+          now,
+        });
+        const nextDate = overview.next
+          ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((overview.next.weekday - mondayBasedWeekday(now) + 7) % 7 || 7))
+          : null;
+        const timeline = buildBriefingTimeline({
+          sessions: history,
+          now,
+          dayLabel: (n) => translateDayName(t, n),
+          plannedToday: overview.strength?.dayName ?? null,
+          next: overview.next && nextDate ? { date: nextDate, dayName: overview.next.dayName } : null,
+        });
+        const body = buildDailyBriefingPayload(
+          loadedPlans,
+          history,
+          i18n.language,
+          (n) => translateDayName(t, n),
+          timeline,
         );
         const url = new URL("/api/coach/daily-briefing", getApiUrl()).toString();
         const res = await fetch(url, {
@@ -603,7 +639,7 @@ export default function MyPlansScreen() {
         setCoachBrief(brief);
         await AsyncStorage.setItem(
           cacheKey,
-          JSON.stringify({ date: today, lang: i18n.language, brief }),
+          JSON.stringify({ date: today, lang: i18n.language, lastWorkout, brief }),
         );
       } catch {
         setCoachBrief(null);
@@ -619,7 +655,7 @@ export default function MyPlansScreen() {
       const prefs = await getUserPreferences();
       setCommitments(prefs?.weeklyCommitments ?? []);
       setMobilityWeekdays(prefs?.mobilityWeekdays ?? []);
-      void fetchCoachBrief(loadedPlans);
+      void fetchCoachBrief(loadedPlans, prefs?.weeklyCommitments ?? [], prefs?.mobilityWeekdays ?? []);
       const history = await getWorkoutHistory();
       const offer = await evaluatePlanAdaptationOffer(loadedPlans, history);
       setAdaptPlan(offer.offer ? offer.plan : null);

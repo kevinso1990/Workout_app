@@ -92,12 +92,47 @@ function buildRecentPerformanceDetail(sessions: WorkoutSession[], maxSessions = 
   return lines.join("\n").slice(0, 2500);
 }
 
+/**
+ * The facts a model can't reliably infer from a list of dated sessions: what
+ * day it is, which workout was the LAST one and what the plan has next. Given
+ * only the list, the coach said "coming off push and core" right after a pull
+ * session — it picked an older entry as the most recent.
+ */
+export function buildBriefingTimeline(input: {
+  sessions: WorkoutSession[];
+  now: Date;
+  dayLabel: (dayName: string) => string;
+  /** Strength session the plan has for today and not yet done. */
+  plannedToday?: string | null;
+  /** Next planned strength session after today. */
+  next?: { date: Date; dayName: string } | null;
+}): string {
+  const { sessions, now, dayLabel } = input;
+  const day = (d: Date) =>
+    `${d.toLocaleDateString("en-US", { weekday: "long" })} ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const lines = [`Today is ${day(now)}.`];
+  const latest = [...sessions].sort(
+    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+  )[0];
+  if (latest) {
+    lines.push(
+      `Most recent workout: ${day(new Date(latest.completedAt))} — ${dayLabel(latest.dayName)}. ` +
+        "Anything about recovery or what the athlete is coming off refers to THIS session only.",
+    );
+  }
+  if (input.plannedToday) lines.push(`Planned for today (not done yet): ${dayLabel(input.plannedToday)}.`);
+  else if (input.next) lines.push(`Next planned session: ${day(input.next.date)} — ${dayLabel(input.next.dayName)}.`);
+  return lines.join("\n");
+}
+
 export function buildDailyBriefingPayload(
   plans: WorkoutPlan[],
   sessions: WorkoutSession[],
   language: string,
   /** Day names as the user sees them, so the coach doesn't say "Full Body B" next to "Ganzkörper B". */
   dayLabel: (dayName: string) => string = (n) => n,
+  /** Today / last workout / next session, put ahead of the session list. */
+  timeline = "",
 ): {
   locale: "de" | "en";
   planSummary: string;
@@ -122,12 +157,18 @@ export function buildDailyBriefingPayload(
     .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
     .slice(0, 10);
 
-  const sessionSummary = recent
-    .map((s) => {
-      const names = s.exercises.map((e) => e.name).slice(0, 8).join(", ");
-      return `${(s.completedAt || "").slice(0, 10)} — ${s.planName} / ${dayLabel(s.dayName)}: ${names}`;
-    })
-    .join("\n");
+  // Newest first, so the first line is the last workout.
+  const sessionSummary = [
+    timeline,
+    recent
+      .map((s) => {
+        const names = s.exercises.map((e) => e.name).slice(0, 8).join(", ");
+        return `${(s.completedAt || "").slice(0, 10)} — ${s.planName} / ${dayLabel(s.dayName)}: ${names}`;
+      })
+      .join("\n"),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Ground the briefing in the same structured signals (PLATEAU/OVERREACH/
   // UNDERLOAD/MISSED_SESSIONS) and best-set numbers used for plan adaptation,

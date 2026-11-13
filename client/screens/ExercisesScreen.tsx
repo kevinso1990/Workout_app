@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ViewToken,
@@ -39,7 +40,18 @@ import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import { translateMuscleGroup, translateEquipment, isMobilityExercise } from "@/lib/exerciseTaxonomy";
-import { sortByRelevance } from "@shared/exerciseSearch";
+import { searchExercises } from "@shared/exerciseSearch";
+import {
+  CUSTOM_EXERCISES_KEY,
+  isTimedExercise,
+  loadCustomExercises as loadStoredCustomExercises,
+  loadMeasureOverrides,
+  renameCustomExercise,
+  setMeasureOverride,
+} from "@/lib/customExercises";
+import { confirmAlert } from "@/lib/confirmAlert";
+import { toast } from "@/lib/toast";
+import { scheduleDataSync } from "@/lib/dataSync";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -67,7 +79,7 @@ interface APIExercise {
   category: string;
 }
 
-const CUSTOM_EXERCISES_KEY = "@fitplan_custom_exercises";
+// The key lives with the shared custom-exercise store now.
 
 const EXERCISE_LIBRARY: ExerciseItem[] = [
   { id: "1", name: "Bench Press", muscleGroup: "Chest", equipment: "Barbell" },
@@ -522,14 +534,10 @@ function APISearchModal({
 
   useEffect(() => {
     if (searchQuery.trim() && allExercises.length > 0) {
-      const filtered = allExercises.filter((ex) =>
-        ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ex.primaryMuscles.some((m) => m.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      const ranked = sortByRelevance(
-        filtered,
+      const ranked = searchExercises(
+        allExercises,
         searchQuery,
-        (ex) => ex.name,
+        (ex) => [ex.name],
         (ex) => ex.primaryMuscles,
       ).slice(0, 30);
       setResults(ranked);
@@ -966,15 +974,10 @@ export default function ExercisesScreen() {
     }
   };
 
+  // Shared with the workout's exercise picker (lib/customExercises), so an
+  // exercise created mid-workout shows up here and can be renamed.
   const loadCustomExercises = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(CUSTOM_EXERCISES_KEY);
-      if (stored) {
-        setCustomExercises(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error("Error loading custom exercises:", error);
-    }
+    setCustomExercises((await loadStoredCustomExercises()) as ExerciseItem[]);
   };
 
   const saveCustomExercise = async (exercise: Omit<ExerciseItem, "id">) => {
@@ -1000,6 +1003,66 @@ export default function ExercisesScreen() {
     [customExercises],
   );
 
+  const renameCustom = useCallback(
+    (item: ExerciseItem) => {
+      Alert.prompt(
+        t("exercises.custom.renameTitle"),
+        t("exercises.custom.renameMessage"),
+        async (value) => {
+          const catalogNames = new Set(catalogExercises.map((c) => c.name.toLowerCase()));
+          const result = await renameCustomExercise(item.id, value ?? "", (n) =>
+            catalogNames.has(n.trim().toLowerCase()),
+          );
+          if (!result.ok) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            toast.error(t(result.reason === "taken" ? "exercises.custom.nameTaken" : "exercises.custom.nameEmpty"));
+            return;
+          }
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          void loadCustomExercises();
+          scheduleDataSync();
+        },
+        "plain-text",
+        item.name,
+      );
+    },
+    [catalogExercises, t],
+  );
+
+  // Long press on one of your own exercises: rename it, switch how it is
+  // measured, or delete it — delete used to fire straight away, unasked.
+  const openCustomActions = useCallback(
+    async (item: ExerciseItem) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const timed = isTimedExercise(item.name, null, await loadMeasureOverrides());
+      Alert.alert(item.name, undefined, [
+        { text: t("exercises.custom.rename"), onPress: () => renameCustom(item) },
+        {
+          text: t(timed ? "exercises.custom.measureWeight" : "exercises.custom.measureTime"),
+          onPress: () => {
+            void setMeasureOverride(item.name, timed ? "weight" : "time").then(() =>
+              toast.success(t(timed ? "exercises.custom.nowWeight" : "exercises.custom.nowTime")),
+            );
+          },
+        },
+        {
+          text: t("exercises.custom.delete"),
+          style: "destructive",
+          onPress: async () => {
+            const ok = await confirmAlert(
+              t("exercises.custom.deleteTitle", { name: item.name }),
+              t("exercises.custom.deleteMessage"),
+              { confirmText: t("exercises.custom.delete"), cancelText: t("common.cancel"), destructive: true },
+            );
+            if (ok) void deleteCustomExercise(item.id);
+          },
+        },
+        { text: t("common.cancel"), style: "cancel" },
+      ]);
+    },
+    [deleteCustomExercise, renameCustom, t],
+  );
+
   const allExercises = useMemo(() => {
     const catalog: ExerciseItem[] =
       catalogExercises.length > 0 ? catalogExercises : EXERCISE_LIBRARY;
@@ -1011,12 +1074,6 @@ export default function ExercisesScreen() {
   const filteredExercises = useMemo(() => {
     const armGroups = new Set(["Biceps", "Triceps", "Forearms", "Arms"]);
     return allExercises.filter((exercise) => {
-      const q = searchQuery.toLowerCase();
-      // Match the German label too, so a German user can search "Kreuzheben"
-      // even though the canonical name stays English.
-      const matchesSearch =
-        exercise.name.toLowerCase().includes(q) ||
-        (exercise.nameDe?.toLowerCase().includes(q) ?? false);
       const matchesFilter =
         selectedFilter === "All"
           ? true
@@ -1025,16 +1082,19 @@ export default function ExercisesScreen() {
             : selectedFilter === "Mobility"
               ? isMobilityExercise(exercise.name)
               : exercise.muscleGroup === selectedFilter;
-      return matchesSearch && matchesFilter;
+      return matchesFilter;
     });
-  }, [searchQuery, selectedFilter, allExercises]);
+  }, [selectedFilter, allExercises]);
 
+  // Word by word, in any order, typos and both languages forgiven — see
+  // searchExercises. The German label counts too ("Kreuzheben").
   const rankedExercises = useMemo(
     () =>
-      sortByRelevance(
+      searchExercises(
         filteredExercises,
         searchQuery,
-        (ex) => [ex.name, ex.nameDe ?? ex.name],
+        (ex) => [ex.name, ex.nameDe],
+        (ex) => [ex.muscleGroup, ex.equipment],
       ),
     [filteredExercises, searchQuery],
   );
@@ -1059,12 +1119,12 @@ export default function ExercisesScreen() {
       <ExerciseCard
         exercise={item}
         index={index}
-        onLongPress={item.isCustom ? () => deleteCustomExercise(item.id) : undefined}
+        onLongPress={item.isCustom ? () => void openCustomActions(item) : undefined}
         onPress={() => setSelectedExercise(item)}
         onDetailPress={() => setDetailExercise(item)}
       />
     ),
-    [deleteCustomExercise],
+    [openCustomActions],
   );
 
   return (
@@ -1180,7 +1240,7 @@ export default function ExercisesScreen() {
               contentContainerStyle={styles.filtersContainer}
             />
             <ThemedText style={[styles.exerciseCount, { color: theme.textSecondary }]}>
-              {t("exercises.exerciseCount", { count: filteredExercises.length })}
+              {t("exercises.exerciseCount", { count: rankedExercises.length })}
               {customExercises.length > 0 ? t("exercises.customCount", { count: customExercises.length }) : ""}
             </ThemedText>
           </View>
