@@ -151,6 +151,9 @@ export function WeekScheduleStrip({
           const isGym = slot.kind === "gym" && !planMobility;
           const isMobility = planMobility || mobilityWeekdays.includes(slot.weekday);
           const trained = trainedWeekdays.has(slot.weekday);
+          // A past session that wasn't logged fades, so it doesn't read as
+          // still to do next to today's.
+          const missed = isGym && !trained && slot.weekday < today;
 
           let caption = "";
           if (isGym) caption = weekStripCaption(translateDayName(t, slot.dayName ?? ""))[0];
@@ -187,6 +190,7 @@ export function WeekScheduleStrip({
                   <View
                     style={[
                       styles.dot,
+                      missed && styles.missed,
                       {
                         backgroundColor:
                           sessionHues[
@@ -207,7 +211,11 @@ export function WeekScheduleStrip({
               </View>
               <ThemedText
                 numberOfLines={1}
-                style={[styles.caption, { color: isToday ? theme.text : theme.textSecondary }]}
+                style={[
+                  styles.caption,
+                  { color: isToday ? theme.text : theme.textSecondary },
+                  missed && styles.missed,
+                ]}
               >
                 {caption}
               </ThemedText>
@@ -271,6 +279,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   dayDate: { fontSize: 11, fontFamily: FontFamily.mono },
   markWrap: { height: 18, alignItems: "center", justifyContent: "center" },
   dot: { width: 10, height: 10, borderRadius: 5 },
+  missed: { opacity: 0.35 },
   ring: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5 },
   checkDot: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   caption: { fontSize: 10, maxWidth: "100%", paddingHorizontal: 2 },

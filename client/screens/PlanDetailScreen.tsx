@@ -27,6 +27,7 @@ import { HEVY, hevyHeaderInsets, hevyHairline } from "@/constants/hevyLayout";
 import {
   WorkoutPlan,
   getWorkoutPlans,
+  getUserPreferences,
   deleteWorkoutPlan,
   type Exercise,
 } from "@/lib/storage";
@@ -60,6 +61,8 @@ export default function PlanDetailScreen() {
       const plans = await getWorkoutPlans();
       const foundPlan = plans.find((p) => p.id === planId);
       setPlan(foundPlan || null);
+      const prefs = await getUserPreferences();
+      setMobilityDays(prefs?.mobilityWeekdays ?? []);
     } catch (error) {
       console.error("Error loading plan:", error);
     } finally {
@@ -226,6 +229,7 @@ export default function PlanDetailScreen() {
           flush
           days={plan.days}
           schedule={plan.schedule}
+          mobilityWeekdays={mobilityDays}
           onExercisePress={(exercise) => setDetailExercise(exercise)}
           onStartDay={handleStartDay}
         />

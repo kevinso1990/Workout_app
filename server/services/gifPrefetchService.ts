@@ -151,19 +151,45 @@ export async function prefetchSingleExercise(id: number, name: string): Promise<
 
 const folderKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-/** Points rows at their mapped image where an older mapping left a wrong one. */
+/**
+ * Images an older version set that show something else: KB Halo was mapped to
+ * a lateral raise, and these free-exercise-db folders no longer exist upstream.
+ */
+const RETIRED_IMAGES: Record<string, string> = { "KB Halo": "Cable_Seated_Lateral_Raise" };
+const DEAD_FOLDERS = new Set([
+  "Kettlebell_Halo",
+  "Kettlebell_Halo_With_Overhead_Extension",
+  "Kettlebell_Overhead_Triceps_Extension",
+]);
+
+/** Points rows at their mapped image where it is missing or an older mapping left a wrong one. */
 export function correctMappedImages(exercises: { id: number; name: string }[]): number {
   const read = db.prepare("SELECT gif_url FROM exercises WHERE id = ?");
   const update = db.prepare("UPDATE exercises SET gif_url = ? WHERE id = ?");
   let fixed = 0;
   for (const ex of exercises) {
-    const want = getGithubImageUrl(ex.name);
-    if (!want) continue;
     const row = read.get(ex.id) as { gif_url: string | null } | undefined;
     const current = row?.gif_url;
-    if (!current || current === want || !current.startsWith(GITHUB_CDN)) continue;
+    if (!current) {
+      const want = getGithubImageUrl(ex.name);
+      if (want) {
+        update.run(want, ex.id);
+        fixed++;
+      }
+      continue;
+    }
+    if (!current.startsWith(GITHUB_CDN)) continue;
     const folder = current.slice(GITHUB_CDN.length + 1).split("/")[0] ?? "";
-    if (folderKey(folder) === folderKey(ex.name)) continue;
+    if (DEAD_FOLDERS.has(folder) || RETIRED_IMAGES[ex.name] === folder) {
+      update.run(getGithubImageUrl(ex.name), ex.id);
+      fixed++;
+      continue;
+    }
+    const want = getGithubImageUrl(ex.name);
+    if (!want || current === want) continue;
+    // Its own folder stays unless only the frame differs (Plank's frame 1).
+    const wantFolder = want.slice(GITHUB_CDN.length + 1).split("/")[0] ?? "";
+    if (folderKey(folder) === folderKey(ex.name) && wantFolder !== folder) continue;
     update.run(want, ex.id);
     fixed++;
   }
@@ -175,16 +201,16 @@ export async function runGifPrefetch(): Promise<void> {
     .prepare("SELECT id, name FROM exercises")
     .all() as { id: number; name: string }[];
 
-  // Step 1: Pre-fetch MuscleWiki animated media (runs for exercises not yet cached).
+  // Step 1: Correct images set from an older version of the mapping (Plank
+  // showed Dead Bug, Good Morning a deadlift). Runs first because it is
+  // instant and the MuscleWiki pass below takes minutes.
+  const fixed = correctMappedImages(allExercises);
+  if (fixed > 0) console.log(`[GIF prefetch] Corrected ${fixed} exercise images.`);
+
+  // Step 2a: Pre-fetch MuscleWiki animated media (runs for exercises not yet cached).
   // This populates exercise_media_cache so the /api/exercises/gif/:name route
   // can serve animated GIFs and MP4 video clips.
   await runMuscleWikiPrefetch(allExercises);
-
-  // Step 2a: Correct images set from an older version of the mapping (Plank
-  // showed Dead Bug, Good Morning a deadlift). A row whose image is already
-  // its own free-exercise-db folder is left alone.
-  const fixed = correctMappedImages(allExercises);
-  if (fixed > 0) console.log(`[GIF prefetch] Corrected ${fixed} exercise images.`);
 
   // Step 2b: Populate the fallback gif_url column with static GitHub CDN images
   // for exercises that still need a static image fallback.

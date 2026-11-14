@@ -7,7 +7,7 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
-import { useColorScheme } from "react-native";
+import { Appearance, Platform, useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -37,6 +37,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setModeState(saved === "light" ? "light" : "dark");
     });
   }, []);
+
+  // Native pieces — the search fields' clear button, the keyboard, alerts —
+  // follow the system appearance, so on a phone set to light they came out
+  // light on the dark app (a dark ✕ on a dark field). Pin them to the app's.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    Appearance.setColorScheme(mode === "system" ? null : mode);
+  }, [mode]);
 
   const setMode = useCallback((newMode: ThemeMode) => {
     setModeState(newMode);

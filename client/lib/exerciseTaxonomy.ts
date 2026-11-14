@@ -124,6 +124,28 @@ export function isHoldExercise(name: string): boolean {
  * plan detail view, and exercise picker rows — single source of truth is
  * MUSCLE_GROUP_META (also used for the exercise detail modal's icon+color badge).
  */
+/**
+ * The catalogue tags muscles finer than the app groups them: a leg press is
+ * "Quads", a leg curl "Hamstrings". Where the app shows "Beine", those belong
+ * to it — the "Beine" filter and the muscle balance missed ~270 exercises.
+ */
+const BROAD_GROUP: Record<string, string> = {
+  Quads: "Legs",
+  Hamstrings: "Legs",
+  Glutes: "Legs",
+  Calves: "Legs",
+  Adductors: "Legs",
+  Abductors: "Legs",
+  Lats: "Back",
+  "Lower Back": "Back",
+  Abs: "Core",
+  Obliques: "Core",
+};
+
+export function broadMuscleGroup(group: string): string {
+  return BROAD_GROUP[group] ?? group;
+}
+
 export function getMuscleGroupColor(group: string): string {
   if (group === "Arms") return ARMS_COLOR;
   if (group === "Mobility") return MOBILITY_COLOR;

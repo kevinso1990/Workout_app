@@ -87,6 +87,16 @@ describe("weeklySetsByMuscle", () => {
     const history = [lift(day(0), "Bench", [[100, 5], [100, 5]]), lift(day(-10), "Bench", [[100, 5]])];
     expect(weeklySetsByMuscle(history, NOW)).toEqual({ Chest: 2 });
   });
+
+  it("counts the catalogue's leg subgroups as legs", () => {
+    const legs = (name: string, muscleGroup: string) => {
+      const s = lift(day(0), name, [[100, 8]]);
+      s.exercises[0].muscleGroup = muscleGroup;
+      return s;
+    };
+    const history = [legs("Leg Press", "Quads"), legs("Leg Curl", "Hamstrings"), legs("Hip Thrust", "Glutes")];
+    expect(weeklySetsByMuscle(history, NOW)).toEqual({ Legs: 3 });
+  });
 });
 
 describe("recentRecords", () => {

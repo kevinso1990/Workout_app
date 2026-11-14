@@ -1,4 +1,5 @@
 import type { WorkoutSession } from "@/lib/storage";
+import { broadMuscleGroup } from "@/lib/exerciseTaxonomy";
 
 /** Epley estimate, rounded to whole kg — same formula the exercise charts use. */
 export function estimate1RM(weight: number, reps: number): number {
@@ -117,7 +118,8 @@ export function weeklySetsByMuscle(
     if (isCardio(s) || new Date(s.completedAt).getTime() < start) continue;
     s.exercises.forEach((ex, idx) => {
       const n = completedSets(s, idx).length;
-      if (n > 0) out[ex.muscleGroup] = (out[ex.muscleGroup] ?? 0) + n;
+      const group = broadMuscleGroup(ex.muscleGroup);
+      if (n > 0) out[group] = (out[group] ?? 0) + n;
     });
   }
   return out;

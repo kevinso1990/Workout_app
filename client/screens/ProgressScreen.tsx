@@ -96,6 +96,7 @@ const MUSCLE_GROUPS = [
   "Legs",
   "Core",
   "Traps",
+  "Forearms",
 ].map((name) => ({ name, color: getMuscleGroupMeta(name).color }));
 
 function StatCard({
@@ -271,6 +272,47 @@ function MuscleBalance({
 
 const calculate1RM = estimate1RM;
 
+const ONE_RM_PLOT_HEIGHT = 120;
+
+/** The estimated-1RM trend as one connected line, points evenly spaced. */
+function OneRMLine({
+  values,
+  min,
+  range,
+  width,
+  height,
+  color,
+}: {
+  values: number[];
+  min: number;
+  range: number;
+  width: number;
+  height: number;
+  color: string;
+}) {
+  const inset = 6;
+  const pts = values.map((v, i) => ({
+    x: inset + (values.length === 1 ? 0.5 : i / (values.length - 1)) * (width - inset * 2),
+    y: height - ((v - min) / range) * height,
+  }));
+  const line = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  return (
+    <Svg width={width} height={height}>
+      <SvgPolyline
+        points={line}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {pts.map((p, i) => (
+        <SvgCircle key={i} cx={p.x} cy={p.y} r="4.5" fill={color} />
+      ))}
+    </Svg>
+  );
+}
+
 function OneRMChart({
   data,
   index,
@@ -282,14 +324,18 @@ function OneRMChart({
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const [selectedLift, setSelectedLift] = useState(0);
+  const [plotWidth, setPlotWidth] = useState(0);
   const selectedData = data[selectedLift];
-  const max1RM = selectedData?.history.length > 0 
-    ? Math.max(...selectedData.history.map(h => h.estimated1RM)) 
-    : 100;
-  const min1RM = selectedData?.history.length > 0 
-    ? Math.min(...selectedData.history.map(h => h.estimated1RM)) 
-    : 0;
-  const range = max1RM - min1RM || 1;
+  const points = selectedData?.history.slice(-8) ?? [];
+  const values = points.map((h) => h.estimated1RM);
+  // The axis spans the plotted points plus a margin, so a lift that held
+  // steady sits mid-chart with three distinct labels — not on the floor
+  // under "112 / 112 / 112".
+  const spread = values.length > 0 ? Math.max(...values) - Math.min(...values) : 0;
+  const margin = Math.max(spread * 0.15, 2.5);
+  const axisMin = values.length > 0 ? Math.floor(Math.min(...values) - margin) : 0;
+  const axisMax = values.length > 0 ? Math.ceil(Math.max(...values) + margin) : 100;
+  const axisRange = axisMax - axisMin || 1;
 
   if (data.every(d => d.history.length === 0)) {
     return (
@@ -383,46 +429,34 @@ function OneRMChart({
         <View style={styles.oneRMGraph}>
           <View style={styles.oneRMYAxis}>
             <ThemedText style={[styles.oneRMAxisLabel, { color: theme.textSecondary }]}>
-              {max1RM}
+              {axisMax}
             </ThemedText>
             <ThemedText style={[styles.oneRMAxisLabel, { color: theme.textSecondary }]}>
-              {Math.round((max1RM + min1RM) / 2)}
+              {Math.round((axisMax + axisMin) / 2)}
             </ThemedText>
             <ThemedText style={[styles.oneRMAxisLabel, { color: theme.textSecondary }]}>
-              {min1RM}
+              {axisMin}
             </ThemedText>
           </View>
-          <View style={styles.oneRMChartArea}>
+          <View
+            style={styles.oneRMChartArea}
+            onLayout={(e) => setPlotWidth(e.nativeEvent.layout.width)}
+          >
             <View style={[styles.oneRMGridLine, { backgroundColor: theme.border }]} />
             <View style={[styles.oneRMGridLine, { backgroundColor: theme.border, top: "50%" }]} />
             <View style={[styles.oneRMGridLine, { backgroundColor: theme.border, top: "100%" }]} />
-            <View style={styles.oneRMLine}>
-              {selectedData.history.slice(-8).map((point, idx, arr) => {
-                const heightPercent = ((point.estimated1RM - min1RM) / range) * 100;
-                return (
-                  <View key={idx} style={styles.oneRMPointWrapper}>
-                    <Animated.View
-                      entering={FadeIn.delay(500 + idx * 50).duration(300)}
-                      style={[
-                        styles.oneRMPoint,
-                        {
-                          backgroundColor: selectedData.color,
-                          bottom: `${heightPercent}%`,
-                        },
-                      ]}
-                    />
-                    {idx > 0 ? (
-                      <View
-                        style={[
-                          styles.oneRMConnector,
-                          { backgroundColor: selectedData.color + "40" },
-                        ]}
-                      />
-                    ) : null}
-                  </View>
-                );
-              })}
-            </View>
+            {plotWidth > 0 ? (
+              <Animated.View entering={FadeIn.delay(400).duration(300)} style={StyleSheet.absoluteFill}>
+                <OneRMLine
+                  values={values}
+                  min={axisMin}
+                  range={axisRange}
+                  width={plotWidth}
+                  height={ONE_RM_PLOT_HEIGHT}
+                  color={selectedData.color}
+                />
+              </Animated.View>
+            ) : null}
           </View>
         </View>
       ) : (
@@ -1621,7 +1655,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   oneRMGraph: {
     flexDirection: "row",
-    height: 120,
+    height: ONE_RM_PLOT_HEIGHT,
   },
   oneRMYAxis: {
     width: 35,
@@ -1642,31 +1676,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     right: 0,
     height: 1,
     top: 0,
-  },
-  oneRMLine: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    position: "relative",
-  },
-  oneRMPointWrapper: {
-    flex: 1,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    position: "relative",
-  },
-  oneRMPoint: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    position: "absolute",
-  },
-  oneRMConnector: {
-    position: "absolute",
-    width: 2,
-    height: 20,
   },
   heatmapContainer: {
     borderRadius: BorderRadius.lg,

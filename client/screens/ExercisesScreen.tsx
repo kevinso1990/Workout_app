@@ -38,8 +38,8 @@ import { getApiUrl } from "@/lib/query-client";
 import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 import { ServerExerciseThumb } from "@/components/ServerExerciseThumb";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
-import { translateMuscleGroup, translateEquipment, isMobilityExercise } from "@/lib/exerciseTaxonomy";
-import { searchExercises } from "@shared/exerciseSearch";
+import { translateMuscleGroup, translateEquipment, isMobilityExercise, broadMuscleGroup } from "@/lib/exerciseTaxonomy";
+import { searchExercises, searchExercisesDetailed } from "@shared/exerciseSearch";
 import {
   CUSTOM_EXERCISES_KEY,
   isTimedExercise,
@@ -317,10 +317,13 @@ const ExerciseCard = React.memo(ExerciseCardBase);
 
 function CreateExerciseModal({
   visible,
+  initialName = "",
   onClose,
   onSave,
 }: {
   visible: boolean;
+  /** Prefills the name, e.g. with a search that found nothing. */
+  initialName?: string;
   onClose: () => void;
   onSave: (exercise: Omit<ExerciseItem, "id">) => void;
 }) {
@@ -329,6 +332,9 @@ function CreateExerciseModal({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
+  useEffect(() => {
+    if (visible && initialName) setName(initialName);
+  }, [visible, initialName]);
   const [muscleGroup, setMuscleGroup] = useState("Chest");
   const [equipment, setEquipment] = useState("Barbell");
 
@@ -897,6 +903,7 @@ export default function ExercisesScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createPrefill, setCreatePrefill] = useState("");
   const [showAPIModal, setShowAPIModal] = useState(false);
   const [customExercises, setCustomExercises] = useState<ExerciseItem[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<ExerciseItem | null>(null);
@@ -1033,22 +1040,49 @@ export default function ExercisesScreen() {
             ? armGroups.has(exercise.muscleGroup)
             : selectedFilter === "Mobility"
               ? isMobilityExercise(exercise.name)
-              : exercise.muscleGroup === selectedFilter;
+              : selectedFilter === "Back"
+                ? broadMuscleGroup(exercise.muscleGroup) === "Back" || exercise.muscleGroup === "Traps"
+                : broadMuscleGroup(exercise.muscleGroup) === selectedFilter;
       return matchesFilter;
     });
   }, [selectedFilter, allExercises]);
 
   // Word by word, in any order, typos and both languages forgiven — see
   // searchExercises. The German label counts too ("Kreuzheben").
-  const rankedExercises = useMemo(
+  const { items: rankedExercises, partial: partialResults } = useMemo(
     () =>
-      searchExercises(
+      searchExercisesDetailed(
         filteredExercises,
         searchQuery,
         (ex) => [ex.name, ex.nameDe],
         (ex) => [ex.muscleGroup, ex.equipment],
       ),
     [filteredExercises, searchQuery],
+  );
+  // Own exercises among the results, not overall — "1 Übung (1 eigene)"
+  // under a catalogue hit read as if the hit were your own.
+  const shownCustomCount = useMemo(
+    () => rankedExercises.filter((ex) => ex.isCustom).length,
+    [rankedExercises],
+  );
+
+  // A search that finds nothing, or only part of what was typed, offers to
+  // create exactly that exercise.
+  const createFromSearch = (
+    <Pressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setCreatePrefill(searchQuery.trim());
+        setShowCreateModal(true);
+      }}
+      style={[styles.emptyCreate, { borderColor: theme.hairlineStrong }]}
+      testID="button-create-from-search"
+    >
+      <Feather name="plus" size={16} color={theme.text} />
+      <ThemedText style={styles.emptyCreateText} numberOfLines={1}>
+        {t("activeWorkout.picker.createCustom", { name: searchQuery.trim() })}
+      </ThemedText>
+    </Pressable>
   );
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
@@ -1090,6 +1124,7 @@ export default function ExercisesScreen() {
       />
       <CreateExerciseModal
         visible={showCreateModal}
+        initialName={createPrefill}
         onClose={() => setShowCreateModal(false)}
         onSave={saveCustomExercise}
       />
@@ -1126,12 +1161,23 @@ export default function ExercisesScreen() {
         removeClippedSubviews
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        ListEmptyComponent={
+          searchQuery.trim() ? (
+            <View style={styles.emptyState}>
+              <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
+                {t("activeWorkout.picker.noResults")}
+              </ThemedText>
+              {createFromSearch}
+            </View>
+          ) : null
+        }
         ListHeaderComponent={
           <View style={styles.headerContainer}>
             <View style={styles.actionButtons}>
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setCreatePrefill("");
                   setShowCreateModal(true);
                 }}
                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
@@ -1191,10 +1237,17 @@ export default function ExercisesScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filtersContainer}
             />
-            <ThemedText style={[styles.exerciseCount, { color: theme.textSecondary }]}>
-              {t("exercises.exerciseCount", { count: rankedExercises.length })}
-              {customExercises.length > 0 ? t("exercises.customCount", { count: customExercises.length }) : ""}
-            </ThemedText>
+            {rankedExercises.length > 0 ? (
+              <ThemedText style={[styles.exerciseCount, { color: theme.textSecondary }]}>
+                {t("exercises.exerciseCount", { count: rankedExercises.length })}
+                {shownCustomCount > 0 ? t("exercises.customCount", { count: shownCustomCount }) : ""}
+              </ThemedText>
+            ) : null}
+            {/* Nothing matches every typed word: what was typed probably isn't
+                in the catalogue, so creating it comes before the near-misses. */}
+            {partialResults && rankedExercises.length > 0 ? (
+              <View style={styles.partialCreate}>{createFromSearch}</View>
+            ) : null}
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -1215,6 +1268,33 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   headerContainer: {
     marginBottom: Spacing.lg,
+  },
+  emptyState: {
+    alignItems: "center",
+    gap: Spacing.lg,
+    paddingTop: Spacing.xl,
+  },
+  emptyText: {
+    fontSize: 15,
+  },
+  emptyCreate: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    maxWidth: "100%",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  partialCreate: {
+    alignItems: "center",
+    marginTop: Spacing.md,
+  },
+  emptyCreateText: {
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: "600",
   },
   actionButtons: {
     flexDirection: "row",
@@ -1278,7 +1358,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   // Floating panels like every other section; a lighter shadow, since a
   // catalogue grid draws many of them at once.
+  // Fills the row, so both cards of a row end on one line however long the
+  // name or whether one carries the "Eigene" badge.
   exerciseCard: {
+    flex: 1,
     padding: Spacing.lg,
     alignItems: "center",
     ...panelFrame(c, 18),

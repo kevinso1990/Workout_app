@@ -846,6 +846,7 @@ export default function MyPlansScreen() {
                 flush
                 days={item.days}
                 schedule={item.schedule}
+                mobilityWeekdays={mobilityWeekdays}
                 onStartDay={(dayIndex) => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.navigate("ActiveWorkout", {
@@ -861,7 +862,7 @@ export default function MyPlansScreen() {
       </SwipeRowActions>
       </>
     ),
-    [t, theme, styles, orderedPlans, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays.length, activePlanId, navigation],
+    [t, theme, styles, orderedPlans, handleDuplicate, handleDeletePlan, handleViewPlan, mobilityWeekdays, activePlanId, navigation],
   );
 
   // Once the user has at least one plan, importing is a deliberate action they

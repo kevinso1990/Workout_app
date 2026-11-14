@@ -27,6 +27,8 @@ type PlanDetailViewProps = {
   flush?: boolean;
   onExercisePress?: (exercise: Exercise) => void;
   onStartDay?: (dayIndex: number) => void;
+  /** The athlete's fixed mobility weekdays (0 = Mo), on top of the plan's schedule. */
+  mobilityWeekdays?: number[];
 };
 
 function PlanExerciseRow({
@@ -101,6 +103,7 @@ function SessionRow({
   day,
   dayIndex,
   schedule,
+  mobilityWeekdays = [],
   initiallyOpen,
   isLast,
   onExercisePress,
@@ -110,6 +113,7 @@ function SessionRow({
   isLast: boolean;
   dayIndex: number;
   schedule?: PlanSchedule;
+  mobilityWeekdays?: number[];
   initiallyOpen: boolean;
   onExercisePress?: (exercise: Exercise) => void;
   onStartDay?: (dayIndex: number) => void;
@@ -126,7 +130,16 @@ function SessionRow({
     ? mobilityHue
     : sessionHues[sessionHueIndex(day.dayName, dayIndex, sessionHues.length)];
   const labels = supersetLabels(day.exercises);
-  const slots = sessionSlots(schedule, day.id)
+  const planned = sessionSlots(schedule, day.id);
+  // The week strip shows mobility on every fixed mobility day too, so the row
+  // names them all — "Mo" alone read as one day when Mo and Mi were set.
+  const extra = mobility
+    ? mobilityWeekdays
+        .filter((wd) => !planned.some((s) => !s.week && s.weekday === wd))
+        .map((weekday) => ({ weekday, week: null }))
+    : [];
+  const slots = [...planned, ...extra]
+    .sort((a, b) => (a.week ?? 0) - (b.week ?? 0) || a.weekday - b.weekday)
     .map((s) => (s.week ? `${t("planDetail.weekShort", { n: s.week })} ${dayLabel(s.weekday)}` : dayLabel(s.weekday)))
     .join(" · ");
 
@@ -226,6 +239,7 @@ export function PlanDetailView({
   flush = false,
   onExercisePress,
   onStartDay,
+  mobilityWeekdays,
 }: PlanDetailViewProps) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -239,6 +253,7 @@ export function PlanDetailView({
           day={day}
           dayIndex={dayIndex}
           schedule={schedule}
+          mobilityWeekdays={mobilityWeekdays}
           initiallyOpen={openAll}
           isLast={dayIndex === days.length - 1}
           onExercisePress={onExercisePress}

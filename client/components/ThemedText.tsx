@@ -17,9 +17,13 @@ function withSafeLineHeight(
   const flat = StyleSheet.flatten(style) ?? {};
   const fontSize = typeof flat.fontSize === "number" ? flat.fontSize : undefined;
   if (fontSize == null) return style;
+  // Oswald's capitals reach the top of the line, so an umlaut on one needs
+  // more room: at 1.1× "Eigene Übung erstellen" lost the dots of its Ü.
+  const oswald = typeof flat.fontFamily === "string" && flat.fontFamily.startsWith("Oswald");
+  const min = oswald ? 1.3 : 1.05;
   const lineHeight = typeof flat.lineHeight === "number" ? flat.lineHeight : undefined;
-  if (lineHeight != null && lineHeight >= fontSize * 1.05) return style;
-  return [style, { lineHeight: Math.round(fontSize * 1.25) }];
+  if (lineHeight != null && lineHeight >= fontSize * min) return style;
+  return [style, { lineHeight: Math.round(fontSize * (oswald ? 1.3 : 1.25)) }];
 }
 
 export type ThemedTextProps = TextProps & {
