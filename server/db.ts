@@ -353,7 +353,13 @@ function migrateFreeExerciseDbCatalog() {
     name_de?: string;
   };
 
-  const dataPath = path.resolve(process.cwd(), "server", "data", "freeExerciseDbCatalog.json");
+  // Started from the repo root locally, but from server/ by pm2 in production
+  // — there the old path pointed at server/server/data and the import (with
+  // its German-name corrections) silently did nothing.
+  const dataPath = [
+    path.resolve(process.cwd(), "server", "data", "freeExerciseDbCatalog.json"),
+    path.resolve(process.cwd(), "data", "freeExerciseDbCatalog.json"),
+  ].find((p) => fs.existsSync(p)) ?? path.resolve(process.cwd(), "server", "data", "freeExerciseDbCatalog.json");
   let rows: CatalogRow[];
   try {
     rows = JSON.parse(fs.readFileSync(dataPath, "utf8"));
