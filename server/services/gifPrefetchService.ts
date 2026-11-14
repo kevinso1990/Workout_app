@@ -153,9 +153,11 @@ const folderKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
  * Images an older version set that show something else: KB Halo was mapped to
- * a lateral raise, and these free-exercise-db folders no longer exist upstream.
+ * a lateral raise and a windmill, and these free-exercise-db folders no longer exist upstream.
  */
-const RETIRED_IMAGES: Record<string, string> = { "KB Halo": "Cable_Seated_Lateral_Raise" };
+const RETIRED_IMAGES: Record<string, string[]> = {
+  "KB Halo": ["Cable_Seated_Lateral_Raise", "Advanced_Kettlebell_Windmill"],
+};
 const DEAD_FOLDERS = new Set([
   "Kettlebell_Halo",
   "Kettlebell_Halo_With_Overhead_Extension",
@@ -180,7 +182,7 @@ export function correctMappedImages(exercises: { id: number; name: string }[]): 
     }
     if (!current.startsWith(GITHUB_CDN)) continue;
     const folder = current.slice(GITHUB_CDN.length + 1).split("/")[0] ?? "";
-    if (DEAD_FOLDERS.has(folder) || RETIRED_IMAGES[ex.name] === folder) {
+    if (DEAD_FOLDERS.has(folder) || RETIRED_IMAGES[ex.name]?.includes(folder)) {
       update.run(getGithubImageUrl(ex.name), ex.id);
       fixed++;
       continue;

@@ -26,7 +26,7 @@ beforeAll(() => {
   initDb();
   setImage("Plank", `${CDN}/Dead_Bug/0.jpg`);
   setImage("Good Morning", `${CDN}/Barbell_Deadlift/0.jpg`);
-  setImage("KB Halo", `${CDN}/Cable_Seated_Lateral_Raise/0.jpg`);
+  setImage("KB Halo", `${CDN}/Advanced_Kettlebell_Windmill/0.jpg`);
   setImage("Australian Pull-Ups", null);
   setImage("Thigh Abductor", `${CDN}/Thigh_Abductor/0.jpg`);
   correctMappedImages(rows());
