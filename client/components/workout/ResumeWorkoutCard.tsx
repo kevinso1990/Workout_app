@@ -20,6 +20,7 @@ import {
 import { translateDayName } from "@/lib/dayNameLabel";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { formatElapsed } from "@/lib/elapsedLabel";
+import { isSameLocalDay } from "@/lib/mobilitySchedule";
 
 /**
  * The way back into a minimised workout. Without it, leaving the workout
@@ -54,6 +55,10 @@ export function ResumeWorkoutCard() {
     0,
   );
   const total = draft.progress.reduce((n, ep) => n + ep.sets.length, 0);
+  // Only a workout from today is "running"; one left over from an earlier day
+  // is unfinished business, not the signal-coloured thing to do now — next to
+  // today's own session it competed as a second orange call to action.
+  const live = isSameLocalDay(new Date(draft.workoutStartedAt), new Date());
 
   const resume = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -81,14 +86,16 @@ export function ResumeWorkoutCard() {
   };
 
   return (
-    // The workout you're in the middle of is the most "now" thing there is:
-    // a warm panel with the signal colour on its edge and its button.
-    <View style={styles.card} testID="card-resume-workout">
-      <PanelFill warm />
+    // The workout you're in the middle of today is the most "now" thing there
+    // is: a warm panel with the signal colour on its edge and its button.
+    <View style={[styles.card, live ? styles.cardLive : null]} testID="card-resume-workout">
+      <PanelFill warm={live} />
       <View style={styles.textCol}>
-        <ThemedText style={styles.title}>{t("plans.resume.title")}</ThemedText>
+        <ThemedText style={styles.title}>
+          {live ? t("plans.resume.title") : t("plans.resume.staleTitle")}
+        </ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
-          {t("plans.resume.subtitle", {
+          {t(live ? "plans.resume.subtitle" : "plans.resume.staleSubtitle", {
             name,
             duration: formatElapsed(t, draft.workoutStartedAt),
           })}
@@ -100,12 +107,17 @@ export function ResumeWorkoutCard() {
       <View style={styles.actions}>
         <Pressable
           onPress={resume}
-          style={[styles.resumeBtn, { backgroundColor: theme.signal }]}
+          style={[
+            styles.resumeBtn,
+            live
+              ? { backgroundColor: theme.signal }
+              : { borderWidth: 1, borderColor: theme.controlOutline },
+          ]}
           accessibilityRole="button"
           testID="button-resume-workout"
         >
-          <Feather name="play" size={14} color={theme.onSignal} />
-          <ThemedText style={[styles.resumeText, { color: theme.onSignal }]}>
+          <Feather name="play" size={14} color={live ? theme.onSignal : theme.text} />
+          <ThemedText style={[styles.resumeText, { color: live ? theme.onSignal : theme.text }]}>
             {t("plans.resume.continue")}
           </ThemedText>
         </Pressable>
@@ -133,6 +145,8 @@ const makeStyles = (c: Palette) =>
       padding: Spacing.lg,
       marginBottom: Spacing.lg,
       ...panelFrame(c),
+    },
+    cardLive: {
       borderWidth: 1.5,
       borderTopWidth: 1.5,
       borderColor: c.signal,

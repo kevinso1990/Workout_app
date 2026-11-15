@@ -18,7 +18,7 @@ function formatTickLabel(value: number, step: number): string {
   return Number.isInteger(snapped) ? String(snapped) : snapped.toFixed(1);
 }
 
-function buildLabeledTicks(min: number, max: number, step: number, maxLabels = 7): number[] {
+function buildLabeledTicks(min: number, max: number, step: number, maxLabels = 11): number[] {
   const values: number[] = [];
   for (let v = min; v <= max + step * 0.01; v += step) {
     values.push(snapToStep(v, step));
@@ -30,7 +30,11 @@ function buildLabeledTicks(min: number, max: number, step: number, maxLabels = 7
     picked.push(values[i]);
   }
   const last = values[values.length - 1];
-  if (picked[picked.length - 1] !== last) picked.push(last);
+  if (picked[picked.length - 1] !== last) {
+    // The end label replaces a neighbour closer than one stride ("… 9 10").
+    if ((last - picked[picked.length - 1]) / step < stride) picked.pop();
+    picked.push(last);
+  }
   return picked;
 }
 

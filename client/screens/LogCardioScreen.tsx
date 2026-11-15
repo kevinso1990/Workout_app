@@ -31,6 +31,7 @@ import { isoFromDateKey } from "@/lib/workoutCalendar";
 import { scheduleDataSync, scheduleSessionSync } from "@/lib/dataSync";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
+import { ActivityIcon } from "@/components/schedule/activityIcons";
 
 const SPORTS: CardioSportType[] = [
   "running",
@@ -42,27 +43,15 @@ const SPORTS: CardioSportType[] = [
   "custom",
 ];
 
-// Cardio has its own warm identity in the app (amber, mirrored from the
-// calendar's cardio markers) — using it here instead of the muted slate
-// primary gives the screen energy and a distinct feel.
-const CARDIO_ACCENT = "#D97706";
-
-const SPORT_EMOJI: Record<CardioSportType, string> = {
-  running: "🏃",
-  football: "⚽",
-  tennis: "🎾",
-  cycling: "🚴",
-  swimming: "🏊",
-  boxing: "🥊",
-  custom: "✨",
-};
-
-/** Effort tier → descriptive label key + color (green → amber → red). */
-function effortMeta(rpe: number): { key: string; color: string } {
-  if (rpe <= 3) return { key: "effortEasy", color: "#16A34A" };
-  if (rpe <= 6) return { key: "effortModerate", color: CARDIO_ACCENT };
-  if (rpe <= 8) return { key: "effortHard", color: "#EA580C" };
-  return { key: "effortMax", color: "#DC2626" };
+/**
+ * Effort tier → label key + plate colour. Effort is load, so it takes the
+ * plate colours (green → yellow → red) like every other intensity mark.
+ */
+function effortMeta(rpe: number, c: Palette): { key: string; color: string } {
+  if (rpe <= 3) return { key: "effortEasy", color: c.plateLight };
+  if (rpe <= 6) return { key: "effortModerate", color: c.plateMedium };
+  if (rpe <= 8) return { key: "effortHard", color: c.plateHeavy };
+  return { key: "effortMax", color: c.plateHeavy };
 }
 
 type LogCardioRoute = RouteProp<RootStackParamList, "LogCardio">;
@@ -76,9 +65,17 @@ export default function LogCardioScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<LogCardioRoute>();
 
-  const [sport, setSport] = useState<CardioSportType>("running");
-  const [customLabel, setCustomLabel] = useState("");
-  const [duration, setDuration] = useState("45");
+  // Opened from today's sport appointment, it starts filled in with it.
+  const prefill = route.params;
+  const prefillSport = prefill?.sport as CardioSportType | undefined;
+  const knownSport = !!prefillSport && SPORTS.includes(prefillSport);
+  const [sport, setSport] = useState<CardioSportType>(
+    knownSport ? prefillSport! : prefillSport ? "custom" : "running",
+  );
+  const [customLabel, setCustomLabel] = useState(
+    prefill?.customLabel ?? (prefillSport && !knownSport ? t(`calendar.sports.${prefillSport}`, { defaultValue: prefillSport }) : ""),
+  );
+  const [duration, setDuration] = useState(String(prefill?.durationMinutes ?? 45));
   const [distance, setDistance] = useState("");
   const [rpe, setRpe] = useState(6);
   const [notes, setNotes] = useState("");
@@ -91,7 +88,7 @@ export default function LogCardioScreen() {
   }, [route.params?.prefilledDate]);
 
   const sportLabel = (s: CardioSportType) => t(`calendar.sports.${s}`);
-  const effort = effortMeta(rpe);
+  const effort = effortMeta(rpe, theme);
 
   const handleSave = async () => {
     const durationMinutes = parseInt(duration, 10);
@@ -163,7 +160,7 @@ export default function LogCardioScreen() {
       >
         <View style={styles.heroRow}>
           <View style={styles.heroBadge}>
-            <ThemedText style={styles.heroEmoji}>{SPORT_EMOJI[sport]}</ThemedText>
+            <ActivityIcon sport={sport} size={24} color={theme.chalk} />
           </View>
           <View style={styles.heroText}>
             <ThemedText style={styles.title}>{t("logCardio.title")}</ThemedText>
@@ -184,7 +181,7 @@ export default function LogCardioScreen() {
                 }}
                 style={[styles.chip, active && styles.chipActive]}
               >
-                <ThemedText style={styles.chipEmoji}>{SPORT_EMOJI[s]}</ThemedText>
+                <ActivityIcon sport={s} size={16} color={active ? theme.onChalk : theme.chalkDim} />
                 <ThemedText
                   style={[styles.chipText, active && styles.chipTextActive]}
                 >
@@ -201,7 +198,7 @@ export default function LogCardioScreen() {
               {t("logCardio.customName")}
             </ThemedText>
             <View style={[styles.inputWrap, { borderColor: theme.border }]}>
-              <Feather name="edit-3" size={16} color={CARDIO_ACCENT} />
+              <Feather name="edit-3" size={16} color={theme.textSecondary} />
               <TextInput
                 returnKeyType="done"
                 clearButtonMode="while-editing"
@@ -222,7 +219,7 @@ export default function LogCardioScreen() {
                 {t("logCardio.durationShort")}
               </ThemedText>
               <View style={[styles.inputWrap, { borderColor: theme.border }]}>
-                <Feather name="clock" size={16} color={CARDIO_ACCENT} />
+                <Feather name="clock" size={16} color={theme.textSecondary} />
                 <TextInput
                   selectTextOnFocus
                   value={duration}
@@ -248,15 +245,15 @@ export default function LogCardioScreen() {
                 </ThemedText>
               </View>
               <View style={[styles.inputWrap, { borderColor: theme.border }]}>
-                <Feather name="map-pin" size={16} color={CARDIO_ACCENT} />
+                <Feather name="map-pin" size={16} color={theme.textSecondary} />
                 <TextInput
                   returnKeyType="done"
                   clearButtonMode="while-editing"
                   value={distance}
                   onChangeText={setDistance}
                   keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"}
-                  placeholder="5,2"
-                  placeholderTextColor={theme.textSecondary}
+                  placeholder="–"
+                  placeholderTextColor={theme.chalkFaint}
                   style={[styles.inputNumber, { color: theme.text }]}
                 />
                 <ThemedText style={styles.unit}>km</ThemedText>
@@ -344,7 +341,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  heroEmoji: { fontSize: 26 },
   heroText: { flex: 1 },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 2 },
   subtitle: { fontSize: 13, opacity: 0.6, lineHeight: 18 },
@@ -368,13 +364,13 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.hairline,
   },
+  // Selected like every chip in the app: chalk fill, iron text.
   chipActive: {
-    backgroundColor: c.ironElevated2,
-    borderColor: CARDIO_ACCENT,
+    backgroundColor: c.chalk,
+    borderColor: c.chalk,
   },
-  chipEmoji: { fontSize: 16 },
   chipText: { fontSize: 14, fontWeight: "600", color: c.chalkDim },
-  chipTextActive: { color: c.chalk, fontWeight: "700" },
+  chipTextActive: { color: c.onChalk, fontWeight: "700" },
   card: {
     backgroundColor: c.backgroundDefault,
     borderRadius: BorderRadius.lg,
@@ -450,14 +446,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: CARDIO_ACCENT,
+    // The primary action is chalk, as everywhere outside "today".
+    backgroundColor: c.chalk,
     borderRadius: BorderRadius.md,
     paddingVertical: 16,
-    shadowColor: CARDIO_ACCENT,
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
   saveBtnText: { color: c.onChalk, fontWeight: "700", fontSize: 16 },
 });

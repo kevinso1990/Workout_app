@@ -131,8 +131,8 @@ function SessionRow({
     : sessionHues[sessionHueIndex(day.dayName, dayIndex, sessionHues.length)];
   const labels = supersetLabels(day.exercises);
   const planned = sessionSlots(schedule, day.id);
-  // The week strip shows mobility on every fixed mobility day too, so the row
-  // names them all — "Mo" alone read as one day when Mo and Mi were set.
+  // The Mobility-Session has no schedule of its own; its row names the fixed
+  // mobility days the athlete picked.
   const extra = mobility
     ? mobilityWeekdays
         .filter((wd) => !planned.some((s) => !s.week && s.weekday === wd))

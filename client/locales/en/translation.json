@@ -136,6 +136,8 @@
     "defaultPlanName": "My Workout Plan",
     "resume": {
       "title": "Workout in progress",
+      "staleTitle": "Unfinished workout",
+      "staleSubtitle": "{{name}} · {{duration}} ago",
       "subtitle": "{{name}} · started {{duration}} ago",
       "continue": "Resume",
       "discard": "Discard",
@@ -151,6 +153,8 @@
       "title": "Today",
       "start": "Start",
       "startEarly": "Do now",
+      "logSport": "Log it",
+      "sportDone": "Logged today",
       "restDay": "Rest day",
       "doneTitle": "Done for today",
       "nextOverline": "Next workout"

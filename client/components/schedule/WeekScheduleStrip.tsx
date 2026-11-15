@@ -211,6 +211,8 @@ export function WeekScheduleStrip({
               </View>
               <ThemedText
                 numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
                 style={[
                   styles.caption,
                   { color: isToday ? theme.text : theme.textSecondary },

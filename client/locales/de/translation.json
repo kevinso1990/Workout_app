@@ -136,6 +136,8 @@
     "defaultPlanName": "Mein Trainingsplan",
     "resume": {
       "title": "Training läuft",
+      "staleTitle": "Nicht beendetes Training",
+      "staleSubtitle": "{{name}} · vor {{duration}}",
       "subtitle": "{{name}} · seit {{duration}}",
       "continue": "Fortsetzen",
       "discard": "Verwerfen",
@@ -151,6 +153,8 @@
       "title": "Heute",
       "start": "Starten",
       "startEarly": "Vorziehen",
+      "logSport": "Eintragen",
+      "sportDone": "Heute eingetragen",
       "restDay": "Ruhetag",
       "doneTitle": "Heute erledigt",
       "nextOverline": "Nächstes Training"

@@ -26,6 +26,8 @@ export interface TodayOverview {
   sport: WeeklyCommitment | null;
   /** Something was already logged today. */
   doneToday: boolean;
+  /** A cardio/sport session is already logged today. */
+  sportLogged: boolean;
   /** Next scheduled strength day after today (only when none is due today). */
   next: (TodaySession & { weekday: number }) | null;
 }
@@ -114,5 +116,12 @@ export function todayOverview(input: {
     mobility = session(mobilityPlan, 0);
   }
 
-  return { strength, mobility, sport, doneToday: today.length > 0, next };
+  return {
+    strength,
+    mobility,
+    sport,
+    doneToday: today.length > 0,
+    sportLogged: today.some((s) => isCardio(s)),
+    next,
+  };
 }

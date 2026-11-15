@@ -77,7 +77,7 @@ export function TodayCard({
   // not hide today's plan, though.
   const draftFromToday = !!draft && isSameLocalDay(new Date(draft.workoutStartedAt), new Date());
   if (!overview || draftFromToday) return null;
-  const { strength, mobility, sport, doneToday, next } = overview;
+  const { strength, mobility, sport, doneToday, sportLogged, next } = overview;
   if (!strength && !mobility && !next && !sport) return null;
 
   const start = async (s: TodaySession) => {
@@ -166,6 +166,40 @@ export function TodayCard({
                   : t("plans.today.restDay")}
             </ThemedText>
           </View>
+          {/* The sport day was a title with nothing to do — logging it took
+              the + menu and typing the sport and minutes again. */}
+          {sport ? (
+            sportLogged ? (
+              <View style={styles.sportDone}>
+                <Feather name="check-circle" size={16} color={theme.signal} />
+                <ThemedText style={[styles.heroMeta, { color: theme.textSecondary }]}>
+                  {t("plans.today.sportDone")}
+                </ThemedText>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate("LogCardio", {
+                    sport: sport.sport,
+                    customLabel: sport.sport === "custom" ? sport.label : undefined,
+                    durationMinutes: sport.durationMinutes,
+                  });
+                }}
+                style={({ pressed }) => [
+                  styles.heroBtn,
+                  { backgroundColor: theme.signal, opacity: pressed ? 0.9 : 1 },
+                ]}
+                accessibilityRole="button"
+                testID="button-today-log-sport"
+              >
+                <Feather name="check" size={16} color={theme.onSignal} />
+                <ThemedText style={[styles.heroBtnText, { color: theme.onSignal }]}>
+                  {t("plans.today.logSport")}
+                </ThemedText>
+              </Pressable>
+            )
+          ) : null}
           {next ? (
             <View style={[styles.sessionRow, { borderTopColor: theme.hairline }]} testID="row-today-next">
               {/* In the session's plan colour, as in the week and the plan. */}
@@ -262,6 +296,11 @@ const makeStyles = (c: Palette) =>
     },
     heroMeta: {
       fontSize: 14,
+    },
+    sportDone: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.sm,
     },
     heroBtn: {
       marginTop: Spacing.sm,

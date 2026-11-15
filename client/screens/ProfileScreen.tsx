@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState, useMemo} from "react";
 import { View, StyleSheet, Pressable, Alert, Modal, TextInput, ScrollView, Switch } from "react-native";
+import Constants from "expo-constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -326,10 +327,8 @@ function ThemeToggleCard() {
               style={[
                 styles.themeSegment,
                 {
-                  backgroundColor: isActive
-                    ? theme.primary + "15"
-                    : theme.backgroundSecondary,
-                  borderColor: isActive ? theme.primary : theme.border,
+                  backgroundColor: isActive ? theme.chalk : theme.backgroundSecondary,
+                  borderColor: isActive ? theme.chalk : theme.border,
                 },
               ]}
               testID={`button-theme-${value}`}
@@ -337,12 +336,12 @@ function ThemeToggleCard() {
               <Feather
                 name={icon}
                 size={18}
-                color={isActive ? theme.primary : theme.textSecondary}
+                color={isActive ? theme.onChalk : theme.textSecondary}
               />
               <ThemedText
                 style={[
                   styles.themeSegmentLabel,
-                  { color: isActive ? theme.primary : theme.textSecondary },
+                  { color: isActive ? theme.onChalk : theme.textSecondary },
                 ]}
               >
                 {t(labelKey)}
@@ -392,10 +391,8 @@ function LanguageToggleCard() {
               style={[
                 styles.themeSegment,
                 {
-                  backgroundColor: isActive
-                    ? theme.primary + "15"
-                    : theme.backgroundSecondary,
-                  borderColor: isActive ? theme.primary : theme.border,
+                  backgroundColor: isActive ? theme.chalk : theme.backgroundSecondary,
+                  borderColor: isActive ? theme.chalk : theme.border,
                 },
               ]}
               testID={`button-language-${code}`}
@@ -403,7 +400,7 @@ function LanguageToggleCard() {
               <ThemedText
                 style={[
                   styles.themeSegmentLabel,
-                  { color: isActive ? theme.primary : theme.textSecondary },
+                  { color: isActive ? theme.onChalk : theme.textSecondary },
                 ]}
               >
                 {label}
@@ -458,8 +455,8 @@ function FitnessLevelCard({
               style={[
                 styles.fitnessLevelOption,
                 {
-                  backgroundColor: isActive ? theme.primary + "15" : theme.backgroundSecondary,
-                  borderColor: isActive ? theme.primary : theme.border,
+                  backgroundColor: isActive ? theme.chalk : theme.backgroundSecondary,
+                  borderColor: isActive ? theme.chalk : theme.border,
                 },
               ]}
               testID={`button-fitness-level-${id}`}
@@ -467,12 +464,12 @@ function FitnessLevelCard({
               <Feather
                 name={icon}
                 size={16}
-                color={isActive ? theme.primary : theme.textSecondary}
+                color={isActive ? theme.onChalk : theme.textSecondary}
               />
               <ThemedText
                 style={[
                   styles.fitnessLevelLabel,
-                  { color: isActive ? theme.primary : theme.textSecondary },
+                  { color: isActive ? theme.onChalk : theme.textSecondary },
                 ]}
               >
                 {t(labelKey)}
@@ -558,7 +555,7 @@ function EquipmentCard({
       <View style={styles.equipmentOptions}>
         {EQUIPMENT_OPTIONS.map(({ id, labelKey, icon, mciIcon }) => {
           const isActive = equipment === id;
-          const iconColor = isActive ? theme.primary : theme.textSecondary;
+          const iconColor = isActive ? theme.onChalk : theme.textSecondary;
           return (
             <Pressable
               key={id}
@@ -569,8 +566,8 @@ function EquipmentCard({
               style={[
                 styles.equipmentOption,
                 {
-                  backgroundColor: isActive ? theme.primary + "15" : theme.backgroundSecondary,
-                  borderColor: isActive ? theme.primary : theme.border,
+                  backgroundColor: isActive ? theme.chalk : theme.backgroundSecondary,
+                  borderColor: isActive ? theme.chalk : theme.border,
                 },
               ]}
               testID={`button-equipment-${id}`}
@@ -583,7 +580,7 @@ function EquipmentCard({
               <ThemedText
                 style={[
                   styles.fitnessLevelLabel,
-                  { color: isActive ? theme.primary : theme.textSecondary },
+                  { color: isActive ? theme.onChalk : theme.textSecondary },
                 ]}
               >
                 {t(labelKey)}
@@ -773,6 +770,7 @@ function SettingsItem({
   onPress,
   isDestructive = false,
   index,
+  separated = false,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
@@ -780,6 +778,8 @@ function SettingsItem({
   onPress?: () => void;
   isDestructive?: boolean;
   index: number;
+  /** A row under another in the same group: a hairline instead of its own card. */
+  separated?: boolean;
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -806,11 +806,10 @@ function SettingsItem({
         style={[
           animatedStyle,
           styles.settingsItem,
-          panelFrame(theme),
+          separated && [styles.settingsItemSeparated, { borderTopColor: theme.hairline }],
         ]}
         testID={`button-settings-${label.toLowerCase().replace(/\s/g, "-")}`}
       >
-        <PanelFill />
         <View
           style={[
             styles.settingsIcon,
@@ -1082,6 +1081,13 @@ export default function ProfileScreen() {
         <MobilityDaysCard style={styles.mobilityDaysCard} />
       </Animated.View>
 
+      {/* About you, so with your week — it sat below "Konto löschen". */}
+      <BodyStatsCard
+        latestMeasurement={measurements[0] || null}
+        onAddNew={() => setShowMeasurementModal(true)}
+      />
+
+
       <Animated.View
         entering={FadeInDown.delay(100).duration(400)}
         style={styles.section}
@@ -1154,18 +1160,21 @@ export default function ProfileScreen() {
         </ThemedText>
       </Animated.View>
 
-      <View style={styles.settingsList}>
+      <View style={[styles.settingsList, panelFrame(theme)]}>
+        <PanelFill />
         {/* App Version: informational only — no press handler, no chevron, no animation */}
         <Animated.View
           entering={FadeInDown.delay(350).duration(400)}
-          style={[styles.settingsItem, panelFrame(theme)]}
+          style={styles.settingsItem}
         >
-          <PanelFill />
           <View style={[styles.settingsIcon, { backgroundColor: theme.chipIdle }]}>
             <Feather name="info" size={20} color={theme.textSecondary} />
           </View>
           <ThemedText style={[styles.settingsLabel, { color: theme.text }]}>{t("profile.appVersion")}</ThemedText>
-          <ThemedText style={[styles.settingsValue, { color: theme.textSecondary }]}>1.0.0</ThemedText>
+          <ThemedText style={[styles.settingsValue, { color: theme.textSecondary }]}>
+            {/* From app.json at build time — the hard-coded "1.0.0" outlived 1.1. */}
+            {Constants.expoConfig?.version ?? "–"}
+          </ThemedText>
         </Animated.View>
 
         <SettingsItem
@@ -1174,6 +1183,7 @@ export default function ProfileScreen() {
           onPress={handleResetOnboarding}
           isDestructive
           index={4}
+          separated
         />
       </View>
 
@@ -1186,7 +1196,8 @@ export default function ProfileScreen() {
         </ThemedText>
       </Animated.View>
 
-      <View style={styles.settingsList}>
+      <View style={[styles.settingsList, panelFrame(theme)]}>
+        <PanelFill />
         <SettingsItem
           icon="shield"
           label={t("profile.privacyPolicy")}
@@ -1198,6 +1209,7 @@ export default function ProfileScreen() {
           label={t("profile.termsOfUse")}
           onPress={() => openLegal(TERMS_OF_USE_URL)}
           index={6}
+          separated
         />
       </View>
 
@@ -1210,7 +1222,8 @@ export default function ProfileScreen() {
         </ThemedText>
       </Animated.View>
 
-      <View style={styles.settingsList}>
+      <View style={[styles.settingsList, panelFrame(theme)]}>
+        <PanelFill />
         <SettingsItem
           icon="trash-2"
           label={t("profile.deleteAccount")}
@@ -1219,11 +1232,6 @@ export default function ProfileScreen() {
           index={7}
         />
       </View>
-
-      <BodyStatsCard
-        latestMeasurement={measurements[0] || null}
-        onAddNew={() => setShowMeasurementModal(true)}
-      />
 
       <AddMeasurementModal
         visible={showMeasurementModal}
@@ -1280,15 +1288,19 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  settingsList: {
-    gap: Spacing.sm,
-  },
+  // One panel per group, rows split by hairlines — a card per row was a
+  // stack of boxes.
+  settingsList: {},
   settingsItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    ...CARD_ELEVATION,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  settingsItemSeparated: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: Spacing.lg,
+    paddingHorizontal: 0,
   },
   settingsIcon: {
     width: 40,

@@ -42,6 +42,16 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { WeekScheduleStrip } from "@/components/schedule/WeekScheduleStrip";
 import { getUserPreferences, getWorkoutPlans, type WorkoutPlan } from "@/lib/storage";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
+import type { TFunction } from "i18next";
+import { translateDayName } from "@/lib/dayNameLabel";
+
+/**
+ * A strength session is named by its session ("GK B kurz – Pull"), not its
+ * plan — every session of a plan showed the same "Wochenplan (3-Wochen-Zyklus)".
+ */
+function strengthTitle(t: TFunction, session: WorkoutSession): string {
+  return session.dayName ? translateDayName(t, session.dayName) : sessionDisplayTitle(session);
+}
 
 function formatMonthTitle(month: Date, locale: string): string {
   return month.toLocaleDateString(locale, { month: "long", year: "numeric" });
@@ -52,7 +62,7 @@ function SessionRow({ session }: { session: WorkoutSession }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const cardio = isCardioSession(session);
-  const title = sessionDisplayTitle(session);
+  const title = cardio ? sessionDisplayTitle(session) : strengthTitle(t, session);
   const time = new Date(session.completedAt).toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
@@ -83,7 +93,7 @@ function SessionRow({ session }: { session: WorkoutSession }) {
                 rpe: session.cardio?.rpe ?? "—",
               })
             : t("calendar.strengthMeta", {
-                day: session.dayName,
+                day: session.planName || session.dayName,
                 count: session.exercises.length,
               })}
           {" · "}
@@ -276,13 +286,16 @@ export default function CalendarScreen() {
                     />
                   </View>
                   <View style={styles.sessionCopy}>
-                    <ThemedText style={styles.weekSessionTitle}>
-                      {sessionDisplayTitle(session)}
+                    <ThemedText style={styles.weekSessionTitle} numberOfLines={1}>
+                      {isCardioSession(session)
+                        ? sessionDisplayTitle(session)
+                        : strengthTitle(t, session)}
                     </ThemedText>
-                    <ThemedText style={styles.weekSessionMeta}>
+                    <ThemedText style={styles.weekSessionMeta} numberOfLines={1}>
                       {new Date(session.completedAt).toLocaleDateString(i18n.language, {
                         weekday: "long",
                       })}
+                      {!isCardioSession(session) && session.planName ? ` · ${session.planName}` : ""}
                     </ThemedText>
                   </View>
                   <Feather

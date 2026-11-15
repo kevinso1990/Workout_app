@@ -229,7 +229,9 @@ export default function PlanDetailScreen() {
           flush
           days={plan.days}
           schedule={plan.schedule}
-          mobilityWeekdays={mobilityDays}
+          // The fixed days belong to the Mobility-Session only — a plan's own
+          // mobility day is a different session on its own weekday.
+          mobilityWeekdays={plan.id === MOBILITY_PLAN_ID ? mobilityDays : undefined}
           onExercisePress={(exercise) => setDetailExercise(exercise)}
           onStartDay={handleStartDay}
         />

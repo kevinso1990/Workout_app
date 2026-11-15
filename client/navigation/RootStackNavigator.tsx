@@ -41,7 +41,15 @@ export type RootStackParamList = {
     dayIndex: number;
     restored?: boolean;
   };
-  LogCardio: { prefilledDate?: string } | undefined;
+  LogCardio:
+    | {
+        prefilledDate?: string;
+        /** Prefill from the day's sport appointment. */
+        sport?: string;
+        customLabel?: string;
+        durationMinutes?: number;
+      }
+    | undefined;
   /** `seed`: the daily coach tip the chat opens with, when started from it. */
   CoachChat: { seed?: string } | undefined;
 };
