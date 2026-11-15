@@ -11,6 +11,8 @@ export interface ExerciseMedia {
   imageUrl: string | null;
   /** Short form-cue bullets shown in the detail modal */
   cues: string[];
+  /** True when `cues` are the generic fallback, not about this exercise. */
+  generic?: boolean;
   /** "Compound" | "Isolation" | "Cardio" — shown as a tag */
   category: string;
 }
@@ -22,6 +24,7 @@ export interface ExerciseMediaProvider {
   /**
    * Return media metadata for the given exercise name.
    * Must never throw — return a safe default when the exercise is unknown.
+   * Cues come in `language` ("de", "en") where the provider has them.
    */
-  getMedia(exerciseName: string): ExerciseMedia;
+  getMedia(exerciseName: string, language?: string): ExerciseMedia;
 }

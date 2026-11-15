@@ -33,6 +33,6 @@ export function getExerciseMediaProvider(): ExerciseMediaProvider {
 }
 
 /** Convenience shorthand used by UI components */
-export function getExerciseMedia(exerciseName: string) {
-  return getExerciseMediaProvider().getMedia(exerciseName);
+export function getExerciseMedia(exerciseName: string, language?: string) {
+  return getExerciseMediaProvider().getMedia(exerciseName, language);
 }

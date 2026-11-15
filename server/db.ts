@@ -130,6 +130,7 @@ export function initDb() {
   migrateSupersetsDropSets();
   migrateAuth();
   migrateVotes();
+  migrateExerciseCues();
   migrateSplitRefresh();
   migrateSubscriptions();
   migrateIndices();
@@ -423,6 +424,19 @@ function migrateMobileWorkoutSync() {
 function migrateIndices() {
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_sets_session ON sets(session_id)"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_plan_exercises_plan ON plan_exercises(plan_id)"); } catch {}
+}
+
+/** AI-written coaching cues for exercises without any (see exerciseCuesService). */
+function migrateExerciseCues() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS exercise_cues (
+      name_key TEXT NOT NULL,
+      lang TEXT NOT NULL,
+      cues TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (name_key, lang)
+    );
+  `);
 }
 
 function migrateVotes() {

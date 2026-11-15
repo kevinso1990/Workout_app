@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState} from "react";
 import { Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Dimensions,
@@ -12,7 +13,6 @@ import {
 } from "react-native";
 
 import {
-  EXERCISEDB_KEY_HINT,
   isExerciseDbConfigured,
 } from "@/lib/rapidApiConfig";
 import { fetchExerciseDetail } from "@/services/exerciseApi";
@@ -113,6 +113,7 @@ function ExerciseDbHeroGifBase({
   onDetailLoaded,
 }: ExerciseDbHeroGifProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const frames = useMemo(() => {
     // A user-supplied image is a single still, so it becomes the only frame —
@@ -203,16 +204,10 @@ function ExerciseDbHeroGifBase({
           onLoad={() => setImageReady(true)}
           onError={() => setImageReady(true)}
         />
-      ) : showKeyHint ? (
+      ) : showKeyHint || showUnavailable ? (
         <View style={styles.hintWrap}>
           <Text style={[styles.hintText, dark && styles.hintTextDark]}>
-            {EXERCISEDB_KEY_HINT}
-          </Text>
-        </View>
-      ) : showUnavailable ? (
-        <View style={styles.hintWrap}>
-          <Text style={[styles.hintText, dark && styles.hintTextDark]}>
-            Animation unavailable for this exercise.
+            {t("exercises.noAnimation")}
           </Text>
         </View>
       ) : null}

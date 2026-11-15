@@ -33,6 +33,8 @@ import { getExerciseMedia as getStaticExerciseMedia } from "@/lib/exerciseMedia/
 import { getMuscleGroupMeta } from "@/lib/exerciseImages";
 import { translateMuscleGroup, translateExerciseCategory } from "@/lib/exerciseTaxonomy";
 import { sanitizeExerciseInstructions } from "@/services/exerciseApi";
+import { fetchExerciseCues } from "@/lib/exerciseCues";
+import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
 import {
   EXERCISE_HERO_GIF_HEIGHT,
   ExerciseDbHeroGif,
@@ -56,7 +58,7 @@ export default function ExerciseDetailModal({
 }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Bumped after a pick/remove so the hero re-reads the image index.
   const [customImageTick, setCustomImageTick] = useState(0);
   const hasCustomImage = getCustomExerciseImageSync(exerciseName) != null;
@@ -84,22 +86,37 @@ export default function ExerciseDetailModal({
   const insets = useSafeAreaInsets();
   const [instructions, setInstructions] = useState<string[]>([]);
 
-  const staticMedia = getStaticExerciseMedia(exerciseName);
+  const staticMedia = getStaticExerciseMedia(exerciseName, i18n.language);
   const meta = getMuscleGroupMeta(muscleGroup);
+  // ExerciseDB only speaks English; in German the app's own translated cues win.
+  const preferStatic = i18n.language.startsWith("de");
 
   const handleDetailLoaded = useCallback(
     (detail: { gifUrl: string | null; instructions: string[] }) => {
-      const steps = sanitizeExerciseInstructions(
-        detail.instructions.length ? detail.instructions : staticMedia.cues,
-      );
-      setInstructions(steps);
+      const remote = sanitizeExerciseInstructions(detail.instructions);
+      // Generic cues are only a placeholder until the server's arrive.
+      if (preferStatic || remote.length === 0 || staticMedia.generic) return;
+      setInstructions(remote);
     },
-    [staticMedia.cues],
+    [preferStatic, staticMedia.generic],
   );
 
+  // The app's own cues are there at once; the network only might add better.
   useEffect(() => {
-    if (visible) setInstructions([]);
-  }, [visible, exerciseName]);
+    if (!visible) return;
+    setInstructions(staticMedia.cues);
+    // No cues of its own (an imported plan's name, say): ask the server,
+    // which writes them once for everyone.
+    if (!staticMedia.generic) return;
+    let cancelled = false;
+    void fetchExerciseCues(exerciseName, muscleGroup, i18n.language).then((cues) => {
+      if (!cancelled && cues.length > 0) setInstructions(cues);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, exerciseName, i18n.language]);
 
   if (!visible) return null;
 
@@ -136,7 +153,7 @@ export default function ExerciseDetailModal({
           <View style={styles.headerRow}>
             <View style={styles.titleBlock}>
               <ThemedText style={styles.exerciseName} numberOfLines={2}>
-                {displayName ?? exerciseName}
+                {displayName ?? localizeExerciseName(exerciseName, i18n.language)}
               </ThemedText>
               <View style={styles.badges}>
                 <View style={[styles.badge, { backgroundColor: meta.color + "20" }]}>

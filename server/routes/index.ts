@@ -17,6 +17,7 @@ import splitRefreshRouter from "./splitRefresh";
 import subscriptionRouter from "./subscriptions";
 import importWorkoutRouter from "./importWorkout";
 import translateExerciseRouter from "./translateExercise";
+import exerciseCuesRouter from "./exerciseCues";
 import coachRouter from "./coach";
 import workoutSyncRouter from "./workoutSync";
 import { requireAuth, optionalAuth } from "../middleware/auth";
@@ -203,6 +204,7 @@ export function registerRoutes(app: Express): void {
   // their plans — matches the "skip / continue without account" UX promise.
   app.use("/api",                   optionalAuth, importWorkoutRouter);
   app.use("/api/coach",             optionalAuth, coachRouter);
+  app.use("/api",                   optionalAuth, exerciseCuesRouter);
   app.use("/api",                   requireAuth, translateExerciseRouter);
 
   startPushScheduler();

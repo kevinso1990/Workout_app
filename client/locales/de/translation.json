@@ -981,6 +981,7 @@
     "customCount": " ({{count}} eigene)",
     "howToPerform": "So geht's",
     "noInstructions": "Für diese Übung sind noch keine Anleitungen verfügbar.",
+    "noAnimation": "Für diese Übung gibt es noch kein Bild.",
     "repsCount_one": "{{count}} Wdh.",
     "repsCount_other": "{{count}} Wdh.",
     "muscleGroups": {

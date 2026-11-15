@@ -290,6 +290,7 @@
     "customCount": " ({{count}} custom)",
     "howToPerform": "How to perform",
     "noInstructions": "Coaching instructions are not available for this exercise yet.",
+    "noAnimation": "No picture for this exercise yet.",
     "repsCount_one": "{{count}} rep",
     "repsCount_other": "{{count}} reps",
     "muscleGroups": {

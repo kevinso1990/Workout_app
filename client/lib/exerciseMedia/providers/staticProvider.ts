@@ -10,7 +10,10 @@
 
 import { ExerciseMedia, ExerciseMediaProvider } from "../types";
 import { getExerciseImageUrl, getExerciseImageId } from "../../exerciseImages";
+import { catalogImageUrl } from "../../exerciseNameCatalog";
 import freeExerciseDbInstructions from "../data/freeExerciseDbInstructions.json";
+import freeExerciseDbInstructionsDe from "../data/freeExerciseDbInstructionsDe.json";
+import exerciseCuesDe from "../data/exerciseCuesDe.json";
 
 // ── Per-exercise cues and category ─────────────────────────────────────────
 
@@ -940,18 +943,38 @@ const GENERIC_CUES = [
   "Stop if you feel sharp or joint pain",
 ];
 
+/**
+ * The free-exercise-db folder an exercise's instructions are filed under: the
+ * curated image mapping, else the folder of the catalog's own image — most of
+ * the 1,000+ catalog exercises are only known there.
+ */
+function instructionsFolder(exerciseName: string): string | null {
+  const mapped = getExerciseImageId(exerciseName);
+  if (mapped) return mapped.split("/")[0];
+  return catalogImageUrl(exerciseName)?.match(/\/exercises\/([^/]+)\/\d+\.jpg$/)?.[1] ?? null;
+}
+
+const CUES_DE = exerciseCuesDe as Record<string, string>;
+
 export class StaticExerciseProvider implements ExerciseMediaProvider {
   readonly providerName = "static";
 
-  getMedia(exerciseName: string): ExerciseMedia {
+  getMedia(exerciseName: string, language?: string): ExerciseMedia {
+    const german = !!language?.startsWith("de");
     const info = EXERCISE_INFO[exerciseName];
-    const imageId = getExerciseImageId(exerciseName);
-    const dbInstructions = imageId
-      ? (freeExerciseDbInstructions as Record<string, string[]>)[imageId]
-      : undefined;
+    const folder = instructionsFolder(exerciseName);
+    const instructions = (german ? freeExerciseDbInstructionsDe : freeExerciseDbInstructions) as Record<
+      string,
+      string[]
+    >;
+    const own = info?.cues ?? (folder ? instructions[folder] : undefined);
+    const cues = own ?? GENERIC_CUES;
     return {
       imageUrl: getExerciseImageUrl(exerciseName),
-      cues: info?.cues ?? dbInstructions ?? GENERIC_CUES,
+      // Hand-written cues are translated one by one; the database ones come
+      // translated per exercise above.
+      cues: german ? cues.map((cue) => CUES_DE[cue] ?? cue) : cues,
+      generic: !own,
       category: info?.category ?? "Exercise",
     };
   }
