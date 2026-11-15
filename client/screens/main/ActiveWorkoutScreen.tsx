@@ -857,6 +857,10 @@ function QuickAdjustButton({
   );
 }
 
+
+/** No workout runs this long: a draft started earlier restarts its clock when resumed. */
+const STALE_DRAFT_MS = 6 * 60 * 60 * 1000;
+
 export default function ActiveWorkoutScreen() {
   const insets = useSafeAreaInsets();
   const workoutHeaderPaddingTop = notchSafeTopPadding(
@@ -905,6 +909,9 @@ export default function ActiveWorkoutScreen() {
   const isSavingRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsetsRef = useRef<Record<number, number>>({});
+  // A restored workout opens at the exercise it was on, not at the top while
+  // the bar highlights exercise 3.
+  const restoreScrollToRef = useRef<number | null>(null);
   const timerEndTimeRef = useRef<number | null>(null);
   const scheduledNotifIdRef = useRef<string | null>(null);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
@@ -1240,7 +1247,14 @@ export default function ActiveWorkoutScreen() {
           setLastWeekProgress(draft.lastWeekProgress);
           setCurrentExerciseIndex(draft.currentExerciseIndex);
           setCurrentSetIndex(draft.currentSetIndex);
-          setWorkoutStartedAt(draft.workoutStartedAt);
+          restoreScrollToRef.current = draft.currentExerciseIndex > 0 ? draft.currentExerciseIndex : null;
+          // A draft untouched for hours was abandoned, not paused: resuming it
+          // kept counting from the original start ("94:11:38") and finishing
+          // it would have logged a four-day workout.
+          // (savedAt can't tell: opening and minimising re-save the draft.)
+          setWorkoutStartedAt(
+            Date.now() - draft.workoutStartedAt > STALE_DRAFT_MS ? Date.now() : draft.workoutStartedAt,
+          );
           setShowRestTimer(draft.showRestTimer);
           setPrsThisSession(draft.prsThisSession);
           setCoachStateByExercise(draft.coachStateByExercise);
@@ -2576,6 +2590,10 @@ export default function ActiveWorkoutScreen() {
                 testID={`exercise-section-${exIdx}`}
                 onLayout={(e) => {
                   sectionOffsetsRef.current[exIdx] = e.nativeEvent.layout.y;
+                  if (restoreScrollToRef.current === exIdx) {
+                    restoreScrollToRef.current = null;
+                    requestAnimationFrame(() => scrollToExercise(exIdx));
+                  }
                 }}
               >
                 {/* A floating panel; the exercise you're on leans warm. */}
