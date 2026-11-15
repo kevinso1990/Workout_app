@@ -47,7 +47,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { buildBriefingTimeline, buildDailyBriefingPayload } from "@/lib/coachHelpers";
 import { isCoachTipRenderable } from "@/lib/coachTip";
 import { WeekScheduleStrip } from "@/components/schedule/WeekScheduleStrip";
-import { getUserPreferences } from "@/lib/storage";
+import { getUserPreferences, promoteWorkoutPlan } from "@/lib/storage";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import { CreatePlanFab } from "@/components/CreatePlanFab";
 import { ResumeWorkoutCard } from "@/components/workout/ResumeWorkoutCard";
@@ -58,7 +58,7 @@ import { translateDayName } from "@/lib/dayNameLabel";
 import { planDaySummary } from "@/lib/planStructure";
 import { PlanDetailView } from "@/components/workout/PlanDetailView";
 import { Panel } from "@/components/surface/Panel";
-import { primaryPlan, todayOverview } from "@/lib/todayPlan";
+import { planToPromote, primaryPlan, todayOverview } from "@/lib/todayPlan";
 import { displayPlanName } from "@/lib/defaultPlanName";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
 import { confirmAlert } from "@/lib/confirmAlert";
@@ -230,6 +230,7 @@ function PlanActionSheet({
   onRename,
   onDuplicate,
   onDelete,
+  onMakeActive,
 }: {
   plan: WorkoutPlan | null;
   onClose: () => void;
@@ -237,6 +238,8 @@ function PlanActionSheet({
   onRename: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** Absent for the plan that is already active. */
+  onMakeActive?: () => void;
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -262,6 +265,9 @@ function PlanActionSheet({
     onPress: () => void;
     destructive?: boolean;
   }[] = [
+    ...(onMakeActive
+      ? [{ key: "active", label: t("plans.menu.makeActive"), icon: "check-circle" as const, onPress: onMakeActive }]
+      : []),
     { key: "edit", label: t("plans.menu.edit"), icon: "edit-3", onPress: onEdit },
     { key: "rename", label: t("plans.menu.rename"), icon: "type", onPress: onRename },
     { key: "duplicate", label: t("plans.menu.duplicate"), icon: "copy", onPress: onDuplicate },
@@ -647,13 +653,15 @@ export default function MyPlansScreen() {
 
   const loadPlans = useCallback(async () => {
     try {
-      const loadedPlans = await getWorkoutPlans();
+      const history = await getWorkoutHistory();
+      // The active plan is the one being trained, not whichever was imported last.
+      const promote = planToPromote(await getWorkoutPlans(), history);
+      const loadedPlans = promote ? await promoteWorkoutPlan(promote) : await getWorkoutPlans();
       setPlans(loadedPlans);
       const prefs = await getUserPreferences();
       setCommitments(prefs?.weeklyCommitments ?? []);
       setMobilityWeekdays(prefs?.mobilityWeekdays ?? []);
       void fetchCoachBrief(loadedPlans, prefs?.weeklyCommitments ?? [], prefs?.mobilityWeekdays ?? []);
-      const history = await getWorkoutHistory();
       const offer = await evaluatePlanAdaptationOffer(loadedPlans, history);
       setAdaptPlan(offer.offer ? offer.plan : null);
       setAdaptSignals(offer.signals);
@@ -1103,6 +1111,15 @@ export default function MyPlansScreen() {
           setMenuPlan(null);
           if (p) void handleDeletePlan(p);
         }}
+        onMakeActive={
+          menuPlan && menuPlan.id !== activePlanId && menuPlan.id !== MOBILITY_PLAN_ID
+            ? () => {
+                const p = menuPlan;
+                setMenuPlan(null);
+                if (p) void promoteWorkoutPlan(p.id).then(setPlans);
+              }
+            : undefined
+        }
       />
 
       <RenamePlanModal

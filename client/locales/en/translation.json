@@ -95,6 +95,7 @@
       "error": "Could not generate split review. Try again later."
     },
     "menu": {
+      "makeActive": "Make active plan",
       "edit": "Edit plan",
       "rename": "Rename plan",
       "duplicate": "Duplicate plan",
@@ -434,6 +435,24 @@
     "chooseDay": "Choose a workout to start"
   },
   "activeWorkout": {
+    "variant": {
+      "lastTime": "Last time: {{variant}}",
+      "button": "Variation",
+      "title": "Done differently today?",
+      "notePlaceholder": "Note, e.g. 20 kg vest, tempo 3-1-1",
+      "done": "Done",
+      "tags": {
+        "vest": "Weight vest",
+        "band": "Band",
+        "elevated": "Elevated",
+        "kettlebell": "Kettlebell",
+        "dumbbell": "Dumbbell",
+        "barbell": "Barbell",
+        "trapBar": "Trap bar",
+        "cable": "Cable",
+        "machine": "Machine"
+      }
+    },
     "measure": {
       "toWeight": "Log weight × reps",
       "toTime": "Log in seconds"

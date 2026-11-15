@@ -228,6 +228,24 @@ export interface ExerciseProgress {
   coachMeta?: ExerciseCoachMeta;
   /** Closed early mid-workout: unfinished sets were skipped on purpose. */
   closed?: boolean;
+  /** How it was done differently today: weight vest, band, other equipment. */
+  variant?: ExerciseVariant;
+}
+
+export type ExerciseVariantTag =
+  | "vest"
+  | "band"
+  | "kettlebell"
+  | "dumbbell"
+  | "barbell"
+  | "trapBar"
+  | "cable"
+  | "machine"
+  | "elevated";
+
+export interface ExerciseVariant {
+  tags: ExerciseVariantTag[];
+  note?: string;
 }
 
 export interface WorkoutSession {
@@ -334,6 +352,16 @@ export async function saveWorkoutPlan(
     plans.push(plan);
   }
   await AsyncStorage.setItem(STORAGE_KEYS.WORKOUT_PLANS, JSON.stringify(plans));
+}
+
+/** Moves a plan to the front — the plan the week and the home tab are built from. */
+export async function promoteWorkoutPlan(planId: string): Promise<WorkoutPlan[]> {
+  const plans = await getWorkoutPlans();
+  const plan = plans.find((p) => p.id === planId);
+  if (!plan || plans[0]?.id === planId) return plans;
+  const reordered = [plan, ...plans.filter((p) => p.id !== planId)];
+  await AsyncStorage.setItem(STORAGE_KEYS.WORKOUT_PLANS, JSON.stringify(reordered));
+  return reordered;
 }
 
 export async function deleteWorkoutPlan(planId: string): Promise<void> {

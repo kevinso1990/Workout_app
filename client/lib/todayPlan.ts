@@ -40,6 +40,33 @@ export function primaryPlan(plans: WorkoutPlan[]): WorkoutPlan | null {
   return plans.find((p) => p.id !== MOBILITY_PLAN_ID && p.days.length > 0) ?? null;
 }
 
+function trainingDays(plan: WorkoutPlan): number {
+  return plan.days.filter((d) => !isMobilityDay(d)).length;
+}
+
+/**
+ * The plan to move to the front because it's the one being trained: the
+ * newest strength workout came from it, not from the plan in front. A plan
+ * added after that workout keeps its place (the athlete just picked it) —
+ * unless it's a single session next to a whole week's plan, which is a one-off
+ * ("Quick session full body"), never the week the home tab is built from.
+ */
+export function planToPromote(plans: WorkoutPlan[], history: WorkoutSession[]): string | null {
+  const front = primaryPlan(plans);
+  if (!front) return null;
+  const last = history
+    .filter((s) => !isCardio(s) && !isMobilitySession(s))
+    .reduce<WorkoutSession | null>((a, s) => (!a || s.completedAt > a.completedAt ? s : a), null);
+  if (!last || last.planId === front.id) return null;
+  const trained = plans.find(
+    (p) => p.id === last.planId && p.id !== MOBILITY_PLAN_ID && p.days.length > 0,
+  );
+  if (!trained) return null;
+  const frontIsNewer = new Date(front.createdAt).getTime() > new Date(last.completedAt).getTime();
+  const frontIsOneOff = trainingDays(front) <= 1 && trainingDays(trained) > 1;
+  return !frontIsNewer || frontIsOneOff ? trained.id : null;
+}
+
 function isCardio(s: WorkoutSession): boolean {
   return s.workoutType === "cardio" || !!s.cardio;
 }

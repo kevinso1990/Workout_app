@@ -17,8 +17,8 @@ import {
   clearActiveWorkoutDraft,
   loadActiveWorkoutDraft,
   type ActiveWorkoutDraft,
+  isLiveDraft,
 } from "@/lib/activeWorkoutPersistence";
-import { isSameLocalDay } from "@/lib/mobilitySchedule";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { todayOverview, type TodaySession } from "@/lib/todayPlan";
 import { translateDayName } from "@/lib/dayNameLabel";
@@ -77,8 +77,8 @@ export function TodayCard({
   // A workout started today has its own card above; offering a second one to
   // start would compete with it. A draft left over from an earlier day must
   // not hide today's plan, though.
-  const draftFromToday = !!draft && isSameLocalDay(new Date(draft.workoutStartedAt), new Date());
-  if (!overview || draftFromToday) return null;
+  const draftLive = !!draft && isLiveDraft(draft);
+  if (!overview || draftLive) return null;
   const { mobility, sport, doneToday, sportLogged, next } = overview;
   const scheduled = overview.strength;
   if (!scheduled && !mobility && !next && !sport) return null;

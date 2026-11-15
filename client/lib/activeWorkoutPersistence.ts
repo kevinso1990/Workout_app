@@ -73,3 +73,13 @@ export async function hasActiveWorkoutDraft(): Promise<boolean> {
 
 /** Completed session payload queued for server sync (local history is already saved). */
 export type CompletedSessionSyncPayload = WorkoutSession;
+
+/**
+ * A draft older than this is no longer "the workout running now": its clock
+ * restarts when resumed, and it doesn't hide today's plan.
+ */
+export const STALE_DRAFT_MS = 6 * 60 * 60 * 1000;
+
+export function isLiveDraft(draft: { workoutStartedAt: number }, now = Date.now()): boolean {
+  return now - draft.workoutStartedAt <= STALE_DRAFT_MS;
+}

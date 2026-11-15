@@ -374,9 +374,18 @@ export function ExercisePickerModal({
             <ThemedText style={[styles.customPanelLabel, { color: theme.textSecondary }]}>
               {t("activeWorkout.picker.newCustom")}
             </ThemedText>
-            <ThemedText style={styles.customPanelName} numberOfLines={2}>
-              {pendingCustomName}
-            </ThemedText>
+            {/* Taken from the search box mid-typing, so it must stay editable:
+                "deadlift e" was saved as the name with no way to finish it. */}
+            <TextInput
+              value={pendingCustomName}
+              onChangeText={setPendingCustomName}
+              style={[styles.customPanelName, styles.customNameInput, { color: theme.text, borderColor: theme.controlOutline }]}
+              autoFocus
+              autoCorrect={false}
+              maxLength={80}
+              returnKeyType="done"
+              testID="input-custom-exercise-name"
+            />
             {creating ? (
               <ActivityIndicator color={theme.primary} style={{ marginTop: Spacing.xl }} />
             ) : (
@@ -690,6 +699,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     marginBottom: Spacing.lg,
+  },
+  customNameInput: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
   muscleGrid: {
     flexDirection: "row",

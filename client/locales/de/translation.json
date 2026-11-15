@@ -95,6 +95,7 @@
       "error": "Split-Prüfung fehlgeschlagen. Bitte später erneut versuchen."
     },
     "menu": {
+      "makeActive": "Als aktiven Plan festlegen",
       "edit": "Plan bearbeiten",
       "rename": "Plan umbenennen",
       "duplicate": "Plan duplizieren",
@@ -338,6 +339,24 @@
     "chooseDay": "Wähle ein Training zum Starten"
   },
   "activeWorkout": {
+    "variant": {
+      "lastTime": "Letztes Mal: {{variant}}",
+      "button": "Variante",
+      "title": "Heute anders gemacht?",
+      "notePlaceholder": "Notiz, z. B. 20 kg Weste, Tempo 3-1-1",
+      "done": "Fertig",
+      "tags": {
+        "vest": "Gewichtsweste",
+        "band": "Band",
+        "elevated": "Erhöht",
+        "kettlebell": "Kettlebell",
+        "dumbbell": "Kurzhantel",
+        "barbell": "Langhantel",
+        "trapBar": "Trap Bar",
+        "cable": "Kabelzug",
+        "machine": "Maschine"
+      }
+    },
     "measure": {
       "toWeight": "Mit Gewicht loggen",
       "toTime": "In Sekunden loggen"

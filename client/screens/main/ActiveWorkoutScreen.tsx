@@ -61,7 +61,15 @@ import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenGradient } from "@/components/surface/ScreenGradient";
-import { defaultTargetFor, isTimedExercise } from "@/lib/customExercises";
+import {
+  defaultTargetFor,
+  isTimedExercise,
+  loadCustomExercises,
+  renameCustomExercise,
+  renameExerciseInPlans,
+  type CustomExercise,
+} from "@/lib/customExercises";
+import { isCatalogExerciseName } from "@/lib/exerciseNameCatalog";
 import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
@@ -104,6 +112,9 @@ import { loadAnsweredDeviations, rememberAnsweredDeviation } from "@/lib/planDev
 import {
   getMuscleGroupMeta,
 } from "@/lib/exerciseImages";
+import { ExerciseVariantSheet } from "@/components/workout/ExerciseVariantSheet";
+import { hasVariant, variantSummary } from "@/lib/exerciseVariant";
+import type { ExerciseVariant } from "@/lib/storage";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
 import { ExerciseDbThumb } from "@/components/workout/ExerciseDbThumb";
@@ -124,6 +135,7 @@ import {
   loadActiveWorkoutDraft,
   clearActiveWorkoutDraft,
   type ActiveWorkoutDraft,
+  isLiveDraft,
 } from "@/lib/activeWorkoutPersistence";
 import { syncWorkoutActivity } from "@/lib/workoutLiveActivity";
 import { scheduleDataSync, scheduleSessionSync } from "@/lib/dataSync";
@@ -151,6 +163,7 @@ interface ExerciseProgress {
   sets: SetData[];
   /** Closed early mid-workout: unfinished sets were skipped on purpose. */
   closed?: boolean;
+  variant?: ExerciseVariant;
 }
 
 interface PRRecord {
@@ -859,7 +872,6 @@ function QuickAdjustButton({
 
 
 /** No workout runs this long: a draft started earlier restarts its clock when resumed. */
-const STALE_DRAFT_MS = 6 * 60 * 60 * 1000;
 
 export default function ActiveWorkoutScreen() {
   const insets = useSafeAreaInsets();
@@ -877,17 +889,49 @@ export default function ActiveWorkoutScreen() {
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const localizeName = useLocalizeExerciseName();
-  const { overrides: measureOverrides, setMeasure } = useMeasureOverrides();
+  const { overrides: measureOverrides, setMeasure, reload: reloadMeasureOverrides } = useMeasureOverrides();
+  // The athlete's own exercises can be renamed right here: one created from a
+  // half-typed search ("deadlift e") was otherwise stuck with that name.
+  const [customExercises, setCustomExercises] = useState<CustomExercise[]>([]);
+  useEffect(() => {
+    void loadCustomExercises().then(setCustomExercises);
+  }, []);
+  const customFor = (name: string) =>
+    customExercises.find((c) => c.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const renameInWorkout = (name: string) => {
+    const custom = customFor(name);
+    if (!custom) return;
+    Alert.prompt(
+      t("exercises.custom.renameTitle"),
+      t("exercises.custom.renameMessage"),
+      async (value) => {
+        const to = (value ?? "").trim();
+        const result = await renameCustomExercise(custom.id, to, isCatalogExerciseName);
+        if (!result.ok) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          toast.error(t(result.reason === "taken" ? "exercises.custom.nameTaken" : "exercises.custom.nameEmpty"));
+          return;
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setPlan((prev) => (prev ? renameExerciseInPlans([prev], name, to)[0] : prev));
+        setCustomExercises(await loadCustomExercises());
+        void reloadMeasureOverrides();
+        scheduleDataSync();
+      },
+      "plain-text",
+      name,
+    );
+  };
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
+  /** Exercise whose "done differently today" sheet is open. */
+  const [variantIndex, setVariantIndex] = useState<number | null>(null);
   const [lastWeekProgress, setLastWeekProgress] = useState<ExerciseProgress[]>(
     []
   );
   const [allHistory, setAllHistory] = useState<WorkoutSession[]>([]);
   const [workoutStartedAt, setWorkoutStartedAt] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
-  const workoutPausedMsRef = useRef(0);
-  const workoutPauseStartedAtRef = useRef<number | null>(null);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(DEFAULT_REST_TIME);
@@ -1021,31 +1065,15 @@ export default function ActiveWorkoutScreen() {
   }, []);
 
   useEffect(() => {
-    if (!restTimerEnabled) {
-      if (workoutPauseStartedAtRef.current === null) {
-        workoutPauseStartedAtRef.current = Date.now();
-      }
-    } else if (workoutPauseStartedAtRef.current !== null) {
-      workoutPausedMsRef.current +=
-        Date.now() - workoutPauseStartedAtRef.current;
-      workoutPauseStartedAtRef.current = null;
-    }
-  }, [restTimerEnabled]);
-
-  useEffect(() => {
     // Finished: the summary shows the saved duration, not a clock that keeps going.
     if (showSummary) return;
-    const interval = setInterval(() => {
-      let pausedMs = workoutPausedMsRef.current;
-      if (workoutPauseStartedAtRef.current !== null) {
-        pausedMs += Date.now() - workoutPauseStartedAtRef.current;
-      }
-      setElapsedTime(
-        Math.floor((Date.now() - workoutStartedAt - pausedMs) / 1000),
-      );
-    }, 1000);
+    // The workout clock always runs. It used to stop whenever the rest timer
+    // was switched off, so a whole session without rest timer saved 0:00.
+    const tick = () => setElapsedTime(Math.floor((Date.now() - workoutStartedAt) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [workoutStartedAt, restTimerEnabled, showSummary]);
+  }, [workoutStartedAt, showSummary]);
 
   const buildActiveWorkoutDraft = useCallback((): ActiveWorkoutDraft | null => {
     if (!plan) return null;
@@ -1253,7 +1281,7 @@ export default function ActiveWorkoutScreen() {
           // it would have logged a four-day workout.
           // (savedAt can't tell: opening and minimising re-save the draft.)
           setWorkoutStartedAt(
-            Date.now() - draft.workoutStartedAt > STALE_DRAFT_MS ? Date.now() : draft.workoutStartedAt,
+            isLiveDraft(draft) ? draft.workoutStartedAt : Date.now(),
           );
           setShowRestTimer(draft.showRestTimer);
           setPrsThisSession(draft.prsThisSession);
@@ -2262,6 +2290,19 @@ export default function ActiveWorkoutScreen() {
         pr={currentPR}
         onClose={() => setShowPRCelebration(false)}
       />
+      <ExerciseVariantSheet
+        visible={variantIndex !== null}
+        exerciseName={variantIndex !== null ? localizeName(day.exercises[variantIndex]?.name ?? "") : ""}
+        variant={variantIndex !== null ? progress[variantIndex]?.variant : undefined}
+        onClose={() => setVariantIndex(null)}
+        onSave={(variant) => {
+          const idx = variantIndex;
+          if (idx === null) return;
+          setProgress((prev) =>
+            prev.map((p, i) => (i === idx ? { ...p, variant: hasVariant(variant) ? variant : undefined } : p)),
+          );
+        }}
+      />
       <ExerciseDetailModal
         visible={showExerciseDetail}
         exerciseName={detailExercise.name}
@@ -2431,10 +2472,8 @@ export default function ActiveWorkoutScreen() {
               const isDone = ep ? isExerciseDone(ep) : false;
               const isCurrent = exIdx === currentExerciseIndex;
               const localizedName = localizeName(exercise.name);
-              const shortName =
-                localizedName.length > 14
-                  ? `${localizedName.slice(0, 13)}…`
-                  : localizedName;
+              // The full name — wrapping to two lines, not cut at 13 letters.
+              const shortName = localizedName;
 
               const sets = ep?.sets ?? [];
               const ink = isCurrent ? theme.onSignal : isDone ? theme.textSecondary : theme.text;
@@ -2466,9 +2505,11 @@ export default function ActiveWorkoutScreen() {
                         {exIdx + 1}
                       </ThemedText>
                     )}
+                    {/* Two lines: one cut "Kettlebell Deadlift Elevated" to
+                        "Deadlift e…" and two exercises read the same. */}
                     <ThemedText
                       style={[styles.exerciseChipLabel, { color: ink }]}
-                      numberOfLines={1}
+                      numberOfLines={2}
                     >
                       {shortName}
                     </ThemedText>
@@ -2648,9 +2689,24 @@ export default function ActiveWorkoutScreen() {
                 >
                   <View style={styles.exerciseHeaderRow}>
                     <View style={styles.exerciseHeaderText}>
-                      <ThemedText style={styles.exerciseName}>
-                        {localizeName(exercise.name)}
-                      </ThemedText>
+                      {customFor(exercise.name) ? (
+                        <Pressable
+                          onPress={() => renameInWorkout(exercise.name)}
+                          accessibilityRole="button"
+                          accessibilityHint={t("exercises.custom.renameTitle")}
+                          style={styles.exerciseNameRow}
+                          testID={`button-rename-exercise-${exIdx}`}
+                        >
+                          <ThemedText style={[styles.exerciseName, styles.exerciseNameFlex]}>
+                            {localizeName(exercise.name)}
+                          </ThemedText>
+                          <Feather name="edit-2" size={14} color={theme.textSecondary} style={styles.exerciseNameEdit} />
+                        </Pressable>
+                      ) : (
+                        <ThemedText style={styles.exerciseName}>
+                          {localizeName(exercise.name)}
+                        </ThemedText>
+                      )}
                       <View style={styles.exerciseMeta}>
                         <View style={styles.metaTopRow}>
                           {supersetLabel ? (
@@ -2696,6 +2752,7 @@ export default function ActiveWorkoutScreen() {
                         {/* Reps with weight or a hold in seconds — the name
                             only guesses, and a hyperextension can be either.
                             The choice is remembered for this exercise. */}
+                        <View style={styles.exercisePillRow}>
                         <Pressable
                           onPress={() => {
                             Haptics.selectionAsync();
@@ -2711,6 +2768,49 @@ export default function ActiveWorkoutScreen() {
                             {t(isHold ? "activeWorkout.measure.toWeight" : "activeWorkout.measure.toTime")}
                           </ThemedText>
                         </Pressable>
+                        {/* Weight vest on, a band, kettlebells instead of the
+                            trap bar — written down with today's sets. */}
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setVariantIndex(exIdx);
+                          }}
+                          hitSlop={6}
+                          style={[
+                            styles.measureToggle,
+                            hasVariant(ep.variant)
+                              ? { backgroundColor: theme.chalk, borderColor: theme.chalk }
+                              : { borderColor: theme.controlOutline },
+                          ]}
+                          accessibilityRole="button"
+                          testID={`button-variant-${exIdx}`}
+                        >
+                          <Feather
+                            name="sliders"
+                            size={12}
+                            color={hasVariant(ep.variant) ? theme.onChalk : theme.textSecondary}
+                          />
+                          <ThemedText
+                            style={[
+                              styles.measureToggleText,
+                              styles.variantText,
+                              { color: hasVariant(ep.variant) ? theme.onChalk : theme.textSecondary },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {hasVariant(ep.variant)
+                              ? variantSummary(t, ep.variant)
+                              : t("activeWorkout.variant.button")}
+                          </ThemedText>
+                        </Pressable>
+                        </View>
+                        {!hasVariant(ep.variant) && hasVariant(lastWeekExercise?.variant) ? (
+                          <ThemedText style={[styles.exerciseCue, { color: theme.chalkDim }]}>
+                            {t("activeWorkout.variant.lastTime", {
+                              variant: variantSummary(t, lastWeekExercise?.variant),
+                            })}
+                          </ThemedText>
+                        ) : null}
                         {exercise.notes ? (
                           <ThemedText style={[styles.exerciseCue, { color: theme.chalkDim }]}>
                             {exercise.notes}
@@ -3145,6 +3245,25 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  variantText: {
+    flexShrink: 1,
+  },
+  exercisePillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    columnGap: Spacing.sm,
+  },
+  exerciseNameRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+  exerciseNameFlex: {
+    flexShrink: 1,
+  },
+  exerciseNameEdit: {
+    marginTop: 10,
+  },
   exerciseSection: {
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
@@ -3249,21 +3368,23 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     minWidth: 72,
-    maxWidth: 150,
+    maxWidth: 170,
     gap: 6,
   },
   exerciseChipTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 6,
   },
   exerciseChipNumber: {
     fontSize: 12,
+    lineHeight: 17,
     fontFamily: "Oswald_600SemiBold",
   },
   exerciseChipLabel: {
     flexShrink: 1,
     fontSize: 13,
+    lineHeight: 17,
     fontFamily: "Oswald_600SemiBold",
   },
   exerciseChipDots: {

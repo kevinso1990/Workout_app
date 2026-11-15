@@ -43,6 +43,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { hapticLight } from "@/lib/safeHaptics";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
+import { variantSummary } from "@/lib/exerciseVariant";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { WorkoutSession, getWorkoutHistory, ExerciseProgress, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
 import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
@@ -70,6 +71,8 @@ interface ExerciseSessionData {
   maxWeight: number;
   maxWeightReps: number;
   estimated1RM: number;
+  /** "Gewichtsweste · Band" — done differently that day. */
+  variant?: string;
 }
 
 interface ExerciseProgressData {
@@ -947,6 +950,7 @@ function ExerciseDetailModal({
               <ThemedText style={styles.modalChartTitle}>{t("exerciseChart.bestSession")}</ThemedText>
               <ThemedText style={[styles.bestSessionDate, { color: theme.textSecondary }]}>
                 {formatDate(exercise.bestSession.date)}
+                {exercise.bestSession.variant ? ` · ${exercise.bestSession.variant}` : ""}
               </ThemedText>
               <View style={styles.bestSessionWeightRow}>
                 <ThemedText style={[styles.bestSessionStats, { color: theme.text }]}>
@@ -1157,6 +1161,7 @@ export default function ProgressScreen() {
           maxWeight: bestWeight,
           maxWeightReps: bestReps,
           estimated1RM: bestEst1RM,
+          variant: variantSummary(t, progress.variant) || undefined,
         };
 
         if (!exerciseMap.has(name)) {
@@ -1184,7 +1189,7 @@ export default function ProgressScreen() {
     return Array.from(exerciseMap.values()).sort(
       (a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
     );
-  }, [history]);
+  }, [history, t]);
 
   // The lifts this athlete actually logs most, instead of six hard-coded
   // barbell names that most plans never contain.

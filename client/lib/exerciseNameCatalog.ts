@@ -62,6 +62,12 @@ export function exerciseNamesReady(): boolean {
   return hydrated;
 }
 
+/** A catalog exercise goes by this name (English or German). */
+export function isCatalogExerciseName(name: string): boolean {
+  const key = norm(name);
+  return gifMap.has(key) || [...deMap.values()].some((de) => norm(de) === key);
+}
+
 export function localizeExerciseName(name: string, language: string): string {
   if (name && language?.startsWith("de")) {
     const de = deMap.get(norm(name)) ?? deMapLoose.get(looseNorm(name));

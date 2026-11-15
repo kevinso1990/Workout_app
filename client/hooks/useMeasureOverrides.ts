@@ -22,5 +22,6 @@ export function useMeasureOverrides() {
   const setMeasure = useCallback(async (name: string, measure: ExerciseMeasure) => {
     setOverrides(await setMeasureOverride(name, measure));
   }, []);
-  return { overrides, setMeasure };
+  const reload = useCallback(async () => setOverrides(await loadMeasureOverrides()), []);
+  return { overrides, setMeasure, reload };
 }

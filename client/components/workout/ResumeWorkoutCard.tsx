@@ -16,11 +16,11 @@ import {
   clearActiveWorkoutDraft,
   loadActiveWorkoutDraft,
   type ActiveWorkoutDraft,
+  isLiveDraft,
 } from "@/lib/activeWorkoutPersistence";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { formatElapsed } from "@/lib/elapsedLabel";
-import { isSameLocalDay } from "@/lib/mobilitySchedule";
 
 /**
  * The way back into a minimised workout. Without it, leaving the workout
@@ -58,7 +58,7 @@ export function ResumeWorkoutCard() {
   // Only a workout from today is "running"; one left over from an earlier day
   // is unfinished business, not the signal-coloured thing to do now — next to
   // today's own session it competed as a second orange call to action.
-  const live = isSameLocalDay(new Date(draft.workoutStartedAt), new Date());
+  const live = isLiveDraft(draft);
 
   const resume = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
