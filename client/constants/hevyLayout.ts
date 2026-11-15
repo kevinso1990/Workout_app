@@ -8,8 +8,8 @@ import { StyleSheet } from "react-native";
  */
 export const HEVY = {
   textPrimary: "#ECE9E1", // chalk
-  textSecondary: "#9BA09A", // chalk dim
-  textMuted: "#686D69", // chalk faint
+  textSecondary: "#BDC1BA", // chalk dim
+  textMuted: "#999E98", // chalk faint
   // The iron ramp has four steps; this file was only using the bottom two, so
   // card and ground sat ~5% apart and everything on the workout screen blurred
   // into one dark band. Card now takes a real step up from the ground, and

@@ -19,7 +19,7 @@ const STORAGE_KEY = "@workout_live_activity_id";
 const CONFIG = {
   backgroundColor: "#191B1D",
   titleColor: "#ECE9E1",
-  subtitleColor: "#9BA09A",
+  subtitleColor: "#BDC1BA",
   progressViewTint: "#ECE9E1",
   progressViewLabelColor: "#ECE9E1",
   timerType: "digital" as const,

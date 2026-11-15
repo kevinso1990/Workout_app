@@ -243,10 +243,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     textAlign: "center",
-    color: "#8E8E93",
+    color: c.textSecondary,
   },
   hintTextDark: {
-    color: "rgba(255,255,255,0.65)",
+    color: c.chalkDim,
   },
 });
 

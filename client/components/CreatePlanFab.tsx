@@ -354,5 +354,5 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   sheetCopy: { flex: 1 },
   sheetItemTitle: { fontSize: 16, fontWeight: "600" },
-  sheetItemDesc: { fontSize: 13, opacity: 0.65, marginTop: 2 },
+  sheetItemDesc: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
 });

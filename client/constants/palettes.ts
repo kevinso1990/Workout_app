@@ -15,8 +15,10 @@ const ironElevated3 = "#33383D";
 
 // Chalk — warm off-white ink, and the colour of the primary action.
 const chalk = "#ECE9E1";
-const chalkDim = "#9BA09A";
-const chalkFaint = "#686D69";
+// Secondary text has to read on the lightest panel, not just on the ground:
+// #9BA09A measured ~4.5:1 there and looked washed out in the gym.
+const chalkDim = "#BDC1BA";
+const chalkFaint = "#999E98"; // ≥4.3:1 on every panel; was #686D69 (~2.3:1)
 const onChalk = "#191B1D"; // iron text sitting on a chalk-filled surface
 
 // Hairlines — chalk at low alpha over iron.

@@ -343,14 +343,14 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   heroText: { flex: 1 },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 2 },
-  subtitle: { fontSize: 13, opacity: 0.6, lineHeight: 18 },
+  subtitle: { fontSize: 13, color: c.textSecondary, lineHeight: 18 },
   label: {
     fontSize: 12,
     fontWeight: "700",
     marginBottom: Spacing.sm,
     textTransform: "uppercase",
     letterSpacing: 0.6,
-    opacity: 0.5,
+    color: c.textSecondary,
   },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
@@ -385,7 +385,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   fieldLabel: {
     fontSize: 13,
     fontWeight: "600",
-    opacity: 0.65,
+    color: c.textSecondary,
     marginBottom: 6,
   },
   fieldLabelRow: {
@@ -396,7 +396,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   optionalTag: {
     fontSize: 11,
     fontWeight: "600",
-    opacity: 0.4,
+    color: c.chalkFaint,
     marginBottom: 6,
   },
   metricRow: { flexDirection: "row", alignItems: "flex-start" },
@@ -417,7 +417,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   inputNumber: { flex: 1, fontSize: 20, fontWeight: "700" },
   inputText: { flex: 1, fontSize: 16 },
-  unit: { fontSize: 13, fontWeight: "600", opacity: 0.5 },
+  unit: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
   rpeHeader: {
     flexDirection: "row",
     alignItems: "center",

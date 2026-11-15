@@ -429,7 +429,7 @@ export default function CalendarScreen() {
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { flex: 1 },
   heading: { fontSize: 28, lineHeight: 34, fontWeight: "700", marginBottom: 4 },
-  subtitle: { fontSize: 14, opacity: 0.65, marginBottom: Spacing.lg },
+  subtitle: { fontSize: 14, color: c.textSecondary, marginBottom: Spacing.lg },
   monthNav: {
     flexDirection: "row",
     alignItems: "center",
@@ -579,7 +579,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   sessionBody: { flex: 1 },
   sessionTitle: { fontSize: 15, fontWeight: "600" },
-  sessionMeta: { fontSize: 12, opacity: 0.65, marginTop: 2 },
+  sessionMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
   primaryBtn: {
     flexDirection: "row",
     alignItems: "center",

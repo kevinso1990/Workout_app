@@ -3165,7 +3165,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderTopWidth: 1.5,
   },
   exerciseSectionIdle: {
-    opacity: 0.72,
+    // Recede, but stay readable — at 0.72 the secondary text on these panels
+    // fell to light grey on anthracite. The signal edge marks the current one.
+    opacity: 0.88,
   },
   loadingContainer: {
     flex: 1,
@@ -3564,7 +3566,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
-    opacity: 0.6,
+    opacity: 0.85,
   },
   setRowCompleted: {
     flexDirection: "row",

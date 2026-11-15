@@ -243,7 +243,12 @@ function MuscleBalance({
             return (
               <View key={idx} style={styles.muscleRow}>
                 <View style={styles.muscleNameContainer}>
-                  <ThemedText style={[styles.muscleName, { color: theme.text }]}>
+                  <ThemedText
+                    style={[styles.muscleName, { color: theme.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
                     {translateMuscleGroup(t, muscle.name)}
                   </ThemedText>
                 </View>
