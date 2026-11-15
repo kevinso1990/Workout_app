@@ -25,7 +25,7 @@ import { translateDayName } from "@/lib/dayNameLabel";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
 import { Panel } from "@/components/surface/Panel";
 import { sessionHues } from "@/constants/palettes";
-import { sessionHueIndex } from "@/lib/planStructure";
+import { sessionHueIndex, sessionLengthVariant } from "@/lib/planStructure";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
 
 /**
@@ -49,6 +49,8 @@ export function TodayCard({
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [history, setHistory] = useState<WorkoutSession[] | null>(null);
   const [draft, setDraft] = useState<ActiveWorkoutDraft | null>(null);
+  // The other length of today's session, when the athlete switched to it.
+  const [pickedDayIndex, setPickedDayIndex] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,8 +79,38 @@ export function TodayCard({
   // not hide today's plan, though.
   const draftFromToday = !!draft && isSameLocalDay(new Date(draft.workoutStartedAt), new Date());
   if (!overview || draftFromToday) return null;
-  const { strength, mobility, sport, doneToday, sportLogged, next } = overview;
-  if (!strength && !mobility && !next && !sport) return null;
+  const { mobility, sport, doneToday, sportLogged, next } = overview;
+  const scheduled = overview.strength;
+  if (!scheduled && !mobility && !next && !sport) return null;
+
+  // A plan with "kurz" and "lang" versions of each session: the long one is
+  // due, but today there's only time for the short one (or the other way).
+  const strengthPlan = scheduled ? plans.find((p) => p.id === scheduled.planId) : undefined;
+  const lengthVariant =
+    scheduled && strengthPlan
+      ? sessionLengthVariant(
+          strengthPlan.days.map((d) => d.dayName),
+          scheduled.dayIndex,
+        )
+      : null;
+  const switched =
+    !!scheduled && !!lengthVariant && pickedDayIndex === lengthVariant.otherIndex;
+  const strength: TodaySession | null =
+    scheduled && strengthPlan && switched
+      ? {
+          ...scheduled,
+          dayIndex: lengthVariant!.otherIndex,
+          dayName: strengthPlan.days[lengthVariant!.otherIndex].dayName,
+          exerciseCount: strengthPlan.days[lengthVariant!.otherIndex].exercises.length,
+        }
+      : scheduled;
+  const shownLength = lengthVariant
+    ? switched
+      ? lengthVariant.length === "short"
+        ? "long"
+        : "short"
+      : lengthVariant.length
+    : null;
 
   const start = async (s: TodaySession) => {
     if (draft) {
@@ -125,9 +157,47 @@ export function TodayCard({
           <ThemedText style={styles.heroTitle} numberOfLines={2}>
             {translateDayName(t, strength.dayName)}
           </ThemedText>
-          <ThemedText style={[styles.heroMeta, { color: theme.textSecondary }]}>
-            {exercises(strength)}
-          </ThemedText>
+          <View style={styles.metaRow}>
+            <ThemedText style={[styles.heroMeta, styles.metaText, { color: theme.textSecondary }]}>
+              {exercises(strength)}
+            </ThemedText>
+            {lengthVariant && scheduled ? (
+              <View
+                style={[styles.lengthToggle, { borderColor: theme.controlOutline }]}
+                accessibilityRole="radiogroup"
+                testID="toggle-today-length"
+              >
+                {(["short", "long"] as const).map((length) => {
+                  const active = shownLength === length;
+                  return (
+                    <Pressable
+                      key={length}
+                      onPress={() => {
+                        if (active) return;
+                        Haptics.selectionAsync();
+                        setPickedDayIndex(
+                          length === lengthVariant.length ? null : lengthVariant.otherIndex,
+                        );
+                      }}
+                      style={[styles.lengthOption, active && { backgroundColor: theme.chalk }]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: active }}
+                      testID={`button-today-length-${length}`}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.lengthOptionText,
+                          { color: active ? theme.onChalk : theme.textSecondary },
+                        ]}
+                      >
+                        {t(`plans.today.length.${length}`)}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+          </View>
           <Pressable
             onPress={() => void start(strength)}
             style={({ pressed }) => [
@@ -296,6 +366,30 @@ const makeStyles = (c: Palette) =>
     },
     heroMeta: {
       fontSize: 14,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.md,
+    },
+    metaText: {
+      flex: 1,
+    },
+    lengthToggle: {
+      flexDirection: "row",
+      borderWidth: 1,
+      borderRadius: BorderRadius.full,
+      padding: 2,
+    },
+    lengthOption: {
+      height: 30,
+      paddingHorizontal: Spacing.md,
+      justifyContent: "center",
+      borderRadius: BorderRadius.full,
+    },
+    lengthOptionText: {
+      fontSize: 13,
+      fontWeight: "700",
     },
     sportDone: {
       flexDirection: "row",

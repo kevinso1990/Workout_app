@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatRest, isTimedTarget, planDaySummary, sessionHueIndex, sessionLetter, sessionSlots, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
+import { formatRest, isTimedTarget, planDaySummary, sessionHueIndex, sessionLetter, sessionLengthVariant, sessionSlots, supersetLabels, supersetMembers, weekStripCaption } from "@/lib/planStructure";
 
 describe("plan structure helpers", () => {
   it("labels superset members A1/A2 and ignores single-member blocks", () => {
@@ -105,5 +105,30 @@ describe("sessionHueIndex", () => {
   it("falls back to the position and wraps around", () => {
     expect(sessionHueIndex("Push", 1, 6)).toBe(1);
     expect(sessionHueIndex("Beine", 7, 6)).toBe(1);
+  });
+});
+
+describe("sessionLengthVariant", () => {
+  const days = [
+    "Mobility",
+    "GK A kurz – Bein / Hinge",
+    "GK B kurz – Pull",
+    "GK A lang – Bein / Hinge",
+    "GK B lang – Pull",
+  ];
+
+  it("pairs the short and long version of the same session", () => {
+    expect(sessionLengthVariant(days, 3)).toEqual({ length: "long", otherIndex: 1 });
+    expect(sessionLengthVariant(days, 2)).toEqual({ length: "short", otherIndex: 4 });
+  });
+
+  it("finds nothing without a counterpart or a length word", () => {
+    expect(sessionLengthVariant(days, 0)).toBeNull();
+    expect(sessionLengthVariant(["Push kurz", "Pull lang"], 0)).toBeNull();
+    expect(sessionLengthVariant(["Full Body A", "Full Body B"], 0)).toBeNull();
+    expect(sessionLengthVariant(["Full Body A kurz", "Full Body A lang"], 0)).toEqual({
+      length: "short",
+      otherIndex: 1,
+    });
   });
 });

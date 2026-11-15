@@ -157,7 +157,11 @@
       "sportDone": "Heute eingetragen",
       "restDay": "Ruhetag",
       "doneTitle": "Heute erledigt",
-      "nextOverline": "Nächstes Training"
+      "nextOverline": "Nächstes Training",
+      "length": {
+        "short": "Kurz",
+        "long": "Lang"
+      }
     },
     "mobilitySplit": {
       "title": "Mobility-Tag als eigene Session?",

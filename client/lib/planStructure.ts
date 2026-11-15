@@ -133,3 +133,38 @@ export function sessionHueIndex(name: string, index: number, count: number): num
   const n = letter ? letter.charCodeAt(0) - 65 : index;
   return ((n % count) + count) % count;
 }
+
+const LENGTH_WORDS: Record<string, "short" | "long"> = {
+  kurz: "short",
+  short: "short",
+  kompakt: "short",
+  express: "short",
+  lang: "long",
+  long: "long",
+};
+const LENGTH_WORD = /(^|\s)(kurz|short|kompakt|express|lang|long)(?=\s|$)/i;
+
+function lengthOf(name: string): { length: "short" | "long"; rest: string } | null {
+  const m = name.match(LENGTH_WORD);
+  if (!m) return null;
+  const rest = name.replace(LENGTH_WORD, "$1").replace(/\s+/g, " ").trim().toLowerCase();
+  return { length: LENGTH_WORDS[m[2].toLowerCase()], rest };
+}
+
+/**
+ * The other length of the same session: "GK A lang – Bein / Hinge" ↔
+ * "GK A kurz – Bein / Hinge". Plans built for busy weeks carry both, and the
+ * day the long one is due is often the day there's only time for the short
+ * one. Null when the plan has no single counterpart.
+ */
+export function sessionLengthVariant(
+  dayNames: string[],
+  index: number,
+): { length: "short" | "long"; otherIndex: number } | null {
+  const own = lengthOf(dayNames[index] ?? "");
+  if (!own) return null;
+  const others = dayNames
+    .map((name, i) => ({ i, v: lengthOf(name) }))
+    .filter(({ i, v }) => i !== index && v && v.rest === own.rest && v.length !== own.length);
+  return others.length === 1 ? { length: own.length, otherIndex: others[0].i } : null;
+}

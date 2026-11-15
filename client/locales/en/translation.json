@@ -157,7 +157,11 @@
       "sportDone": "Logged today",
       "restDay": "Rest day",
       "doneTitle": "Done for today",
-      "nextOverline": "Next workout"
+      "nextOverline": "Next workout",
+      "length": {
+        "short": "Short",
+        "long": "Long"
+      }
     },
     "mobilitySplit": {
       "title": "Make the mobility day its own session?",
