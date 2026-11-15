@@ -195,24 +195,37 @@ function detectUnderloadSignals(
   ];
 }
 
+/** Full weeks looked back on for missed sessions. */
+const MISSED_WINDOW_WEEKS = 4;
+
+/**
+ * Sessions short of the plan's weekly target over the last full weeks (at
+ * most four, never before the plan existed). Counting from the plan's start
+ * told the coach about "21 missed sessions" after a summer break, and it
+ * repeated that to an athlete who was training again.
+ */
 function detectMissedSessionSignals(
   plan: SignalDetectionPlan,
   sessions: SignalDetectionSession[],
+  now: number,
 ): PerformanceSignal[] {
+  const WEEK = 7 * 24 * 60 * 60 * 1000;
   const planStart = new Date(plan.createdAt).getTime();
-  const weeks = Math.max(
-    1,
-    Math.floor((Date.now() - planStart) / (7 * 24 * 60 * 60 * 1000)),
-  );
+  const weeks = Math.min(MISSED_WINDOW_WEEKS, Math.floor((now - planStart) / WEEK));
+  if (weeks < 1) return [];
+  const windowStart = now - weeks * WEEK;
+  const logged = sessions.filter((s) => {
+    const at = new Date(s.completedAt).getTime();
+    return at >= windowStart && at <= now;
+  }).length;
   const expected = weeks * Math.max(1, plan.daysPerWeek);
-  const logged = sessions.length;
   const missed = expected - logged;
   if (missed < 2) return [];
   return [
     {
       type: "MISSED_SESSIONS",
       sessions_analyzed: weeks,
-      summary: `${missed} expected sessions not logged this plan cycle (${logged}/${expected})`,
+      summary: `${missed} of ${expected} planned sessions not logged in the last ${weeks} week${weeks === 1 ? "" : "s"} (${logged} logged)`,
     },
   ];
 }
@@ -221,6 +234,7 @@ function detectMissedSessionSignals(
 export function detectPerformanceSignals(
   plan: SignalDetectionPlan,
   sessions: SignalDetectionSession[],
+  now: number = Date.now(),
 ): PerformanceSignal[] {
   const chronological = sortSessionsChronological(sessions);
   if (chronological.length === 0) return [];
@@ -229,7 +243,7 @@ export function detectPerformanceSignals(
     ...detectPlateauSignals(chronological),
     ...detectOverreachSignals(chronological),
     ...detectUnderloadSignals(chronological),
-    ...detectMissedSessionSignals(plan, chronological),
+    ...detectMissedSessionSignals(plan, chronological, now),
   ];
 
   return signals;

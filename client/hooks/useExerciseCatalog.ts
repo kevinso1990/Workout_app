@@ -74,31 +74,50 @@ export async function fetchCatalog(): Promise<CatalogExercise[]> {
   return rows.map(toCatalogExercise);
 }
 
+/**
+ * The catalog this app session already has. Every screen mounting the hook
+ * started empty and showed its fallback list ("85 Übungen") until storage
+ * answered, then downloaded all 1000+ rows again.
+ */
+let sessionCatalog: CatalogExercise[] = [];
+let sessionFetchedAt = 0;
+const REFRESH_AFTER_MS = 10 * 60 * 1000;
+
 export function useExerciseCatalog(): {
   catalog: CatalogExercise[];
   /** False once either the cache or the network has answered. */
   loading: boolean;
 } {
-  const [catalog, setCatalog] = useState<CatalogExercise[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [catalog, setCatalog] = useState<CatalogExercise[]>(sessionCatalog);
+  const [loading, setLoading] = useState(sessionCatalog.length === 0);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const cached = await readCachedCatalog();
-      if (!cancelled && cached.length > 0) {
-        setCatalog(cached);
-        setLoading(false);
+      if (sessionCatalog.length === 0) {
+        const cached = await readCachedCatalog();
+        if (cached.length > 0) {
+          sessionCatalog = cached;
+          if (!cancelled) {
+            setCatalog(cached);
+            setLoading(false);
+          }
+        }
+      }
+      if (Date.now() - sessionFetchedAt < REFRESH_AFTER_MS) {
+        if (!cancelled) setLoading(false);
+        return;
       }
 
       try {
         const fresh = await fetchCatalog();
-        if (cancelled) return;
+        sessionFetchedAt = Date.now();
         // An empty response must not wipe a good cache — that would turn a
         // server hiccup into an empty picker on the next offline launch.
         if (fresh.length > 0) {
-          setCatalog(fresh);
+          sessionCatalog = fresh;
+          if (!cancelled) setCatalog(fresh);
           await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
         }
       } catch {

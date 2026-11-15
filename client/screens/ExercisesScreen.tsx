@@ -909,7 +909,7 @@ export default function ExercisesScreen() {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseItem | null>(null);
   const [detailExercise, setDetailExercise] = useState<ExerciseItem | null>(null);
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>([]);
-  const { catalog: catalogExercises } = useExerciseCatalog();
+  const { catalog: catalogExercises, loading: catalogLoading } = useExerciseCatalog();
 
   useEffect(() => {
     loadCustomExercises();
@@ -1016,8 +1016,10 @@ export default function ExercisesScreen() {
   );
 
   const allExercises = useMemo(() => {
+    // The bundled list only when there is truly no catalog — not for the
+    // moment the cache takes to answer.
     const catalog: ExerciseItem[] =
-      catalogExercises.length > 0 ? catalogExercises : EXERCISE_LIBRARY;
+      catalogExercises.length > 0 ? catalogExercises : catalogLoading ? [] : EXERCISE_LIBRARY;
     const customNames = new Set(customExercises.map((c) => c.name.toLowerCase()));
     // A-Z by the name on screen — sorted by the English name, the German list
     // looked unordered.
@@ -1028,7 +1030,7 @@ export default function ExercisesScreen() {
       .sort((a, b) => collator.compare(a.label, b.label))
       .map(({ c }) => c);
     return [...customExercises, ...dedupedCatalog];
-  }, [customExercises, catalogExercises, i18n.language]);
+  }, [customExercises, catalogExercises, catalogLoading, i18n.language]);
 
   const filteredExercises = useMemo(() => {
     const armGroups = new Set(["Biceps", "Triceps", "Forearms", "Arms"]);
@@ -1647,11 +1649,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Oswald_600SemiBold",
   },
+  // No flex: the sheet sizes to its content, and flex: 1 in it collapsed
+  // this hint to nothing — the sheet showed an image over empty space.
   noDataContainer: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing["2xl"] * 2,
+    paddingVertical: Spacing["2xl"],
     gap: Spacing.md,
   },
   noDataText: {
