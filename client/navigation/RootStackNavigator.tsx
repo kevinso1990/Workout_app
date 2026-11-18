@@ -7,6 +7,7 @@ import OnboardingStackNavigator from "@/navigation/OnboardingStackNavigator";
 import CreatePlanScreen from "@/screens/CreatePlanScreen";
 import EditPlanScreen from "@/screens/EditPlanScreen";
 import PlanDetailScreen from "@/screens/PlanDetailScreen";
+import PersonalRecordsScreen from "@/screens/PersonalRecordsScreen";
 import ImportWorkoutScreen from "@/screens/ImportWorkoutScreen";
 import GoalPlanScreen from "@/screens/GoalPlanScreen";
 import StartWorkoutScreen from "@/screens/main/StartWorkoutScreen";
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   CreatePlan: undefined;
   EditPlan: { planId: string };
   PlanDetail: { planId: string };
+  PersonalRecords: undefined;
   ImportWorkout: undefined;
   GoalPlan: undefined;
   StartWorkout: { planId?: string };
@@ -183,6 +185,13 @@ export default function RootStackNavigator({
       <Stack.Screen
         name="PlanDetail"
         component={PlanDetailScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="PersonalRecords"
+        component={PersonalRecordsScreen}
         options={{
           headerShown: false,
         }}

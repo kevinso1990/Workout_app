@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
   formatVolume,
   mondayStart,
+  personalBests,
   recentRecords,
   thisWeekSummary,
   weekStreak,
@@ -118,5 +119,27 @@ describe("recentRecords", () => {
 
   it("does not call a first session a record", () => {
     expect(recentRecords([lift(day(-1), "Bench", [[100, 5]])], NOW)).toEqual([]);
+  });
+});
+
+describe("personalBests", () => {
+  it("keeps each exercise's best estimated 1RM, dated when first reached", () => {
+    const history = [
+      lift(day(-20), "Bench Press", [[80, 5]]),
+      lift(day(-10), "Bench Press", [[85, 5], [70, 10]]),
+      lift(day(-3), "Bench Press", [[85, 5]]),
+      lift(day(-5), "Squat", [[100, 3]]),
+    ];
+    const bests = personalBests(history);
+    expect(bests.map((b) => b.exerciseName)).toEqual(["Squat", "Bench Press"]);
+    expect(bests[1]).toMatchObject({ weight: 85, reps: 5, date: day(-10) });
+  });
+
+  it("ranks unloaded moves by reps", () => {
+    const history = [
+      lift(day(-4), "Pull Up", [[0, 8], [0, 10]]),
+      lift(day(-2), "Pull Up", [[0, 9]]),
+    ];
+    expect(personalBests(history)[0]).toMatchObject({ reps: 10, estimated1RM: 0, date: day(-4) });
   });
 });

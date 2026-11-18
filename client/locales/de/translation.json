@@ -1240,7 +1240,8 @@
     "deleteFailed": "Löschen fehlgeschlagen. Bitte erneut versuchen.",
     "loadFailed": "Laden fehlgeschlagen. Prüfe deine Verbindung und zieh zum Aktualisieren.",
     "actionFailed": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-    "add": "Hinzufügen"
+    "add": "Hinzufügen",
+    "close": "Schließen"
   },
   "editPlan": {
     "planName": "Planname",
@@ -1296,5 +1297,18 @@
     "clearTitle": "Neuen Chat starten?",
     "clearMessage": "Der bisherige Verlauf wird gelöscht.",
     "open": "Coach-Chat öffnen"
+  },
+  "records": {
+    "title": "Bestleistungen",
+    "count_one": "{{count}} Übung",
+    "count_other": "{{count}} Übungen",
+    "empty": "Noch keine Bestleistungen. Sobald du ein Training mit Gewicht oder Wiederholungen loggst, steht es hier.",
+    "share": "Teilen",
+    "shareText": "Bestleistung: {{name}} – {{value}} (TrackYourLift)",
+    "cardOverline": "BESTLEISTUNG",
+    "e1rm": "1RM ≈ {{kg}} kg",
+    "repsOnly_one": "{{count}} Wdh.",
+    "repsOnly_other": "{{count}} Wdh.",
+    "seeAll": "Alle Bestleistungen"
   }
 }

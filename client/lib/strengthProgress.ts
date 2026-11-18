@@ -181,3 +181,53 @@ export function recentRecords(
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, limit);
 }
+
+export interface PersonalBest {
+  exerciseName: string;
+  /** When this best was first lifted. */
+  date: string;
+  weight: number;
+  reps: number;
+  /** 0 for bodyweight moves, which are ranked by reps instead. */
+  estimated1RM: number;
+}
+
+/**
+ * Every exercise's all-time best: the highest estimated 1RM, or the most reps
+ * for moves never loaded. Dated to the session that first reached it, so a
+ * later equal set doesn't move it. Newest first.
+ */
+export function personalBests(history: WorkoutSession[]): PersonalBest[] {
+  const bests = new Map<string, PersonalBest>();
+  const sorted = [...history]
+    .filter((s) => !isCardio(s))
+    .sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime());
+
+  for (const s of sorted) {
+    s.exercises.forEach((ex, idx) => {
+      for (const set of completedSets(s, idx)) {
+        if (set.setType === "warmup") continue;
+        const weight = parseFloat(String(set.weight).replace(",", ".")) || 0;
+        const reps = parseInt(set.reps) || 0;
+        if (reps <= 0) continue;
+        const candidate = {
+          exerciseName: ex.name,
+          date: s.completedAt,
+          weight,
+          reps,
+          estimated1RM: weight > 0 ? estimate1RM(weight, reps) : 0,
+        };
+        const prev = bests.get(ex.name);
+        const better =
+          !prev ||
+          candidate.estimated1RM > prev.estimated1RM ||
+          (candidate.estimated1RM === 0 && prev.estimated1RM === 0 && reps > prev.reps);
+        if (better) bests.set(ex.name, candidate);
+      }
+    });
+  }
+
+  return [...bests.values()].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+}

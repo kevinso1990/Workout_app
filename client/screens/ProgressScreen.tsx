@@ -488,6 +488,7 @@ function RecordsCard({ records, index }: { records: PersonalRecord[]; index: num
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <Animated.View
@@ -532,6 +533,22 @@ function RecordsCard({ records, index }: { records: PersonalRecord[]; index: num
           </View>
         ))
       )}
+      {/* The 30-day list is the news; every exercise's best lives one tap on. */}
+      <Pressable
+        onPress={() => navigation.navigate("PersonalRecords")}
+        style={({ pressed }) => [
+          styles.recordsLink,
+          { borderTopColor: theme.hairline },
+          pressed && { opacity: 0.7 },
+        ]}
+        accessibilityRole="button"
+        testID="button-all-records"
+      >
+        <ThemedText style={[styles.recordsLinkText, { color: theme.chalk }]}>
+          {t("records.seeAll")}
+        </ThemedText>
+        <Feather name="chevron-right" size={18} color={theme.chalk} />
+      </Pressable>
     </Animated.View>
   );
 }
@@ -1463,6 +1480,18 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   },
   musclePeriod: {
     fontSize: 12,
+  },
+  recordsLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  recordsLinkText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   muscleEmpty: {
     padding: Spacing.xl,

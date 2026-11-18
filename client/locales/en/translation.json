@@ -1240,7 +1240,8 @@
     "deleteFailed": "Couldn't delete. Please try again.",
     "loadFailed": "Couldn't load. Check your connection and pull to refresh.",
     "actionFailed": "Something went wrong. Please try again.",
-    "add": "Add"
+    "add": "Add",
+    "close": "Close"
   },
   "editPlan": {
     "planName": "Plan name",
@@ -1296,5 +1297,18 @@
     "clearTitle": "Start a new chat?",
     "clearMessage": "The current conversation will be deleted.",
     "open": "Open coach chat"
+  },
+  "records": {
+    "title": "Personal bests",
+    "count_one": "{{count}} exercise",
+    "count_other": "{{count}} exercises",
+    "empty": "No personal bests yet. Log a workout with weight or reps and it shows up here.",
+    "share": "Share",
+    "shareText": "Personal best: {{name}} – {{value}} (TrackYourLift)",
+    "cardOverline": "PERSONAL BEST",
+    "e1rm": "1RM ≈ {{kg}} kg",
+    "repsOnly_one": "{{count}} rep",
+    "repsOnly_other": "{{count}} reps",
+    "seeAll": "All personal bests"
   }
 }

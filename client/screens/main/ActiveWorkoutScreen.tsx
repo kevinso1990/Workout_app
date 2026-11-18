@@ -69,7 +69,8 @@ import {
   renameExerciseInPlans,
   type CustomExercise,
 } from "@/lib/customExercises";
-import { isCatalogExerciseName } from "@/lib/exerciseNameCatalog";
+import { isCatalogExerciseName, localizeExerciseName } from "@/lib/exerciseNameCatalog";
+import { estimate1RM } from "@/lib/strengthProgress";
 import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
@@ -118,6 +119,7 @@ import {
 import { ExerciseVariantSheet } from "@/components/workout/ExerciseVariantSheet";
 import { hasVariant, variantSummary } from "@/lib/exerciseVariant";
 import { formatClock } from "@/lib/elapsedLabel";
+import { ShareRecordSheet, type ShareableRecord } from "@/components/records/ShareRecordSheet";
 import type { ExerciseVariant } from "@/lib/storage";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
@@ -422,14 +424,16 @@ function PRCelebration({
   visible,
   pr,
   onClose,
+  onShare,
 }: {
   visible: boolean;
   pr: PRRecord | null;
   onClose: () => void;
+  onShare: () => void;
 }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   if (!visible || !pr) return null;
 
@@ -452,7 +456,7 @@ function PRCelebration({
                 style={[styles.prExercise, { color: theme.text }]}
                 textBreakStrategy="highQuality"
               >
-                {pr.exerciseName}
+                {localizeExerciseName(pr.exerciseName, i18n.language)}
               </ThemedText>
             </View>
 
@@ -511,6 +515,12 @@ function PRCelebration({
               <View style={[styles.prButton, { backgroundColor: theme.primary }]}>
                 <ThemedText style={styles.prButtonText}>{t("activeWorkout.pr.cta")}</ThemedText>
               </View>
+            </Pressable>
+            <Pressable onPress={onShare} style={styles.prShareBtn} testID="button-pr-share">
+              <Feather name="share" size={15} color={theme.text} />
+              <ThemedText style={[styles.prShareText, { color: theme.text }]}>
+                {t("records.share")}
+              </ThemedText>
             </Pressable>
           </View>
         </Animated.View>
@@ -937,6 +947,7 @@ export default function ActiveWorkoutScreen() {
   const [warmupExpanded, setWarmupExpanded] = useState<boolean | null>(null);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
+  const [sharePR, setSharePR] = useState<ShareableRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState<PRRecord[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [planDeviations, setPlanDeviations] = useState<PlanDeviation[]>([]);
@@ -2309,7 +2320,20 @@ export default function ActiveWorkoutScreen() {
         visible={showPRCelebration}
         pr={currentPR}
         onClose={() => setShowPRCelebration(false)}
+        onShare={() => {
+          if (!currentPR) return;
+          const record = {
+            ...currentPR,
+            date: new Date().toISOString(),
+            estimated1RM: estimate1RM(currentPR.weight, currentPR.reps),
+          };
+          setShowPRCelebration(false);
+          // Let the celebration's modal leave before the next one comes in;
+          // iOS drops a modal presented while another is still dismissing.
+          setTimeout(() => setSharePR(record), 350);
+        }}
       />
+      <ShareRecordSheet record={sharePR} onClose={() => setSharePR(null)} />
       <ExerciseVariantSheet
         visible={variantIndex !== null}
         exerciseName={variantIndex !== null ? localizeName(day.exercises[variantIndex]?.name ?? "") : ""}
@@ -4254,6 +4278,17 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
+  },
+  prShareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Spacing.sm,
+  },
+  prShareText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   prButtonText: {
     color: c.onChalk,
