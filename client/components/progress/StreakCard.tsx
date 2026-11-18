@@ -1,22 +1,24 @@
 import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { Feather } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
 import { ThemedText } from "@/components/ThemedText";
 import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, FontFamily, Spacing } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { dayNumber, type RestDayStreak } from "@/lib/restDayStreak";
 import { mondayStart } from "@/lib/strengthProgress";
 
 const WEEKS = 5;
+const DOT = 30;
 
 /**
- * The streak as days, with the last five weeks underneath: trained days
- * filled, rest days inside the streak ringed — rest is part of the streak,
- * not a hole in it. Today carries the signal.
+ * The streak as one number and a calendar it runs through: the streak is a
+ * band across the days, trained days sit on it as chalk discs, rest days are
+ * simply part of the band. Today carries the signal ring.
  */
 export function StreakCard({
   streak,
@@ -34,7 +36,6 @@ export function StreakCard({
   const today = dayNumber(now);
   const firstMonday = mondayStart(now);
   firstMonday.setDate(firstMonday.getDate() - (WEEKS - 1) * 7);
-  const firstDay = dayNumber(firstMonday);
 
   const weekdayLetters = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(firstMonday);
@@ -42,14 +43,22 @@ export function StreakCard({
     return d.toLocaleDateString(i18n.language, { weekday: "narrow" });
   });
 
-  const status =
-    streak.days === 0
-      ? t("streak.broken")
-      : streak.trained.has(today)
-        ? t("streak.trainedToday")
-        : streak.restLeft === 0
-          ? t("streak.lastDay")
-          : t("streak.restLeft", { count: streak.restLeft });
+  const alive = streak.days > 0;
+  const trainedToday = streak.trained.has(today);
+  const lastChain = streak.chains[streak.chains.length - 1];
+  const status = !alive
+    ? lastChain
+      ? t("streak.brokenAfter", { count: lastChain.end - lastChain.start + 1 })
+      : t("streak.broken")
+    : trainedToday
+      ? t("streak.trainedToday")
+      : streak.restLeft === 0
+        ? t("streak.lastDay")
+        : t("streak.restLeft", { count: streak.restLeft });
+
+  // Every streak gets the band, finished ones too: the gap between two bands
+  // is where one broke.
+  const chainOf = (day: number) => streak.chains.find((c) => day >= c.start && day <= c.end);
 
   return (
     <Animated.View
@@ -58,13 +67,36 @@ export function StreakCard({
       testID="card-streak"
     >
       <PanelFill />
-      {/* The number itself is the tile above; this says what it means now. */}
-      <ThemedText style={styles.title}>{t("streak.title")}</ThemedText>
-      <ThemedText style={[styles.status, { color: theme.textSecondary }]}>{status}</ThemedText>
+      <View style={styles.header}>
+        <View style={styles.headline}>
+          <ThemedText style={styles.number}>{streak.days}</ThemedText>
+          <ThemedText style={styles.unit}>{t("streak.unit", { count: streak.days })}</ThemedText>
+        </View>
+        {alive ? (
+          // Rest left as pips: what the streak can still absorb.
+          <View style={styles.pipsWrap} accessibilityLabel={status}>
+            <View style={styles.pips}>
+              {Array.from({ length: streak.maxRest }, (_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.pip,
+                    i < (trainedToday ? streak.maxRest : streak.restLeft)
+                      ? { backgroundColor: theme.chalk }
+                      : { borderWidth: 1.5, borderColor: theme.chalkFaint },
+                  ]}
+                />
+              ))}
+            </View>
+            <ThemedText style={styles.pipsLabel}>{t("streak.restPips")}</ThemedText>
+          </View>
+        ) : null}
+      </View>
+      <ThemedText style={styles.status}>{status}</ThemedText>
 
       <View style={styles.row}>
         {weekdayLetters.map((letter, i) => (
-          <ThemedText key={i} style={[styles.weekday, { color: theme.chalkFaint }]}>
+          <ThemedText key={i} style={styles.weekday}>
             {letter}
           </ThemedText>
         ))}
@@ -72,49 +104,68 @@ export function StreakCard({
       {Array.from({ length: WEEKS }, (_, w) => (
         <View key={w} style={styles.row}>
           {Array.from({ length: 7 }, (_, d) => {
-            const day = firstDay + w * 7 + d;
+            const date = new Date(firstMonday);
+            date.setDate(firstMonday.getDate() + w * 7 + d);
+            const day = dayNumber(date);
             const trained = streak.trained.has(day);
-            const inStreak = streak.startDay !== null && day >= streak.startDay && day <= today;
-            const isToday = day === today;
+            const chain = chainOf(day);
+            const band = !!chain;
             const future = day > today;
+            const isToday = day === today;
+            // The band is cut into cells; round it where the run starts or
+            // ends and where the week wraps to the next row.
+            const bandStart = !!chain && (d === 0 || day === chain.start);
+            const bandEnd = !!chain && (d === 6 || day === chain.end);
             return (
               <View key={d} style={styles.cell}>
+                {band ? (
+                  <View
+                    style={[
+                      styles.band,
+                      bandStart && styles.bandStart,
+                      bandEnd && styles.bandEnd,
+                    ]}
+                  />
+                ) : null}
                 <View
                   style={[
                     styles.dot,
-                    trained
-                      ? { backgroundColor: theme.chalk }
-                      : inStreak
-                        ? { borderWidth: 1.5, borderColor: theme.chalkDim }
-                        : future
-                          ? null
-                          : { backgroundColor: theme.hairlineStrong, transform: [{ scale: 0.4 }] },
-                    isToday && {
-                      borderWidth: 2,
-                      borderColor: theme.signal,
-                      transform: [{ scale: 1 }],
-                      backgroundColor: trained ? theme.chalk : "transparent",
-                    },
+                    trained && { backgroundColor: theme.chalk },
+                    isToday && { borderWidth: 2, borderColor: theme.signal },
                   ]}
-                />
+                >
+                  <ThemedText
+                    style={[
+                      styles.date,
+                      {
+                        color: trained
+                          ? theme.onChalk
+                          : band
+                            ? theme.chalk
+                            : future
+                              ? theme.hairlineStrong
+                              : theme.chalkFaint,
+                      },
+                    ]}
+                  >
+                    {date.getDate()}
+                  </ThemedText>
+                </View>
               </View>
             );
           })}
         </View>
       ))}
-      <View style={styles.legend}>
-        <View style={[styles.legendDot, { backgroundColor: theme.chalk }]} />
-        <ThemedText style={[styles.legendText, { color: theme.textSecondary }]}>
-          {t("streak.legendTrained")}
+
+      <View style={styles.footer}>
+        <Feather name="award" size={14} color={theme.chalkDim} />
+        <ThemedText style={styles.footerText}>
+          {t("streak.longest", { count: streak.longest })}
         </ThemedText>
-        <View style={[styles.legendDot, { borderWidth: 1.5, borderColor: theme.chalkDim }]} />
-        <ThemedText style={[styles.legendText, { color: theme.textSecondary }]}>
-          {t("streak.legendRest")}
+        <ThemedText style={[styles.footerText, styles.footerRule]} numberOfLines={1}>
+          {t("streak.rule", { count: streak.maxRest })}
         </ThemedText>
       </View>
-      <ThemedText style={[styles.rule, { color: theme.textSecondary }]}>
-        {t("streak.rule", { count: streak.maxRest })}
-      </ThemedText>
     </Animated.View>
   );
 }
@@ -126,22 +177,53 @@ const makeStyles = (c: Palette) =>
       padding: Spacing.lg,
       marginBottom: Spacing.md,
     },
-    title: {
-      fontSize: 16,
-      fontWeight: "600",
-      fontFamily: "Archivo_600SemiBold",
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+    },
+    headline: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: Spacing.sm,
+    },
+    number: {
+      fontFamily: FontFamily.display,
+      fontSize: 52,
+      lineHeight: 58,
       color: c.chalk,
+    },
+    unit: {
+      fontFamily: FontFamily.displaySemi,
+      fontSize: 20,
+      color: c.chalkDim,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    pipsWrap: {
+      alignItems: "flex-end",
+      gap: 6,
+      marginBottom: 10,
+    },
+    pips: {
+      flexDirection: "row",
+      gap: 5,
+    },
+    pip: {
+      width: 18,
+      height: 6,
+      borderRadius: 3,
+    },
+    pipsLabel: {
+      fontSize: 12,
+      color: c.chalkDim,
     },
     status: {
       fontSize: 14,
       lineHeight: 20,
-      marginTop: 4,
-      marginBottom: Spacing.md,
-    },
-    rule: {
-      fontSize: 12,
-      marginTop: 6,
-      marginLeft: 6,
+      color: c.chalkDim,
+      marginTop: 2,
+      marginBottom: Spacing.lg,
     },
     row: {
       flexDirection: "row",
@@ -150,32 +232,58 @@ const makeStyles = (c: Palette) =>
       flex: 1,
       textAlign: "center",
       fontSize: 12,
-      marginBottom: 4,
+      color: c.chalkFaint,
+      marginBottom: 6,
     },
     cell: {
       flex: 1,
+      height: DOT + 10,
       alignItems: "center",
-      paddingVertical: 5,
+      justifyContent: "center",
+    },
+    band: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: DOT,
+      backgroundColor: c.chipIdle,
+    },
+    bandStart: {
+      left: 4,
+      borderTopLeftRadius: DOT / 2,
+      borderBottomLeftRadius: DOT / 2,
+    },
+    bandEnd: {
+      right: 4,
+      borderTopRightRadius: DOT / 2,
+      borderBottomRightRadius: DOT / 2,
     },
     dot: {
-      width: 18,
-      height: 18,
-      borderRadius: 9,
+      width: DOT,
+      height: DOT,
+      borderRadius: DOT / 2,
+      alignItems: "center",
+      justifyContent: "center",
     },
-    legend: {
+    date: {
+      fontFamily: FontFamily.mono,
+      fontSize: 12,
+    },
+    footer: {
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
-      marginTop: Spacing.sm,
+      marginTop: Spacing.md,
+      paddingTop: Spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.hairline,
     },
-    legendDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      marginLeft: 6,
+    footerText: {
+      fontSize: 13,
+      color: c.chalkDim,
     },
-    legendText: {
-      fontSize: 12,
-      marginRight: Spacing.sm,
+    footerRule: {
+      flex: 1,
+      textAlign: "right",
     },
   });

@@ -54,6 +54,7 @@ import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
 import {
   estimate1RM,
   formatVolume,
+  formatTrainingTime,
   recentRecords,
   thisWeekSummary,
   weeklySetsByMuscle,
@@ -1294,10 +1295,11 @@ export default function ProgressScreen() {
               value={formatVolume(week.volume, i18n.language)}
               index={2}
             />
+            {/* The streak has its own card below; the week gets its time. */}
             <StatCard
-              icon="zap"
-              label={t("streak.tileLabel", { count: streak.days })}
-              value={streak.days.toString()}
+              icon="clock"
+              label={t("progress.weekTime")}
+              value={formatTrainingTime(week.minutes)}
               index={3}
             />
           </View>

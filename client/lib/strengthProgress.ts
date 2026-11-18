@@ -56,6 +56,8 @@ export interface WeekSummary {
   workouts: number;
   sets: number;
   volume: number;
+  /** Logged training time, in minutes. */
+  minutes: number;
 }
 
 /** Monday-to-now numbers — the week a lifter actually thinks in. */
@@ -66,6 +68,7 @@ export function thisWeekSummary(history: WorkoutSession[], now: Date): WeekSumma
     workouts: week.length,
     sets: week.reduce((n, s) => n + sessionSetCount(s), 0),
     volume: week.reduce((n, s) => n + sessionVolume(s), 0),
+    minutes: Math.round(week.reduce((n, s) => n + (s.duration ?? 0), 0) / 60),
   };
 }
 
@@ -230,4 +233,10 @@ export function personalBests(history: WorkoutSession[]): PersonalBest[] {
   return [...bests.values()].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
+}
+
+/** "45 min" under an hour, "2:05 h" from there. */
+export function formatTrainingTime(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")} h`;
 }

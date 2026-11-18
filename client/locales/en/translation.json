@@ -756,7 +756,8 @@
     "recordLine": "{{weight}} kg × {{reps}} · 1RM ≈ {{e1rm}} kg",
     "recordGain": "+{{kg}} kg",
     "volumeSubtitle": "kg moved per week, from Monday",
-    "oneRMNeedsTwo": "Your trend shows up here from your second session with this exercise."
+    "oneRMNeedsTwo": "Your trend shows up here from your second session with this exercise.",
+    "weekTime": "Training time"
   },
   "history": {
     "title": "History",
@@ -1312,19 +1313,19 @@
     "seeAll": "All personal bests"
   },
   "streak": {
-    "days_one": "{{count}} day",
-    "days_other": "{{count}} days",
-    "broken": "Streak broken – your next workout starts a new one.",
+    "broken": "Broken – one workout starts a new streak.",
     "trainedToday": "Trained today – rest days refilled.",
     "restLeft_one": "{{count}} rest day left before the streak breaks",
     "restLeft_other": "{{count}} rest days left before the streak breaks",
     "lastDay": "Train today or the streak breaks",
-    "rule_one": "{{count}} rest day in a row counts",
-    "rule_other": "{{count}} rest days in a row count",
-    "tileLabel_one": "day streak",
-    "tileLabel_other": "day streak",
-    "legendTrained": "Workout",
-    "legendRest": "Rest day",
-    "title": "Streak"
+    "rule_one": "up to {{count}} rest day in a row",
+    "rule_other": "up to {{count}} rest days in a row",
+    "unit_one": "day streak",
+    "unit_other": "day streak",
+    "restPips": "rest days left",
+    "longest_one": "Longest: {{count}} day",
+    "longest_other": "Longest: {{count}} days",
+    "brokenAfter_one": "Broke after {{count}} day – one workout starts a new streak.",
+    "brokenAfter_other": "Broke after {{count}} days – one workout starts a new streak."
   }
 }

@@ -660,7 +660,8 @@
     "recordLine": "{{weight}} kg × {{reps}} · 1RM ≈ {{e1rm}} kg",
     "recordGain": "+{{kg}} kg",
     "volumeSubtitle": "Bewegte kg pro Woche, ab Montag",
-    "oneRMNeedsTwo": "Ab der zweiten Einheit mit dieser Übung siehst du hier deinen Verlauf."
+    "oneRMNeedsTwo": "Ab der zweiten Einheit mit dieser Übung siehst du hier deinen Verlauf.",
+    "weekTime": "Trainingszeit"
   },
   "history": {
     "title": "Verlauf",
@@ -1312,19 +1313,19 @@
     "seeAll": "Alle Bestleistungen"
   },
   "streak": {
-    "days_one": "{{count}} Tag",
-    "days_other": "{{count}} Tage",
-    "broken": "Serie gerissen – das nächste Training startet eine neue.",
+    "broken": "Gerissen – ein Training startet eine neue Serie.",
     "trainedToday": "Heute trainiert – Ruhetage wieder voll.",
     "restLeft_one": "Noch {{count}} Ruhetag, dann reißt die Serie",
     "restLeft_other": "Noch {{count}} Ruhetage, dann reißt die Serie",
     "lastDay": "Heute trainieren, sonst reißt die Serie",
-    "rule_one": "{{count}} Ruhetag am Stück zählt mit",
-    "rule_other": "{{count}} Ruhetage am Stück zählen mit",
-    "tileLabel_one": "Tag Serie",
-    "tileLabel_other": "Tage Serie",
-    "legendTrained": "Training",
-    "legendRest": "Ruhetag",
-    "title": "Serie"
+    "rule_one": "max. {{count}} Ruhetag am Stück",
+    "rule_other": "max. {{count}} Ruhetage am Stück",
+    "unit_one": "Tag Serie",
+    "unit_other": "Tage Serie",
+    "restPips": "Ruhetage übrig",
+    "longest_one": "Längste Serie: {{count}} Tag",
+    "longest_other": "Längste Serie: {{count}} Tage",
+    "brokenAfter_one": "Gerissen nach {{count}} Tag – ein Training startet eine neue Serie.",
+    "brokenAfter_other": "Gerissen nach {{count}} Tagen – ein Training startet eine neue Serie."
   }
 }

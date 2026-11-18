@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  formatTrainingTime,
   formatVolume,
   mondayStart,
   personalBests,
@@ -58,11 +59,11 @@ describe("formatVolume", () => {
 describe("thisWeekSummary", () => {
   it("counts Monday onwards only and ignores cardio volume", () => {
     const history = [
-      lift(day(0), "Bench", [[100, 5], [100, 5]]),
-      lift(day(-3), "Bench", [[90, 5]]), // previous Sunday
-      lift(day(-1), "Run", [], { workoutType: "cardio" }),
+      lift(day(0), "Bench", [[100, 5], [100, 5]], { duration: 3300 }),
+      lift(day(-3), "Bench", [[90, 5]], { duration: 3600 }), // previous Sunday
+      lift(day(-1), "Run", [], { workoutType: "cardio", duration: 1800 }),
     ];
-    expect(thisWeekSummary(history, NOW)).toEqual({ workouts: 2, sets: 2, volume: 1000 });
+    expect(thisWeekSummary(history, NOW)).toEqual({ workouts: 2, sets: 2, volume: 1000, minutes: 85 });
   });
 });
 
@@ -141,5 +142,12 @@ describe("personalBests", () => {
       lift(day(-2), "Pull Up", [[0, 9]]),
     ];
     expect(personalBests(history)[0]).toMatchObject({ reps: 10, estimated1RM: 0, date: day(-4) });
+  });
+});
+
+describe("formatTrainingTime", () => {
+  it("reads minutes under an hour, h:mm from there", () => {
+    expect(formatTrainingTime(45)).toBe("45 min");
+    expect(formatTrainingTime(125)).toBe("2:05 h");
   });
 });

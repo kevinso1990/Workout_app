@@ -28,6 +28,10 @@ export interface RestDayStreak {
   trained: Set<number>;
   /** First day of the running streak, or null. */
   startDay: number | null;
+  /** The longest streak ever, in days — the running one included. */
+  longest: number;
+  /** Every streak as first/last day, oldest first; a live one ends today. */
+  chains: { start: number; end: number }[];
 }
 
 /**
@@ -44,7 +48,9 @@ export function restDayStreak(
   const trained = new Set(history.map((s) => dayNumber(new Date(s.completedAt))));
   const today = dayNumber(now);
   const days = [...trained].filter((d) => d <= today).sort((a, b) => b - a);
-  const empty = { days: 0, restLeft: 0, maxRest, trained, startDay: null };
+  const chains = streakChains(days, maxRest, today);
+  const longest = chains.reduce((n, c) => Math.max(n, c.end - c.start + 1), 0);
+  const empty = { days: 0, restLeft: 0, maxRest, trained, startDay: null, longest, chains };
   if (days.length === 0) return empty;
 
   // Rest days since the last session; today itself is still open.
@@ -62,5 +68,32 @@ export function restDayStreak(
     maxRest,
     trained,
     startDay: start,
+    longest,
+    chains,
   };
+}
+
+/**
+ * Sessions grouped into streaks: a new one starts after a gap past
+ * `maxRest`. A finished streak runs from its first to its last session; one
+ * still alive runs to today.
+ */
+function streakChains(
+  daysDesc: number[],
+  maxRest: number,
+  today: number,
+): { start: number; end: number }[] {
+  const asc = [...daysDesc].reverse();
+  const chains: { start: number; end: number }[] = [];
+  let first = asc[0];
+  for (let i = 0; i < asc.length; i++) {
+    const last = asc[i];
+    const next = asc[i + 1];
+    if (next === undefined || next - last - 1 > maxRest) {
+      const alive = next === undefined && today - last - 1 <= maxRest;
+      chains.push({ start: first, end: alive ? today : last });
+      first = next;
+    }
+  }
+  return chains;
 }
