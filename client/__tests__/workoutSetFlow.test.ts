@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 
 import {
   appendedSet,
+  beatsTopSet,
+  replicateSource,
+  topSet,
   carryOverToNextSet,
   isExerciseDone,
   liveSets,
@@ -94,5 +97,42 @@ describe("nextSupersetStep", () => {
 
   it("reports the superset as finished", () => {
     expect(nextSupersetStep(members, [[true], [true], [false]], 1)).toEqual({ target: null, rest: false });
+  });
+});
+
+describe("topSet", () => {
+  it("picks the heaviest working set, then the most reps", () => {
+    const sets = [
+      set("60", "10", true, { setType: "warmup" }),
+      set("90", "5", true),
+      set("92.5", "3", true),
+      set("92.5", "4", true),
+      set("100", "", false),
+    ];
+    expect(topSet(sets, false)).toMatchObject({ weight: "92.5", reps: "4" });
+  });
+
+  it("uses reps for bodyweight moves and ignores open sets", () => {
+    expect(topSet([set("", "12", true), set("", "15", true), set("", "20")], true)).toMatchObject({ reps: "15" });
+    expect(topSet([set("80", "5")], false)).toBeNull();
+  });
+
+  it("beatsTopSet compares load first, reps on equal load", () => {
+    expect(beatsTopSet(set("92,5", "3"), set("90", "5"), false)).toBe(true);
+    expect(beatsTopSet(set("90", "6"), set("90", "5"), false)).toBe(true);
+    expect(beatsTopSet(set("90", "5"), set("90", "5"), false)).toBe(false);
+  });
+});
+
+describe("replicateSource", () => {
+  it("copies the nearest done set of the same kind above", () => {
+    const sets = [set("60", "10", true, { setType: "warmup" }), set("90", "5", true), set("", "")];
+    expect(replicateSource(sets, 2)).toEqual({ weight: "90", reps: "5" });
+  });
+
+  it("falls back to last time's set at the same position", () => {
+    const sets = [set("", ""), set("", "")];
+    expect(replicateSource(sets, 1, [set("85", "6", true), set("85", "5", true)])).toEqual({ weight: "85", reps: "5" });
+    expect(replicateSource(sets, 1)).toBeNull();
   });
 });

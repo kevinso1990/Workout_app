@@ -96,3 +96,54 @@ export function nextSupersetStep(
   }
   return { target: null, rest: false };
 }
+
+const num = (v: string) => parseFloat(String(v).replace(",", ".")) || 0;
+
+/**
+ * The best working set of an exercise — heaviest, then most reps; most reps
+ * for bodyweight moves. Feeds the "last time → today" line on each exercise.
+ */
+export function topSet(sets: SetData[], isBodyweight: boolean): SetData | null {
+  let best: SetData | null = null;
+  for (const s of sets) {
+    if (!s.completed || s.setType === "warmup" || !(num(s.reps) > 0)) continue;
+    if (!isBodyweight && !(num(s.weight) > 0)) continue;
+    if (!best) {
+      best = s;
+      continue;
+    }
+    const heavier = num(s.weight) - num(best.weight);
+    if (isBodyweight ? num(s.reps) > num(best.reps) : heavier > 0 || (heavier === 0 && num(s.reps) > num(best.reps))) {
+      best = s;
+    }
+  }
+  return best;
+}
+
+/** True when `today` beats `last`: more weight, or same weight and more reps. */
+export function beatsTopSet(today: SetData, last: SetData, isBodyweight: boolean): boolean {
+  if (isBodyweight) return num(today.reps) > num(last.reps);
+  const diff = num(today.weight) - num(last.weight);
+  return diff > 0 || (diff === 0 && num(today.reps) > num(last.reps));
+}
+
+/**
+ * Swipe → "wie vorher": the values to log an open set with. The nearest done
+ * set above it of the same kind (warm-up or working), else the same set from
+ * last time. Null when there's nothing to copy.
+ */
+export function replicateSource(
+  sets: SetData[],
+  setIndex: number,
+  lastSets: SetData[] = [],
+): { weight: string; reps: string } | null {
+  const warmup = sets[setIndex]?.setType === "warmup";
+  for (let i = setIndex - 1; i >= 0; i--) {
+    const s = sets[i];
+    if (s.completed && (s.setType === "warmup") === warmup && s.reps.trim()) {
+      return { weight: s.weight, reps: s.reps };
+    }
+  }
+  const last = lastSets[setIndex];
+  return last?.reps?.trim() ? { weight: last.weight, reps: last.reps } : null;
+}

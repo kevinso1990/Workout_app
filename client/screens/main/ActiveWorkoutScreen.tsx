@@ -73,7 +73,7 @@ import { isCatalogExerciseName } from "@/lib/exerciseNameCatalog";
 import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors, FontFamily } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
@@ -96,11 +96,14 @@ import {
 } from "@/lib/storage";
 import {
   appendedSet,
+  beatsTopSet,
   carryOverToNextSet,
   isExerciseDone,
   liveSets,
   nextOpenExercise,
   nextSupersetStep,
+  replicateSource,
+  topSet,
 } from "@/lib/workoutSetFlow";
 import { isTimedTarget, supersetLabels, supersetMembers } from "@/lib/planStructure";
 import {
@@ -1919,6 +1922,30 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
+  /**
+   * Swipe right on an open set that isn't the one you're on → log it with the
+   * set before (or last time's). For catching up on sets done without the
+   * phone; unlike the check it doesn't move you or start a rest.
+   */
+  const handleReplicateSet = (exerciseIndex: number, setIndex: number) => {
+    const ep = progress[exerciseIndex];
+    if (!plan || !ep) return;
+    const lastSets = lastWeekProgress.find((l) => l.exerciseId === ep.exerciseId)?.sets;
+    const source = replicateSource(ep.sets, setIndex, lastSets);
+    if (!source) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    handleUpdateSet(exerciseIndex, setIndex, { ...source, rating: "yellow", completed: true });
+    const exercise = plan.days[route.params.dayIndex].exercises[exerciseIndex];
+    const weight = parseFloat(source.weight.replace(",", ".")) || 0;
+    const reps = parseInt(source.reps) || 0;
+    if (weight > 0 && reps > 0 && ep.sets[setIndex].setType !== "warmup") {
+      checkForPR(exercise.name, weight, reps);
+    }
+  };
+
   /** "+ Satz": one more set at the load of the last one. */
   const handleAddSet = (exerciseIndex: number) => {
     if (!plan) return;
@@ -2618,6 +2645,17 @@ export default function ActiveWorkoutScreen() {
             const isCurrentExercise = exIdx === currentExerciseIndex;
             const doneCount = ep.sets.filter((s) => s.completed).length;
             const exerciseDone = isExerciseDone(ep);
+            // "Zuletzt bester Satz 90 kg × 5 → heute 92.5 kg × 5" — progress at
+            // a glance instead of reading it off the previous column set by set.
+            const lastTop = lastWeekExercise ? topSet(lastWeekExercise.sets, isBodyweight || isHold) : null;
+            const todayTop = lastTop ? topSet(ep.sets, isBodyweight || isHold) : null;
+            const formatTop = (s: SetData) =>
+              isHold
+                ? `${s.reps} s`
+                : isBodyweight
+                  ? t("activeWorkout.topSet.reps", { count: parseInt(s.reps) || 0 })
+                  : `${s.weight} kg × ${s.reps}`;
+            const beatLast = !!(todayTop && lastTop && beatsTopSet(todayTop, lastTop, isBodyweight || isHold));
 
             return (
               <View
@@ -2811,6 +2849,30 @@ export default function ActiveWorkoutScreen() {
                             })}
                           </ThemedText>
                         ) : null}
+                        {lastTop ? (
+                          <View style={styles.topSetRow} testID={`top-set-${exIdx}`}>
+                            <ThemedText style={[styles.topSetText, { color: theme.chalkDim }]}>
+                              {t("activeWorkout.topSet.last", { set: formatTop(lastTop) })}
+                            </ThemedText>
+                            {todayTop ? (
+                              <>
+                                <Feather
+                                  name={beatLast ? "trending-up" : "arrow-right"}
+                                  size={13}
+                                  color={beatLast ? theme.chalk : theme.chalkDim}
+                                />
+                                <ThemedText
+                                  style={[
+                                    styles.topSetText,
+                                    { color: beatLast ? theme.chalk : theme.chalkDim },
+                                  ]}
+                                >
+                                  {t("activeWorkout.topSet.today", { set: formatTop(todayTop) })}
+                                </ThemedText>
+                              </>
+                            ) : null}
+                          </View>
+                        ) : null}
                         {exercise.notes ? (
                           <ThemedText style={[styles.exerciseCue, { color: theme.chalkDim }]}>
                             {exercise.notes}
@@ -2970,7 +3032,8 @@ export default function ActiveWorkoutScreen() {
                         }
                       />
                     );
-                    if (ep.sets.length <= 1) return row;
+                    const canReplicate = !setData.completed && !isActiveSet;
+                    if (ep.sets.length <= 1 && !canReplicate) return row;
                     return (
                       <Swipeable
                         key={setIdx}
@@ -2978,9 +3041,28 @@ export default function ActiveWorkoutScreen() {
                         // horizontally — disable the swipe gesture there so the two
                         // don't fight over the same touch.
                         enabled={!(isActiveSet && !setData.completed)}
+                        overshootLeft={false}
                         overshootRight={false}
+                        leftThreshold={60}
                         rightThreshold={40}
-                        renderRightActions={() => (
+                        onSwipeableOpen={(direction, swipeable) => {
+                          if (direction !== "left") return;
+                          swipeable.close();
+                          handleReplicateSet(exIdx, setIdx);
+                        }}
+                        renderLeftActions={
+                          canReplicate
+                            ? () => (
+                                <View style={styles.swipeFinishAction}>
+                                  <Feather name="copy" size={18} color={theme.iron} />
+                                  <ThemedText style={[styles.swipeFinishLabel, { color: theme.iron }]}>
+                                    {t("activeWorkout.swipeLog")}
+                                  </ThemedText>
+                                </View>
+                              )
+                            : undefined
+                        }
+                        renderRightActions={ep.sets.length <= 1 ? undefined : () => (
                           <Pressable
                             onPress={() => handleRemoveSet(exIdx, setIdx)}
                             style={styles.swipeDeleteAction}
@@ -3450,6 +3532,18 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   swipeFinishLabel: {
     fontSize: 15,
     fontWeight: "700",
+  },
+  topSetRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    columnGap: 6,
+    rowGap: 2,
+  },
+  topSetText: {
+    fontFamily: FontFamily.mono,
+    fontSize: 12,
+    lineHeight: 17,
   },
   addSetBtn: {
     flexDirection: "row",

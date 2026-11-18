@@ -55,6 +55,20 @@ export async function loadActiveWorkoutDraft(): Promise<ActiveWorkoutDraft | nul
   }
 }
 
+const draftClearedListeners = new Set<() => void>();
+
+/**
+ * Called after the draft is cleared. Screens that only read the draft on
+ * focus (the Today card) would otherwise stay hidden after "Verwerfen" on the
+ * same screen.
+ */
+export function onActiveWorkoutDraftCleared(listener: () => void): () => void {
+  draftClearedListeners.add(listener);
+  return () => {
+    draftClearedListeners.delete(listener);
+  };
+}
+
 export async function clearActiveWorkoutDraft(): Promise<void> {
   try {
     await AsyncStorage.removeItem(ACTIVE_WORKOUT_STORAGE_KEY);
@@ -64,6 +78,7 @@ export async function clearActiveWorkoutDraft(): Promise<void> {
   // Every way a workout ends (finished, discarded, replaced) goes through
   // here, so this is where the lock-screen activity goes away too.
   void endWorkoutActivity();
+  draftClearedListeners.forEach((listener) => listener());
 }
 
 export async function hasActiveWorkoutDraft(): Promise<boolean> {

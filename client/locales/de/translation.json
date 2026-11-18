@@ -527,7 +527,13 @@
     },
     "warmup": "Warm-up",
     "supersetChip": "Superset {{label}}",
-    "perSideSuffix": " / Seite"
+    "perSideSuffix": " / Seite",
+    "topSet": {
+      "last": "Zuletzt bester Satz {{set}}",
+      "today": "heute {{set}}",
+      "reps": "{{count}} Wdh."
+    },
+    "swipeLog": "Wie vorher"
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",

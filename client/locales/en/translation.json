@@ -623,7 +623,13 @@
     },
     "warmup": "Warm-up",
     "supersetChip": "Superset {{label}}",
-    "perSideSuffix": " / side"
+    "perSideSuffix": " / side",
+    "topSet": {
+      "last": "Last best set {{set}}",
+      "today": "today {{set}}",
+      "reps": "{{count}} reps"
+    },
+    "swipeLog": "Same again"
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",

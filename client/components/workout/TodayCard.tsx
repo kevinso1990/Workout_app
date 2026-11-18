@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,6 +18,7 @@ import {
   loadActiveWorkoutDraft,
   type ActiveWorkoutDraft,
   isLiveDraft,
+  onActiveWorkoutDraftCleared,
 } from "@/lib/activeWorkoutPersistence";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { todayOverview, type TodaySession } from "@/lib/todayPlan";
@@ -65,6 +66,7 @@ export function TodayCard({
       };
     }, []),
   );
+  useEffect(() => onActiveWorkoutDraftCleared(() => setDraft(null)), []);
 
   const overview = useMemo(
     () =>

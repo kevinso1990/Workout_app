@@ -153,7 +153,9 @@ function showDomFatalOverlay(err: CapturedError): void {
 }
 
 export function reloadWebApp(): void {
-  if (typeof window === "undefined") return;
+  // React Native has a `window` but no `location`: "Neu starten" on the
+  // native crash screen threw a second error here instead of restarting.
+  if (typeof window === "undefined" || !window.location) return;
   clearCapturedError();
   const base = window.location.pathname || "/";
   window.location.href = `${base}?cb=${Date.now()}`;
