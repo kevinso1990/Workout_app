@@ -1310,5 +1310,21 @@
     "repsOnly_one": "{{count}} Wdh.",
     "repsOnly_other": "{{count}} Wdh.",
     "seeAll": "Alle Bestleistungen"
+  },
+  "streak": {
+    "days_one": "{{count}} Tag",
+    "days_other": "{{count}} Tage",
+    "broken": "Serie gerissen – das nächste Training startet eine neue.",
+    "trainedToday": "Heute trainiert – Ruhetage wieder voll.",
+    "restLeft_one": "Noch {{count}} Ruhetag, dann reißt die Serie",
+    "restLeft_other": "Noch {{count}} Ruhetage, dann reißt die Serie",
+    "lastDay": "Heute trainieren, sonst reißt die Serie",
+    "rule_one": "{{count}} Ruhetag am Stück zählt mit",
+    "rule_other": "{{count}} Ruhetage am Stück zählen mit",
+    "tileLabel_one": "Tag Serie",
+    "tileLabel_other": "Tage Serie",
+    "legendTrained": "Training",
+    "legendRest": "Ruhetag",
+    "title": "Serie"
   }
 }

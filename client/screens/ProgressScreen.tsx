@@ -45,7 +45,10 @@ import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 import { variantSummary } from "@/lib/exerciseVariant";
 import { translateDayName } from "@/lib/dayNameLabel";
-import { WorkoutSession, getWorkoutHistory, ExerciseProgress, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
+import { WorkoutSession, getWorkoutHistory, getWorkoutPlans, ExerciseProgress, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
+import { primaryPlan } from "@/lib/todayPlan";
+import { restDayStreak } from "@/lib/restDayStreak";
+import { StreakCard } from "@/components/progress/StreakCard";
 import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
 import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
 import {
@@ -53,7 +56,6 @@ import {
   formatVolume,
   recentRecords,
   thisWeekSummary,
-  weekStreak,
   weeklySetsByMuscle,
   weeklyVolumes,
   type PersonalRecord,
@@ -1084,14 +1086,16 @@ export default function ProgressScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [history, setHistory] = useState<WorkoutSession[]>([]);
+  const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
   const [hybridPeriod, setHybridPeriod] = useState<ProgressPeriod>("month");
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
-      const loadedHistory = await getWorkoutHistory();
+      const [loadedHistory, plans] = await Promise.all([getWorkoutHistory(), getWorkoutPlans()]);
       setHistory(loadedHistory);
+      setSessionsPerWeek(primaryPlan(plans)?.daysPerWeek ?? 3);
     } catch (error) {
       console.error("Error loading history:", error);
     } finally {
@@ -1116,7 +1120,10 @@ export default function ProgressScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => new Date(), [history]);
   const week = useMemo(() => thisWeekSummary(history, now), [history, now]);
-  const streak = useMemo(() => weekStreak(history, now), [history, now]);
+  const streak = useMemo(
+    () => restDayStreak(history, now, sessionsPerWeek),
+    [history, now, sessionsPerWeek],
+  );
   const records = useMemo(() => recentRecords(history, now), [history, now]);
 
   const weeklyVolumeData = useMemo(
@@ -1289,11 +1296,13 @@ export default function ProgressScreen() {
             />
             <StatCard
               icon="zap"
-              label={t("progress.weekStreak", { count: streak })}
-              value={streak.toString()}
+              label={t("streak.tileLabel", { count: streak.days })}
+              value={streak.days.toString()}
               index={3}
             />
           </View>
+
+          <StreakCard streak={streak} now={now} index={4} />
 
           <RecordsCard records={records} index={4} />
 

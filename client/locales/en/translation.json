@@ -1310,5 +1310,21 @@
     "repsOnly_one": "{{count}} rep",
     "repsOnly_other": "{{count}} reps",
     "seeAll": "All personal bests"
+  },
+  "streak": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "broken": "Streak broken – your next workout starts a new one.",
+    "trainedToday": "Trained today – rest days refilled.",
+    "restLeft_one": "{{count}} rest day left before the streak breaks",
+    "restLeft_other": "{{count}} rest days left before the streak breaks",
+    "lastDay": "Train today or the streak breaks",
+    "rule_one": "{{count}} rest day in a row counts",
+    "rule_other": "{{count}} rest days in a row count",
+    "tileLabel_one": "day streak",
+    "tileLabel_other": "day streak",
+    "legendTrained": "Workout",
+    "legendRest": "Rest day",
+    "title": "Streak"
   }
 }
