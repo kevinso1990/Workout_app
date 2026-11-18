@@ -8,3 +8,11 @@ export function formatElapsed(t: TFunction, startedAt: number, now = Date.now())
   if (hours < 24) return t("plans.resume.hours", { count: hours });
   return t("plans.resume.days", { count: Math.floor(hours / 24) });
 }
+
+/** Stopwatch reading: "4:05", or "1:04:05" past an hour ("64:05" read like a bug). */
+export function formatClock(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const ss = String(seconds % 60).padStart(2, "0");
+  return hours > 0 ? `${hours}:${String(mins).padStart(2, "0")}:${ss}` : `${mins}:${ss}`;
+}

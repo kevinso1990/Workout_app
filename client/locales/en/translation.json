@@ -629,7 +629,11 @@
       "today": "today {{set}}",
       "reps": "{{count}} reps"
     },
-    "swipeLog": "Same again"
+    "swipeLog": "Same again",
+    "timerBar": {
+      "resume": "Back to {{name}}",
+      "rest": "Rest"
+    }
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",

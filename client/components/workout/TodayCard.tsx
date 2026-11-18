@@ -18,7 +18,7 @@ import {
   loadActiveWorkoutDraft,
   type ActiveWorkoutDraft,
   isLiveDraft,
-  onActiveWorkoutDraftCleared,
+  onActiveWorkoutDraftChange,
 } from "@/lib/activeWorkoutPersistence";
 import { confirmAlert } from "@/lib/confirmAlert";
 import { todayOverview, type TodaySession } from "@/lib/todayPlan";
@@ -28,6 +28,33 @@ import { Panel } from "@/components/surface/Panel";
 import { sessionHues } from "@/constants/palettes";
 import { sessionHueIndex, sessionLengthVariant } from "@/lib/planStructure";
 import { useCommitmentLabels } from "@/components/schedule/CommitmentEditor";
+
+type LengthChoice<S extends TodaySession = TodaySession> = {
+  session: S | null;
+  variant: { length: "short" | "long"; otherIndex: number } | null;
+  shownLength: "short" | "long" | null;
+};
+
+/** The session as due, or its other length when the athlete switched to it. */
+function lengthChoice<S extends TodaySession>(
+  plans: WorkoutPlan[],
+  due: S | null,
+  pickedIndex: number | null,
+): LengthChoice<S> {
+  const plan = due ? plans.find((p) => p.id === due.planId) : undefined;
+  const variant =
+    due && plan ? sessionLengthVariant(plan.days.map((d) => d.dayName), due.dayIndex) : null;
+  if (!due || !plan || !variant) return { session: due, variant: null, shownLength: null };
+  if (pickedIndex !== variant.otherIndex) {
+    return { session: due, variant, shownLength: variant.length };
+  }
+  const day = plan.days[variant.otherIndex];
+  return {
+    session: { ...due, dayIndex: variant.otherIndex, dayName: day.dayName, exerciseCount: day.exercises.length },
+    variant,
+    shownLength: variant.length === "short" ? "long" : "short",
+  };
+}
 
 /**
  * "What do I do today?" answered on the home tab with one tap into the
@@ -52,6 +79,7 @@ export function TodayCard({
   const [draft, setDraft] = useState<ActiveWorkoutDraft | null>(null);
   // The other length of today's session, when the athlete switched to it.
   const [pickedDayIndex, setPickedDayIndex] = useState<number | null>(null);
+  const [pickedNextIndex, setPickedNextIndex] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,7 +94,7 @@ export function TodayCard({
       };
     }, []),
   );
-  useEffect(() => onActiveWorkoutDraftCleared(() => setDraft(null)), []);
+  useEffect(() => onActiveWorkoutDraftChange(setDraft), []);
 
   const overview = useMemo(
     () =>
@@ -87,32 +115,51 @@ export function TodayCard({
 
   // A plan with "kurz" and "lang" versions of each session: the long one is
   // due, but today there's only time for the short one (or the other way).
-  const strengthPlan = scheduled ? plans.find((p) => p.id === scheduled.planId) : undefined;
-  const lengthVariant =
-    scheduled && strengthPlan
-      ? sessionLengthVariant(
-          strengthPlan.days.map((d) => d.dayName),
-          scheduled.dayIndex,
-        )
-      : null;
-  const switched =
-    !!scheduled && !!lengthVariant && pickedDayIndex === lengthVariant.otherIndex;
-  const strength: TodaySession | null =
-    scheduled && strengthPlan && switched
-      ? {
-          ...scheduled,
-          dayIndex: lengthVariant!.otherIndex,
-          dayName: strengthPlan.days[lengthVariant!.otherIndex].dayName,
-          exerciseCount: strengthPlan.days[lengthVariant!.otherIndex].exercises.length,
-        }
-      : scheduled;
-  const shownLength = lengthVariant
-    ? switched
-      ? lengthVariant.length === "short"
-        ? "long"
-        : "short"
-      : lengthVariant.length
-    : null;
+  // The same goes for the session pulled forward from later in the week.
+  const strengthChoice = lengthChoice(plans, scheduled, pickedDayIndex);
+  const strength = strengthChoice.session;
+  const nextChoice = lengthChoice(plans, next, pickedNextIndex);
+  const nextShown = nextChoice.session;
+
+  const lengthToggle = (
+    choice: LengthChoice,
+    setPicked: (index: number | null) => void,
+    testID: string,
+  ) =>
+    choice.variant ? (
+      <View
+        style={[styles.lengthToggle, { borderColor: theme.controlOutline }]}
+        accessibilityRole="radiogroup"
+        testID={testID}
+      >
+        {(["short", "long"] as const).map((length) => {
+          const active = choice.shownLength === length;
+          return (
+            <Pressable
+              key={length}
+              onPress={() => {
+                if (active || !choice.variant) return;
+                Haptics.selectionAsync();
+                setPicked(length === choice.variant.length ? null : choice.variant.otherIndex);
+              }}
+              style={[styles.lengthOption, active && { backgroundColor: theme.chalk }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              testID={`${testID}-${length}`}
+            >
+              <ThemedText
+                style={[
+                  styles.lengthOptionText,
+                  { color: active ? theme.onChalk : theme.textSecondary },
+                ]}
+              >
+                {t(`plans.today.length.${length}`)}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+    ) : null;
 
   const start = async (s: TodaySession) => {
     if (draft) {
@@ -163,42 +210,7 @@ export function TodayCard({
             <ThemedText style={[styles.heroMeta, styles.metaText, { color: theme.textSecondary }]}>
               {exercises(strength)}
             </ThemedText>
-            {lengthVariant && scheduled ? (
-              <View
-                style={[styles.lengthToggle, { borderColor: theme.controlOutline }]}
-                accessibilityRole="radiogroup"
-                testID="toggle-today-length"
-              >
-                {(["short", "long"] as const).map((length) => {
-                  const active = shownLength === length;
-                  return (
-                    <Pressable
-                      key={length}
-                      onPress={() => {
-                        if (active) return;
-                        Haptics.selectionAsync();
-                        setPickedDayIndex(
-                          length === lengthVariant.length ? null : lengthVariant.otherIndex,
-                        );
-                      }}
-                      style={[styles.lengthOption, active && { backgroundColor: theme.chalk }]}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: active }}
-                      testID={`button-today-length-${length}`}
-                    >
-                      <ThemedText
-                        style={[
-                          styles.lengthOptionText,
-                          { color: active ? theme.onChalk : theme.textSecondary },
-                        ]}
-                      >
-                        {t(`plans.today.length.${length}`)}
-                      </ThemedText>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
+            {lengthToggle(strengthChoice, setPickedDayIndex, "toggle-today-length")}
           </View>
           <Pressable
             onPress={() => void start(strength)}
@@ -272,7 +284,7 @@ export function TodayCard({
               </Pressable>
             )
           ) : null}
-          {next ? (
+          {nextShown ? (
             <View style={[styles.sessionRow, { borderTopColor: theme.hairline }]} testID="row-today-next">
               {/* In the session's plan colour, as in the week and the plan. */}
               <View
@@ -280,12 +292,12 @@ export function TodayCard({
                   styles.weekdayBadge,
                   {
                     backgroundColor:
-                      sessionHues[sessionHueIndex(next.dayName, next.dayIndex, sessionHues.length)],
+                      sessionHues[sessionHueIndex(nextShown.dayName, nextShown.dayIndex, sessionHues.length)],
                   },
                 ]}
               >
                 <ThemedText style={[styles.weekdayBadgeText, { color: theme.onSessionHue }]}>
-                  {dayLabel(next.weekday)}
+                  {dayLabel(nextShown.weekday)}
                 </ThemedText>
               </View>
               <View style={styles.statusText}>
@@ -293,24 +305,29 @@ export function TodayCard({
                   {t("plans.today.nextOverline")}
                 </ThemedText>
                 <ThemedText style={styles.rowTitle} numberOfLines={1}>
-                  {translateDayName(t, next.dayName)}
+                  {translateDayName(t, nextShown.dayName)}
                 </ThemedText>
                 <ThemedText style={[styles.heroMeta, { color: theme.textSecondary }]} numberOfLines={1}>
-                  {exercises(next)}
+                  {exercises(nextShown)}
                 </ThemedText>
+                {nextChoice.variant ? (
+                  <View style={styles.nextToggle}>
+                    {lengthToggle(nextChoice, setPickedNextIndex, "toggle-next-length")}
+                  </View>
+                ) : null}
               </View>
-              {!mobility ? (
-                <Pressable
-                  onPress={() => void start(next)}
-                  style={[styles.smallBtn, { borderColor: theme.controlOutline }]}
-                  accessibilityRole="button"
-                  testID="button-today-start-next"
-                >
-                  <ThemedText style={[styles.smallBtnText, { color: theme.text }]}>
-                    {t("plans.today.startEarly")}
-                  </ThemedText>
-                </Pressable>
-              ) : null}
+              {/* Also on mobility days: switching to the long session for
+                  tomorrow was pointless when it couldn't be started. */}
+              <Pressable
+                onPress={() => void start(nextShown)}
+                style={[styles.smallBtn, { borderColor: theme.controlOutline }]}
+                accessibilityRole="button"
+                testID="button-today-start-next"
+              >
+                <ThemedText style={[styles.smallBtnText, { color: theme.text }]}>
+                  {t("plans.today.startEarly")}
+                </ThemedText>
+              </Pressable>
             </View>
           ) : null}
         </>
@@ -376,6 +393,10 @@ const makeStyles = (c: Palette) =>
     },
     metaText: {
       flex: 1,
+    },
+    nextToggle: {
+      flexDirection: "row",
+      marginTop: Spacing.sm,
     },
     lengthToggle: {
       flexDirection: "row",

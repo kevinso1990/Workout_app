@@ -117,6 +117,7 @@ import {
 } from "@/lib/exerciseImages";
 import { ExerciseVariantSheet } from "@/components/workout/ExerciseVariantSheet";
 import { hasVariant, variantSummary } from "@/lib/exerciseVariant";
+import { formatClock } from "@/lib/elapsedLabel";
 import type { ExerciseVariant } from "@/lib/storage";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
 import { prefetchWorkoutExerciseMedia } from "../../services/exerciseMedia";
@@ -208,14 +209,6 @@ function getHistoricalCompletedSetsForExercise(
   return out;
 }
 
-function formatTime(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  const ss = secs.toString().padStart(2, "0");
-  // "4269:05" for a long session read like a bug; switch to h:mm:ss past an hour.
-  return hours > 0 ? `${hours}:${mins.toString().padStart(2, "0")}:${ss}` : `${mins}:${ss}`;
-}
 
 function calculatePlates(totalWeight: number): { plates: number[] } {
   const weightPerSide = (totalWeight - BAR_WEIGHT) / 2;
@@ -391,7 +384,7 @@ function RestTimerBar({
       </View>
       <View style={styles.restBarRow}>
         <Feather name="clock" size={16} color={theme.primary} />
-        <ThemedText style={styles.restBarTime}>{formatTime(timeLeft)}</ThemedText>
+        <ThemedText style={styles.restBarTime}>{formatClock(timeLeft)}</ThemedText>
         <View style={styles.restBarSpacer} />
         <Pressable
           onPress={() => onAdjust(-15)}
@@ -574,7 +567,7 @@ function WorkoutSummary({
       `${t("activeWorkout.shareText.complete", { name: workoutName })}\n` +
       `📅 ${today}\n` +
       t("activeWorkout.shareText.stats", {
-        time: formatTime(duration),
+        time: formatClock(duration),
         sets: completedSets,
         volume: totalVolume.toLocaleString(),
       }) +
@@ -648,7 +641,7 @@ function WorkoutSummary({
             <View style={styles.shareCardStats}>
               <View style={styles.shareCardStat}>
                 <ThemedText style={styles.shareCardStatValue}>
-                  {formatTime(duration)}
+                  {formatClock(duration)}
                 </ThemedText>
                 <ThemedText
                   style={[styles.shareCardStatLabel, { color: theme.textSecondary }]}
@@ -2421,7 +2414,7 @@ export default function ActiveWorkoutScreen() {
                     { color: theme.primary },
                   ]}
                 >
-                  {formatTime(elapsedTime)}
+                  {formatClock(elapsedTime)}
                 </ThemedText>
               </View>
             </View>

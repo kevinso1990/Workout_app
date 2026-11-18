@@ -533,7 +533,11 @@
       "today": "heute {{set}}",
       "reps": "{{count}} Wdh."
     },
-    "swipeLog": "Wie vorher"
+    "swipeLog": "Wie vorher",
+    "timerBar": {
+      "resume": "Zurück zu {{name}}",
+      "rest": "Pause"
+    }
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",

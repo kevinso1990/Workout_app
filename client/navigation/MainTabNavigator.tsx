@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { BottomTabBar, createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet, Text, View } from "react-native";
@@ -14,6 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { ScreenGradient } from "@/components/surface/ScreenGradient";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { CoachHeaderButton } from "@/components/CoachHeaderButton";
+import { WorkoutTimerBar } from "@/components/workout/WorkoutTimerBar";
 import { Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 
@@ -85,6 +86,12 @@ export default function MainTabNavigator() {
       <ScreenGradient />
       <Tab.Navigator
         initialRouteName="MyPlans"
+        tabBar={(props) => (
+          <>
+            <WorkoutTimerBar />
+            <BottomTabBar {...props} />
+          </>
+        )}
         screenOptions={{
           tabBarActiveTintColor: theme.chalk,
           tabBarInactiveTintColor: theme.chalkFaint,
