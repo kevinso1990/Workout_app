@@ -7,12 +7,15 @@ import {
   MOBILITY_REMINDER_KIND,
   syncMobilityReminders,
 } from "@/lib/mobilityReminders";
-import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
+import { mobilityReminderPlanId } from "@/lib/mobilitySplit";
+import { getWorkoutPlans } from "@/lib/storage";
 
-function openMobilityPlan(response: Notifications.NotificationResponse | null) {
+async function openMobilityPlan(response: Notifications.NotificationResponse | null) {
   if (response?.notification.request.content.data?.kind !== MOBILITY_REMINDER_KIND) return;
   if (!rootNavigationRef.isReady()) return;
-  rootNavigationRef.navigate("PlanDetail", { planId: MOBILITY_PLAN_ID });
+  const planId = mobilityReminderPlanId(await getWorkoutPlans());
+  if (planId) rootNavigationRef.navigate("PlanDetail", { planId });
+  else rootNavigationRef.navigate("Main");
 }
 
 /**

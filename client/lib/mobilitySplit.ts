@@ -83,3 +83,16 @@ export function splitMobilityDay(
     },
   };
 }
+
+/**
+ * Where a tapped mobility reminder should lead: the standalone
+ * Mobility-Session, or else the plan that carries a mobility day. The reminder
+ * used to open the Mobility-Session blindly and showed "Plan nicht gefunden"
+ * when mobility lived inside the training plan.
+ */
+export function mobilityReminderPlanId(plans: WorkoutPlan[]): string | null {
+  const own = plans.find((p) => p.id === MOBILITY_PLAN_ID && p.days.length > 0);
+  if (own) return own.id;
+  const carrier = plans.find((p) => p.days.some((d) => isMobilityDay(d) && d.exercises.length > 0));
+  return carrier?.id ?? null;
+}

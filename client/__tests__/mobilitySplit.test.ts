@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
   findMobilityDayToSplit,
   isMobilityDay,
+  mobilityReminderPlanId,
   splitMobilityDay,
 } from "@/lib/mobilitySplit";
 import { MOBILITY_PLAN_ID } from "@/lib/mobilitySchedule";
@@ -54,5 +55,28 @@ describe("splitMobilityDay", () => {
     expect(trainingPlan.daysPerWeek).toBe(3);
     expect(mobilityPlan.id).toBe(MOBILITY_PLAN_ID);
     expect(mobilityPlan.days[0].exercises.map((e) => e.name)).toEqual(["Cat Stretch", "Pigeon Stretch", "Plank"]);
+  });
+});
+
+describe("mobilityReminderPlanId", () => {
+  const day = (dayName: string, names: string[]) => ({
+    dayName,
+    exercises: names.map((name) => ({ name, sets: 2, reps: "10", muscleGroup: "Mobility" })),
+  });
+  const plan = (id: string, days: ReturnType<typeof day>[]) =>
+    ({ id, name: id, daysPerWeek: days.length, days, createdAt: "", lastModified: "" }) as never;
+
+  it("prefers the standalone Mobility-Session", () => {
+    const plans = [plan("week", [day("Mobility", ["Pigeon Stretch"])]), plan(MOBILITY_PLAN_ID, [day("Mobility", ["Cat Cow"])])];
+    expect(mobilityReminderPlanId(plans)).toBe(MOBILITY_PLAN_ID);
+  });
+
+  it("falls back to the plan carrying a mobility day", () => {
+    const plans = [plan("other", [day("GK A", ["Back Squat"])]), plan("week", [day("GK A", ["Back Squat"]), day("Mobility", ["Pigeon Stretch"])])];
+    expect(mobilityReminderPlanId(plans)).toBe("week");
+  });
+
+  it("returns null when no plan has mobility", () => {
+    expect(mobilityReminderPlanId([plan("other", [day("GK A", ["Back Squat"])])])).toBeNull();
   });
 });
