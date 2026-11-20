@@ -15,7 +15,8 @@ cd "$(dirname "$0")/.."
 STAMP=$(date +%Y%m%d-%H%M%S)
 ssh "$HOST" "cp $APP/server/dist/index.js $APP/server/dist/index.js.bak-$STAMP"
 for f in "$@"; do
-  ssh "$HOST" "cp $APP/$f $APP/$f.bak-$STAMP 2>/dev/null || true"
+  # New files may live in folders the VPS doesn't have yet (server/scripts/).
+  ssh "$HOST" "mkdir -p $APP/$(dirname "$f") && { cp $APP/$f $APP/$f.bak-$STAMP 2>/dev/null || true; }"
   scp -q "$f" "$HOST:$APP/$f"
   echo "copied $f"
 done
