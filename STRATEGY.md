@@ -1,6 +1,6 @@
 # TrackYourLift — Produktstrategie (eine Seite)
 
-Stand 2026-11-20 · v2 (Ziel, Zielgruppe, Bezahlmodell und Ausschlüsse bestätigt) · ⚠ = noch offen.
+Stand 2026-11-20 · v3 (Ziel, Zielgruppe und Ausschlüsse bestätigt; Launch nur kostenlos) · ⚠ = noch offen.
 Gehört zur [Roadmap](MASTER_ROADMAP.md): jede Roadmap-Zeile muss auf eine Wette hier zeigen.
 
 ## 1. Wo wir heute stehen (ehrlich)
@@ -9,11 +9,11 @@ Gehört zur [Roadmap](MASTER_ROADMAP.md): jede Roadmap-Zeile muss auf eine Wette
 - **Messen startet gerade.** Die anonyme Nutzungsstatistik ist seit 2026-11-20 auf dem Server live; die App sendet ab dem nächsten Build. Kennzahlen: `server/scripts/productMetrics.ts`.
 - Import-Benchmark, synthetisch (`ops/import-benchmark`, 6 selbst erstellte Pläne): vorher 55/67 Übungen ohne Nacharbeit (82 %), nach den Fixes vom 2026-11-20 67/67 in 2 Läufen.
 - Import-Benchmark, echt (`ops/import-benchmark/real`, 10 öffentliche Trainer-Pläne, PDFs bleiben außerhalb des Repos): Übungen 288/300 → 300/300, ohne Zuordnung 99 → 38, Termine 10/10. Mit PDF direkt an Gemini statt Text: Wdh 95 % → 100 %, Supersätze 8/9 → 9/9.
-- Schulden: Medien von MuscleWiki (Lizenzrisiko), VPS-Repo divergiert, Pro-Abo (5 €/Monat) eingerichtet, aber nicht als Wert positioniert.
+- Schulden: Medien von MuscleWiki (Lizenzrisiko), VPS-Repo divergiert. Pro-Abo-Code (RevenueCat) ist vorhanden, aber abgeschaltet (`EXPO_PUBLIC_SUBSCRIPTIONS_ENABLED` nicht gesetzt).
 
 ## 2. Ziel und Horizont
 - Horizont 12 Monate (neues Produkt, aber Solo-Entwickler: 5–10 Jahre wäre Fantasie).
-- Ziel: 1.000 Nutzer, die in Woche 4 noch ≥ 2× pro Woche loggen, und 3 % davon zahlen Pro.
+- Ziel: 1.000 Nutzer, die in Woche 4 noch ≥ 2× pro Woche loggen. Erst danach Geld verlangen.
 
 ## 3. Wo wir gewinnen
 **Was nur wir können:** *Dein echter Plan, egal wie komplex, wird zum geführten Training.*
@@ -26,8 +26,8 @@ Hevy und Strong loggen gut, aber sie verstehen keinen 3-Wochen-Zyklus und keinen
 
 **Schwer zu kopieren:** die Plan-Struktur (Rotation, Varianten, Supersätze, Mobility) plus Import, der sie richtig erkennt, plus deutsche Inhalte für 1.000 Übungen.
 
-**Bezahlt wird für:** mehr KI-Import und KI-Anpassung, mit Monatskontingent statt unbegrenzt, weil jeder KI-Aufruf Geld kostet. Das Logging bleibt kostenlos.
-⚠ Startwerte, serverseitig einstellbar: Free 2 Importe insgesamt + 5 Anpassungen/Monat · Pro (5 €/Monat) 10 Importe + 30 Anpassungen/Monat.
+**Bezahlmodell:** Zum Launch nur kostenlos, keine Kaufoberfläche. KI-Kosten begrenzt der Server: `importLimiter` (15 Importe/Tag pro IP) und `aiUsageGuard` (Tages- und Monatsdeckel).
+Später, wenn Woche-4-Bindung da ist: Pro mit Monatskontingent für KI-Import und -Anpassung (nicht unbegrenzt, zu teuer). Das Logging bleibt immer kostenlos.
 
 **Erster Kontakt kinderleicht:** vom Install zum ersten geloggten Satz in unter 2 Minuten, auch ohne Plan (Vorlage).
 
@@ -41,9 +41,9 @@ Kein Social-Feed. Kein Ernährungs-Tracking. Keine eigene Watch-App vor Woche-4-
 | Import ist der Grund zu installieren | Anteil Installs mit erfolgreichem Import in 24 h | ≥ 40 % |
 | Geführtes Training hält | Woche-4-Aktive (≥ 2 Trainings/Woche) | ≥ 25 % |
 | Vergleich „zuletzt → heute“ motiviert | Trainings pro aktiver Woche | ≥ 2,5 |
-| Zahlen für Import/KI | Pro-Conversion nach 30 Tagen | ≥ 3 % |
+| *(später)* Zahlen für Import/KI | Pro-Conversion nach 30 Tagen | ≥ 3 % |
 
-**Endzustand rückwärts:** Launch 1.1.0 → Analytics für die 4 Messwerte → Import-Qualität auf echten Trainer-Plänen → Onboarding „Plan rein“ als erster Schritt → Pro-Grenze am Import.
+**Endzustand rückwärts:** Launch 1.1.0 → Analytics für die 4 Messwerte → Import-Qualität auf echten Trainer-Plänen → Onboarding „Plan rein“ als erster Schritt → erst bei Woche-4-Bindung: Pro mit Kontingent.
 Jeder Schritt ist für sich etwas wert.
 
 ## 6. Regeln für den Alltag
