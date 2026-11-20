@@ -9,7 +9,7 @@ import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import { rateLimit } from '../middleware/rateLimiter';
 import { aiUsageGuard } from '../middleware/aiUsageGuard';
 import { geminiGenerateContent } from '../services/geminiGenerate';
-import { matchExerciseToCatalog } from '../services/importExerciseMatchService';
+import { matchExerciseWithNotes } from '../services/importExerciseMatchService';
 import {
   parseWorkoutTextImport,
   isAiQuotaOrBillingError,
@@ -112,6 +112,25 @@ function deduplicateExercisesAcrossDays(raw: Record<string, unknown>): void {
   }
 }
 
+/** Exercises plus non-strength sessions (a cardio day has no exercise rows). */
+export function importItemCount(plan: Record<string, unknown>): number {
+  const days = Array.isArray(plan.days) ? (plan.days as Record<string, unknown>[]) : [];
+  return days.reduce((n, d) => {
+    const exercises = Array.isArray(d.exercises) ? d.exercises.length : 0;
+    return n + (exercises > 0 ? exercises : d.kind && d.kind !== "strength" ? 1 : 0);
+  }, 0);
+}
+
+/**
+ * A read worth repeating: almost nothing came back, or the plain-text parser
+ * sees clearly more exercises in the same document than the model returned.
+ */
+export function importLooksIncomplete(plan: Record<string, unknown>, textParserCount: number | null): boolean {
+  const items = importItemCount(plan);
+  if (items <= 2) return true;
+  return textParserCount !== null && textParserCount >= 4 && items < textParserCount * 0.6;
+}
+
 export interface NormalizeImportOptions {
   /**
    * Client understands mobility/cardio days, supersets and the schedule
@@ -174,6 +193,21 @@ export function normalizeImportedPlan(
     const exercises = d.exercises;
     // A cardio session is a prescription, not a list of lifts to log.
     if (!Array.isArray(exercises) || d.kind === "cardio") {
+      // A table plan puts "Laufen 30 Min locker" in the exercise column; the
+      // model hands it back as an exercise. Keep it as the day's prescription
+      // instead of dropping it with the list.
+      if (d.kind === "cardio" && !d.notes && Array.isArray(exercises)) {
+        const text = exercises
+          .map((ex) => {
+            const e = (ex ?? {}) as Record<string, unknown>;
+            return [e.name, e.reps, e.notes].filter((v) => typeof v === "string" && v.trim()).join(" ");
+          })
+          .filter(Boolean)
+          .join(" · ");
+        d.notes = cleanText(text, 500);
+        const mins = text.match(/(\d{1,3})\s*(?:min|minuten)\b/i);
+        if (!d.durationMinutes && mins && +mins[1] > 0 && +mins[1] <= 300) d.durationMinutes = +mins[1];
+      }
       d.exercises = [];
       continue;
     }
@@ -186,7 +220,7 @@ export function normalizeImportedPlan(
       const rawName = String(e.name ?? "").trim().replace(/^[A-H][1-9]\s+/, "");
       if (!rawName) continue;
 
-      const m = matchExerciseToCatalog(rawName);
+      const m = matchExerciseWithNotes(rawName, e.notes);
       // Weak/uncertain matches are kept (not dropped) — the client's import
       // review screen lets the user assign a catalog exercise or delete the
       // row. Silently dropping here used to eat real exercises whose names
@@ -584,10 +618,9 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
     }
 
     // Try Claude first; fall back to Gemini on any error.
-    let rawText: string;
-    let usedProvider = 'claude';
-
-    try {
+    const readPlan = async (): Promise<{ plan: Record<string, unknown>; usedProvider: string }> => {
+      let rawText: string;
+      let usedProvider = 'claude';
       if (process.env.ANTHROPIC_API_KEY) {
         try {
           rawText = await callClaude(images, pdfBase64, spreadsheetText, aiText);
@@ -600,10 +633,32 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
         usedProvider = 'gemini';
         rawText = await callGemini(images, pdfBase64, spreadsheetText, aiText);
       }
-
       console.log(`[import-workout] ${usedProvider} raw response:\n${rawText}`);
+      return { plan: normalizeImportedPlan(extractPlan(rawText), { fullPlan }), usedProvider };
+    };
 
-      const plan = normalizeImportedPlan(extractPlan(rawText), { fullPlan });
+    try {
+      let { plan, usedProvider } = await readPlan();
+      // The model now and then stops after one exercise of a 15-exercise plan
+      // (seen in the import benchmark, same file, same model). One more read
+      // fixes it; keep whichever came back fuller.
+      const offlineCount = offlineText
+        ? (parseWorkoutTextImport(offlineText, { minExercises: 1 })?.days ?? []).reduce(
+            (n, d) => n + d.exercises.length,
+            0,
+          )
+        : null;
+      if (importLooksIncomplete(plan, offlineCount)) {
+        console.warn(
+          `[import-workout] result looks incomplete (${importItemCount(plan)} items, text parser ${offlineCount ?? '–'}) — reading once more`,
+        );
+        try {
+          const second = await readPlan();
+          if (importItemCount(second.plan) > importItemCount(plan)) ({ plan, usedProvider } = second);
+        } catch (retryErr) {
+          console.warn('[import-workout] second read failed:', (retryErr as Error).message);
+        }
+      }
       console.log(`[import-workout] parsed plan via ${usedProvider}:`, (plan as { planName?: string }).planName ?? '(unnamed)');
       res.json(plan);
     } catch (aiErr) {

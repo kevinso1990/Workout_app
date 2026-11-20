@@ -97,7 +97,10 @@ export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
                 restSeconds: { type: "integer", nullable: true },
                 muscleGroup: { type: "string", enum: [...IMPORT_MUSCLE_GROUPS] },
               },
-              required: ["name", "sets"],
+              // Required (nullable) so the model has to fill them: as optional
+              // fields they were dropped on some reads of the same document,
+              // losing "Kabel"/"Kurzhantel" notes and "8/Seite".
+              required: ["name", "sets", "reps", "perSide", "notes", "superset"],
             },
           },
         },

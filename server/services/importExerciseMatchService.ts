@@ -45,6 +45,18 @@ const SHORTHAND: [RegExp, string][] = [
   [/\bSA\b/g, "Single-Arm"],
   [/\balternate\b/gi, "alternating"],
   [/\balt\.?\b/gi, "alternating"],
+  // German gym shorthand from hand-written plans ("KH-Bankdr. 4x8",
+  // "rum. Kreuzh."). An abbreviation ends at a space, hyphen, comma, bracket
+  // or the end — so "Bankdr" inside "Bankdrücken" is never rewritten.
+  [/\bKH(?=[\s\-,()/]|$)/g, "Kurzhantel"],
+  [/\bLH(?=[\s\-,()/]|$)/g, "Langhantel"],
+  [/\bBankdr\.?(?=[\s\-,()/]|$)/gi, "Bankdrücken"],
+  [/\bSchulterdr\.?(?=[\s\-,()/]|$)/gi, "Schulterdrücken"],
+  [/\bKreuzh\.?(?=[\s\-,()/]|$)/gi, "Kreuzheben"],
+  [/\bKlimmz\.?(?=[\s\-,()/]|$)/gi, "Klimmzüge"],
+  [/\bBeinstr\.?(?=[\s\-,()/]|$)/gi, "Beinstrecker"],
+  [/\bBeinb\.?(?=[\s\-,()/]|$)/gi, "Beinbeuger"],
+  [/\brum\.(?=\s)/gi, "Rumänisches"],
 ];
 
 export function expandShorthand(s: string): string {
@@ -136,6 +148,12 @@ const EXERCISE_ALIASES: Record<string, string> = {
   halfkneelinglandminepress: "Half-Kneeling Landmine Press",
   singlearmlandminerow: "Single-Arm Landmine Row",
   // German → canonical
+  katzekuh: "Cat Stretch",
+  catcow: "Cat Stretch",
+  kurzhantelschragbankdrucken: "Incline Dumbbell Press",
+  schragbankdruckenkurzhantel: "Incline Dumbbell Press",
+  trizepsseil: "Triceps Pushdown - Rope Attachment",
+  trizepsdruckenseil: "Triceps Pushdown - Rope Attachment",
   kniebeuge: "Barbell Squat",
   kniebeugen: "Barbell Squat",
   frontkniebeuge: "Front Squat",
@@ -570,6 +588,38 @@ export function matchExerciseToCatalog(raw: string): ImportExerciseMatch {
     needsUserMapping: true,
     catalogExerciseId: null,
   };
+}
+
+/**
+ * The plan often puts the equipment in the note, not the name ("Rudern" ·
+ * "Kabel", "Kreuzheben" · "rumänisch"). Matching the bare name picked the
+ * barbell default; this tries the name with that hint first and keeps it only
+ * when it resolves confidently, else falls back to the plain name.
+ */
+export function matchExerciseWithNotes(raw: string, notes?: unknown): ImportExerciseMatch {
+  const plain = () => matchExerciseToCatalog(raw);
+  const note = typeof notes === "string" ? notes.toLowerCase() : "";
+  if (!note) return plain();
+  const name = expandShorthand(raw);
+  let hinted: string | null = null;
+  if (/rumän|romanian/.test(note) && /kreuzheb|deadlift/i.test(name) && !/rumän|romanian/i.test(name)) {
+    hinted = "Rumänisches Kreuzheben";
+  } else if (!/kurzhantel|langhantel|kabel|kettlebell|dumbbell|barbell|cable|seil/i.test(name)) {
+    const word = /kabel|seilzug|cable/.test(note)
+      ? "Kabel"
+      : /kurzhantel|\bkh\b|dumbbell/.test(note)
+        ? "Kurzhantel"
+        : /langhantel|\blh\b|barbell/.test(note)
+          ? "Langhantel"
+          : /kettlebell|\bkb\b/.test(note)
+            ? "Kettlebell"
+            : null;
+    if (word) hinted = `${name} ${word}`;
+  }
+  if (!hinted) return plain();
+  const m = matchExerciseToCatalog(hinted);
+  if (m.needsUserMapping || m.matchQuality === "uncertain" || !m.catalogExerciseId) return plain();
+  return { ...m, originalName: raw.trim() };
 }
 
 export function invalidateImportExerciseNameCache(): void {
