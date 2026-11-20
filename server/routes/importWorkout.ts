@@ -112,6 +112,12 @@ function deduplicateExercisesAcrossDays(raw: Record<string, unknown>): void {
   }
 }
 
+/** exact > fuzzy > needs mapping. */
+function importMatchRank(m: { matchQuality: string; needsUserMapping: boolean; catalogExerciseId: number | null }): number {
+  if (m.needsUserMapping || !m.catalogExerciseId || m.matchQuality === "uncertain") return 0;
+  return m.matchQuality === "exact" ? 2 : 1;
+}
+
 /** Exercises plus non-strength sessions (a cardio day has no exercise rows). */
 export function importItemCount(plan: Record<string, unknown>): number {
   const days = Array.isArray(plan.days) ? (plan.days as Record<string, unknown>[]) : [];
@@ -220,7 +226,17 @@ export function normalizeImportedPlan(
       const rawName = String(e.name ?? "").trim().replace(/^[A-H][1-9]\s+/, "");
       if (!rawName) continue;
 
-      const m = matchExerciseWithNotes(rawName, e.notes);
+      // The source's own name first when it maps exactly (curated German
+      // aliases), else the model's English name, which the English catalog
+      // knows far better than "Latzug eng zur Brust".
+      const english = typeof e.englishName === "string" ? e.englishName.trim() : "";
+      delete e.englishName;
+      const own = matchExerciseWithNotes(rawName, e.notes);
+      const viaEnglish = english && own.matchQuality !== "exact" ? matchExerciseWithNotes(english, e.notes) : null;
+      const m =
+        viaEnglish && importMatchRank(viaEnglish) > importMatchRank(own)
+          ? { ...viaEnglish, originalName: rawName }
+          : own;
       // Weak/uncertain matches are kept (not dropped) — the client's import
       // review screen lets the user assign a catalog exercise or delete the
       // row. Silently dropping here used to eat real exercises whose names
@@ -280,7 +296,10 @@ export function normalizeImportedPlan(
 
   if (opts.fullPlan) {
     const dayNames = (raw.days as Record<string, unknown>[]).map((d) => String(d?.dayName ?? ""));
-    raw.schedule = { weeks: normalizeSchedule(rawSchedule, dayNames) };
+    const weeks = normalizeSchedule(rawSchedule, dayNames);
+    // "Woche 4: wie Woche 1" read as a fourth week: the cycle restarts there.
+    while (weeks.length > 1 && JSON.stringify(weeks[weeks.length - 1]) === JSON.stringify(weeks[0])) weeks.pop();
+    raw.schedule = { weeks };
   }
   return raw;
 }

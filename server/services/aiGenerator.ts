@@ -13,6 +13,7 @@ WHAT TO READ — every SESSION block of the plan:
 - Strength days, however titled ("GK A", "GK A kurz – Bein / Hinge", "Tag 1", "Day A", "Push", "Workout B", …). Short and long versions of the same focus day are SEPARATE days.
 - Mobility / stretching sessions ("Mobility – Mo abends") → kind "mobility".
 - Cardio / conditioning sessions ("Cardio – So", "Norwegisches 4×4") → kind "cardio".
+- Several plan variants printed side by side ("Trainingsplan 3" | "Trainingsplan 3.2") are separate days — read every column.
 WHAT TO IGNORE: introductions, rule/physio text, disclaimers, page headers/footers, table header rows ("# Übung Sätze × Wdh Kurz-Hinweis").
 
 PER DAY:
@@ -25,6 +26,7 @@ PER DAY:
 
 PER EXERCISE:
 - name: the exercise name only — no numbering, no "A1"/"B2" prefix, no conditions like "(falls Stange da)" (those go to notes). Keep qualifiers that change WHICH exercise it is ("Single Leg KB RDL", "Enge Klimmzüge (supinated)", "Bulgarian Split Squat (KB Front Rack)"). Equipment choices between otherwise identical options go to notes ("Rudern Sitzend (Kabel/Maschine)" → name "Rudern Sitzend", notes "Kabel/Maschine").
+- englishName: the exercise's standard English gym name as used in exercise databases — translate German or abbreviated names and keep equipment and variant: "Flachbankdrücken" → "Barbell Bench Press", "Latzug eng zur Brust" → "Close-Grip Lat Pulldown", "Wadenheben an der Maschine" → "Machine Calf Raise", "Frontdrücken Multipresse" → "Smith Machine Shoulder Press", "Wadenmassage" with a foam roller → "Foam Roll Calves". If the name is already English, repeat it.
 - sets: integer. For a range ("2–3") use the higher number and add "2–3 Sätze" to notes. A row with only a duration ("Child's Pose 60 Sek") is 1 set. If the block header gives rounds ("3 Runden") and the row has no own sets, use the rounds.
 - reps: the per-set target as a string, WITHOUT the "per side" part:
     "6–8" → "6-8", "10" → "10", "20–30 Sek" → "20-30 s", "45 Sek" → "45 s", "2 Min" → "120 s", "2–3 Min" → "120-180 s". null if none.
@@ -32,7 +34,7 @@ PER EXERCISE:
 - weight: number in kg if the row prescribes a load, else null.
 - notes: the row's coaching cue as written, shortened only by removing the alternative (below). Instructions in a BLOCK header that apply to every exercise of the block (e.g. "linke Seite zuerst, links +1 Satz") are added to each of those exercises' notes. null if nothing.
 - alternative: an alternative exercise the row offers for another setting, with its label, e.g. "Zuhause: KB Suitcase DL 3 × 8/Seite" or "Gym: Reverse Butterfly". Remove it from notes. null if none.
-- superset: when the row belongs to a superset/circuit block ("Superset A – 3 Runden, 90 Sek Pause", rows prefixed A1/A2), the block letter ("A", "B"). Exercises of a normal block or a "Finisher" without superset wording → null.
+- superset: when the row belongs to a superset/circuit block ("Superset A – 3 Runden, 90 Sek Pause", rows prefixed A1/A2), the block letter ("A", "B"). Exercises of a normal block or a "Finisher" without superset wording → null. A block labelled "Supersatz"/"Supersätze" (in its title or its muscle-group cell) pairs its exercises in order: each pair gets its own letter.
 - restSeconds: rest in seconds stated for the row or its block ("90 Sek Pause" → 90, "2 Min Pause" → 120), else null.
 - muscleGroup: the main muscle group the exercise trains, one of: Chest, Back, Shoulders, Biceps, Triceps, Forearms, Traps, Quads, Hamstrings, Glutes, Calves, Legs, Core, Full Body, Mobility ("Mobility" for stretches and mobility drills).
 
@@ -42,6 +44,7 @@ SCHEDULE — only when the document assigns sessions to weekdays:
 - Resolve rotation tables: e.g. "Woche 1: Di GK B kurz, Do GK C kurz, Sa GK A lang" → week 1 has tue → "GK B kurz – Pull", thu → "GK C kurz – Push / Core", sat → "GK A lang – Bein / Hinge".
 - Sessions that are the same every week (e.g. "Mo Mobility", "So Cardio") appear in EVERY week of the cycle.
 - Free/rest days are simply not listed.
+- "Woche 4: wie Woche 1" means the cycle starts over — it is not another week.
 - If the document has no weekday assignment at all, return "weeks": [].
 
 AVOID-LIST — separate from the days:
@@ -87,6 +90,7 @@ export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
               type: "object",
               properties: {
                 name: { type: "string" },
+                englishName: { type: "string" },
                 sets: { type: "integer" },
                 reps: { type: "string", nullable: true },
                 perSide: { type: "boolean" },
@@ -100,7 +104,7 @@ export const IMPORT_WORKOUT_RESPONSE_SCHEMA = {
               // Required (nullable) so the model has to fill them: as optional
               // fields they were dropped on some reads of the same document,
               // losing "Kabel"/"Kurzhantel" notes and "8/Seite".
-              required: ["name", "sets", "reps", "perSide", "notes", "superset"],
+              required: ["name", "englishName", "sets", "reps", "perSide", "notes", "superset"],
             },
           },
         },
