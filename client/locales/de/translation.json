@@ -778,7 +778,11 @@
       "subtitle": "Feste Termine — dein Plan wird drumherum gelegt"
     },
     "avoidExercises": "Übungen vermeiden",
-    "myWeek": "Meine Woche"
+    "myWeek": "Meine Woche",
+    "analytics": {
+      "title": "Anonyme Statistik",
+      "subtitle": "Ohne Konto-Bezug, ohne Trainingsinhalte"
+    }
   },
   "onboarding": {
     "welcome": "Lass uns deinen perfekten Trainingsplan erstellen",

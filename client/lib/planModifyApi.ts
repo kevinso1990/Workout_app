@@ -1,6 +1,7 @@
 import { nativeRequest } from "@/lib/nativeApi";
 import { IMPORT_JSON_HEADERS } from "@/lib/importApiHeaders";
 import type { WorkoutPlan } from "@/lib/storage";
+import { track } from "@/lib/analytics";
 
 export type PlanModifyResponse = {
   planName: string;
@@ -46,11 +47,13 @@ export async function requestPlanModify(
       : instruction,
   };
   try {
-    return await nativeRequest<PlanModifyResponse>(
+    const result = await nativeRequest<PlanModifyResponse>(
       "/api/plans/modify",
       { method: "POST", headers: { ...IMPORT_JSON_HEADERS }, body: JSON.stringify(body) },
       60_000,
     );
+    void track("ai_plan_adjusted");
+    return result;
   } catch (err) {
     const raw = err instanceof Error ? err.message : "";
     let message = raw;

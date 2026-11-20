@@ -29,6 +29,7 @@ import {
   IMPORT_ACCEPT_HEADERS,
   IMPORT_JSON_HEADERS,
 } from "@/lib/importApiHeaders";
+import { track } from "@/lib/analytics";
 
 export { ImportRequestError } from "@/hooks/importRequestError";
 export { formatImportFailure } from "@/hooks/importRequestError";
@@ -779,6 +780,7 @@ export function useWorkoutImport() {
         await setUserPreferences({ workoutDaysPerWeek: storagePlan.daysPerWeek, ...prefs, weeklyCommitments: commitments });
       }
     }
+    void track("import_succeeded", { days: storagePlan.days.length });
     return planId;
   }
 
@@ -790,5 +792,25 @@ export function useWorkoutImport() {
     return postImport({ plainText: trimmed });
   }
 
-  return { pickImage, pickFile, analyzeImages, analyzeFile, analyzePlainText, saveImportedPlan };
+  /** A failed analysis is the import-quality signal STRATEGY.md bets on. */
+  async function measured(
+    source: string,
+    run: () => Promise<ImportedWorkoutPlan>,
+  ): Promise<ImportedWorkoutPlan> {
+    try {
+      return await run();
+    } catch (e) {
+      void track("import_failed", { source, unreadable: e instanceof WorkoutImportUnreadableError });
+      throw e;
+    }
+  }
+
+  return {
+    pickImage,
+    pickFile,
+    analyzeImages: (images: PickedImage[]) => measured("image", () => analyzeImages(images)),
+    analyzeFile: (file: PickedFile) => measured(file.kind, () => analyzeFile(file)),
+    analyzePlainText: (text: string) => measured("text", () => analyzePlainText(text)),
+    saveImportedPlan,
+  };
 }

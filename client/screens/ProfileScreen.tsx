@@ -54,6 +54,7 @@ import * as WebBrowser from "expo-web-browser";
 import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from "@/lib/legalLinks";
 import { api } from "@/lib/api";
 import { setStoredToken } from "@/lib/nativeAuth";
+import { isAnalyticsEnabled, setAnalyticsEnabled } from "@/lib/analytics";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -849,6 +850,45 @@ function SettingsItem({
   );
 }
 
+/** Opt-out for the anonymous usage events (lib/analytics). On by default. */
+function AnalyticsToggleRow() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { t } = useTranslation();
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    void isAnalyticsEnabled().then(setEnabled);
+  }, []);
+
+  return (
+    <View style={[styles.settingsItem, styles.settingsItemSeparated, { borderTopColor: theme.hairline }]}>
+      <View style={[styles.settingsIcon, { backgroundColor: theme.backgroundSecondary }]}>
+        <Feather name="bar-chart-2" size={20} color={theme.textSecondary} />
+      </View>
+      <View style={styles.reminderInfo}>
+        <ThemedText style={[styles.settingsLabel, { color: theme.text }]}>
+          {t("profile.analytics.title")}
+        </ThemedText>
+        <ThemedText style={[styles.analyticsHint, { color: theme.textSecondary }]}>
+          {t("profile.analytics.subtitle")}
+        </ThemedText>
+      </View>
+      <Switch
+        value={enabled}
+        onValueChange={(value) => {
+          setEnabled(value);
+          void setAnalyticsEnabled(value);
+        }}
+        trackColor={{ false: theme.border, true: theme.success }}
+        thumbColor="#fff"
+        ios_backgroundColor={theme.border}
+        testID="switch-analytics"
+      />
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
@@ -1211,6 +1251,7 @@ export default function ProfileScreen() {
           index={6}
           separated
         />
+        <AnalyticsToggleRow />
       </View>
 
       <Animated.View
@@ -1348,6 +1389,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginTop: Spacing.sm,
     ...CARD_ELEVATION,
+  },
+  analyticsHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+    marginRight: Spacing.sm,
   },
   reminderInfo: {
     flex: 1,

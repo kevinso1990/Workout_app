@@ -17,6 +17,7 @@ import {
   SUBSCRIPTIONS_ENABLED,
 } from "./subscriptionConfig";
 import { decodeJwtSub, ensureAuthToken, getStoredToken } from "./nativeAuth";
+import { track } from "@/lib/analytics";
 
 export type PurchaseErrorCode =
   | "cancelled"
@@ -148,6 +149,7 @@ export async function purchaseProPackage(
         customerInfo,
       };
     }
+    void track("pro_purchased");
     return { success: true, customerInfo };
   } catch (err) {
     return mapPurchaseError(err);

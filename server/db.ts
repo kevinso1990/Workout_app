@@ -131,6 +131,7 @@ export function initDb() {
   migrateAuth();
   migrateVotes();
   migrateExerciseCues();
+  migrateEvents();
   migrateSplitRefresh();
   migrateSubscriptions();
   migrateIndices();
@@ -427,6 +428,23 @@ function migrateIndices() {
 }
 
 /** AI-written coaching cues for exercises without any (see exerciseCuesService). */
+/** Anonymous product events (no user id, no content) — see routes/events.ts. */
+function migrateEvents() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      anon_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      props TEXT,
+      client_ts TEXT NOT NULL,
+      platform TEXT,
+      app_version TEXT,
+      received_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_events_name_anon ON events(name, anon_id);
+  `);
+}
+
 function migrateExerciseCues() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS exercise_cues (

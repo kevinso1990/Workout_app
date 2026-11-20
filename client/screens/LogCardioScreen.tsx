@@ -32,6 +32,7 @@ import { scheduleDataSync, scheduleSessionSync } from "@/lib/dataSync";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 import { ActivityIcon } from "@/components/schedule/activityIcons";
+import { trackWorkoutCompleted } from "@/lib/analytics";
 
 const SPORTS: CardioSportType[] = [
   "running",
@@ -134,6 +135,7 @@ export default function LogCardioScreen() {
       };
 
       await addWorkoutSession(session);
+      trackWorkoutCompleted(session);
       void scheduleSessionSync(session).catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();

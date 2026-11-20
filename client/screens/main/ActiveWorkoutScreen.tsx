@@ -119,6 +119,7 @@ import {
 import { ExerciseVariantSheet } from "@/components/workout/ExerciseVariantSheet";
 import { hasVariant, variantSummary } from "@/lib/exerciseVariant";
 import { formatClock } from "@/lib/elapsedLabel";
+import { trackOnce, trackWorkoutCompleted } from "@/lib/analytics";
 import { ShareRecordSheet, type ShareableRecord } from "@/components/records/ShareRecordSheet";
 import type { ExerciseVariant } from "@/lib/storage";
 import ExerciseDetailModal from "@/components/ExerciseDetailModal";
@@ -1808,6 +1809,7 @@ export default function ActiveWorkoutScreen() {
   ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!plan) return;
+    void trackOnce("first_set_logged");
     const day = plan.days[route.params.dayIndex];
     const exercise = day.exercises[exerciseIndex];
     const exerciseProgress = progress[exerciseIndex];
@@ -2192,6 +2194,7 @@ export default function ActiveWorkoutScreen() {
 
     try {
       await addWorkoutSession(session);
+      trackWorkoutCompleted(session);
       // A skipped exercise wasn't lifted light — it wasn't lifted. Keep it
       // out of the progression bookkeeping.
       const skippedIds = new Set(

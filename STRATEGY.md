@@ -1,35 +1,36 @@
 # TrackYourLift — Produktstrategie (eine Seite)
 
-Stand 2026-11-20 · Entwurf v1 · ⚠ = Annahme, bitte bestätigen oder ändern.
+Stand 2026-11-20 · v2 (Ziel, Zielgruppe, Bezahlmodell und Ausschlüsse bestätigt) · ⚠ = noch offen.
 Gehört zur [Roadmap](MASTER_ROADMAP.md): jede Roadmap-Zeile muss auf eine Wette hier zeigen.
 
 ## 1. Wo wir heute stehen (ehrlich)
 - 1.0.0 ist freigegeben, aber zurückgehalten; 1.1.0 ist der echte Launch. Es gibt noch keine Nutzer außer uns.
 - Viele Funktionen: Logging, KI-Pläne, Smart Import, Mobility, Cardio, Coach, Live Activity, Bestleistungen, Serie.
-- **Wir messen nichts.** Kein Analytics im Client: Wir wissen nicht, ob jemand den ersten Satz loggt oder in Woche 4 noch trainiert.
+- **Wir messen noch nichts.** Anonyme Nutzungsstatistik ist in Arbeit (2026-11-20); bisher kein Analytics: Wir wissen nicht, ob jemand den ersten Satz loggt oder in Woche 4 noch trainiert.
 - Schulden: Medien von MuscleWiki (Lizenzrisiko), VPS-Repo divergiert, Pro-Abo (5 €/Monat) eingerichtet, aber nicht als Wert positioniert.
 
 ## 2. Ziel und Horizont
-- ⚠ Horizont 12 Monate (neues Produkt, aber Solo-Entwickler: 5–10 Jahre wäre Fantasie).
-- ⚠ Ziel: 1.000 Nutzer, die in Woche 4 noch ≥ 2× pro Woche loggen, und 3 % davon zahlen Pro.
+- Horizont 12 Monate (neues Produkt, aber Solo-Entwickler: 5–10 Jahre wäre Fantasie).
+- Ziel: 1.000 Nutzer, die in Woche 4 noch ≥ 2× pro Woche loggen, und 3 % davon zahlen Pro.
 
 ## 3. Wo wir gewinnen
 **Was nur wir können:** *Dein echter Plan, egal wie komplex, wird zum geführten Training.*
 Foto oder PDF vom Trainer → Plan in 1 Minute, inklusive Rotation, Kurz/Lang-Varianten, Mobility-Tagen und deutscher Ausführungsanleitung.
 Hevy und Strong loggen gut, aber sie verstehen keinen 3-Wochen-Zyklus und keinen Trainer-Zettel.
 
-**Für wen:** ⚠ Deutschsprachige, die 2–4× pro Woche nach einem Plan trainieren, den jemand anderes geschrieben hat (Trainer, Coach, Instagram, KI). Nicht: Powerlifter mit eigenem Excel, nicht: Anfänger ganz ohne Plan.
+**Für wen:** Deutschsprachige, die 2–4× pro Woche nach einem Plan trainieren, den jemand anderes geschrieben hat (Trainer, Coach, Instagram, KI). Nicht: Powerlifter mit eigenem Excel, nicht: Anfänger ganz ohne Plan.
 
 **Ein Use Case zuerst:** Plan rein → heute starten → Satz loggen → nächstes Mal sehen, was zu schlagen ist. Erst wenn das in Woche 4 trägt, wird breiter gebaut.
 
 **Schwer zu kopieren:** die Plan-Struktur (Rotation, Varianten, Supersätze, Mobility) plus Import, der sie richtig erkennt, plus deutsche Inhalte für 1.000 Übungen.
 
-**Bezahlt wird für:** ⚠ unbegrenzten Import und KI-Anpassung des Plans. Das Logging bleibt kostenlos.
+**Bezahlt wird für:** mehr KI-Import und KI-Anpassung, mit Monatskontingent statt unbegrenzt, weil jeder KI-Aufruf Geld kostet. Das Logging bleibt kostenlos.
+⚠ Startwerte, serverseitig einstellbar: Free 2 Importe insgesamt + 5 Anpassungen/Monat · Pro (5 €/Monat) 10 Importe + 30 Anpassungen/Monat.
 
 **Erster Kontakt kinderleicht:** vom Install zum ersten geloggten Satz in unter 2 Minuten, auch ohne Plan (Vorlage).
 
 ## 4. Was wir nicht machen
-⚠ Kein Social-Feed. Kein Ernährungs-Tracking. Keine eigene Watch-App vor Woche-4-Bindung. Keine Coach-Marktplatz-Funktion. Keine Features, nur weil Hevy/Setgraph sie haben, sondern nur, wenn sie den einen Use Case stärken. Apple Health erst nach Launch.
+Kein Social-Feed. Kein Ernährungs-Tracking. Keine eigene Watch-App vor Woche-4-Bindung. Keine Coach-Marktplatz-Funktion. Keine Features, nur weil Hevy/Setgraph sie haben, sondern nur, wenn sie den einen Use Case stärken. Apple Health erst nach Launch.
 **Konkurrenz:** Hevy, Strong, Setgraph. Kurswechsel, wenn einer von ihnen Plan-Import mit Struktur bringt oder wenn der Import in Tests unter 80 % richtig erkennt.
 
 ## 5. Die Wetten (Hypothesen mit Messwert)

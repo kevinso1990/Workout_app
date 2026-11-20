@@ -18,6 +18,7 @@ import subscriptionRouter from "./subscriptions";
 import importWorkoutRouter from "./importWorkout";
 import translateExerciseRouter from "./translateExercise";
 import exerciseCuesRouter from "./exerciseCues";
+import eventsRouter from "./events";
 import coachRouter from "./coach";
 import workoutSyncRouter from "./workoutSync";
 import { requireAuth, optionalAuth } from "../middleware/auth";
@@ -205,6 +206,8 @@ export function registerRoutes(app: Express): void {
   app.use("/api",                   optionalAuth, importWorkoutRouter);
   app.use("/api/coach",             optionalAuth, coachRouter);
   app.use("/api",                   optionalAuth, exerciseCuesRouter);
+  // Anonymous on purpose: no auth, so events never carry a user id.
+  app.use("/api",                   eventsRouter);
   app.use("/api",                   requireAuth, translateExerciseRouter);
 
   startPushScheduler();

@@ -43,6 +43,7 @@ import { loadCustomExerciseImages } from "@/lib/customExerciseImages";
 import { hydrateExerciseNameCatalog } from "@/lib/exerciseNameCatalog";
 import { registerWebServiceWorker } from "@/lib/installWebGlobalErrorHandlers";
 import { ReducedMotionConfig, ReduceMotion } from "react-native-reanimated";
+import { startAnalytics } from "@/lib/analytics";
 
 // Provider ordering rationale (outside-in):
 //   GestureHandlerRootView  -> required at the very top of the tree by
@@ -79,6 +80,7 @@ export default function AppNative() {
   });
 
   useEffect(() => initDataSync(), []);
+  useEffect(() => startAnalytics(), []);
 
   useEffect(() => {
     void hydrateExerciseNameCatalog();

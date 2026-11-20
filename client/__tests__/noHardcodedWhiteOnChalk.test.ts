@@ -40,6 +40,7 @@ const ALLOWED: Record<string, string[]> = {
   ],
   "screens/ProfileScreen.tsx": [
     "Switch thumbColor (not a surface foreground)",
+    "Switch thumbColor, analytics opt-out (not a surface foreground)",
   ],
   "components/ErrorFallback.tsx": [
     "title on #111111",
