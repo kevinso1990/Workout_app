@@ -7,6 +7,7 @@ Gehört zur [Roadmap](MASTER_ROADMAP.md): jede Roadmap-Zeile muss auf eine Wette
 - 1.0.0 ist freigegeben, aber zurückgehalten; 1.1.0 ist der echte Launch. Es gibt noch keine Nutzer außer uns.
 - Viele Funktionen: Logging, KI-Pläne, Smart Import, Mobility, Cardio, Coach, Live Activity, Bestleistungen, Serie.
 - **Wir messen noch nichts.** Anonyme Nutzungsstatistik ist in Arbeit (2026-11-20); bisher kein Analytics: Wir wissen nicht, ob jemand den ersten Satz loggt oder in Woche 4 noch trainiert.
+- Import-Benchmark (`ops/import-benchmark`, 6 realistische, aber selbst erstellte Pläne): vorher 55/67 Übungen ohne Nacharbeit (82 %), nach den Fixes vom 2026-11-20 67/67 in 2 Läufen. Echte Trainer-Pläne fehlen noch als Testmaterial.
 - Schulden: Medien von MuscleWiki (Lizenzrisiko), VPS-Repo divergiert, Pro-Abo (5 €/Monat) eingerichtet, aber nicht als Wert positioniert.
 
 ## 2. Ziel und Horizont
