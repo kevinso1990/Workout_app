@@ -7,7 +7,8 @@ Gehört zur [Roadmap](MASTER_ROADMAP.md): jede Roadmap-Zeile muss auf eine Wette
 - 1.0.0 ist freigegeben, aber zurückgehalten; 1.1.0 ist der echte Launch. Es gibt noch keine Nutzer außer uns.
 - Viele Funktionen: Logging, KI-Pläne, Smart Import, Mobility, Cardio, Coach, Live Activity, Bestleistungen, Serie.
 - **Messen startet gerade.** Die anonyme Nutzungsstatistik ist seit 2026-11-20 auf dem Server live; die App sendet ab dem nächsten Build. Kennzahlen: `server/scripts/productMetrics.ts`.
-- Import-Benchmark (`ops/import-benchmark`, 6 realistische, aber selbst erstellte Pläne): vorher 55/67 Übungen ohne Nacharbeit (82 %), nach den Fixes vom 2026-11-20 67/67 in 2 Läufen. Echte Trainer-Pläne fehlen noch als Testmaterial.
+- Import-Benchmark, synthetisch (`ops/import-benchmark`, 6 selbst erstellte Pläne): vorher 55/67 Übungen ohne Nacharbeit (82 %), nach den Fixes vom 2026-11-20 67/67 in 2 Läufen.
+- Import-Benchmark, echt (`ops/import-benchmark/real`, 10 öffentliche Trainer-Pläne, PDFs bleiben außerhalb des Repos): Übungen 288/300 → 300/300, ohne Zuordnung 99 → 38, Termine 10/10. Mit PDF direkt an Gemini statt Text: Wdh 95 % → 100 %, Supersätze 8/9 → 9/9.
 - Schulden: Medien von MuscleWiki (Lizenzrisiko), VPS-Repo divergiert, Pro-Abo (5 €/Monat) eingerichtet, aber nicht als Wert positioniert.
 
 ## 2. Ziel und Horizont

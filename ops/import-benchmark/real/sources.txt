@@ -1,0 +1,17 @@
+# Öffentliche Trainingspläne für den Real-Benchmark: <Dateiname> <Quelle>
+# Die PDFs bleiben aus Urheberrechtsgründen außerhalb des Repos (fetch.sh lädt sie in einen eigenen Ordner).
+engel-5x5.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/5x5-trainingsplan.pdf
+engel-masseaufbau.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/masseaufbau-trainingsplan.pdf
+engel-gvt.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/german-volume-training.pdf
+engel-profi.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/profi-trainingsplan.pdf
+engel-frauen.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/trainingsplan-muskelaufbau-frauen.pdf
+engel-heim-l2.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/heimtraining-muskelaufbau-Level-2.pdf
+engel-schnellkraft.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/schnellkrafttraining-trainingsplan.pdf
+engel-5tage.pdf https://www.sportnahrung-engel.de/media/trainingsplaene/5-tage-krafttrainingsprogramm.pdf
+fuersie-3er-split.pdf https://www.fuersie.de/sites/default/files/downloads/2024-01/3er-split-trainingsplan.pdf
+fitnessfirst-masse.pdf https://www.fitnessfirst.de/sites/g/files/tbchtk381/files/2022-11/fitness-first-trainingsplan-split-training-in-der-massephase.pdf
+heimatkk-muskelaufbau.pdf https://www.heimat-krankenkasse.de/fileadmin/user_upload/fitmacher/pdf/Heimat_KK_Trainingsplan_Muskelaufbau.pdf
+dav-mobilisation.pdf https://www.alpenverein.de/files/mtb-mobilisationsprogramm-matthias-laar-dav-panorama-3-2021.pdf
+reha-mobilisation.pdf https://www.vitrea-gesundheit.de/fileadmin/Rehazentrum_Karlsruhe-am-Entenfang/Dateien/Mobilisationstraining.pdf
+hilfswerk-zuhause.pdf https://www.hilfswerk.at/fileadmin/storage/global/Brosch%C3%BCren/Trainingsplan_f%C3%BCr_zuhause.pdf
+tubs-ruecken.pdf https://www.tu-braunschweig.de/fileadmin/Redaktionsgruppen/Einrichtungen/Sportzentrum/BGF/Trainingsplan/BGF_TRAININGSPLAN_RUECKEN_3.pdf

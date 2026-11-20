@@ -36,6 +36,11 @@ describe("German shorthand", () => {
       "rum. Kreuzh.": /romanian deadlift/i,
       "Beinstr.": /leg extension/i,
       "Katze-Kuh": /cat stretch/i,
+      // From public plans (Engel, Heimat KK) in the real-plan benchmark.
+      "Brustpresse, sitzend": /machine chest press/i,
+      "Rudern, eng": /seated cable row/i,
+      "Seitheben am Kabel einarmig": /cable lateral raise/i,
+      "Rudern LH vorgebeugt (Untergriff)": /reverse grip bent-over row/i,
     };
     for (const [raw, want] of Object.entries(expected)) {
       const m = matchExerciseToCatalog(raw);
@@ -109,5 +114,25 @@ describe("incomplete reads", () => {
     };
     expect(importItemCount(plan)).toBe(3);
     expect(importLooksIncomplete(plan, null)).toBe(false);
+  });
+});
+
+describe("schedule", () => {
+  it("keeps a third week that repeats the first", async () => {
+    const { normalizeImportedPlan } = await import("../routes/importWorkout");
+    const ex = [{ name: "Kniebeuge", sets: 3, reps: "6" }];
+    const week = (a: string) => ({ sessions: [{ weekday: "mon", dayName: a }] });
+    const plan = normalizeImportedPlan(
+      {
+        planName: "3-Wochen-Zyklus",
+        days: [
+          { dayName: "A kurz", kind: "strength", exercises: ex },
+          { dayName: "B kurz", kind: "strength", exercises: ex },
+        ],
+        schedule: { weeks: [week("A kurz"), week("B kurz"), week("A kurz")] },
+      },
+      { fullPlan: true },
+    );
+    expect((plan.schedule as { weeks: unknown[] }).weeks).toHaveLength(3);
   });
 });

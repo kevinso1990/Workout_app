@@ -137,6 +137,9 @@ export function importLooksIncomplete(plan: Record<string, unknown>, textParserC
   return textParserCount !== null && textParserCount >= 4 && items < textParserCount * 0.6;
 }
 
+/** ~1.5 MB of PDF — every trainer plan in the import benchmark is well under. */
+const PDF_INLINE_MAX_BASE64 = 2_000_000;
+
 export interface NormalizeImportOptions {
   /**
    * Client understands mobility/cardio days, supersets and the schedule
@@ -296,10 +299,10 @@ export function normalizeImportedPlan(
 
   if (opts.fullPlan) {
     const dayNames = (raw.days as Record<string, unknown>[]).map((d) => String(d?.dayName ?? ""));
-    const weeks = normalizeSchedule(rawSchedule, dayNames);
-    // "Woche 4: wie Woche 1" read as a fourth week: the cycle restarts there.
-    while (weeks.length > 1 && JSON.stringify(weeks[weeks.length - 1]) === JSON.stringify(weeks[0])) weeks.pop();
-    raw.schedule = { weeks };
+    // No trimming of a last week equal to the first: in a 3-week kurz/lang
+    // cycle week 3 can legitimately repeat week 1. "Woche 4: wie Woche 1" is
+    // left to the extraction prompt.
+    raw.schedule = { weeks: normalizeSchedule(rawSchedule, dayNames) };
   }
   return raw;
 }
@@ -431,7 +434,8 @@ async function callClaude(
 
   if (pdfText) {
     content.push({ type: 'text', text: `PDF text contents:\n\n${pdfText}` });
-  } else if (pdfBase64) {
+  }
+  if (pdfBase64) {
     content.push({
       type: 'document',
       source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 },
@@ -469,12 +473,11 @@ async function callGemini(
   for (const img of images) {
     parts.push({ inlineData: { mimeType: img.mediaType || 'image/jpeg', data: img.base64 } });
   }
-  if (pdfText) {
-    // Sending extracted text instead of the binary PDF keeps the request tiny
-    // and avoids Gemini ResourceExhausted (quota) errors on large documents.
-    parts.push({ text: `PDF text contents:\n\n${pdfText}` });
-  } else if (pdfBase64) {
+  if (pdfBase64) {
     parts.push({ inlineData: { mimeType: 'application/pdf', data: pdfBase64 } });
+  }
+  if (pdfText) {
+    parts.push({ text: `PDF text contents:\n\n${pdfText}` });
   }
   if (spreadsheetText) {
     parts.push({ text: `Spreadsheet contents:\n\n${spreadsheetText}` });
@@ -599,8 +602,13 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
         const compact = extracted.replace(/\s+/g, '');
         if (compact.length >= 80 && isReadableText(extracted)) {
           pdfText = extracted;
-          pdfBase64 = null;
-          console.log(`[import-workout] using extracted PDF text (${extracted.length} chars)`);
+          // A typical trainer PDF still goes to the model as the page itself:
+          // the extracted text loses the table layout, so reps slid into the
+          // wrong rows ("8-12" vs "10-12" in a four-column table). The text
+          // stays for the offline parser and the completeness check. Large
+          // documents go as text only, clear of ResourceExhausted errors.
+          if (pdfBase64.length >= PDF_INLINE_MAX_BASE64) pdfBase64 = null;
+          console.log(`[import-workout] extracted PDF text (${extracted.length} chars), sending ${pdfBase64 ? 'the PDF' : 'the text'}`);
         }
       } catch (pdfErr) {
         console.warn('[import-workout] pdf text extraction failed, falling back to binary PDF:', (pdfErr as Error).message);
@@ -614,7 +622,7 @@ async function handleImportWorkout(req: Request, res: Response): Promise<void> {
     // The model gets the whole document: the schedule, rotation, warm-ups and
     // mobility/cardio sessions are part of the plan. Only the offline parser
     // (no AI) works on the pre-filtered strength sections.
-    const aiText = plainText;
+    const aiText = pdfBase64 ? [spreadsheetText, pastedText].filter(Boolean).join("\n\n") || null : plainText;
     const offlineText =
       plainText && !isSpreadsheetLikeText(plainText) ? extractStrengthDaySections(plainText) : plainText;
     const fullPlan = String(req.query.v ?? "") === "2";

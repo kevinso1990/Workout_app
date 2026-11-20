@@ -148,6 +148,19 @@ const EXERCISE_ALIASES: Record<string, string> = {
   halfkneelinglandminepress: "Half-Kneeling Landmine Press",
   singlearmlandminerow: "Single-Arm Landmine Row",
   // German → canonical
+  // Seen in public gym plans (import benchmark): machine and cable names
+  // the catalog has under a different wording.
+  brustpresse: "Machine Chest Press",
+  brustpressesitzend: "Machine Chest Press",
+  seatedchestpress: "Machine Chest Press",
+  ruderneng: "Seated Cable Row",
+  closegripseatedcablerow: "Seated Cable Row",
+  seithebenamkabeleinarmig: "Cable Lateral Raise",
+  seithebenamkabel: "Cable Lateral Raise",
+  rudernlanghantelvorgebeugtuntergriff: "Reverse Grip Bent-Over Rows",
+  pigeonpose: "Pigeon Stretch",
+  pigeonposehipopener: "Pigeon Stretch",
+  supermanhold: "Superman",
   katzekuh: "Cat Stretch",
   catcow: "Cat Stretch",
   kurzhantelschragbankdrucken: "Incline Dumbbell Press",
