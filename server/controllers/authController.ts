@@ -50,6 +50,19 @@ export const appleSignIn = asyncHandler(async (req: Request, res: Response) => {
   res.json(await authService.signInWithApple(id_token, name));
 });
 
+/** POST /api/auth/refresh — new token for an expired but validly signed one. */
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const header = req.headers.authorization;
+  res.json(authService.renewToken(header?.startsWith("Bearer ") ? header.slice(7) : undefined));
+});
+
+/** DELETE /api/auth/account — deletes the signed-in user and all their data. */
+export const deleteAccount = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new AppError(401, "Authentication required");
+  authService.deleteUserAccount(req.user.sub);
+  res.json({ ok: true });
+});
+
 /** GET /api/auth/me — returns the current user, freshly read from the DB. */
 export const me = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new AppError(401, "Authentication required");

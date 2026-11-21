@@ -78,6 +78,55 @@ export function tokenOwner(token: string | undefined): number | null {
   }
 }
 
+/** Tokens older than this can't be renewed; the client signs in again instead. */
+const RENEW_MAX_AGE_S = 365 * 24 * 60 * 60;
+
+/**
+ * Renews an expired but validly signed token for a user that still exists.
+ * Keeps Apple users signed in past the 7-day expiry instead of the client
+ * silently falling back to a fresh guest account.
+ */
+export function renewToken(token: string | undefined): AuthResponse {
+  if (!token) throw new AppError(401, "Token required");
+  let payload: JwtPayload & { iat?: number };
+  try {
+    payload = jwt.verify(token, getJwtSecret(), { ignoreExpiration: true }) as unknown as JwtPayload & { iat?: number };
+  } catch {
+    throw new AppError(401, "Invalid token");
+  }
+  if (!payload.iat || Date.now() / 1000 - payload.iat > RENEW_MAX_AGE_S) {
+    throw new AppError(401, "Token too old to renew");
+  }
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(payload.sub) as User | undefined;
+  if (!user) throw new AppError(401, "User no longer exists");
+  return { token: signToken(user), user: toPublicUser(user) };
+}
+
+/**
+ * Deletes a user and everything stored for them (App Store 5.1.1(v)).
+ * Anonymous rows (usage events, exercise votes by device) aren't linked to
+ * the account and stay.
+ */
+export function deleteUserAccount(userId: number): void {
+  const statements = [
+    "DELETE FROM sets WHERE user_id = @id OR session_id IN (SELECT id FROM sessions WHERE user_id = @id)",
+    "DELETE FROM sessions WHERE user_id = @id",
+    "DELETE FROM plan_exercises WHERE plan_id IN (SELECT id FROM plans WHERE user_id = @id)",
+    "DELETE FROM plans WHERE user_id = @id",
+    "DELETE FROM body_weight WHERE user_id = @id",
+    "DELETE FROM exercise_feedback WHERE user_id = @id",
+    "DELETE FROM muscle_fatigue WHERE user_id = @id",
+    "DELETE FROM mobile_workout_sync WHERE user_id = @id",
+    "DELETE FROM subscription_receipts WHERE user_id = @id",
+    "DELETE FROM exercises WHERE user_id = @id AND is_custom = 1",
+    "DELETE FROM device_cloud_sync WHERE user_id = 'u' || CAST(@id AS INTEGER)",
+    "DELETE FROM users WHERE id = @id",
+  ];
+  db.transaction(() => {
+    for (const sql of statements) db.prepare(sql).run({ id: userId });
+  })();
+}
+
 /** Look up a user by primary key — used by GET /api/auth/me to return fresh data. */
 export function getUserById(id: number): User {
   const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as User | undefined;

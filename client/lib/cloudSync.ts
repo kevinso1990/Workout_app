@@ -22,6 +22,7 @@ import {
 } from "@/lib/storage";
 
 const CLOUD_USER_ID_KEY = "cloud_user_id";
+const LAST_BACKUP_KEY = "cloud_last_backup_at";
 
 /**
  * Snapshot bundled into the backend's `currentPlan` field. We send more than
@@ -113,6 +114,7 @@ export async function pushCloudBackup(): Promise<boolean> {
         }),
         signal: controller.signal,
       });
+      if (res.ok) await AsyncStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
       return res.ok;
     } finally {
       clearTimeout(timeout);
@@ -128,62 +130,76 @@ type RestoreResult = {
   planCount: number;
 };
 
-/**
- * Fetches the cloud backup for the given id and writes it into local storage.
- * Overwrites local data — only call when local is empty or on explicit
- * user-initiated restore.
- */
-export async function restoreFromCloud(userId: string): Promise<RestoreResult> {
-  const empty: RestoreResult = {
-    restored: false,
-    historyCount: 0,
-    planCount: 0,
-  };
+/** ISO time of the last successful backup from this install, or null. */
+export async function getLastBackupAt(): Promise<string | null> {
+  return AsyncStorage.getItem(LAST_BACKUP_KEY).catch(() => null);
+}
+
+export type CloudBackup = SyncGetResponse & { historyCount: number; planCount: number };
+
+/** Reads the backup stored under `userId` without touching local data. */
+export async function fetchCloudBackup(
+  userId: string,
+  /** Read as this account instead of the stored token (sign-in, before adopting it). */
+  token?: string,
+): Promise<CloudBackup | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12_000);
-    let data: SyncGetResponse;
-    try {
-      const res = await fetch(syncUrl(`/${encodeURIComponent(userId)}`), {
-        method: "GET",
-        headers: await getAuthHeaders(),
-        signal: controller.signal,
-      });
-      if (!res.ok) return empty;
-      data = (await res.json()) as SyncGetResponse;
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!data.found) return empty;
-
-    const history = Array.isArray(data.workoutHistory)
-      ? data.workoutHistory
-      : [];
-    const snapshot = data.currentPlan;
-    const plans = Array.isArray(snapshot?.plans) ? snapshot!.plans : [];
-
-    if (history.length > 0) {
-      await replaceWorkoutHistory(history);
-    }
-    if (plans.length > 0) {
-      await replaceWorkoutPlans(plans);
-    }
-    if (snapshot?.preferences) {
-      await setUserPreferences(snapshot.preferences);
-    }
-    // If the cloud has real data, the user already onboarded — skip it.
-    if (snapshot?.onboardingComplete || history.length > 0 || plans.length > 0) {
-      await setOnboardingComplete(true);
-    }
-
-    return {
-      restored: history.length > 0 || plans.length > 0,
-      historyCount: history.length,
-      planCount: plans.length,
-    };
+    const headers = await getAuthHeaders();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(syncUrl(`/${encodeURIComponent(userId)}`), {
+      method: "GET",
+      headers,
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as SyncGetResponse;
+    if (!data.found) return null;
+    const workoutHistory = Array.isArray(data.workoutHistory) ? data.workoutHistory : [];
+    const plans = Array.isArray(data.currentPlan?.plans) ? data.currentPlan!.plans : [];
+    return { ...data, workoutHistory, historyCount: workoutHistory.length, planCount: plans.length };
   } catch {
-    return empty;
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** The backup of the account `token` belongs to, or null. */
+export async function fetchAccountBackup(token: string): Promise<CloudBackup | null> {
+  const sub = decodeJwtSub(token);
+  return sub == null ? null : fetchCloudBackup(`u${sub}`, token);
+}
+
+/**
+ * Writes a fetched backup into local storage. Overwrites local data — only
+ * call when local is empty or on explicit user-initiated restore.
+ */
+export async function applyCloudBackup(data: CloudBackup): Promise<RestoreResult> {
+  const snapshot = data.currentPlan;
+  const plans = Array.isArray(snapshot?.plans) ? snapshot!.plans : [];
+  if (data.workoutHistory.length > 0) await replaceWorkoutHistory(data.workoutHistory);
+  if (plans.length > 0) await replaceWorkoutPlans(plans);
+  if (snapshot?.preferences) await setUserPreferences(snapshot.preferences);
+  // If the cloud has real data, the user already onboarded — skip it.
+  if (snapshot?.onboardingComplete || data.historyCount > 0 || plans.length > 0) {
+    await setOnboardingComplete(true);
+  }
+  return {
+    restored: data.historyCount > 0 || plans.length > 0,
+    historyCount: data.historyCount,
+    planCount: plans.length,
+  };
+}
+
+/** Fetches the backup for `userId` and writes it into local storage. */
+export async function restoreFromCloud(userId: string): Promise<RestoreResult> {
+  try {
+    const data = await fetchCloudBackup(userId);
+    return data ? await applyCloudBackup(data) : { restored: false, historyCount: 0, planCount: 0 };
+  } catch {
+    return { restored: false, historyCount: 0, planCount: 0 };
   }
 }
 
@@ -200,9 +216,14 @@ export async function restoreFromCloudIfEmpty(): Promise<boolean> {
     ]);
     if (history.length > 0 || plans.length > 0) return false;
 
-    const backupKey = await getSyncBackupKey();
-    const result = await restoreFromCloud(backupKey);
-    return result.restored;
+    // The account key needs the token; on a reinstall the Keychain device id
+    // brings back the same guest account, and with it this backup.
+    await ensureAuthToken();
+    const result = await restoreFromCloud(await getSyncBackupKey());
+    if (result.restored) return true;
+    // Backups from before account keys were stored under the random install id.
+    const legacy = await AsyncStorage.getItem(CLOUD_USER_ID_KEY);
+    return legacy ? (await restoreFromCloud(legacy)).restored : false;
   } catch {
     return false;
   }

@@ -853,22 +853,10 @@
     "chestCm": "Chest (cm)",
     "waistCm": "Waist (cm)",
     "saveMeasurement": "Save Measurement",
-    "cloudBackupTitle": "Cloud Backup",
-    "cloudBackupHint": "There's no account or login — this code is your key to your data. Save it somewhere safe to restore your plans and history after reinstalling the app or on a new phone:",
+    "cloudBackupTitle": "Backup",
     "cloudBackupNow": "Back up now",
-    "cloudRestore": "Restore",
-    "cloudRestoreTitle": "Restore from backup code",
-    "cloudRestoreHint": "Enter the backup code from your previous device. This will overwrite local data on this device.",
-    "cloudBackupCodePlaceholder": "Backup code",
-    "cloudLoad": "Load",
-    "cloudBackedUpTitle": "Backed up",
-    "cloudBackedUpMessage": "Your workout data has been saved to the cloud.",
-    "cloudErrorTitle": "Error",
+    "cloudErrorTitle": "Backup failed",
     "cloudErrorMessage": "Backup failed. Check your internet connection.",
-    "cloudRestoredTitle": "Restored",
-    "cloudRestoredMessage": "Loaded {{historyCount}} workouts and {{planCount}} plans. The app will reload.",
-    "cloudNotFoundTitle": "No backup found",
-    "cloudNotFoundMessage": "No data was found for this backup code.",
     "commitments": {
       "title": "Sport outside the gym",
       "subtitle": "Fixed commitments — your plan is built around them"
@@ -878,7 +866,21 @@
     "analytics": {
       "title": "Anonymous stats",
       "subtitle": "Not tied to your account, no workout content"
-    }
+    },
+    "backupLast": "Backed up {{when}}",
+    "backupNever": "Not backed up yet",
+    "backupToday": "today",
+    "backupHintGuest": "Backed up automatically and restored on its own after a reinstall. For a new iPhone: sign in with Apple.",
+    "backupHintApple": "Signed in with Apple. On a new iPhone, sign in with the same Apple ID and everything is back.",
+    "backupFoundTitle": "Backup found",
+    "backupFoundMessage": "Your Apple ID has {{historyCount}} workouts and {{planCount}} plans (backed up {{when}}). This iPhone has {{localCount}} workouts. Which data should stay?",
+    "backupKeepPhone": "This iPhone",
+    "backupTakeCloud": "Backup",
+    "appleErrorTitle": "Sign-in failed",
+    "appleErrorMessage": "Signing in with Apple didn't work. Check your connection and try again.",
+    "signOut": "Sign out",
+    "signOutTitle": "Sign out?",
+    "signOutMessage": "Your data stays on this iPhone. From then on it's only backed up for this iPhone."
   },
   "onboarding": {
     "welcome": "Let's build your perfect workout plan",

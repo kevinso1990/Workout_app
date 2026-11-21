@@ -140,13 +140,10 @@ export async function verifyAppleIdToken(
   // Only fail if it's truly a brand-new user we've never seen.
   let email = payload.email?.toLowerCase() ?? null;
   if (!email) {
-    email = lookupStoredAppleEmail(payload.sub);
-    if (!email) {
-      throw new AppError(
-        401,
-        "Apple ID token is missing the email claim and no existing account was found",
-      );
-    }
+    // Apple sends no email when the user declined it, or again after they
+    // deleted their account here (Apple only shares it on the first consent).
+    // The account is keyed on `sub`, so a non-routable placeholder is enough.
+    email = lookupStoredAppleEmail(payload.sub) ?? `apple-${payload.sub}@users.invalid`;
   }
 
   return {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo} from "react";
-import { View, StyleSheet, Pressable, Alert, Modal, TextInput, ScrollView, Switch } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Modal, TextInput, ScrollView, Switch, ActivityIndicator } from "react-native";
 import Constants from "expo-constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -39,11 +39,14 @@ import {
   addBodyMeasurement,
 } from "@/lib/storage";
 import {
-  getCloudUserId,
-  setCloudUserId,
-  restoreFromCloud,
+  applyCloudBackup,
+  fetchAccountBackup,
+  getLastBackupAt,
+  type CloudBackup,
 } from "@/lib/cloudSync";
-import { runDataSync } from "@/lib/dataSync";
+import { runDataSync, subscribeDataSyncStatus } from "@/lib/dataSync";
+import { afterSignInAction } from "@/lib/accountBackup";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { BrandMark } from "@/components/brand/BrandLogo";
 import { CommitmentEditor } from "@/components/schedule/CommitmentEditor";
@@ -52,8 +55,13 @@ import { AvoidExerciseEditor } from "@/components/AvoidExerciseEditor";
 import type { WeeklyCommitment } from "@shared/weeklySchedule";
 import * as WebBrowser from "expo-web-browser";
 import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from "@/lib/legalLinks";
-import { api } from "@/lib/api";
-import { setStoredToken } from "@/lib/nativeAuth";
+import {
+  deleteAccount,
+  getAuthProvider,
+  setStoredToken,
+  signInWithApple,
+  signOutToGuest,
+} from "@/lib/nativeAuth";
 import { isAnalyticsEnabled, setAnalyticsEnabled } from "@/lib/analytics";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -594,57 +602,110 @@ function EquipmentCard({
   );
 }
 
+function formatBackupTime(iso: string, language: string, t: (k: string) => string): string {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === new Date().toDateString()) return `${t("profile.backupToday")}, ${time}`;
+  return `${d.toLocaleDateString(language, { day: "numeric", month: "short" })}, ${time}`;
+}
+
 function CloudBackupCard() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
-  const [backupId, setBackupId] = useState<string>("");
+  const { t, i18n } = useTranslation();
+  const navigation = useNavigation();
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(null);
+  const [provider, setProvider] = useState<string | null>(null);
+  const [appleAvailable, setAppleAvailable] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [showRestore, setShowRestore] = useState(false);
-  const [codeInput, setCodeInput] = useState("");
+
+  const refresh = useCallback(() => {
+    void getLastBackupAt().then(setLastBackupAt);
+    void getAuthProvider().then(setProvider);
+  }, []);
 
   useEffect(() => {
-    void getCloudUserId().then(setBackupId);
-  }, []);
+    refresh();
+    void AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => {});
+    return subscribeDataSyncStatus(refresh);
+  }, [refresh]);
+
+  const signedInWithApple = provider === "apple";
 
   const handleBackupNow = async () => {
     setBusy(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const ok = await runDataSync();
     setBusy(false);
-    Alert.alert(
-      ok ? t("profile.cloudBackedUpTitle") : t("profile.cloudErrorTitle"),
-      ok ? t("profile.cloudBackedUpMessage") : t("profile.cloudErrorMessage"),
-    );
+    refresh();
+    if (!ok) Alert.alert(t("profile.cloudErrorTitle"), t("profile.cloudErrorMessage"));
   };
 
-  const handleRestore = async () => {
-    const code = codeInput.trim();
-    if (!code) return;
+  const takeBackup = async (token: string, backup: CloudBackup) => {
+    await applyCloudBackup(backup);
+    await setStoredToken(token);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: "Main" as never }] }));
+  };
+
+  const keepThisPhone = async (token: string) => {
+    await setStoredToken(token);
+    await runDataSync();
+    refresh();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleApple = async () => {
     setBusy(true);
-    await setCloudUserId(code);
-    const result = await restoreFromCloud(code);
-    setBusy(false);
-    setShowRestore(false);
-    setCodeInput("");
-    if (result.restored) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      const token = await signInWithApple();
+      if (!token) return;
+      const [history, plans, backup] = await Promise.all([
+        getWorkoutHistory(),
+        getWorkoutPlans(),
+        fetchAccountBackup(token),
+      ]);
+      const action = afterSignInAction(
+        { historyCount: history.length, planCount: plans.length },
+        backup,
+      );
+      if (action === "upload" || !backup) return await keepThisPhone(token);
+      if (action === "restore") return await takeBackup(token, backup);
       Alert.alert(
-        t("profile.cloudRestoredTitle"),
-        t("profile.cloudRestoredMessage", {
-          historyCount: result.historyCount,
-          planCount: result.planCount,
+        t("profile.backupFoundTitle"),
+        t("profile.backupFoundMessage", {
+          historyCount: backup.historyCount,
+          planCount: backup.planCount,
+          when: backup.updatedAt ? formatBackupTime(backup.updatedAt, i18n.language, t) : "–",
+          localCount: history.length,
         }),
+        [
+          { text: t("profile.backupKeepPhone"), onPress: () => void keepThisPhone(token) },
+          { text: t("profile.backupTakeCloud"), onPress: () => void takeBackup(token, backup) },
+        ],
       );
-      if (typeof window !== "undefined" && window.location?.reload) {
-        setTimeout(() => window.location.reload(), 800);
-      }
-    } else {
-      Alert.alert(
-        t("profile.cloudNotFoundTitle"),
-        t("profile.cloudNotFoundMessage"),
-      );
+    } catch (err) {
+      console.warn("Apple sign-in failed", err);
+      Alert.alert(t("profile.appleErrorTitle"), t("profile.appleErrorMessage"));
+    } finally {
+      setBusy(false);
     }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(t("profile.signOutTitle"), t("profile.signOutMessage"), [
+      { text: t("profile.cancel"), style: "cancel" },
+      {
+        text: t("profile.signOut"),
+        onPress: async () => {
+          setBusy(true);
+          await signOutToGuest();
+          await runDataSync();
+          setBusy(false);
+          refresh();
+        },
+      },
+    ]);
   };
 
   return (
@@ -660,106 +721,61 @@ function CloudBackupCard() {
         <ThemedText style={styles.prefsCardTitle}>{t("profile.cloudBackupTitle")}</ThemedText>
       </View>
 
+      <ThemedText style={[styles.cloudStatus, { color: theme.text }]} testID="text-last-backup">
+        {lastBackupAt
+          ? t("profile.backupLast", { when: formatBackupTime(lastBackupAt, i18n.language, t) })
+          : t("profile.backupNever")}
+      </ThemedText>
       <ThemedText style={[styles.cloudHint, { color: theme.textSecondary }]}>
-        {t("profile.cloudBackupHint")}
+        {signedInWithApple ? t("profile.backupHintApple") : t("profile.backupHintGuest")}
       </ThemedText>
 
-      <View style={[styles.cloudCodeBox, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
-        <ThemedText
-          style={[styles.cloudCode, { color: theme.text }]}
-          selectable
-          numberOfLines={1}
-          testID="text-backup-code"
-        >
-          {backupId || "…"}
-        </ThemedText>
-      </View>
+      {!signedInWithApple && appleAvailable ? (
+        <View style={styles.appleButtonWrap} pointerEvents={busy ? "none" : "auto"}>
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={
+              isDark
+                ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+            }
+            cornerRadius={BorderRadius.md}
+            style={styles.appleButton}
+            onPress={handleApple}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.cloudButtonsRow}>
         <Pressable
           onPress={handleBackupNow}
           disabled={busy}
-          style={[styles.cloudButton, { borderColor: theme.border, opacity: busy ? 0.5 : 1 }]}
+          style={[styles.cloudButton, { borderColor: theme.border }]}
           testID="button-backup-now"
         >
-          <Feather name="upload-cloud" size={16} color={theme.text} />
+          {busy ? (
+            <ActivityIndicator size="small" color={theme.text} />
+          ) : (
+            <Feather name="upload-cloud" size={16} color={theme.text} />
+          )}
           <ThemedText style={[styles.cloudButtonText, { color: theme.text }]}>
             {t("profile.cloudBackupNow")}
           </ThemedText>
         </Pressable>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowRestore(true);
-          }}
-          disabled={busy}
-          style={[styles.cloudButton, { borderColor: theme.border, opacity: busy ? 0.5 : 1 }]}
-          testID="button-restore-open"
-        >
-          <Feather name="download-cloud" size={16} color={theme.text} />
-          <ThemedText style={[styles.cloudButtonText, { color: theme.text }]}>
-            {t("profile.cloudRestore")}
-          </ThemedText>
-        </Pressable>
+        {signedInWithApple ? (
+          <Pressable
+            onPress={handleSignOut}
+            disabled={busy}
+            style={[styles.cloudButton, { borderColor: theme.border }]}
+            testID="button-sign-out"
+          >
+            <Feather name="log-out" size={16} color={theme.text} />
+            <ThemedText style={[styles.cloudButtonText, { color: theme.text }]}>
+              {t("profile.signOut")}
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </View>
-
-      <Modal visible={showRestore} animationType="fade" transparent>
-        <View style={styles.cloudModalOverlay}>
-          <View style={[styles.cloudRestoreModal, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText style={styles.measurementModalTitle}>
-              {t("profile.cloudRestoreTitle")}
-            </ThemedText>
-            <ThemedText style={[styles.cloudHint, { color: theme.textSecondary }]}>
-              {t("profile.cloudRestoreHint")}
-            </ThemedText>
-            <TextInput
-              returnKeyType="done"
-              clearButtonMode="while-editing"
-              style={[
-                styles.cloudInput,
-                { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.border },
-              ]}
-              placeholder={t("profile.cloudBackupCodePlaceholder")}
-              placeholderTextColor={theme.textSecondary}
-              value={codeInput}
-              onChangeText={setCodeInput}
-              autoCapitalize="none"
-              autoCorrect={false}
-              testID="input-backup-code"
-            />
-            <View style={styles.cloudButtonsRow}>
-              <Pressable
-                onPress={() => {
-                  setShowRestore(false);
-                  setCodeInput("");
-                }}
-                style={[styles.cloudButton, { borderColor: theme.border }]}
-              >
-                <ThemedText style={[styles.cloudButtonText, { color: theme.textSecondary }]}>
-                  {t("profile.cancel")}
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                onPress={handleRestore}
-                disabled={busy || !codeInput.trim()}
-                style={[
-                  styles.cloudButton,
-                  {
-                    backgroundColor: theme.primary,
-                    borderColor: theme.primary,
-                    opacity: busy || !codeInput.trim() ? 0.5 : 1,
-                  },
-                ]}
-                testID="button-restore-confirm"
-              >
-                <ThemedText style={[styles.cloudButtonText, { color: theme.onChalk }]}>
-                  {t("profile.cloudLoad")}
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </Animated.View>
   );
 }
@@ -975,8 +991,7 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await api.deleteAccount();
-              await setStoredToken(null);
+              await deleteAccount();
               await clearAllData();
               Haptics.notificationAsync(
                 Haptics.NotificationFeedbackType.Success
@@ -1475,6 +1490,18 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     gap: Spacing.xs,
+  },
+  cloudStatus: {
+    fontSize: 14,
+    fontFamily: "Archivo_600SemiBold",
+    marginBottom: Spacing.xs,
+  },
+  appleButtonWrap: {
+    marginBottom: Spacing.sm,
+  },
+  appleButton: {
+    height: 44,
+    width: "100%",
   },
   cloudHint: {
     fontSize: 13,

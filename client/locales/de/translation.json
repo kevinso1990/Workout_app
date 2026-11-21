@@ -757,22 +757,10 @@
     "chestCm": "Brust (cm)",
     "waistCm": "Taille (cm)",
     "saveMeasurement": "Messung speichern",
-    "cloudBackupTitle": "Cloud-Backup",
-    "cloudBackupHint": "Du hast kein Konto — dieser Code ist dein Schlüssel zu deinen Daten. Bewahre ihn sicher auf, um Pläne und Verlauf nach einer Neuinstallation oder auf einem neuen Handy wiederherzustellen:",
+    "cloudBackupTitle": "Datensicherung",
     "cloudBackupNow": "Jetzt sichern",
-    "cloudRestore": "Wiederherstellen",
-    "cloudRestoreTitle": "Aus Backup-Code wiederherstellen",
-    "cloudRestoreHint": "Gib den Backup-Code von deinem vorherigen Gerät ein. Die aktuellen lokalen Daten werden überschrieben.",
-    "cloudBackupCodePlaceholder": "Backup-Code",
-    "cloudLoad": "Laden",
-    "cloudBackedUpTitle": "Gesichert",
-    "cloudBackedUpMessage": "Deine Trainingsdaten wurden in der Cloud gesichert.",
-    "cloudErrorTitle": "Fehler",
+    "cloudErrorTitle": "Sicherung fehlgeschlagen",
     "cloudErrorMessage": "Sicherung fehlgeschlagen. Prüfe deine Internetverbindung.",
-    "cloudRestoredTitle": "Wiederhergestellt",
-    "cloudRestoredMessage": "{{historyCount}} Trainings und {{planCount}} Pläne geladen. Die App wird neu geladen.",
-    "cloudNotFoundTitle": "Kein Backup gefunden",
-    "cloudNotFoundMessage": "Für diesen Code wurden keine Daten gefunden.",
     "commitments": {
       "title": "Sport außerhalb des Gyms",
       "subtitle": "Feste Termine — dein Plan wird drumherum gelegt"
@@ -782,7 +770,21 @@
     "analytics": {
       "title": "Anonyme Statistik",
       "subtitle": "Ohne Konto-Bezug, ohne Trainingsinhalte"
-    }
+    },
+    "backupLast": "Gesichert {{when}}",
+    "backupNever": "Noch nicht gesichert",
+    "backupToday": "heute",
+    "backupHintGuest": "Wird automatisch gesichert und kommt nach einer Neuinstallation von selbst zurück. Für ein neues iPhone: mit Apple anmelden.",
+    "backupHintApple": "Mit Apple angemeldet. Auf einem neuen iPhone mit derselben Apple-ID anmelden, dann ist alles wieder da.",
+    "backupFoundTitle": "Gesicherte Daten gefunden",
+    "backupFoundMessage": "Zu deiner Apple-ID gibt es {{historyCount}} Trainings und {{planCount}} Pläne (gesichert {{when}}). Auf diesem iPhone sind {{localCount}} Trainings. Welche Daten sollen bleiben?",
+    "backupKeepPhone": "Dieses iPhone",
+    "backupTakeCloud": "Gesicherte Daten",
+    "appleErrorTitle": "Anmeldung fehlgeschlagen",
+    "appleErrorMessage": "Die Anmeldung mit Apple hat nicht geklappt. Prüfe deine Verbindung und versuche es erneut.",
+    "signOut": "Abmelden",
+    "signOutTitle": "Abmelden?",
+    "signOutMessage": "Deine Daten bleiben auf diesem iPhone. Sie werden dann nur noch für dieses iPhone gesichert."
   },
   "onboarding": {
     "welcome": "Lass uns deinen perfekten Trainingsplan erstellen",

@@ -16,7 +16,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "So you can photograph a workout plan and import it.",
         "NSPhotoLibraryUsageDescription": "So you can import a workout plan from your photos, or give an exercise your own picture."
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -69,7 +70,9 @@
       "./plugins/withPrivacyManifest.js",
       "expo-localization",
       "@sentry/react-native",
-      "expo-live-activity"
+      "expo-live-activity",
+      "expo-secure-store",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "reactCompiler": false

@@ -17,6 +17,8 @@ router.post("/google", oauthLimiter, authController.googleSignIn);
 router.post("/apple",  oauthLimiter, authController.appleSignIn);
 router.post("/guest",  guestLimiter, authController.guestSignIn);
 router.get("/me",      requireAuth,  authController.me);
+router.post("/refresh", guestLimiter, authController.refresh);
+router.delete("/account", requireAuth, authController.deleteAccount);
 router.post("/logout", authController.logout);
 
 // Dev-only convenience login — handler returns 404 when NODE_ENV=production
