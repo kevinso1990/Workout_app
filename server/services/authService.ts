@@ -62,6 +62,22 @@ export function verifyToken(token: string): JwtPayload {
   }
 }
 
+/**
+ * Signature-only check for proving who owns data (cloud backup). Expiry is
+ * ignored on purpose: guest tokens expire after 7 days and the backup push
+ * does not refresh them, but a validly signed token still proves the owner.
+ * Returns the user id, or null for a missing or forged token.
+ */
+export function tokenOwner(token: string | undefined): number | null {
+  if (!token) return null;
+  try {
+    const payload = jwt.verify(token, getJwtSecret(), { ignoreExpiration: true }) as unknown as JwtPayload;
+    return typeof payload.sub === "number" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Look up a user by primary key — used by GET /api/auth/me to return fresh data. */
 export function getUserById(id: number): User {
   const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as User | undefined;

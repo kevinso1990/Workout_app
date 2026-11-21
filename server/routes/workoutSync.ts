@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import db from "../db";
+import { tokenOwner } from "../services/authService";
 
 /**
  * Anonymous, password-free cloud backup for the web/native client.
@@ -25,6 +26,18 @@ const router = Router();
 
 // Accept UUIDs and similar opaque client ids; reject anything weird.
 const VALID_ID = /^[A-Za-z0-9_-]{8,128}$/;
+// Signed-in clients (guest or Apple/Google) back up under `u{userId}`. Those
+// ids are sequential, so only the token's owner may read or write them.
+// Random device UUIDs stay keyed by possession of the id.
+const ACCOUNT_ID = /^u(\d+)$/;
+
+function mayAccess(req: Request, key: string): boolean {
+  const m = ACCOUNT_ID.exec(key);
+  if (!m) return VALID_ID.test(key);
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
+  return tokenOwner(token) === Number(m[1]);
+}
 
 type SyncRow = {
   workout_history: string;
@@ -45,8 +58,12 @@ router.post("/sync", (req: Request, res: Response) => {
   };
   const userId = typeof body.userId === "string" ? body.userId.trim() : "";
 
-  if (!VALID_ID.test(userId)) {
+  if (!VALID_ID.test(userId) && !ACCOUNT_ID.test(userId)) {
     res.status(400).json({ error: "valid userId required" });
+    return;
+  }
+  if (!mayAccess(req, userId)) {
+    res.status(403).json({ error: "not your backup" });
     return;
   }
   if (!Array.isArray(body.workoutHistory)) {
@@ -94,8 +111,12 @@ router.post("/sync", (req: Request, res: Response) => {
 router.get("/sync/:userId", (req: Request, res: Response) => {
   const userId =
     typeof req.params.userId === "string" ? req.params.userId.trim() : "";
-  if (!VALID_ID.test(userId)) {
+  if (!VALID_ID.test(userId) && !ACCOUNT_ID.test(userId)) {
     res.status(400).json({ error: "valid userId required" });
+    return;
+  }
+  if (!mayAccess(req, userId)) {
+    res.status(403).json({ error: "not your backup" });
     return;
   }
 
