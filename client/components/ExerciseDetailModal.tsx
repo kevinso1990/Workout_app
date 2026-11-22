@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
 
 import { toast } from "@/lib/toast";
+import { confirmAlert } from "@/lib/confirmAlert";
 import { ThemedText } from "@/components/ThemedText";
 import {
   getCustomExerciseImageSync,
@@ -64,6 +65,15 @@ export default function ExerciseDetailModal({
   const hasCustomImage = getCustomExerciseImageSync(exerciseName) != null;
 
   const pickOwnImage = useCallback(async () => {
+    // Asked first: the button sits right under the empty image box, and a
+    // stray tap went straight into Photos, where one more tap attaches a
+    // random screenshot to the exercise.
+    const go = await confirmAlert(
+      t("exercises.ownImageConfirmTitle"),
+      t("exercises.ownImageConfirmMessage"),
+      { confirmText: t("exercises.ownImageConfirmOpen"), cancelText: t("common.cancel") },
+    );
+    if (!go) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({

@@ -38,7 +38,7 @@ const WEIGHT_STEP_KG = 1;
  * against a background that did not, and the contrast collapses. This is the
  * dark ink from the iron ramp, pinned as a literal.
  */
-const PLATE_INK = "#191B1D";
+export const PLATE_INK = "#191B1D";
 
 const FIELD_ALERT_BG = "rgba(203, 58, 44, 0.30)"; // plate-heavy wash
 // 0.045 was effectively invisible against the card, so "which set am I on?"
@@ -597,20 +597,15 @@ export function HevySetRow({
           accessibilityLabel={t("activeWorkout.toggleSetA11y")}
           accessibilityState={{ checked: setData.completed }}
         >
-          <Feather
-            name="check"
-            size={setData.completed ? 16 : 14}
-            color={
-              setData.completed
-                ? theme.iron
-                : isActive
-                  ? theme.chalk
-                  : theme.chalkFaint
-            }
-            style={
-              !setData.completed && !isActive ? styles.checkIconIdle : undefined
-            }
-          />
+          {/* Upcoming sets get an empty circle: a faint tick read as
+              "already done". */}
+          {setData.completed || isActive ? (
+            <Feather
+              name="check"
+              size={setData.completed ? 18 : 16}
+              color={setData.completed ? theme.iron : theme.chalk}
+            />
+          ) : null}
         </Pressable>
       </View>
     </Pressable>
@@ -833,26 +828,29 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     justifyContent: "center",
   },
   colPrev: {
-    width: "25%",
+    width: "22%",
     paddingRight: 4,
     justifyContent: "center",
   },
   colWeight: {
-    width: "25%",
+    width: "24%",
     justifyContent: "center",
     alignItems: "center",
   },
   colReps: {
-    width: "25%",
+    width: "22%",
     justifyContent: "center",
     alignItems: "center",
   },
   colRepsWide: {
-    width: "50%",
+    width: "46%",
   },
   colCheck: {
-    width: "15%",
-    alignItems: "center",
+    // Wider than the value columns and right-aligned, so the check sits apart
+    // from the rep count instead of reading as a fourth value cell.
+    width: "22%",
+    alignItems: "flex-end",
+    paddingRight: 4,
     justifyContent: "center",
   },
   headerLabel: {
@@ -941,10 +939,12 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     color: c.chalkDim,
   },
   checkBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    borderWidth: 1,
+    // Round, unlike every value cell and stepper in the grid: a rounded square
+    // next to the rep count looked like one more field to type into.
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -964,9 +964,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   checkBoxDone: {
     borderColor: c.chalk,
     backgroundColor: c.chalk,
-  },
-  checkIconIdle: {
-    opacity: 0.5,
   },
   editorPanel: {
     flexDirection: "row",

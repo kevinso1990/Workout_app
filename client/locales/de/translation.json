@@ -154,8 +154,6 @@
       "title": "Heute",
       "start": "Starten",
       "startEarly": "Vorziehen",
-      "logSport": "Eintragen",
-      "sportDone": "Heute eingetragen",
       "restDay": "Ruhetag",
       "doneTitle": "Heute erledigt",
       "nextOverline": "Nächstes Training",
@@ -469,11 +467,8 @@
       "gotIt": "Verstanden"
     },
     "pr": {
-      "title": "Neuer Rekord!",
-      "weightLabel": "Gewicht",
-      "repsLabel": "Wiederholungen",
-      "repsShort": "Wdh.",
-      "cta": "Super!"
+      "title": "Neuer Rekord",
+      "line": "{{exercise}} · {{weight}} kg × {{reps}}"
     },
     "coach": {
       "nextSetPlusWeight": "KI-Coach empfiehlt: +{{kg}} kg für das nächste Set.",
@@ -614,40 +609,6 @@
     "totalWorkouts": "Trainings gesamt",
     "dayStreak": "Tage-Serie",
     "thisWeek": "Diese Woche",
-    "hybrid": {
-      "title": "Hybrid-Bericht",
-      "period": {
-        "week": "Woche",
-        "month": "Monat",
-        "year": "Jahr"
-      },
-      "strengthLabel": "Kraft",
-      "strengthSessions": "Krafteinheiten",
-      "cardioSessions": "Cardio-Einheiten",
-      "countStrength": "{{count}}",
-      "countCardio": "{{count}}",
-      "totalDuration": "Gesamtzeit",
-      "totalDistance": "Distanz",
-      "distanceKm": "{{km}} km",
-      "durationMinutes": "{{count}} Min",
-      "durationHours": "{{count}} Std",
-      "durationHoursMinutes": "{{hours}} Std {{minutes}} Min",
-      "distributionTitle": "Sport-Mix",
-      "rpeTrendTitle": "Belastungstrend (RPE)",
-      "avgRpe": "Ø {{rpe}}/10",
-      "rpeHighHint": "Hohe Durchschnittsbelastung — Regeneration priorisieren.",
-      "rpeBalancedHint": "Belastung wirkt ausgeglichen — gutes Stress-Recovery-Verhältnis.",
-      "highlightsTitle": "Highlights",
-      "highlightLongestCardio": "Längste Cardio-Einheit: {{minutes}} Min {{sport}}",
-      "highlightLongestCardioSub": "Ausdauer-Peak in diesem Zeitraum",
-      "highlightMaxVolume": "Höchstes Kraftvolumen: {{volume}} kg · {{day}}",
-      "highlightMaxVolumeSub": "Schwerstes Krafttraining",
-      "highlightMaxDistance": "Längste Distanz: {{km}} km {{sport}}",
-      "highlightMaxDistanceSub": "Distanz-Rekord im Zeitraum",
-      "highlightPeakRpe": "Peak-Belastung: RPE {{rpe}} · {{sport}}",
-      "highlightPeakRpeSub": "Auf Overreaching achten",
-      "emptyPeriod": "In diesem Zeitraum noch keine Trainings geloggt."
-    },
     "noBodyWeightYet": "Noch kein Körpergewicht erfasst.",
     "fullHistory": "Gesamter Verlauf",
     "weekWorkouts": "Trainings",
@@ -1060,7 +1021,10 @@
     "replaceOwnImage": "Eigenes Bild ersetzen",
     "removeOwnImage": "Eigenes Bild entfernen",
     "ownImageHint": "Bleibt nur auf diesem Gerät",
-    "ownImageFailed": "Bild konnte nicht gespeichert werden"
+    "ownImageFailed": "Bild konnte nicht gespeichert werden",
+    "ownImageConfirmTitle": "Eigenes Bild für diese Übung?",
+    "ownImageConfirmMessage": "Wähle ein Bild aus deinen Fotos, zum Beispiel vom Plan deines Trainers. Es ersetzt das Übungsbild nur auf diesem Gerät.",
+    "ownImageConfirmOpen": "Fotos öffnen"
   },
   "splits": {
     "fullBody": "Ganzkörper",

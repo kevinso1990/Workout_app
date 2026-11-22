@@ -25,6 +25,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import {
   HevySetGridHeader,
   HevySetRowWithPrefill,
+  PLATE_INK,
 } from "@/components/workout/HevySetRow";
 import {
   ExercisePickerModal,
@@ -47,6 +48,7 @@ import Animated, {
   FadeInDown,
   FadeOutDown,
   FadeInUp,
+  FadeOutUp,
   ZoomIn,
 } from "react-native-reanimated";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -71,6 +73,7 @@ import {
 } from "@/lib/customExercises";
 import { isCatalogExerciseName, localizeExerciseName } from "@/lib/exerciseNameCatalog";
 import { estimate1RM } from "@/lib/strengthProgress";
+import { isRecordSet, recordBaseline } from "@/lib/recordDetection";
 import { useMeasureOverrides } from "@/hooks/useMeasureOverrides";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
@@ -188,30 +191,6 @@ const RATING_COLORS = {
 const DEFAULT_REST_TIME = 90;
 const BAR_WEIGHT = 20;
 const AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
-
-function getHistoricalCompletedSetsForExercise(
-  sessions: WorkoutSession[],
-  exerciseName: string
-): { weight: number; reps: number }[] {
-  const out: { weight: number; reps: number }[] = [];
-  for (const session of sessions) {
-    const exList = session.exercises ?? [];
-    const prog = session.exerciseProgress ?? [];
-    for (let i = 0; i < exList.length; i++) {
-      if ((exList[i]?.name ?? "") !== exerciseName) continue;
-      const ep = prog[i];
-      if (!ep?.sets) continue;
-      for (const s of ep.sets) {
-        if (!s.completed) continue;
-        const w = parseFloat(String(s.weight).replace(",", ".")) || 0;
-        const r = parseInt(String(s.reps), 10) || 0;
-        if (w > 0 && r > 0) out.push({ weight: w, reps: r });
-      }
-    }
-  }
-  return out;
-}
-
 
 function calculatePlates(totalWeight: number): { plates: number[] } {
   const weightPerSide = (totalWeight - BAR_WEIGHT) / 2;
@@ -421,13 +400,17 @@ function RestTimerBar({
   );
 }
 
-function PRCelebration({
-  visible,
+/**
+ * A record is good news, not an interruption: a small banner under the status
+ * bar that leaves the set grid usable, fades out on its own and closes on a
+ * tap. The full-screen modal with a bouncing badge and a "Super!" button had
+ * to be dismissed before the next set could be logged.
+ */
+function PRToast({
   pr,
   onClose,
   onShare,
 }: {
-  visible: boolean;
   pr: PRRecord | null;
   onClose: () => void;
   onShare: () => void;
@@ -435,98 +418,57 @@ function PRCelebration({
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
 
-  if (!visible || !pr) return null;
+  useEffect(() => {
+    if (!pr) return;
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [pr, onClose]);
+
+  if (!pr) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.prModalOverlay}>
-        <Animated.View
-          entering={ZoomIn.springify().damping(12)}
-          style={[styles.prModalContent, { backgroundColor: theme.backgroundDefault }]}
+    <Animated.View
+      entering={FadeInUp.duration(220)}
+      exiting={FadeOutUp.duration(180)}
+      style={[styles.prToastWrap, { top: insets.top + Spacing.sm }]}
+      pointerEvents="box-none"
+    >
+      <Pressable
+        onPress={onClose}
+        style={[
+          styles.prToast,
+          { backgroundColor: theme.backgroundSecondary, borderColor: theme.hairlineStrong },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={t("activeWorkout.pr.title")}
+        testID="toast-pr"
+      >
+        <View style={styles.prToastBadge}>
+          <Feather name="award" size={14} color={PLATE_INK} />
+        </View>
+        <View style={styles.prToastCopy}>
+          <ThemedText style={styles.prToastTitle}>{t("activeWorkout.pr.title")}</ThemedText>
+          <ThemedText style={[styles.prToastLine, { color: theme.textSecondary }]} numberOfLines={1}>
+            {t("activeWorkout.pr.line", {
+              exercise: localizeExerciseName(pr.exerciseName, i18n.language),
+              weight: pr.weight.toLocaleString(i18n.language, { maximumFractionDigits: 2 }),
+              reps: pr.reps,
+            })}
+          </ThemedText>
+        </View>
+        <Pressable
+          onPress={onShare}
+          hitSlop={10}
+          style={styles.prToastShare}
+          accessibilityLabel={t("records.share")}
+          testID="button-pr-share"
         >
-          <View style={[styles.prBadge, { backgroundColor: theme.primary }]}>
-            <Feather name="award" size={40} color={theme.onChalk} />
-          </View>
-
-          <View style={styles.prColumn}>
-            <ThemedText style={styles.prTitle}>{t("activeWorkout.pr.title")}</ThemedText>
-
-            <View style={styles.prExerciseWrap}>
-              <ThemedText
-                style={[styles.prExercise, { color: theme.text }]}
-                textBreakStrategy="highQuality"
-              >
-                {localizeExerciseName(pr.exerciseName, i18n.language)}
-              </ThemedText>
-            </View>
-
-            <View style={styles.prStatsRow}>
-              <View
-                style={[
-                  styles.prStatBox,
-                  {
-                    borderColor: theme.border,
-                    backgroundColor: theme.backgroundSecondary,
-                  },
-                ]}
-              >
-                <ThemedText style={[styles.prStatBoxCaption, { color: theme.textSecondary }]}>
-                  {t("activeWorkout.pr.weightLabel")}
-                </ThemedText>
-                <ThemedText
-                  style={[styles.prStatBoxValue, { color: theme.text }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.65}
-                >
-                  {pr.weight}
-                </ThemedText>
-                <ThemedText style={[styles.prStatBoxUnit, { color: theme.textSecondary }]}>
-                  {t("common.kg")}
-                </ThemedText>
-              </View>
-              <View
-                style={[
-                  styles.prStatBox,
-                  {
-                    borderColor: theme.border,
-                    backgroundColor: theme.backgroundSecondary,
-                  },
-                ]}
-              >
-                <ThemedText style={[styles.prStatBoxCaption, { color: theme.textSecondary }]}>
-                  {t("activeWorkout.pr.repsLabel")}
-                </ThemedText>
-                <ThemedText
-                  style={[styles.prStatBoxValue, { color: theme.text }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.65}
-                >
-                  {pr.reps}
-                </ThemedText>
-                <ThemedText style={[styles.prStatBoxUnit, { color: theme.textSecondary }]}>
-                  {t("activeWorkout.pr.repsShort")}
-                </ThemedText>
-              </View>
-            </View>
-
-            <Pressable onPress={onClose} style={styles.prButtonWrap}>
-              <View style={[styles.prButton, { backgroundColor: theme.primary }]}>
-                <ThemedText style={styles.prButtonText}>{t("activeWorkout.pr.cta")}</ThemedText>
-              </View>
-            </Pressable>
-            <Pressable onPress={onShare} style={styles.prShareBtn} testID="button-pr-share">
-              <Feather name="share" size={15} color={theme.text} />
-              <ThemedText style={[styles.prShareText, { color: theme.text }]}>
-                {t("records.share")}
-              </ThemedText>
-            </Pressable>
-          </View>
-        </Animated.View>
-      </View>
-    </Modal>
+          <Feather name="share" size={18} color={theme.text} />
+        </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -946,8 +888,8 @@ export default function ActiveWorkoutScreen() {
   const [restTotal, setRestTotal] = useState<number | null>(null);
   /** null = follow the default (open until the first set is done). */
   const [warmupExpanded, setWarmupExpanded] = useState<boolean | null>(null);
-  const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
+  const closePRToast = useCallback(() => setCurrentPR(null), []);
   const [sharePR, setSharePR] = useState<ShareableRecord | null>(null);
   const [prsThisSession, setPrsThisSession] = useState<PRRecord[]>([]);
   const [showSummary, setShowSummary] = useState(false);
@@ -1473,35 +1415,30 @@ export default function ActiveWorkoutScreen() {
     weight: number,
     reps: number
   ) => {
-    const exerciseHistory = getHistoricalCompletedSetsForExercise(
-      allHistory,
-      exerciseName
-    );
+    const sessionRecord = prsThisSession.find((pr) => pr.exerciseName === exerciseName);
+    const isRecord = isRecordSet({
+      baseline: recordBaseline(allHistory, exerciseName),
+      sessionBest: sessionRecord ? sessionRecord.weight * sessionRecord.reps : 0,
+      weight,
+      reps,
+    });
+    if (!isRecord) return;
 
-    if (exerciseHistory.length === 0) {
+    setPrsThisSession((prev) =>
+      prev.some((pr) => pr.exerciseName === exerciseName)
+        ? prev.map((pr) =>
+            pr.exerciseName === exerciseName ? { exerciseName, weight, reps } : pr
+          )
+        : [...prev, { exerciseName, weight, reps }]
+    );
+    // One banner per exercise and workout. Beating it again later in the
+    // same workout just moves the PR mark in the set grid.
+    if (sessionRecord) {
+      Haptics.selectionAsync();
       return;
     }
-
-    const currentVolume = weight * reps;
-    const maxPreviousVolume = Math.max(
-      0,
-      ...exerciseHistory.map((h) => h.weight * h.reps)
-    );
-
-    if (currentVolume > maxPreviousVolume && currentVolume > 0) {
-      setCurrentPR({ exerciseName, weight, reps });
-      setShowPRCelebration(true);
-      setPrsThisSession((prev) =>
-        prev.some((pr) => pr.exerciseName === exerciseName)
-          ? prev.map((pr) =>
-              pr.exerciseName === exerciseName ? { exerciseName, weight, reps } : pr
-            )
-          : [...prev, { exerciseName, weight, reps }]
-      );
-      Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success
-      );
-    }
+    setCurrentPR({ exerciseName, weight, reps });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handleUpdateSet = (
@@ -2163,7 +2100,7 @@ export default function ActiveWorkoutScreen() {
     // Any native Modal still mounted when navigation.reset() fires will
     // leave UIKit in a bad state and produce a black screen on iOS.
     setShowRestTimer(false);
-    setShowPRCelebration(false);
+    setCurrentPR(null);
     setShowExerciseDetail(false);
 
     const day = plan.days[route.params.dayIndex];
@@ -2319,21 +2256,17 @@ export default function ActiveWorkoutScreen() {
           it. Both subscribe to the same toast bus, so this is safe even
           though two hosts briefly co-exist while a toast is active. */}
       <NativeToastHost />
-      <PRCelebration
-        visible={showPRCelebration}
+      <PRToast
         pr={currentPR}
-        onClose={() => setShowPRCelebration(false)}
+        onClose={closePRToast}
         onShare={() => {
           if (!currentPR) return;
-          const record = {
+          setSharePR({
             ...currentPR,
             date: new Date().toISOString(),
             estimated1RM: estimate1RM(currentPR.weight, currentPR.reps),
-          };
-          setShowPRCelebration(false);
-          // Let the celebration's modal leave before the next one comes in;
-          // iOS drops a modal presented while another is still dismissing.
-          setTimeout(() => setSharePR(record), 350);
+          });
+          setCurrentPR(null);
         }}
       />
       <ShareRecordSheet record={sharePR} onClose={() => setSharePR(null)} />
@@ -4182,123 +4115,56 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  prModalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    alignItems: "center",
-    justifyContent: "center",
+  prToastWrap: {
+    position: "absolute",
+    left: Spacing.lg,
+    right: Spacing.lg,
+    zIndex: 100,
   },
-  prModalContent: {
-    width: SCREEN_WIDTH - 48,
-    maxWidth: 400,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing["2xl"],
-    alignItems: "center",
-  },
-  prBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.lg,
-  },
-  prColumn: {
-    width: "100%",
-    alignItems: "stretch",
-    gap: Spacing.lg,
-  },
-  prTitle: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: "700",
-    fontFamily: "Oswald_700Bold",
-    textAlign: "center",
-    width: "100%",
-  },
-  prExerciseWrap: {
-    width: "100%",
-    alignItems: "center",
-    paddingHorizontal: Spacing.xs,
-  },
-  prExercise: {
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: "600",
-    fontFamily: "Oswald_600SemiBold",
-    textAlign: "center",
-    width: "100%",
-    flexWrap: "wrap",
-  },
-  prStatsRow: {
+  prToast: {
     flexDirection: "row",
-    width: "100%",
+    alignItems: "center",
     gap: Spacing.md,
-    alignItems: "stretch",
-    justifyContent: "space-between",
-  },
-  prStatBox: {
-    flex: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    minHeight: 108,
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.xs,
-    overflow: "hidden",
-  },
-  prStatBoxCaption: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-    textAlign: "center",
-  },
-  prStatBoxValue: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "800",
-    fontFamily: "Oswald_700Bold",
-    textAlign: "center",
-    width: "100%",
-    maxWidth: "100%",
-  },
-  prStatBoxUnit: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  prButtonWrap: {
-    width: "100%",
-    marginTop: Spacing.sm,
-  },
-  prButton: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing["2xl"],
-    borderRadius: BorderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  prShareBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
     paddingVertical: Spacing.sm,
+    paddingLeft: Spacing.md,
+    paddingRight: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  prShareText: {
+  prToastBadge: {
+    // Same mark as the PR badge in the set grid.
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    backgroundColor: c.plateMedium,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  prToastCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  prToastTitle: {
     fontSize: 15,
-    fontWeight: "600",
+    lineHeight: 20,
+    fontFamily: FontFamily.displaySemi,
+    letterSpacing: 0.3,
   },
-  prButtonText: {
-    color: c.onChalk,
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "Oswald_600SemiBold",
+  prToastLine: {
+    fontSize: 13,
+    lineHeight: 18,
   },
+  prToastShare: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   summaryOverlay: {
     // Sits above all workout content; zIndex keeps it above sibling views.
     // No elevation needed because it's within the same RN view hierarchy.

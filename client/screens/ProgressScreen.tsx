@@ -49,7 +49,6 @@ import { WorkoutSession, getWorkoutHistory, getWorkoutPlans, ExerciseProgress, i
 import { primaryPlan } from "@/lib/todayPlan";
 import { restDayStreak } from "@/lib/restDayStreak";
 import { StreakCard } from "@/components/progress/StreakCard";
-import { HybridProgressPanel } from "@/components/progress/HybridProgressPanel";
 import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
 import {
   estimate1RM,
@@ -62,7 +61,6 @@ import {
   type PersonalRecord,
 } from "@/lib/strengthProgress";
 import { NativeRecoveryPanel } from "@/components/progress/NativeRecoveryPanel";
-import type { ProgressPeriod } from "@/lib/hybridProgressReport";
 import { useTranslation } from "react-i18next";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -1088,7 +1086,6 @@ export default function ProgressScreen() {
   const { t } = useTranslation();
   const [history, setHistory] = useState<WorkoutSession[]>([]);
   const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
-  const [hybridPeriod, setHybridPeriod] = useState<ProgressPeriod>("month");
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -1315,16 +1312,6 @@ export default function ProgressScreen() {
           <MuscleBalance data={muscleBalanceData} index={7} />
 
           <ExerciseProgressSection data={getExerciseProgressData} index={8} />
-
-          {/* Cardio and recovery are context for the lifting, not the
-              headline — they sit below it. */}
-          <View style={styles.hybridSection}>
-            <HybridProgressPanel
-              history={history}
-              period={hybridPeriod}
-              onPeriodChange={setHybridPeriod}
-            />
-          </View>
 
           <NativeRecoveryPanel index={9} />
 
@@ -1554,9 +1541,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   sectionHeaderFirst: {
     marginBottom: Spacing.md,
   },
-  hybridSection: {
-    marginTop: Spacing.xl,
-  },
+
   recordRow: {
     flexDirection: "row",
     alignItems: "center",

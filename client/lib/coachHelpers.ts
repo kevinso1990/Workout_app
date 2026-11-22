@@ -111,7 +111,9 @@ export function buildBriefingTimeline(input: {
   const day = (d: Date) =>
     `${d.toLocaleDateString("en-US", { weekday: "long" })} ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const lines = [`Today is ${day(now)}.`];
-  const latest = [...sessions].sort(
+  // Strength only: sport days are on the calendar for planning, not for the
+  // coach to give advice on ("after yesterday's run...").
+  const latest = [...sessions].filter(isStrengthSession).sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
   )[0];
   if (latest) {
@@ -171,7 +173,8 @@ export function buildDailyBriefingPayload(
     })
     .join("\n\n");
 
-  const recent = [...sessions]
+  const recent = sessions
+    .filter(isStrengthSession)
     .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
     .slice(0, 10);
 

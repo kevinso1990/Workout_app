@@ -154,8 +154,6 @@
       "title": "Today",
       "start": "Start",
       "startEarly": "Do now",
-      "logSport": "Log it",
-      "sportDone": "Logged today",
       "restDay": "Rest day",
       "doneTitle": "Done for today",
       "nextOverline": "Next workout",
@@ -334,7 +332,10 @@
     "replaceOwnImage": "Replace your image",
     "removeOwnImage": "Remove your image",
     "ownImageHint": "Stays on this device only",
-    "ownImageFailed": "Could not save the image"
+    "ownImageFailed": "Could not save the image",
+    "ownImageConfirmTitle": "Use your own image for this exercise?",
+    "ownImageConfirmMessage": "Pick an image from your photos, for example from your coach's plan. It replaces the exercise image on this device only.",
+    "ownImageConfirmOpen": "Open Photos"
   },
   "importWorkout": {
     "pasteLabel": "Or paste your plan text here",
@@ -565,11 +566,8 @@
     "tip3Title": "Progressive overload in action",
     "tip3Body": "When the app suggests adding weight (green arrow), go for it — that's how muscles grow. Switch to Advanced mode anytime for RiR tracking and drop sets.",
     "pr": {
-      "title": "New personal record!",
-      "weightLabel": "Weight",
-      "repsLabel": "Reps",
-      "repsShort": "reps",
-      "cta": "Awesome!"
+      "title": "New personal record",
+      "line": "{{exercise}} · {{weight}} kg × {{reps}}"
     },
     "coach": {
       "nextSetPlusWeight": "AI coach suggests +{{kg}} kg for your next set.",
@@ -710,40 +708,6 @@
     "totalWorkouts": "Total Workouts",
     "dayStreak": "Day Streak",
     "thisWeek": "This Week",
-    "hybrid": {
-      "title": "Hybrid report",
-      "period": {
-        "week": "Week",
-        "month": "Month",
-        "year": "Year"
-      },
-      "strengthLabel": "Strength",
-      "strengthSessions": "Strength sessions",
-      "cardioSessions": "Cardio sessions",
-      "countStrength": "{{count}}",
-      "countCardio": "{{count}}",
-      "totalDuration": "Total time",
-      "totalDistance": "Distance",
-      "distanceKm": "{{km}} km",
-      "durationMinutes": "{{count}} min",
-      "durationHours": "{{count}} h",
-      "durationHoursMinutes": "{{hours}} h {{minutes}} min",
-      "distributionTitle": "Activity mix",
-      "rpeTrendTitle": "Effort trend (RPE)",
-      "avgRpe": "Avg {{rpe}}/10",
-      "rpeHighHint": "High average effort — prioritize recovery and sleep.",
-      "rpeBalancedHint": "Effort looks balanced — good mix of stress and recovery.",
-      "highlightsTitle": "Highlights",
-      "highlightLongestCardio": "Longest cardio: {{minutes}} min {{sport}}",
-      "highlightLongestCardioSub": "Endurance peak this period",
-      "highlightMaxVolume": "Top strength volume: {{volume}} kg · {{day}}",
-      "highlightMaxVolumeSub": "Heaviest lifting session",
-      "highlightMaxDistance": "Longest distance: {{km}} km {{sport}}",
-      "highlightMaxDistanceSub": "Distance PR this period",
-      "highlightPeakRpe": "Peak effort: RPE {{rpe}} · {{sport}}",
-      "highlightPeakRpeSub": "Watch for overreaching",
-      "emptyPeriod": "No workouts logged in this period yet."
-    },
     "noBodyWeightYet": "No body weight recorded yet.",
     "fullHistory": "Full history",
     "weekWorkouts": "Workouts",
