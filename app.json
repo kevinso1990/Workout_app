@@ -72,7 +72,8 @@
       "@sentry/react-native",
       "expo-live-activity",
       "expo-secure-store",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-font"
     ],
     "experiments": {
       "reactCompiler": false
