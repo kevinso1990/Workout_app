@@ -63,10 +63,22 @@ describe("todayOverview", () => {
   it("points to the next session on a rest day", () => {
     const gym = new Set(gymWeekdays.map((g) => g.weekday));
     const rest = [0, 1, 2, 3, 4, 5, 6].find((d) => !gym.has(d))!;
-    const o = todayOverview({ ...base, now: onWeekday(rest) });
+    // Trained the week before, so this isn't the plan's first workout.
+    const history = [logged(new Date(2026, 9, 13, 10))];
+    const o = todayOverview({ ...base, history, now: onWeekday(rest) });
     expect(o.strength).toBeNull();
     const expected = [1, 2, 3, 4, 5, 6, 7].map((k) => (rest + k) % 7).find((d) => gym.has(d));
     expect(o.next?.weekday).toBe(expected);
+  });
+
+  it("starts a plan nobody has trained yet today, even on a rest day", () => {
+    const gym = new Set(gymWeekdays.map((g) => g.weekday));
+    const rest = [0, 1, 2, 3, 4, 5, 6].find((d) => !gym.has(d))!;
+    const nextDay = [1, 2, 3, 4, 5, 6, 7].map((k) => (rest + k) % 7).find((d) => gym.has(d))!;
+    const o = todayOverview({ ...base, now: onWeekday(rest) });
+    expect(o.firstWorkout).toBe(true);
+    expect(o.strength?.dayName).toBe(gymWeekdays.find((g) => g.weekday === nextDay)!.dayName);
+    expect(o.next).toBeNull();
   });
 
   it("stops offering the day once a strength workout is logged today", () => {
@@ -145,7 +157,8 @@ describe("todayOverview — plan with its own weekdays and rotation", () => {
 
   it("looks into next cycle week for the next session", () => {
     // Sat of week 1 is done → next is Mon mobility (skipped) → Tue week 2.
-    const o = todayOverview({ ...input, now: onWeekday(6) });
+    const done = logged(onWeekday(5, 9), { planId: "gk", exercises: [ex("Trap Bar Deadlift")] });
+    const o = todayOverview({ ...input, history: [done], now: onWeekday(6) });
     expect(o.next).toMatchObject({ dayName: "GK A kurz", weekday: 1 });
   });
 });

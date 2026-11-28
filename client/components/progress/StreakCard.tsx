@@ -9,23 +9,22 @@ import { PanelFill, panelFrame } from "@/components/surface/Panel";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, FontFamily, Spacing } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
-import { dayNumber, type RestDayStreak } from "@/lib/restDayStreak";
-import { mondayStart } from "@/lib/strengthProgress";
+import { dayNumber, type WeekStreak } from "@/lib/weekStreak";
 
-const WEEKS = 5;
 const DOT = 30;
 
 /**
- * The streak as one number and a calendar it runs through: the streak is a
- * band across the days, trained days sit on it as chalk discs, rest days are
- * simply part of the band. Today carries the signal ring.
+ * Weeks in a row at the plan's weekly goal, with the last five weeks below:
+ * a week that reached the goal is one band, trained days sit on it as chalk
+ * discs. Today carries the signal ring. Pips show this week's sessions
+ * against the goal — what still counts toward the next week of the streak.
  */
 export function StreakCard({
   streak,
   now,
   index,
 }: {
-  streak: RestDayStreak;
+  streak: WeekStreak;
   now: Date;
   index: number;
 }) {
@@ -34,31 +33,16 @@ export function StreakCard({
   const { t, i18n } = useTranslation();
 
   const today = dayNumber(now);
-  const firstMonday = mondayStart(now);
-  firstMonday.setDate(firstMonday.getDate() - (WEEKS - 1) * 7);
-
+  const firstMonday = streak.recent[0].start;
   const weekdayLetters = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(firstMonday);
     d.setDate(d.getDate() + i);
     return d.toLocaleDateString(i18n.language, { weekday: "narrow" });
   });
 
-  const alive = streak.days > 0;
-  const trainedToday = streak.trained.has(today);
-  const lastChain = streak.chains[streak.chains.length - 1];
-  const status = !alive
-    ? lastChain
-      ? t("streak.brokenAfter", { count: lastChain.end - lastChain.start + 1 })
-      : t("streak.broken")
-    : trainedToday
-      ? t("streak.trainedToday")
-      : streak.restLeft === 0
-        ? t("streak.lastDay")
-        : t("streak.restLeft", { count: streak.restLeft });
-
-  // Every streak gets the band, finished ones too: the gap between two bands
-  // is where one broke.
-  const chainOf = (day: number) => streak.chains.find((c) => day >= c.start && day <= c.end);
+  const toGo = Math.max(0, streak.goal - streak.thisWeek);
+  // Never "broken": a week still open only ever counts up.
+  const status = toGo === 0 ? t("streak.goalMet") : t("streak.toGo", { count: toGo });
 
   return (
     <Animated.View
@@ -69,28 +53,25 @@ export function StreakCard({
       <PanelFill />
       <View style={styles.header}>
         <View style={styles.headline}>
-          <ThemedText style={styles.number}>{streak.days}</ThemedText>
-          <ThemedText style={styles.unit}>{t("streak.unit", { count: streak.days })}</ThemedText>
+          <ThemedText style={styles.number}>{streak.weeks}</ThemedText>
+          <ThemedText style={styles.unit}>{t("streak.unit", { count: streak.weeks })}</ThemedText>
         </View>
-        {alive ? (
-          // Rest left as pips: what the streak can still absorb.
-          <View style={styles.pipsWrap} accessibilityLabel={status}>
-            <View style={styles.pips}>
-              {Array.from({ length: streak.maxRest }, (_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.pip,
-                    i < (trainedToday ? streak.maxRest : streak.restLeft)
-                      ? { backgroundColor: theme.chalk }
-                      : { borderWidth: 1.5, borderColor: theme.chalkFaint },
-                  ]}
-                />
-              ))}
-            </View>
-            <ThemedText style={styles.pipsLabel}>{t("streak.restPips")}</ThemedText>
+        <View style={styles.pipsWrap} accessibilityLabel={status}>
+          <View style={styles.pips}>
+            {Array.from({ length: streak.goal }, (_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.pip,
+                  i < streak.thisWeek
+                    ? { backgroundColor: theme.chalk }
+                    : { borderWidth: 1.5, borderColor: theme.chalkFaint },
+                ]}
+              />
+            ))}
           </View>
-        ) : null}
+          <ThemedText style={styles.pipsLabel}>{t("streak.thisWeek")}</ThemedText>
+        </View>
       </View>
       <ThemedText style={styles.status}>{status}</ThemedText>
 
@@ -101,32 +82,18 @@ export function StreakCard({
           </ThemedText>
         ))}
       </View>
-      {Array.from({ length: WEEKS }, (_, w) => (
-        <View key={w} style={styles.row}>
+      {streak.recent.map((week) => (
+        <View key={week.start.toISOString()} style={styles.row}>
+          {week.met ? <View style={styles.band} /> : null}
           {Array.from({ length: 7 }, (_, d) => {
-            const date = new Date(firstMonday);
-            date.setDate(firstMonday.getDate() + w * 7 + d);
+            const date = new Date(week.start);
+            date.setDate(week.start.getDate() + d);
             const day = dayNumber(date);
             const trained = streak.trained.has(day);
-            const chain = chainOf(day);
-            const band = !!chain;
             const future = day > today;
             const isToday = day === today;
-            // The band is cut into cells; round it where the run starts or
-            // ends and where the week wraps to the next row.
-            const bandStart = !!chain && (d === 0 || day === chain.start);
-            const bandEnd = !!chain && (d === 6 || day === chain.end);
             return (
               <View key={d} style={styles.cell}>
-                {band ? (
-                  <View
-                    style={[
-                      styles.band,
-                      bandStart && styles.bandStart,
-                      bandEnd && styles.bandEnd,
-                    ]}
-                  />
-                ) : null}
                 <View
                   style={[
                     styles.dot,
@@ -140,7 +107,7 @@ export function StreakCard({
                       {
                         color: trained
                           ? theme.onChalk
-                          : band
+                          : week.met
                             ? theme.chalk
                             : future
                               ? theme.hairlineStrong
@@ -163,7 +130,7 @@ export function StreakCard({
           {t("streak.longest", { count: streak.longest })}
         </ThemedText>
         <ThemedText style={[styles.footerText, styles.footerRule]} numberOfLines={1}>
-          {t("streak.rule", { count: streak.maxRest })}
+          {t("streak.rule", { count: streak.goal })}
         </ThemedText>
       </View>
     </Animated.View>
@@ -243,20 +210,12 @@ const makeStyles = (c: Palette) =>
     },
     band: {
       position: "absolute",
-      left: 0,
-      right: 0,
-      height: DOT,
-      backgroundColor: c.chipIdle,
-    },
-    bandStart: {
       left: 4,
-      borderTopLeftRadius: DOT / 2,
-      borderBottomLeftRadius: DOT / 2,
-    },
-    bandEnd: {
       right: 4,
-      borderTopRightRadius: DOT / 2,
-      borderBottomRightRadius: DOT / 2,
+      top: 5,
+      height: DOT,
+      borderRadius: DOT / 2,
+      backgroundColor: c.chipIdle,
     },
     dot: {
       width: DOT,

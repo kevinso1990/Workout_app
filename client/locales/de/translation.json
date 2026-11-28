@@ -153,6 +153,7 @@
     "today": {
       "title": "Heute",
       "start": "Starten",
+      "startFirst": "Erstes Training starten",
       "startEarly": "Vorziehen",
       "restDay": "Ruhetag",
       "doneTitle": "Heute erledigt",
@@ -532,7 +533,9 @@
     "timerBar": {
       "resume": "Zurück zu {{name}}",
       "rest": "Pause"
-    }
+    },
+    "checkSet": "Satz {{number}} abhaken",
+    "options": "Optionen"
   },
   "postWorkout": {
     "workoutComplete": "Training abgeschlossen",
@@ -1286,19 +1289,15 @@
     "seeAll": "Alle Bestleistungen"
   },
   "streak": {
-    "broken": "Gerissen – ein Training startet eine neue Serie.",
-    "trainedToday": "Heute trainiert – Ruhetage wieder voll.",
-    "restLeft_one": "Noch {{count}} Ruhetag, dann reißt die Serie",
-    "restLeft_other": "Noch {{count}} Ruhetage, dann reißt die Serie",
-    "lastDay": "Heute trainieren, sonst reißt die Serie",
-    "rule_one": "max. {{count}} Ruhetag am Stück",
-    "rule_other": "max. {{count}} Ruhetage am Stück",
-    "unit_one": "Tag Serie",
-    "unit_other": "Tage Serie",
-    "restPips": "Ruhetage übrig",
-    "longest_one": "Längste Serie: {{count}} Tag",
-    "longest_other": "Längste Serie: {{count}} Tage",
-    "brokenAfter_one": "Gerissen nach {{count}} Tag – ein Training startet eine neue Serie.",
-    "brokenAfter_other": "Gerissen nach {{count}} Tagen – ein Training startet eine neue Serie."
+    "unit_one": "Woche in Folge",
+    "unit_other": "Wochen in Folge",
+    "thisWeek": "Diese Woche",
+    "goalMet": "Wochenziel geschafft – die Serie läuft weiter.",
+    "toGo_one": "Noch {{count}} Training diese Woche für dein Wochenziel.",
+    "toGo_other": "Noch {{count}} Trainings diese Woche für dein Wochenziel.",
+    "longest_one": "Längste Serie: {{count}} Woche",
+    "longest_other": "Längste Serie: {{count}} Wochen",
+    "rule_one": "Ziel: {{count}} Training pro Woche",
+    "rule_other": "Ziel: {{count}} Trainings pro Woche"
   }
 }

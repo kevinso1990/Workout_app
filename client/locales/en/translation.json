@@ -153,6 +153,7 @@
     "today": {
       "title": "Today",
       "start": "Start",
+      "startFirst": "Start your first workout",
       "startEarly": "Do now",
       "restDay": "Rest day",
       "doneTitle": "Done for today",
@@ -631,7 +632,9 @@
     "timerBar": {
       "resume": "Back to {{name}}",
       "rest": "Rest"
-    }
+    },
+    "checkSet": "Log set {{number}}",
+    "options": "Options"
   },
   "postWorkout": {
     "workoutComplete": "Workout Complete",
@@ -1286,19 +1289,15 @@
     "seeAll": "All personal bests"
   },
   "streak": {
-    "broken": "Broken – one workout starts a new streak.",
-    "trainedToday": "Trained today – rest days refilled.",
-    "restLeft_one": "{{count}} rest day left before the streak breaks",
-    "restLeft_other": "{{count}} rest days left before the streak breaks",
-    "lastDay": "Train today or the streak breaks",
-    "rule_one": "up to {{count}} rest day in a row",
-    "rule_other": "up to {{count}} rest days in a row",
-    "unit_one": "day streak",
-    "unit_other": "day streak",
-    "restPips": "rest days left",
-    "longest_one": "Longest: {{count}} day",
-    "longest_other": "Longest: {{count}} days",
-    "brokenAfter_one": "Broke after {{count}} day – one workout starts a new streak.",
-    "brokenAfter_other": "Broke after {{count}} days – one workout starts a new streak."
+    "unit_one": "week in a row",
+    "unit_other": "weeks in a row",
+    "thisWeek": "This week",
+    "goalMet": "Weekly goal reached – the streak goes on.",
+    "toGo_one": "{{count}} more workout this week for your weekly goal.",
+    "toGo_other": "{{count}} more workouts this week for your weekly goal.",
+    "longest_one": "Longest streak: {{count}} week",
+    "longest_other": "Longest streak: {{count}} weeks",
+    "rule_one": "Goal: {{count}} workout a week",
+    "rule_other": "Goal: {{count}} workouts a week"
   }
 }

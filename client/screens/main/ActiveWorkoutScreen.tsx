@@ -888,6 +888,15 @@ export default function ActiveWorkoutScreen() {
   const [restTotal, setRestTotal] = useState<number | null>(null);
   /** null = follow the default (open until the first set is done). */
   const [warmupExpanded, setWarmupExpanded] = useState<boolean | null>(null);
+  // Rest timer and circuit mode are set once per workout at most; they sat
+  // as a pill row above the sets and pushed the first input below the fold.
+  const [showOptions, setShowOptions] = useState(false);
+  // The active set row registers its check here so the wide footer button can
+  // log the set — the one action repeated all session long.
+  const activeSetCheck = useRef<(() => void) | null>(null);
+  const registerActiveSetCheck = useCallback((fn: (() => void) | null) => {
+    activeSetCheck.current = fn;
+  }, []);
   const [currentPR, setCurrentPR] = useState<PRRecord | null>(null);
   const closePRToast = useCallback(() => setCurrentPR(null), []);
   const [sharePR, setSharePR] = useState<ShareableRecord | null>(null);
@@ -2243,6 +2252,9 @@ export default function ActiveWorkoutScreen() {
     totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   const workoutComplete = progress.every(isExerciseDone);
+  const currentEp = progress[currentExerciseIndex];
+  const activeSet = currentEp && !currentEp.closed ? currentEp.sets[currentSetIndex] : undefined;
+  const activeSetOpen = !!activeSet && !activeSet.completed;
 
   return (
     <ThemedView style={styles.container}>
@@ -2378,10 +2390,23 @@ export default function ActiveWorkoutScreen() {
                 </ThemedText>
               </View>
             </View>
-            {/* Mirrors the back button's width so the title stays centred. */}
-            <View style={styles.headerSideSpacer} />
+            {/* Same width as the back button, so the title stays centred. */}
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShowOptions((v) => !v);
+              }}
+              style={styles.backButton}
+              testID="button-workout-options"
+              accessibilityRole="button"
+              accessibilityLabel={t("activeWorkout.options")}
+              accessibilityState={{ expanded: showOptions }}
+            >
+              <Feather name="more-horizontal" size={22} color={theme.text} />
+            </Pressable>
           </View>
 
+          {showOptions ? (
           <View style={styles.headerToggleRow}>
             {renderHeaderToggle({
               label: t("activeWorkout.restTimer"),
@@ -2405,6 +2430,7 @@ export default function ActiveWorkoutScreen() {
               testID: "switch-circuit-mode",
             })}
           </View>
+          ) : null}
 
           <View style={styles.progressBarContainer}>
             <View
@@ -2983,6 +3009,7 @@ export default function ActiveWorkoutScreen() {
                         onComplete={(payload) =>
                           handleSetComplete(exIdx, setIdx, payload)
                         }
+                        registerCheck={isActiveSet ? registerActiveSetCheck : undefined}
                       />
                     );
                     const canReplicate = !setData.completed && !isActiveSet;
@@ -3190,6 +3217,30 @@ export default function ActiveWorkoutScreen() {
                 </Pressable>
               ) : (
                 <>
+                  {/* While a set is open the wide button logs it — the thing
+                      done dozens of times a session, where the thumb rests.
+                      It turns into "next exercise" once the exercise is done. */}
+                  {activeSetOpen ? (
+                  <Pressable
+                    onPress={() => activeSetCheck.current?.()}
+                    style={[
+                      styles.skipButton,
+                      styles.skipButtonFlex,
+                      styles.primaryNextBtn,
+                      { borderColor: theme.chalk, backgroundColor: theme.chalk },
+                    ]}
+                    testID="button-check-set"
+                    accessibilityRole="button"
+                    accessibilityLabel={t("activeWorkout.checkSet", { number: currentSetIndex + 1 })}
+                  >
+                    <Feather name="check" size={18} color={theme.onChalk} />
+                    <ThemedText
+                      style={[styles.skipButtonText, { color: theme.onChalk }]}
+                    >
+                      {t("activeWorkout.checkSet", { number: currentSetIndex + 1 })}
+                    </ThemedText>
+                  </Pressable>
+                  ) : (
                   <Pressable
                     onPress={() => {
                       if (currentExerciseIndex < day.exercises.length - 1) {
@@ -3221,6 +3272,7 @@ export default function ActiveWorkoutScreen() {
                     </ThemedText>
                     <Feather name="chevron-right" size={18} color={theme.iron} />
                   </Pressable>
+                  )}
                   <Pressable
                     onPress={handleFinishWorkout}
                     style={[
@@ -4089,9 +4141,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,
-  },
-  headerSideSpacer: {
-    width: 40,
   },
   headerToggleRow: {
     flexDirection: "row",

@@ -30,6 +30,8 @@ export interface TodayOverview {
   sportLogged: boolean;
   /** Next scheduled strength day after today (only when none is due today). */
   next: (TodaySession & { weekday: number }) | null;
+  /** `strength` is the plan's first workout, pulled to today. */
+  firstWorkout: boolean;
 }
 
 /**
@@ -104,6 +106,7 @@ export function todayOverview(input: {
   let strength: TodaySession | null = null;
   let mobilityFromPlan: TodaySession | null = null;
   let next: TodayOverview["next"] = null;
+  let firstWorkout = false;
   const plan = primaryPlan(plans);
   if (plan) {
     // Same lookup as the week strip: the plan's own weekdays/rotation when it
@@ -135,6 +138,19 @@ export function todayOverview(input: {
         }
       }
     }
+    // A plan nobody has trained yet starts today, whatever weekday it put its
+    // first session on: greeting a fresh import with "rest day" loses the
+    // moment the athlete is most ready to begin. Not on a day that already
+    // has something in it — a sport commitment or the plan's mobility day.
+    const trainedBefore = history.some(
+      (s) => s.planId === plan.id && !isCardio(s) && !isMobilitySession(s),
+    );
+    if (!strength && next && !strengthLogged && !trainedBefore && !sport && !mobilityFromPlan) {
+      const { weekday: _later, ...first } = next;
+      strength = first;
+      next = null;
+      firstWorkout = true;
+    }
   }
 
   let mobility: TodaySession | null = mobilityFromPlan;
@@ -150,5 +166,6 @@ export function todayOverview(input: {
     doneToday: today.length > 0,
     sportLogged: today.some((s) => isCardio(s)),
     next,
+    firstWorkout,
   };
 }

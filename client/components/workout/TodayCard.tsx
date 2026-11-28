@@ -223,7 +223,7 @@ export function TodayCard({
           >
             <Feather name="play" size={16} color={theme.onSignal} />
             <ThemedText style={[styles.heroBtnText, { color: theme.onSignal }]}>
-              {t("plans.today.start")}
+              {overview.firstWorkout ? t("plans.today.startFirst") : t("plans.today.start")}
             </ThemedText>
           </Pressable>
         </>

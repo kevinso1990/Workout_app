@@ -47,7 +47,7 @@ import { variantSummary } from "@/lib/exerciseVariant";
 import { translateDayName } from "@/lib/dayNameLabel";
 import { WorkoutSession, getWorkoutHistory, getWorkoutPlans, ExerciseProgress, isCardioSession, sessionDisplayTitle } from "@/lib/storage";
 import { primaryPlan } from "@/lib/todayPlan";
-import { restDayStreak } from "@/lib/restDayStreak";
+import { weekStreak } from "@/lib/weekStreak";
 import { StreakCard } from "@/components/progress/StreakCard";
 import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
 import {
@@ -1119,7 +1119,7 @@ export default function ProgressScreen() {
   const now = useMemo(() => new Date(), [history]);
   const week = useMemo(() => thisWeekSummary(history, now), [history, now]);
   const streak = useMemo(
-    () => restDayStreak(history, now, sessionsPerWeek),
+    () => weekStreak(history, now, sessionsPerWeek),
     [history, now, sessionsPerWeek],
   );
   const records = useMemo(() => recentRecords(history, now), [history, now]);

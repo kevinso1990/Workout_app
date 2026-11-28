@@ -175,6 +175,10 @@ export type HevySetRowProps = {
     /** The values committed with the check, as stored on the set. */
     logged: { weight: string; reps: string };
   }) => void;
+  /** Hands the active row's check to the screen's footer button. */
+  registerCheck?: (check: (() => void) | null) => void;
+  /** The editor under the row shows weight and reps; the row leaves them out. */
+  valuesInEditor?: boolean;
 };
 
 function formatPrevious(last: LastSet, bodyweight: boolean): string {
@@ -402,6 +406,8 @@ export function HevySetRow({
   onToggleWarmup,
   onUpdate,
   onComplete,
+  registerCheck,
+  valuesInEditor,
 }: HevySetRowProps) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -482,6 +488,14 @@ export function HevySetRow({
     });
   };
 
+  const checkRef = useRef(handleCheck);
+  checkRef.current = handleCheck;
+  useEffect(() => {
+    if (!registerCheck || !isActive || setData.completed) return;
+    registerCheck(() => checkRef.current());
+    return () => registerCheck(null);
+  }, [registerCheck, isActive, setData.completed]);
+
   const rowMuted = !isActive && !setData.completed;
 
   return (
@@ -555,7 +569,7 @@ export function HevySetRow({
                 style={[styles.cellValue, rowMuted && styles.textMuted]}
                 numberOfLines={1}
               >
-                {weightDisplay}
+                {valuesInEditor ? "" : weightDisplay}
               </Text>
             </Pressable>
           </FieldAlertCell>
@@ -574,7 +588,7 @@ export function HevySetRow({
               style={[styles.cellValue, rowMuted && styles.textMuted]}
               numberOfLines={1}
             >
-              {repsDisplay}
+              {valuesInEditor ? "" : repsDisplay}
             </Text>
           </Pressable>
         </FieldAlertCell>
@@ -748,7 +762,12 @@ export function HevySetRowWithPrefill(props: HevySetRowWithPrefillProps) {
 
   return (
     <View style={[styles.setBlock, showEditor && styles.setBlockActive]}>
-      <HevySetRow {...props} setData={displaySet} suppressBottomBorder={showEditor} />
+      <HevySetRow
+        {...props}
+        setData={displaySet}
+        suppressBottomBorder={showEditor}
+        valuesInEditor={showEditor}
+      />
       {showEditor ? (
         <HevySetEditor
           setIndex={props.setIndex}
