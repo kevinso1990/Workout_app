@@ -7,27 +7,38 @@ Einfügen. Alles unter „👉 Schritte" machst du in App Store Connect / beim A
 
 ## 1) Screenshots  (App Store Connect → Version → Medien)
 Apple verlangt mindestens **iPhone 6,9″** (1320×2868) **oder 6,5″** (1242×2688).
-→ Werden separat aus dem Simulator generiert und dir übergeben (5 Stück:
-Plan-Übersicht, aktives Workout, KI-Ziel, Import, Fortschritt).
+→ Werden separat aus dem Simulator generiert und dir übergeben (5 Stück, in
+dieser Reihenfolge, weil der Import der Grund zum Installieren ist):
+1. Import: Foto/PDF vom Trainingsplan → erkannter Plan
+2. Importierter Plan mit Rotation / Kurz-Lang-Varianten
+3. Aktives Training mit „Letztes Mal“ zum Schlagen
+4. Woche/Monat mit Kraft- und Sporttagen
+5. Fortschritt / Rekorde
 
-**👉 Schritte:** App Store Connect → deine App → „+ Version" (1.0) → **Vorschau und
+**👉 Schritte:** App Store Connect → deine App → Version 1.1.0 → **Vorschau und
 Screenshots** → 6,9″-Tab → die 5 PNGs hochladen (Reihenfolge = Reihenfolge im Store).
 
 ---
 
 ## 2) App-Privacy „Nutrition Labels"  (ASC → App-Datenschutz)
-Wahrheitsgemäß, basierend auf dem Gast-Modell (kein Login, geräte-/gast-basiert):
+Wahrheitsgemäß, Stand 1.1.0: Gast-Konto über eine Geräte-ID im Schlüsselbund,
+Cloud-Backup auf unserem Server, optional „Mit Apple fortfahren“, anonyme
+Nutzungsstatistik. Kostenlos, keine Käufe.
 
 **Frage „Erfasst diese App Daten?" → Ja.**
 
-| Datentyp | Erfasst? | Verknüpft mit Nutzer? | Tracking? | Zweck |
-|---|---|---|---|---|
-| **Gesundheit & Fitness → Fitness** (Workouts, Sätze) | Ja | Ja (Gast-ID) | Nein | App-Funktionalität |
-| **Identifikatoren → Geräte-ID / Nutzer-ID** | Ja | Ja | Nein | App-Funktionalität |
-| **Nutzerinhalte → Fotos/PDF** (nur beim Import) | Ja | Ja | Nein | App-Funktionalität |
+| Datentyp | Verknüpft mit Nutzer? | Tracking? | Zweck |
+|---|---|---|---|
+| **Gesundheit & Fitness → Fitness** (Pläne, Trainings, Sätze, Körpermaße) | Ja | Nein | App-Funktionalität |
+| **Identifikatoren → Nutzer-ID** (Gast-/Konto-ID) | Ja | Nein | App-Funktionalität |
+| **Kontaktinformationen → Name, E-Mail-Adresse** (nur bei „Mit Apple fortfahren“, ggf. Apple-Relay-Adresse) | Ja | Nein | App-Funktionalität |
+| **Nutzerinhalte → Fotos oder Videos, andere Nutzerinhalte** (Foto/PDF/Excel beim Import) | Ja | Nein | App-Funktionalität |
+| **Nutzungsdaten → Produktinteraktion** (anonyme Ereignisse wie „Training beendet“, zufällige ID) | **Nein** | Nein | Analyse |
+| **Diagnose → Absturzdaten** (nur wenn Sentry-DSN im Build gesetzt ist) | Nein | Nein | App-Funktionalität |
 
+- **„Käufe“: entfernen.** 1.1.0 hat keine In-App-Käufe.
 - **„Zum Tracking verwendet": NEIN** (keine Werbung/Cross-App-Tracking).
-- **Drittanbieter offenlegen:** Import/KI senden Inhalte an **Anthropic** und **Google (Gemini)** als Auftragsverarbeiter. (RevenueCat erst wenn Abo aktiv.)
+- **Auftragsverarbeiter** (gehört in die Datenschutzerklärung, nicht ins Label): Hostinger (Server, EU), Google Gemini (Import/KI). Anthropic nur, wenn der Server wieder mit Claude läuft.
 - Muss zur Datenschutzerklärung passen (siehe #8).
 
 ---
@@ -36,64 +47,85 @@ Wahrheitsgemäß, basierend auf dem Gast-Modell (kein Login, geräte-/gast-basie
 
 **Kategorie:** Health & Fitness (primär). Sekundär optional: Lifestyle.
 
+Positionierung aus [STRATEGY.md](STRATEGY.md): *Dein echter Plan, egal wie
+komplex, wird zum geführten Training.* Der Import steht vorn, der KI-Plan ist
+die Alternative für alle ohne Plan.
+
 ### 📋 Untertitel (max. 30 Zeichen)
-- DE: `KI-Trainingsplan & Logger`
-- EN: `AI workout plans & logger`
+- DE: `Trainingsplan-Import & Logger` (29)
+- EN: `Workout plan import & logger` (28)
 
 ### 📋 Werbetext / Promo (max. 170 Zeichen)
-- DE: `Erstelle per KI in Sekunden einen Trainingsplan – oder importiere deinen bestehenden aus PDF/Foto. Logge jeden Satz. 1000+ Übungen mit Bildern.`
-- EN: `Build a workout plan with AI in seconds — or import your existing one from a PDF/photo. Log every set. 1000+ exercises with images.`
+- DE: `Foto oder PDF vom Trainingsplan rein – die App macht daraus dein geführtes Training, mit Rotation, Varianten und Supersätzen. Jeden Satz loggen. Kostenlos.` (155)
+- EN: `Snap or upload your coach's plan and get a guided workout – rotations, variants and supersets included. Log every set, beat last time. Free.` (140)
 
 ### 📋 Keywords (max. 100 Zeichen, kommagetrennt, KEINE Leerzeichen nach Komma)
-- DE: `training,gym,fitness,workout,trainingsplan,krafttraining,ki,hantel,muskelaufbau,plan,satz,übungen`
-- EN: `workout,gym,fitness,training,lifting,strength,ai,dumbbell,plan,log,tracker,exercises,muscle`
+Wörter aus Name und Untertitel zählt Apple schon mit, deshalb fehlen hier
+„trainingsplan“, „import“ und „logger“.
+- DE: `trainer,pdf,foto,gym,fitness,krafttraining,workout,muskelaufbau,hantel,übungen,tracker,ki,coach` (95)
+- EN: `coach,trainer,pdf,photo,gym,fitness,strength,lifting,routine,tracker,exercises,ai,dumbbell` (90)
 
 ### 📋 Beschreibung — DE
 ```
-TrackYourLift ist dein Krafttraining-Logger mit KI.
+Du trainierst nach einem Plan von deinem Trainer, Coach oder aus dem Netz?
+TrackYourLift macht daraus dein geführtes Training – ohne Abtippen.
 
-▶ KI-TRAININGSPLAN IN SEKUNDEN
-Sag der App dein Ziel („Hüftmobilität verbessern", „Muskelaufbau Oberkörper") –
-sie baut daraus einen passenden Plan. Oder importiere deinen bestehenden Plan
-einfach per PDF oder Foto; die KI liest ihn aus und legt ihn für dich an.
+▶ PLAN REIN, LOSLEGEN
+Fotografiere deinen Trainingsplan oder lade ein PDF oder eine Excel-Datei hoch.
+Die App erkennt Übungen, Sätze, Wiederholungen und Pausen – auch Rotationen
+über mehrere Wochen, Kurz- und Lang-Varianten, Supersätze und Mobility-Tage.
+Du prüfst das Ergebnis und startest noch heute.
 
-▶ SCHNELL LOGGEN IM GYM
-Gewicht und Wiederholungen in 1-kg-Schritten per Tipp, Pausen-Timer, der dein
-Workout nicht verdeckt, Aufwärmsätze, persönliche Rekorde. Gerät belegt? Tausch
-die Übung mit einem Tipp gegen eine Alternative – nur für diese Einheit.
+▶ JEDES MAL BESSER ALS LETZTES MAL
+Beim Training siehst du, was du beim letzten Mal geschafft hast. Gewicht und
+Wiederholungen trägst du mit einem Tipp ein, der Pausen-Timer läuft auch auf dem
+Sperrbildschirm. Gerät belegt? Tausch die Übung gegen eine Alternative – nur für
+diese Einheit.
 
-▶ 1000+ ÜBUNGEN MIT BILDERN
-Große Übungsbibliothek mit Fotos, deutschen Namen und Muskelgruppen.
+▶ 1000+ ÜBUNGEN AUF DEUTSCH
+Große Übungsbibliothek mit Bildern, deutschen Namen und Ausführungshinweisen.
 
-▶ FORTSCHRITT SEHEN
-Volumen, Rekorde, Verlauf pro Übung und Muskelgruppen-Balance.
+▶ DEINE WOCHE IM BLICK
+Kraft- und Sporttage in Wochen- und Monatsansicht, Rekorde, Verlauf pro Übung
+und Muskelgruppen-Balance.
 
-Kein Konto nötig – leg direkt los. Deine Daten bleiben auf deinem Gerät, mit
-optionalem Cloud-Backup per Code.
+▶ KEIN PLAN? KEIN PROBLEM
+Beantworte ein paar Fragen und die KI baut dir einen Plan für dein Ziel – oder
+stell dir deinen Plan selbst aus der Übungsbibliothek zusammen.
+
+Kostenlos und ohne Konto – leg direkt los. Deine Pläne und Trainings werden
+automatisch gesichert. Mit „Mit Apple fortfahren“ nimmst du sie auf ein neues
+iPhone mit.
 ```
 
 ### 📋 Beschreibung — EN
 ```
-TrackYourLift is your strength-training logger with AI.
+Training from a plan your coach, trainer or the internet wrote? TrackYourLift
+turns it into a guided workout – no retyping.
 
-▶ AI WORKOUT PLAN IN SECONDS
-Tell the app your goal ("improve hip mobility", "upper-body muscle") and it
-builds a matching plan. Or import your existing plan from a PDF or photo — the
-AI reads it and sets it up for you.
+▶ IMPORT YOUR PLAN, START TODAY
+Take a photo of your plan or upload a PDF or Excel file. The app picks up
+exercises, sets, reps and rest – including multi-week rotations, short and long
+variants, supersets and mobility days. Review the result and start today.
 
-▶ FAST LOGGING IN THE GYM
-Tap weight and reps in 1 kg steps, a rest timer that doesn't hide your workout,
-warm-up sets, personal records. Machine taken? Swap the exercise for an
-alternative in one tap — just for this session.
+▶ BEAT LAST TIME
+During your workout you see what you did last time. Log weight and reps with a
+tap; the rest timer keeps running on the lock screen. Machine taken? Swap the
+exercise for an alternative – just for this session.
 
-▶ 1000+ EXERCISES WITH IMAGES
-Large exercise library with photos, names and muscle groups.
+▶ 1000+ EXERCISES
+Large exercise library with images, muscle groups and form cues.
 
-▶ SEE PROGRESS
-Volume, records, per-exercise history and muscle-group balance.
+▶ YOUR WEEK AT A GLANCE
+Strength and sport days in week and month views, records, per-exercise history
+and muscle-group balance.
 
-No account required — just start. Your data stays on your device, with optional
-cloud backup via a code.
+▶ NO PLAN? NO PROBLEM
+Answer a few questions and the AI builds a plan for your goal – or put one
+together yourself from the exercise library.
+
+Free, no account needed – just start. Your plans and workouts are backed up
+automatically. Use "Continue with Apple" to take them to a new iPhone.
 ```
 
 ### 📋 Support-URL / Marketing-URL
@@ -140,16 +172,19 @@ Bereits erledigt im Code (`ITSAppUsesNonExemptEncryption: false`) → beim Einre
 ## 8) Legal-Review
 Von jemandem mit Ahnung (Anwalt/Datenschutz-Dienst) prüfen lassen:
 - **Impressum** vollständig (Name/Anschrift/Kontakt nach §5 TMG).
-- **Datenschutzerklärung** deckt ab: Gast-Modell + Geräte-ID, Cloud-Backup,
-  **Auftragsverarbeiter Anthropic + Google (Gemini)** (Datenübermittlung USA),
-  RevenueCat (sobald Abo aktiv). Muss zu den App-Privacy-Labels (#2) passen.
+- **Datenschutzerklärung** (`/var/www/fitplan-web/datenschutz.html` auf dem VPS,
+  nicht im Repo) deckt ab: Geräte-ID im Schlüsselbund, Cloud-Backup, „Mit Apple
+  fortfahren“ (Name/E-Mail), anonyme Statistik, Auftragsverarbeiter Hostinger +
+  Google Gemini (USA). Muss zu den App-Privacy-Labels (#2) passen.
+- Vor dem Launch den orangen Hinweis „⚠️ Vor Veröffentlichung … Entwurf“ oben in
+  der Datenschutzerklärung entfernen – erst nach der Prüfung.
 
 ---
 
 ## 9) QA-Pass (echtes Gerät via TestFlight)
-Frischer Install → durchspielen: Onboarding → Plan (KI + Import) → Workout
-loggen → Historie → Backup-Code sichern & wiederherstellen. → Wird von mir im
-Simulator vorab durchgespielt; echtes-Gerät-Pass machst du auf Build 27.
+Frischer Install → durchspielen: Onboarding → Plan (Import + KI) → Workout
+loggen → Historie → Profil → Datensicherung → „Mit Apple fortfahren“ → „Jetzt
+sichern“ → App löschen, neu installieren → Daten wieder da. Echtes Gerät: Build 72.
 
 ---
 
