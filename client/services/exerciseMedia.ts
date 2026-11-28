@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { getApiUrl } from '@/lib/query-client';
 import { getExerciseImageUrl } from '@/lib/exerciseImages';
 
-const WGER_BASE = 'https://wger.de/api/v2';
 const CACHE_PREFIX = 'exercise_media_v3_';
 const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -48,44 +47,6 @@ export async function getExerciseGifThumbUrl(exerciseName: string): Promise<stri
   const url = media.gifUrl ?? null;
   thumbUrlCache.set(key, url);
   return url;
-}
-
-async function fetchGifFromWger(exerciseName: string): Promise<string | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const searchRes = await fetch(
-      `${WGER_BASE}/exercise/search/?term=${encodeURIComponent(exerciseName)}&language=english&format=json`,
-      { signal: controller.signal }
-    );
-    clearTimeout(timeout);
-    if (!searchRes.ok) return null;
-
-    const searchData = await searchRes.json();
-    const suggestions = searchData.suggestions as { data: { id: number } }[];
-    if (!suggestions?.length) return null;
-
-    const exerciseId = suggestions[0].data.id;
-
-    const imgController = new AbortController();
-    const imgTimeout = setTimeout(() => imgController.abort(), 5000);
-    const imgRes = await fetch(
-      `${WGER_BASE}/exerciseimage/?exercise_base=${exerciseId}&format=json`,
-      { signal: imgController.signal }
-    );
-    clearTimeout(imgTimeout);
-    if (!imgRes.ok) return null;
-
-    const imgData = await imgRes.json();
-    const images = imgData.results as { image: string; is_main: boolean }[];
-    if (!images?.length) return null;
-
-    const main = images.find(i => i.is_main) || images[0];
-    return main.image;
-  } catch {
-    return null;
-  }
 }
 
 let gifNamesCache: Set<string> | null = null;
@@ -158,14 +119,6 @@ export async function getExerciseMedia(exerciseName: string): Promise<ExerciseMe
   const fetchPromise = (async () => {
     try {
       const media = await fetchFromServer(exerciseName);
-
-      // If server returned nothing, try wger.de as a last resort (static image only).
-      if (!media.gifUrl && !media.videoMp4) {
-        const wgerUrl = await fetchGifFromWger(exerciseName);
-        if (wgerUrl) {
-          media.gifUrl = wgerUrl;
-        }
-      }
 
       // Cache anything with an image. Empty answers are retried next time: a
       // new custom exercise gets its image a moment after it is created.
