@@ -141,7 +141,8 @@ export function WeekScheduleStrip({
       </View>
 
       {/* Days as a line of marks, not seven boxes: a dot is a session, a
-          ring is mobility, a tick is done — and only "today" is in signal. */}
+          ring is mobility, a tick is done. Today is a chalk selection; the
+          signal colour stays with the Start button on the today card. */}
       <View style={styles.row}>
         {schedule.slots.map((slot) => {
           const isToday = slot.weekday === today;
@@ -163,12 +164,12 @@ export function WeekScheduleStrip({
           return (
             <View
               key={slot.weekday}
-              style={[styles.dayCol, isToday && { backgroundColor: theme.signal + "1F" }]}
+              style={[styles.dayCol, isToday && { backgroundColor: theme.chipIdle }]}
             >
               <ThemedText
                 style={[
                   styles.dayLabel,
-                  { color: isToday ? theme.signalText : theme.textSecondary },
+                  { color: isToday ? theme.text : theme.textSecondary },
                   isToday && styles.dayLabelToday,
                 ]}
               >
@@ -181,8 +182,8 @@ export function WeekScheduleStrip({
               </ThemedText>
               <View style={styles.markWrap}>
                 {trained && (isGym || slot.kind === "rest") ? (
-                  <View style={[styles.checkDot, { backgroundColor: theme.signal }]}>
-                    <Feather name="check" size={11} color={theme.onSignal} />
+                  <View style={[styles.checkDot, { backgroundColor: theme.chalk }]}>
+                    <Feather name="check" size={11} color={theme.onChalk} />
                   </View>
                 ) : isGym ? (
                   // Each session in its plan colour, the same one its row in
@@ -233,7 +234,7 @@ export function WeekScheduleStrip({
               style={[
                 styles.progressFill,
                 {
-                  backgroundColor: theme.signal,
+                  backgroundColor: theme.chalk,
                   width: `${Math.min(100, Math.round((doneCount / plannedGym) * 100))}%`,
                 },
               ]}

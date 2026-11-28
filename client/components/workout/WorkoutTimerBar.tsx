@@ -29,7 +29,7 @@ const TAB_BAR_HEIGHT = 49;
  * and, while resting, the pause left. Tapping it goes back into the workout.
  * Before, leaving the workout screen meant losing sight of the rest timer.
  */
-export function WorkoutTimerBar() {
+export function WorkoutTimerBar({ hidden = false }: { hidden?: boolean }) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
@@ -57,7 +57,7 @@ export function WorkoutTimerBar() {
     return () => clearInterval(id);
   }, [live]);
 
-  if (!draft || !live) return null;
+  if (hidden || !draft || !live) return null;
 
   const day = draft.plan.days[draft.route.dayIndex];
   const name = day ? translateDayName(t, day.dayName) : draft.route.planName;
@@ -93,10 +93,10 @@ export function WorkoutTimerBar() {
       </ThemedText>
       {restLeft > 0 ? (
         <View style={styles.rest}>
-          <ThemedText style={[styles.restLabel, { color: theme.signalText }]}>
+          <ThemedText style={[styles.restLabel, { color: theme.chalkDim }]}>
             {t("activeWorkout.timerBar.rest")}
           </ThemedText>
-          <ThemedText style={[styles.clock, { color: theme.signalText }]}>
+          <ThemedText style={styles.clock}>
             {formatClock(restLeft)}
           </ThemedText>
         </View>

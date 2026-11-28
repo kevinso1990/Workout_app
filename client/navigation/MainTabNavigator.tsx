@@ -86,7 +86,8 @@ export default function MainTabNavigator() {
         initialRouteName="MyPlans"
         tabBar={(props) => (
           <>
-            <WorkoutTimerBar />
+            {/* The plans tab shows the running workout as its top card. */}
+            <WorkoutTimerBar hidden={props.state.routes[props.state.index]?.name === "MyPlans"} />
             <BottomTabBar {...props} />
           </>
         )}

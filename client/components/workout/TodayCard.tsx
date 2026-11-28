@@ -197,7 +197,9 @@ export function TodayCard({
   // tinted warm, drawn big, with the one signal button.
   return (
     <Panel warm style={styles.hero} testID="card-today">
-      <ThemedText style={[styles.overline, { color: strength ? theme.signalText : theme.textSecondary }]}>
+      {/* One orange on the tab: the Start button. The date line above it
+          used to be orange too, as were the week strip's today and ticks. */}
+      <ThemedText style={[styles.overline, { color: theme.textSecondary }]}>
         {t("plans.today.title")} · {dateLabel}
       </ThemedText>
 
@@ -239,7 +241,7 @@ export function TodayCard({
               <Feather
                 name={doneToday ? "check-circle" : "moon"}
                 size={24}
-                color={doneToday ? theme.signal : theme.text}
+                color={theme.text}
               />
             )}
             <ThemedText style={styles.statusTitle} numberOfLines={1}>

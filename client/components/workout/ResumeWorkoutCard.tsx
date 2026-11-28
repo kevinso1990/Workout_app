@@ -87,8 +87,9 @@ export function ResumeWorkoutCard() {
 
   return (
     // The workout you're in the middle of today is the most "now" thing there
-    // is: a warm panel with the signal colour on its edge and its button.
-    <View style={[styles.card, live ? styles.cardLive : null]} testID="card-resume-workout">
+    // is: a warm panel with the signal colour on its button — once, not also
+    // on its edge.
+    <View style={styles.card} testID="card-resume-workout">
       <PanelFill warm={live} />
       <View style={styles.textCol}>
         <ThemedText style={styles.title}>
@@ -145,12 +146,6 @@ const makeStyles = (c: Palette) =>
       padding: Spacing.lg,
       marginBottom: Spacing.lg,
       ...panelFrame(c),
-    },
-    cardLive: {
-      borderWidth: 1.5,
-      borderTopWidth: 1.5,
-      borderColor: c.signal,
-      borderTopColor: c.signal,
     },
     textCol: {
       flex: 1,
