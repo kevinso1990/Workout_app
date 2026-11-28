@@ -66,7 +66,7 @@
     "daysCount_other": "{{count}} Tage",
     "importBanner": {
       "title": "Plan importieren",
-      "subtitle": "PDF oder Foto → KI-Prüfung",
+      "subtitle": "Foto, PDF oder Excel vom Trainer",
       "cta": "Importieren"
     },
     "new": "Neu",
@@ -314,6 +314,21 @@
         "cardio": "Cardio"
       },
       "cardioAsAppointment": "Cardio-Einheiten kommen als fester Termin in deine Woche."
+    },
+    "capabilitiesA11y": "Erkennt Rotation über mehrere Wochen, Kurz- und Lang-Varianten, Supersätze und Mobility-Tage",
+    "capabilities": {
+      "rotation": "Mehrwochen-Rotation",
+      "variants": "Kurz / Lang",
+      "supersets": "Supersätze",
+      "mobility": "Mobility-Tage"
+    },
+    "sample": {
+      "cta": "Beispielplan ansehen",
+      "planName": "Beispielplan · Ganzkörper",
+      "dayA": "Tag A – Ganzkörper",
+      "dayB": "Tag B – Ganzkörper",
+      "mobility": "Mobility",
+      "warmup": "5 Min Rudergerät · 10 Hip Hinges · 10 Band Pull-Aparts"
     }
   },
   "aiCoach": {

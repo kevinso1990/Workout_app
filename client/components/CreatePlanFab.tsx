@@ -216,6 +216,20 @@ export function CreatePlanFab({
             <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
             <ThemedText style={styles.sheetTitle}>{t("addWorkout.title")}</ThemedText>
 
+            {/* Importing the plan you already train by comes first (STRATEGY.md). */}
+            <Pressable style={styles.sheetItem} onPress={goImport} testID="button-add-import">
+              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
+                <Feather name="camera" size={20} color={theme.chalk} />
+              </View>
+              <View style={styles.sheetCopy}>
+                <ThemedText style={styles.sheetItemTitle}>
+                  {t("plans.importBanner.title", { defaultValue: "Plan importieren" })}
+                </ThemedText>
+                <ThemedText style={styles.sheetItemDesc}>
+                  {t("plans.importBanner.subtitle", { defaultValue: "PDF oder Foto → KI-Prüfung" })}
+                </ThemedText>
+              </View>
+            </Pressable>
             <Pressable style={styles.sheetItem} onPress={goCreatePlan} testID="button-add-create-plan">
               <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
                 <Feather name="clipboard" size={20} color={theme.chalk} />
@@ -272,19 +286,6 @@ export function CreatePlanFab({
               </View>
             </Pressable>
 
-            <Pressable style={styles.sheetItem} onPress={goImport} testID="button-add-import">
-              <View style={[styles.sheetIcon, { backgroundColor: theme.primary + "1A" }]}>
-                <Feather name="file-text" size={20} color={theme.chalk} />
-              </View>
-              <View style={styles.sheetCopy}>
-                <ThemedText style={styles.sheetItemTitle}>
-                  {t("plans.importBanner.title", { defaultValue: "Plan importieren" })}
-                </ThemedText>
-                <ThemedText style={styles.sheetItemDesc}>
-                  {t("plans.importBanner.subtitle", { defaultValue: "PDF oder Foto → KI-Prüfung" })}
-                </ThemedText>
-              </View>
-            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>

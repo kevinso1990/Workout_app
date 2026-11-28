@@ -57,6 +57,7 @@ import {
 import { getApiUrl } from "@/lib/query-client";
 import { ImportPlanReviewPanel } from "@/components/import/ImportPlanReviewPanel";
 import type { CatalogRow as ImportCatalogRow } from "@/lib/importCatalog";
+import { buildSampleImportPlan } from "@/lib/sampleImportPlan";
 import { getExerciseDisplayName } from "@/lib/exerciseDisplayName";
 import { translateMuscleGroup } from "@/lib/exerciseTaxonomy";
 
@@ -393,6 +394,8 @@ export default function ImportWorkoutScreen() {
   const [catalogQuery, setCatalogQuery] = useState("");
   const [catalogPick, setCatalogPick] = useState<CatalogPickTarget>(null);
   const [importSummaryText, setImportSummaryText] = useState<string | null>(null);
+  /** The review shows the built-in example plan, not one the athlete imported. */
+  const [isSamplePlan, setIsSamplePlan] = useState(false);
 
   const checkScale = useSharedValue(0);
   const checkOpacity = useSharedValue(0);
@@ -510,6 +513,7 @@ export default function ImportWorkoutScreen() {
       if (loadingTimer.current) clearTimeout(loadingTimer.current);
       setLoadingScanUri(null);
       const plan = planRaw as ImportedWorkoutPlan & { emptyPlan?: boolean };
+      setIsSamplePlan(false);
       setPlanName(plan.planName || t("importWorkout.defaultImportedPlanName"));
       setExpandedDays(new Set([0]));
       setImportSummaryText(null);
@@ -572,7 +576,10 @@ export default function ImportWorkoutScreen() {
     setError(null);
     setErrorNeedsSettings(false);
     try {
-      await saveImportedPlan({ ...previewPlan, planName: planName.trim() || previewPlan.planName });
+      await saveImportedPlan(
+        { ...previewPlan, planName: planName.trim() || previewPlan.planName },
+        { sample: isSamplePlan },
+      );
       // Importing is the main way through onboarding: a saved plan finishes it.
       await setOnboardingComplete(true);
       scheduleDataSync();
@@ -606,6 +613,7 @@ export default function ImportWorkoutScreen() {
     setCatalogQuery("");
     setImportSummaryText(null);
     setSavedPlanId(null);
+    setIsSamplePlan(false);
   }, []);
 
   const appendCatalogExerciseToDay = useCallback((dayIdx: number, row: CatalogRow) => {
@@ -680,6 +688,28 @@ export default function ImportWorkoutScreen() {
   };
 
   // ── Landing ────────────────────────────────────────────────────────────────
+  // The example plan goes straight to the review — no AI call — so someone
+  // without their plan at hand sees in seconds what an import turns into.
+  const handleShowSample = async () => {
+    Haptics.selectionAsync();
+    let rows: ImportCatalogRow[] = [];
+    try {
+      const res = await fetch(new URL("/api/exercises/catalog", getApiUrl()).toString());
+      if (res.ok) rows = (await res.json()) as ImportCatalogRow[];
+    } catch {
+      // Offline: the sample still shows, its exercises just aren't linked.
+    }
+    const sample = buildSampleImportPlan(t, rows);
+    setIsSamplePlan(true);
+    setPlanName(sample.planName);
+    setExpandedDays(new Set([0]));
+    setImportSummaryText(null);
+    setError(null);
+    setErrorNeedsSettings(false);
+    setPreviewPlan(sample);
+    setScreenState("review");
+  };
+
   const handleAnalyzePastedText = () => {
     if (pastedText.trim().length < 20) {
       setErrorWithSettings(t("importWorkout.pasteTooShort"));
@@ -707,12 +737,33 @@ export default function ImportWorkoutScreen() {
             <ThemedText style={[styles.landingSubtitle, { color: theme.textSecondary }]}>
               {t("importWorkout.landingSubtitle")}
             </ThemedText>
+            {/* What sets this import apart, said before the first tap. */}
+            <View style={styles.capabilityRow} accessibilityLabel={t("importWorkout.capabilitiesA11y")}>
+              {(["rotation", "variants", "supersets", "mobility"] as const).map((key) => (
+                <View key={key} style={[styles.capabilityChip, { backgroundColor: theme.chipIdle }]}>
+                  <ThemedText style={[styles.capabilityText, { color: theme.text }]}>
+                    {t(`importWorkout.capabilities.${key}`)}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.pickButtonRow}>
             <GradientButton label={t("importWorkout.takePhoto")} icon="camera" onPress={() => handlePickImage("camera")} />
             <OutlineButton label={t("importWorkout.chooseFromLibrary")} icon="image" onPress={() => handlePickImage("library")} />
             <OutlineButton label={t("importWorkout.pickFile")} icon="file-text" onPress={handlePickFile} />
+            <Pressable
+              onPress={() => void handleShowSample()}
+              style={({ pressed }) => [styles.sampleLink, pressed && { opacity: 0.7 }]}
+              hitSlop={8}
+              testID="button-import-sample"
+            >
+              <ThemedText style={[styles.sampleLinkText, { color: theme.textSecondary }]}>
+                {t("importWorkout.sample.cta")}
+              </ThemedText>
+              <Feather name="arrow-right" size={14} color={theme.textSecondary} />
+            </Pressable>
           </Animated.View>
 
           {error ? (
@@ -1027,6 +1078,31 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.xl,
+  },
+  capabilityRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
+  },
+  capabilityChip: {
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
+  },
+  capabilityText: {
+    fontSize: 13,
+  },
+  sampleLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Spacing.sm,
+  },
+  sampleLinkText: {
+    fontSize: 15,
   },
   landingTitle: {
     fontSize: 24,

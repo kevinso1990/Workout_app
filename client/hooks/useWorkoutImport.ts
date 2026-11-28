@@ -766,7 +766,11 @@ export function useWorkoutImport() {
    * native app reads from, returning the new plan id so the caller can deep
    * link into PlanDetail / StartWorkout.
    */
-  async function saveImportedPlan(plan: ImportedWorkoutPlan): Promise<string> {
+  /** `sample`: the built-in example plan — saved like an import, not counted as one. */
+  async function saveImportedPlan(
+    plan: ImportedWorkoutPlan,
+    opts: { sample?: boolean } = {},
+  ): Promise<string> {
     const planId = Date.now().toString();
     const { plan: storagePlan, cardioDays } = importedPlanToStorage(plan, planId, new Date());
     // A plan you just imported is the one you're about to train by.
@@ -780,7 +784,8 @@ export function useWorkoutImport() {
         await setUserPreferences({ workoutDaysPerWeek: storagePlan.daysPerWeek, ...prefs, weeklyCommitments: commitments });
       }
     }
-    void track("import_succeeded", { days: storagePlan.days.length });
+    // The example plan would inflate the import-success bet in STRATEGY.md.
+    if (!opts.sample) void track("import_succeeded", { days: storagePlan.days.length });
     return planId;
   }
 

@@ -66,7 +66,7 @@
     "daysCount_other": "{{count}} days",
     "importBanner": {
       "title": "Import a plan",
-      "subtitle": "PDF or photo → AI review",
+      "subtitle": "Photo, PDF or Excel from your coach",
       "cta": "Import"
     },
     "new": "New",
@@ -413,6 +413,21 @@
         "cardio": "Cardio"
       },
       "cardioAsAppointment": "Cardio sessions go into your week as fixed appointments."
+    },
+    "capabilitiesA11y": "Reads multi-week rotations, short and long variants, supersets and mobility days",
+    "capabilities": {
+      "rotation": "Multi-week rotation",
+      "variants": "Short / Long",
+      "supersets": "Supersets",
+      "mobility": "Mobility days"
+    },
+    "sample": {
+      "cta": "See an example plan",
+      "planName": "Example plan · Full body",
+      "dayA": "Day A – Full body",
+      "dayB": "Day B – Full body",
+      "mobility": "Mobility",
+      "warmup": "5 min rower · 10 hip hinges · 10 band pull-aparts"
     }
   },
   "aiCoach": {
