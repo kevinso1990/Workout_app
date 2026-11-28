@@ -625,7 +625,9 @@
     "recordGain": "+{{kg}} kg",
     "volumeSubtitle": "Bewegte kg pro Woche, ab Montag",
     "oneRMNeedsTwo": "Ab der zweiten Einheit mit dieser Übung siehst du hier deinen Verlauf.",
-    "weekTime": "Trainingszeit"
+    "weekTime": "Trainingszeit",
+    "viewOverview": "Übersicht",
+    "viewCalendar": "Kalender"
   },
   "history": {
     "title": "Verlauf",
@@ -1081,7 +1083,10 @@
     "daysAgoShort_other": "vor {{count}} Tagen",
     "today": "Heute",
     "yesterday": "Gestern",
-    "best": "Bestwert"
+    "best": "Bestwert",
+    "gainSinceStart": "+{{kg}} kg seit Start",
+    "showAll": "Alle {{count}} Übungen",
+    "showLess": "Weniger anzeigen"
   },
   "recovery": {
     "title": "Erholungsstatus",
@@ -1297,7 +1302,9 @@
     "toGo_other": "Noch {{count}} Trainings diese Woche für dein Wochenziel.",
     "longest_one": "Längste Serie: {{count}} Woche",
     "longest_other": "Längste Serie: {{count}} Wochen",
-    "rule_one": "Ziel: {{count}} Training pro Woche",
-    "rule_other": "Ziel: {{count}} Trainings pro Woche"
+    "rule_one": "Ziel: {{count}} pro Woche",
+    "rule_other": "Ziel: {{count}} pro Woche",
+    "nextWeek_one": "Ab Montag zählt die neue Woche – {{count}} Training fürs Wochenziel.",
+    "nextWeek_other": "Ab Montag zählt die neue Woche – {{count}} Trainings fürs Wochenziel."
   }
 }

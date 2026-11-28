@@ -41,8 +41,16 @@ export function StreakCard({
   });
 
   const toGo = Math.max(0, streak.goal - streak.thisWeek);
-  // Never "broken": a week still open only ever counts up.
-  const status = toGo === 0 ? t("streak.goalMet") : t("streak.toGo", { count: toGo });
+  // Days left this week, today included (Monday-based weeks).
+  const daysLeft = 7 - ((now.getDay() + 6) % 7);
+  // Never "broken": a week still open only ever counts up. When the goal is
+  // out of reach, point at next week instead of counting what can't be done.
+  const status =
+    toGo === 0
+      ? t("streak.goalMet")
+      : toGo > daysLeft
+        ? t("streak.nextWeek", { count: streak.goal })
+        : t("streak.toGo", { count: toGo });
 
   return (
     <Animated.View
@@ -125,11 +133,18 @@ export function StreakCard({
       ))}
 
       <View style={styles.footer}>
-        <Feather name="award" size={14} color={theme.chalkDim} />
-        <ThemedText style={styles.footerText}>
-          {t("streak.longest", { count: streak.longest })}
-        </ThemedText>
-        <ThemedText style={[styles.footerText, styles.footerRule]} numberOfLines={1}>
+        {streak.longest > 0 ? (
+          <>
+            <Feather name="award" size={14} color={theme.chalkDim} />
+            <ThemedText style={styles.footerText}>
+              {t("streak.longest", { count: streak.longest })}
+            </ThemedText>
+          </>
+        ) : null}
+        <ThemedText
+          style={[styles.footerText, streak.longest > 0 && styles.footerRule]}
+          numberOfLines={1}
+        >
           {t("streak.rule", { count: streak.goal })}
         </ThemedText>
       </View>

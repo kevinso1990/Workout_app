@@ -724,7 +724,9 @@
     "recordGain": "+{{kg}} kg",
     "volumeSubtitle": "kg moved per week, from Monday",
     "oneRMNeedsTwo": "Your trend shows up here from your second session with this exercise.",
-    "weekTime": "Training time"
+    "weekTime": "Training time",
+    "viewOverview": "Overview",
+    "viewCalendar": "Calendar"
   },
   "history": {
     "title": "History",
@@ -1081,7 +1083,10 @@
     "daysAgoShort_other": "{{count}}d ago",
     "today": "Today",
     "yesterday": "Yesterday",
-    "best": "best"
+    "best": "best",
+    "gainSinceStart": "+{{kg}} kg since start",
+    "showAll": "All {{count}} exercises",
+    "showLess": "Show less"
   },
   "recovery": {
     "title": "Recovery Status",
@@ -1297,7 +1302,9 @@
     "toGo_other": "{{count}} more workouts this week for your weekly goal.",
     "longest_one": "Longest streak: {{count}} week",
     "longest_other": "Longest streak: {{count}} weeks",
-    "rule_one": "Goal: {{count}} workout a week",
-    "rule_other": "Goal: {{count}} workouts a week"
+    "rule_one": "Goal: {{count}} a week",
+    "rule_other": "Goal: {{count}} a week",
+    "nextWeek_one": "A new week counts from Monday – {{count}} workout for your weekly goal.",
+    "nextWeek_other": "A new week counts from Monday – {{count}} workouts for your weekly goal."
   }
 }

@@ -755,6 +755,12 @@ function ExerciseProgressRow({
     return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
   };
 
+  // "Zuletzt → heute" over the whole history: the heaviest set of the latest
+  // session against the first one.
+  const first = exercise.sessions[0];
+  const latest = exercise.sessions[exercise.sessions.length - 1];
+  const gain = exercise.sessions.length >= 2 ? latest.maxWeight - first.maxWeight : 0;
+
   return (
     <Pressable
       onPress={onPress}
@@ -770,6 +776,11 @@ function ExerciseProgressRow({
         </ThemedText>
         <ThemedText style={[styles.exerciseRowMeta, { color: theme.textSecondary }]}>
           {t("exerciseChart.sessionCount", { count: exercise.totalSessions })} · {formatLastUsed(exercise.lastUsed)}
+          {gain > 0
+            ? ` · ${t("exerciseChart.gainSinceStart", {
+                kg: gain.toLocaleString(i18n.language, { maximumFractionDigits: 2 }),
+              })}`
+            : ""}
         </ThemedText>
       </View>
       <View style={styles.exerciseRowRight}>
@@ -989,6 +1000,8 @@ function ExerciseDetailModal({
   );
 }
 
+const EXERCISE_PREVIEW = 6;
+
 function ExerciseProgressSection({
   data,
   index,
@@ -1000,8 +1013,12 @@ function ExerciseProgressSection({
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const [selectedExercise, setSelectedExercise] = useState<ExerciseProgressData | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   if (data.length === 0) return null;
+  // Most recent lifts first; the rest one tap away so the list doesn't push
+  // everything else off the tab.
+  const shown = showAll ? data : data.slice(0, EXERCISE_PREVIEW);
 
   return (
     <>
@@ -1017,14 +1034,28 @@ function ExerciseProgressSection({
         style={[styles.exerciseProgressList, panelFrame(theme)]}
       >
         <PanelFill />
-        {data.map((exercise, idx) => (
+        {shown.map((exercise, idx) => (
           <ExerciseProgressRow
             key={exercise.exerciseName}
             exercise={exercise}
-            isLast={idx === data.length - 1}
+            isLast={idx === shown.length - 1 && data.length <= EXERCISE_PREVIEW}
             onPress={() => setSelectedExercise(exercise)}
           />
         ))}
+        {data.length > EXERCISE_PREVIEW ? (
+          <Pressable
+            onPress={() => setShowAll((v) => !v)}
+            style={({ pressed }) => [styles.showAllRow, { opacity: pressed ? 0.7 : 1 }]}
+            testID="button-exercise-progress-all"
+          >
+            <ThemedText style={[styles.showAllText, { color: theme.textSecondary }]}>
+              {showAll
+                ? t("exerciseChart.showLess")
+                : t("exerciseChart.showAll", { count: data.length })}
+            </ThemedText>
+            <Feather name={showAll ? "chevron-up" : "chevron-down"} size={16} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
       </Animated.View>
 
       <ExerciseDetailModal
@@ -1077,7 +1108,7 @@ function EmptyState() {
   );
 }
 
-export default function ProgressScreen() {
+export default function ProgressScreen({ header }: { header?: React.ReactNode } = {}) {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -1259,6 +1290,7 @@ export default function ProgressScreen() {
         />
       }
     >
+      {header}
       {history.length === 0 ? (
         <>
           <EmptyState />
@@ -1266,7 +1298,15 @@ export default function ProgressScreen() {
         </>
       ) : (
         <>
-          <View style={styles.sectionHeaderFirst}>
+          {/* What to beat first: the weekly goal, then each lift since the
+              start. This week's totals used to lead with four zeros. */}
+          <StreakCard streak={streak} now={now} index={0} />
+
+          <ExerciseProgressSection data={getExerciseProgressData} index={1} />
+
+          <RecordsCard records={records} index={2} />
+
+          <View style={styles.sectionHeader}>
             <ThemedText style={styles.sectionTitle}>{t("progress.weeklySummaryTitle")}</ThemedText>
           </View>
 
@@ -1275,13 +1315,13 @@ export default function ProgressScreen() {
               icon="calendar"
               label={t("progress.weekWorkouts")}
               value={week.workouts.toString()}
-              index={0}
+              index={3}
             />
             <StatCard
               icon="layers"
               label={t("progress.weekSets")}
               value={week.sets.toString()}
-              index={1}
+              index={4}
             />
           </View>
 
@@ -1290,28 +1330,22 @@ export default function ProgressScreen() {
               icon="bar-chart-2"
               label={t("progress.weekVolume")}
               value={formatVolume(week.volume, i18n.language)}
-              index={2}
+              index={4}
             />
-            {/* The streak has its own card below; the week gets its time. */}
+            {/* The streak has its own card above; the week gets its time. */}
             <StatCard
               icon="clock"
               label={t("progress.weekTime")}
               value={formatTrainingTime(week.minutes)}
-              index={3}
+              index={4}
             />
           </View>
-
-          <StreakCard streak={streak} now={now} index={4} />
-
-          <RecordsCard records={records} index={4} />
 
           <VolumeChart data={weeklyVolumeData} index={5} />
 
           <OneRMChart data={oneRMData} index={6} />
 
           <MuscleBalance data={muscleBalanceData} index={7} />
-
-          <ExerciseProgressSection data={getExerciseProgressData} index={8} />
 
           <NativeRecoveryPanel index={9} />
 
@@ -1538,10 +1572,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     marginTop: Spacing.md,
     marginBottom: Spacing.md,
   },
-  sectionHeaderFirst: {
-    marginBottom: Spacing.md,
-  },
-
   recordRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1814,6 +1844,16 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.hairlineStrong,
     overflow: "hidden",
+  },
+  showAllRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Spacing.md,
+  },
+  showAllText: {
+    fontSize: 14,
   },
   exerciseRow: {
     flexDirection: "row",

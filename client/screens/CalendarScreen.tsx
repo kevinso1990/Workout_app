@@ -104,7 +104,11 @@ function SessionRow({ session }: { session: WorkoutSession }) {
   );
 }
 
-export default function CalendarScreen() {
+/**
+ * With `header` (the progress tab's view switch) the screen shows the month
+ * only: the week already lives on the home tab.
+ */
+export default function CalendarScreen({ header }: { header?: React.ReactNode } = {}) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
@@ -114,7 +118,7 @@ export default function CalendarScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+  const [viewMode, setViewMode] = useState<"week" | "month">(header ? "month" : "week");
   const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);
   const [mobilityWeekdays, setMobilityWeekdays] = useState<number[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
@@ -210,14 +214,18 @@ export default function CalendarScreen() {
     <View style={styles.screen}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: paddingTopUnderHeader(headerHeight, insets.top, Spacing.lg),
+          // Inside the progress tab it matches the overview's insets, so the
+          // view switch doesn't jump when flipping between the two.
+          paddingTop: paddingTopUnderHeader(headerHeight, insets.top, header ? Spacing.xl : Spacing.lg),
           paddingBottom: tabBarHeight + 128,
-          paddingHorizontal: Spacing.lg,
+          paddingHorizontal: header ? Spacing.xl : Spacing.lg,
         }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {header ?? (
+        <>
         <ThemedText style={styles.heading}>{t("calendar.title")}</ThemedText>
         <ThemedText style={styles.subtitle}>{t("calendar.subtitle")}</ThemedText>
 
@@ -245,6 +253,8 @@ export default function CalendarScreen() {
             );
           })}
         </View>
+        </>
+        )}
 
         {viewMode === "week" ? (
           <>

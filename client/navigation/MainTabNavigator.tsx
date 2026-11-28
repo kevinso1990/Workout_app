@@ -7,8 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import MyPlansScreen from "@/screens/MyPlansScreen";
 import ExercisesScreen from "@/screens/ExercisesScreen";
-import CalendarScreen from "@/screens/CalendarScreen";
-import ProgressScreen from "@/screens/ProgressScreen";
+import ProgressTabScreen, { type ProgressView } from "@/screens/ProgressTabScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { ScreenGradient } from "@/components/surface/ScreenGradient";
@@ -21,8 +20,7 @@ import type { Palette } from "@/constants/palettes";
 export type MainTabParamList = {
   MyPlans: undefined;
   Exercises: undefined;
-  Calendar: undefined;
-  Progress: undefined;
+  Progress: { view?: ProgressView } | undefined;
   Profile: undefined;
 };
 
@@ -171,23 +169,8 @@ export default function MainTabNavigator() {
           }}
         />
         <Tab.Screen
-          name="Calendar"
-          component={CalendarScreen}
-          options={{
-            title: t("nav.calendar"),
-            headerTitle: () => <HeaderTitle brand />,
-            headerTitleAlign: "center",
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name="calendar" color={color} focused={focused} />
-            ),
-            tabBarLabel: ({ color, focused }) => (
-              <TabBarLabel label={t("nav.calendar")} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tab.Screen
           name="Progress"
-          component={ProgressScreen}
+          component={ProgressTabScreen}
           options={{
             title: t("nav.progress"),
             headerTitle: () => <HeaderTitle brand />,

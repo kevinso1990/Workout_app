@@ -1076,12 +1076,16 @@ export default function MyPlansScreen() {
               commitments={commitments}
               plan={primaryPlan(plans)}
               mobilityWeekdays={mobilityWeekdays}
-              // "Profile" and "Calendar" are sibling TABS, not
+              // "Profile" and "Progress" are sibling TABS, not
               // RootStackParamList routes — navigate resolves them in the tab
               // navigator this screen actually belongs to. The casts are the
               // typing gap, not wrong routes.
               onPressEdit={() => navigation.navigate("Profile" as never)}
-              onPress={() => navigation.navigate("Calendar" as never)}
+              onPress={() =>
+                (navigation.navigate as (name: string, params: object) => void)("Progress", {
+                  view: "calendar",
+                })
+              }
             />
           </>
         }

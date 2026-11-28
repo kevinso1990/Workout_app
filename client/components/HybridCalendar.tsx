@@ -167,9 +167,11 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     flexWrap: "wrap",
   },
   // The slot holds the 1/7 column width; the tile inside is inset so tiles read
-  // as separate pieces of material rather than one continuous block.
+  // as separate pieces of material rather than one continuous block. Just under
+  // 1/7: at an exact 14.2857% rounding pushed the seventh day of a row onto the
+  // next line at some widths, shifting every date under the wrong weekday.
   cellSlot: {
-    width: `${100 / 7}%`,
+    width: "14.28%",
     aspectRatio: 1,
     padding: 2.5,
   },
