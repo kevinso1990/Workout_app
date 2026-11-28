@@ -13,6 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
+import { localizeExerciseName } from "@/lib/exerciseNameCatalog";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
@@ -100,7 +101,14 @@ export function ImportPlanReviewPanel({
 }: ImportPlanReviewPanelProps) {
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const german = i18n.language?.startsWith("de") ?? false;
+  // Matched exercises keep the catalog's English name as their key; the
+  // review shows them the way the rest of the app does. A name the athlete
+  // typed stays exactly as typed.
+  const displayName = (ex: ImportedExercise) =>
+    ex.catalogExerciseId ? localizeExerciseName(ex.name, i18n.language) : ex.name;
+  const rowLabel = (row: CatalogRow) => (german && row.name_de ? row.name_de : row.name);
   const [avoidDismissed, setAvoidDismissed] = useState(false);
   const insets = useSafeAreaInsets();
   const [inlinePick, setInlinePick] = useState<InlinePick>(null);
@@ -145,6 +153,7 @@ export function ImportPlanReviewPanel({
       .filter(
         (r) =>
           r.name.toLowerCase().includes(q) ||
+          (r.name_de ?? "").toLowerCase().includes(q) ||
           r.muscle_group.toLowerCase().includes(q),
       )
       .slice(0, 12);
@@ -356,7 +365,7 @@ export function ImportPlanReviewPanel({
                           returnKeyType="done"
                           clearButtonMode="while-editing"
                           style={styles.nameInput}
-                          value={ex.name}
+                          value={displayName(ex)}
                           onChangeText={(text) =>
                             onUpdateExercise(dayIdx, exIdx, {
                               name: text,
@@ -556,7 +565,7 @@ export function ImportPlanReviewPanel({
                               ]}
                             >
                               <ThemedText style={styles.inlineRowName}>
-                                {item.name}
+                                {rowLabel(item)}
                               </ThemedText>
                               <ThemedText style={styles.inlineRowSub}>
                                 {translateMuscleGroup(t, item.muscle_group)}
