@@ -21,6 +21,8 @@ export type OnboardingStackParamList = {
   FitnessLevel: undefined;
   SplitSelection: undefined;
   Main: undefined;
+  /** Root modal; reached from Welcome, which is the onboarding's main way in. */
+  ImportWorkout: undefined;
 };
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();

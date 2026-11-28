@@ -40,7 +40,8 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import type { Palette } from "@/constants/palettes";
 import { paddingTopUnderHeader } from "@/lib/paddingTopUnderHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { getUserPreferences, setUserPreferences } from "@/lib/storage";
+import { getUserPreferences, setOnboardingComplete, setUserPreferences } from "@/lib/storage";
+import { scheduleDataSync } from "@/lib/dataSync";
 import { mergeAvoidLists } from "@shared/avoidExercises";
 import { toast } from "@/lib/toast";
 import {
@@ -572,6 +573,9 @@ export default function ImportWorkoutScreen() {
     setErrorNeedsSettings(false);
     try {
       await saveImportedPlan({ ...previewPlan, planName: planName.trim() || previewPlan.planName });
+      // Importing is the main way through onboarding: a saved plan finishes it.
+      await setOnboardingComplete(true);
+      scheduleDataSync();
       navigation.dispatch(
         CommonActions.reset({
           index: 0,

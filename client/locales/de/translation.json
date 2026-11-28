@@ -750,8 +750,8 @@
   "onboarding": {
     "welcome": "Lass uns deinen perfekten Trainingsplan erstellen",
     "welcomeSub": "Beantworte 4 kurze Fragen und wir richten alles für dich ein",
-    "welcomeTitle": "Erstelle dein\nperfektes Training",
-    "welcomeTagline": "Personalisierte Pläne, smarte Progression und alles, was du brauchst, um dranzubleiben.",
+    "welcomeTitle": "Dein Plan wird\nzum Training",
+    "welcomeTagline": "Fotografiere den Plan von deinem Trainer oder lade ihn hoch. Die App erkennt Übungen, Sätze und Rotation und führt dich durch jedes Training.",
     "frequencyQuestion": "Wie viele Tage pro Woche kannst du trainieren?",
     "frequencySubtitle": "Kraft- und Gewichtstrainings-Tage",
     "frequencyRec": {
@@ -925,7 +925,10 @@
       "placeholder": "z. B. Good Mornings",
       "skip": "Keine Einschränkungen",
       "removeA11y": "{{name}} entfernen"
-    }
+    },
+    "welcomeImport": "Plan importieren",
+    "welcomeImportHint": "Foto, PDF oder Excel · in etwa einer Minute",
+    "welcomeNoPlan": "Ich habe noch keinen Plan"
   },
   "exercisesScreen": {
     "searchPlaceholder": "Über 800 Übungen durchsuchen...",

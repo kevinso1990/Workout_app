@@ -849,8 +849,8 @@
   "onboarding": {
     "welcome": "Let's build your perfect workout plan",
     "welcomeSub": "Answer 4 quick questions and we'll set everything up for you",
-    "welcomeTitle": "Build Your\nPerfect Workout",
-    "welcomeTagline": "Personalised plans, smart progression, and everything you need to keep showing up.",
+    "welcomeTitle": "Your plan becomes\nyour workout",
+    "welcomeTagline": "Snap or upload the plan your coach wrote. The app picks up exercises, sets and rotation and guides you through every session.",
     "frequencyQuestion": "How many days per week can you train?",
     "frequencySubtitle": "Strength and weight training days",
     "frequencyRec": {
@@ -1024,7 +1024,10 @@
       "placeholder": "e.g. Good Mornings",
       "skip": "Nothing to avoid",
       "removeA11y": "Remove {{name}}"
-    }
+    },
+    "welcomeImport": "Import my plan",
+    "welcomeImportHint": "Photo, PDF or Excel · about a minute",
+    "welcomeNoPlan": "I don't have a plan yet"
   },
   "splits": {
     "fullBody": "Full Body",
