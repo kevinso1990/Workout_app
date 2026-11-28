@@ -18,7 +18,6 @@
 
 import db from "../db";
 import { getExerciseDbApiKey } from "../lib/exerciseDbConfig";
-import { searchMuscleWiki } from "./muscleWikiService";
 import { EXERCISE_IMAGE_IDS, exerciseImageFile } from "../../shared/exerciseImageIds";
 
 const GITHUB_CDN =
@@ -77,50 +76,12 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Pre-fetches MuscleWiki animated content for all exercises that don't yet
- * have a cached entry in exercise_media_cache. Runs in the background with a
- * small delay between requests to avoid hammering the external API.
- */
-async function runMuscleWikiPrefetch(exercises: { id: number; name: string }[]): Promise<void> {
-  const alreadyCached = new Set(
-    (
-      db
-        .prepare("SELECT exercise_name FROM exercise_media_cache")
-        .all() as { exercise_name: string }[]
-    ).map((r) => r.exercise_name.toLowerCase()),
-  );
-
-  const uncached = exercises.filter((ex) => !alreadyCached.has(ex.name.toLowerCase()));
-  if (uncached.length === 0) {
-    console.log("[GIF prefetch] MuscleWiki data already cached for all exercises.");
-    return;
-  }
-
-  console.log(`[GIF prefetch] Pre-fetching MuscleWiki animated media for ${uncached.length} exercises…`);
-  let fetched = 0;
-
-  for (const ex of uncached) {
-    try {
-      const results = await searchMuscleWiki(ex.name);
-      if (results.length > 0) fetched++;
-    } catch {
-      /* ignore individual failures */
-    }
-    await sleep(200);
-  }
-
-  console.log(`[GIF prefetch] MuscleWiki prefetch done — fetched ${fetched}/${uncached.length} exercises.`);
-}
-
-/**
  * Fetches and caches media for a single newly-created exercise.
  * Called after custom exercise creation so users see images without waiting
  * for a server restart. Runs asynchronously (fire-and-forget).
  */
 export async function prefetchSingleExercise(id: number, name: string): Promise<void> {
   try {
-    await runMuscleWikiPrefetch([{ id, name }]);
-
     const row = db
       .prepare("SELECT gif_url FROM exercises WHERE id = ?")
       .get(id) as { gif_url: string | null } | undefined;
@@ -204,17 +165,11 @@ export async function runGifPrefetch(): Promise<void> {
     .all() as { id: number; name: string }[];
 
   // Step 1: Correct images set from an older version of the mapping (Plank
-  // showed Dead Bug, Good Morning a deadlift). Runs first because it is
-  // instant and the MuscleWiki pass below takes minutes.
+  // showed Dead Bug, Good Morning a deadlift).
   const fixed = correctMappedImages(allExercises);
   if (fixed > 0) console.log(`[GIF prefetch] Corrected ${fixed} exercise images.`);
 
-  // Step 2a: Pre-fetch MuscleWiki animated media (runs for exercises not yet cached).
-  // This populates exercise_media_cache so the /api/exercises/gif/:name route
-  // can serve animated GIFs and MP4 video clips.
-  await runMuscleWikiPrefetch(allExercises);
-
-  // Step 2b: Populate the fallback gif_url column with static GitHub CDN images
+  // Step 2: Populate the fallback gif_url column with static GitHub CDN images
   // for exercises that still need a static image fallback.
   const exercises = allExercises.filter((ex) => {
     const row = db

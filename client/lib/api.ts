@@ -184,8 +184,6 @@ export const api = {
   getLastSets: (exerciseId: number) => request<any[]>(`/api/stats/last-sets/${exerciseId}`),
   getRestAverage: (exerciseId: number) => request<any>(`/api/stats/rest-average/${exerciseId}`),
 
-  searchMuscleWiki: (name: string) => request<any[]>(`/api/musclewiki/search?name=${encodeURIComponent(name)}`),
-
   getBodyWeight: () => request<any[]>("/api/body-weight"),
   logBodyWeight: (data: { weight_kg: number; logged_date?: string; notes?: string }) =>
     request<any>("/api/body-weight", { method: "POST", body: JSON.stringify(data) }),

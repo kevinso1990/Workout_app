@@ -5,7 +5,6 @@ import { enqueue, dequeue, flushQueue } from "../lib/offlineQueue";
 import { DEFAULT_REST_SECONDS, WEIGHT_STEP, REP_STEP } from "../config";
 import ConfirmModal from "../components/ConfirmModal";
 import PlateCalculator from "../components/PlateCalculator";
-import ExerciseMedia from "../components/ExerciseMedia";
 import { useTranslation } from "react-i18next";
 
 interface LoggedSet {
@@ -584,10 +583,6 @@ export default function ActiveWorkout() {
                           </span>
                         </div>
                       ) : null}
-
-                      <div className="mb-3">
-                        <ExerciseMedia exerciseName={ex.name} showInstructions />
-                      </div>
 
                       {ex.lastSessionSets.length > 0 ? (
                         <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--color-surface)]">

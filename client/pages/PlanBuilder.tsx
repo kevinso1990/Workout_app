@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { api } from "../lib/api";
 import { DEFAULT_SETS, DEFAULT_REPS, DEFAULT_WEIGHT } from "../config";
-import ExerciseMedia from "../components/ExerciseMedia";
 import { useTranslation } from "react-i18next";
 
 interface PlanExercise {
@@ -238,7 +237,6 @@ export default function PlanBuilder() {
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate">{ex.name}</div>
                         <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>
-                        <ExerciseMedia exerciseName={ex.name} compact />
                       </div>
                       {!selectMode ? (
                         <button onClick={() => removeExercise(idx)} className="text-[var(--color-text-muted)] hover:text-red-400 p-1">
@@ -297,7 +295,6 @@ export default function PlanBuilder() {
                 {filteredExercises.map(ex => (
                   <button key={ex.id} onClick={() => addExercise(ex)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[var(--color-surface)] active:bg-[var(--color-surface-alt)] transition-colors text-left">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <ExerciseMedia exerciseName={ex.name} compact />
                       <div className="min-w-0">
                         <div className="font-medium">{ex.name}</div>
                         <div className="text-xs text-[var(--color-text-secondary)]">{ex.muscle_group}</div>

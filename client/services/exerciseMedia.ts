@@ -124,6 +124,10 @@ export async function getGifAvailableNames(): Promise<Set<string>> {
   return gifNamesFetchPromise;
 }
 
+function hasMedia(media: { gifUrl?: string | null; videoMp4?: string | null; correctSteps?: unknown[] }): boolean {
+  return !!media.gifUrl || !!media.videoMp4 || (media.correctSteps?.length ?? 0) > 0;
+}
+
 /**
  * Returns full media info (animated GIF URL + MP4 video URL) for an exercise.
  * Results are cached in memory and AsyncStorage for 7 days.
@@ -139,8 +143,7 @@ export async function getExerciseMedia(exerciseName: string): Promise<ExerciseMe
     if (stored) {
       const { media, timestamp } = JSON.parse(stored);
       const correctSteps = Array.isArray(media.correctSteps) ? media.correctSteps : [];
-      const hasRichData = correctSteps.length > 0 || !!(media.videoMp4);
-      if (Date.now() - timestamp < CACHE_DURATION_MS && hasRichData) {
+      if (Date.now() - timestamp < CACHE_DURATION_MS && hasMedia(media)) {
         const normalized: ExerciseMedia = {
           gifUrl: media.gifUrl ?? null,
           videoMp4: media.videoMp4 ?? null,
@@ -164,12 +167,9 @@ export async function getExerciseMedia(exerciseName: string): Promise<ExerciseMe
         }
       }
 
-      // Cache only results with rich MuscleWiki data (form tips or MP4 video).
-      // Static image-only responses (exercises table / wger.de fallback) are not
-      // cached so the next modal open re-fetches and picks up form tips once the
-      // server's background MuscleWiki fetch has completed.
-      const hasRichData = media.correctSteps.length > 0 || !!(media.videoMp4);
-      if (hasRichData) {
+      // Cache anything with an image. Empty answers are retried next time: a
+      // new custom exercise gets its image a moment after it is created.
+      if (hasMedia(media)) {
         sessionCache[cacheKey] = media;
         AsyncStorage.setItem(CACHE_PREFIX + cacheKey, JSON.stringify({ media, timestamp: Date.now() }))
           .catch(() => {});
@@ -221,8 +221,7 @@ const PREWARM_RECHECK_DELAY_MS = 5000;
  *
  * First pass: fires immediately for exercises not yet attempted this session.
  * Second pass: schedules a re-fetch after PREWARM_RECHECK_DELAY_MS for exercises
- *   whose first response lacked rich data (no form tips or MP4), giving the server's
- *   background MuscleWiki fetch time to complete.
+ *   whose first response had no image yet.
  * Completely non-blocking: caller does not need to await.
  */
 export function prewarmExerciseMedia(exerciseNames: string[]): void {
